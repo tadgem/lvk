@@ -1,0 +1,6 @@
+[submodule "submod/glm"]
+	path = submod/glm
+	url = https://github.com/g-truc/glm.git
+[submodule "submod/sdl"]
+	path = submod/sdl
+	url = https://github.com/libsdl-org/SDL.git
