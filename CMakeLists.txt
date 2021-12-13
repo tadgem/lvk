@@ -6,7 +6,7 @@ set(GLM_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/submod/glm)
 
 find_package(Vulkan REQUIRED FATAL_ERROR) # error
 
-add_executable(${PROJECT_NAME} src/main.cpp )
+add_executable(${PROJECT_NAME} src/main.cpp src/sdl_helpers.hpp )
 
 target_include_directories (${PROJECT_NAME} PUBLIC ${Vulkan_INCLUDE_DIRS})
 
