@@ -14,7 +14,7 @@ target_link_libraries (${PROJECT_NAME} ${Vulkan_LIBRARIES})
 
 # sdl2
 if(NOT TARGET SDL2)
-    add_subdirectory("${SDL_DIRECTORY}")
+    add_subdirectory("${SDL_DIRECTORY}" ${CMAKE_CURRENT_BINARY_DIR}/SDL2)
     target_link_libraries(${PROJECT_NAME} SDL2)
 endif()
 
