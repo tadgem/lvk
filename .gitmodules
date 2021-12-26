@@ -4,3 +4,6 @@
 [submodule "submod/sdl"]
 	path = submod/sdl
 	url = https://github.com/libsdl-org/SDL.git
+[submodule "submod/spdlog"]
+	path = submod/spdlog
+	url = https://github.com/gabime/spdlog.git

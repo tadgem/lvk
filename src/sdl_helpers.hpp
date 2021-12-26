@@ -1,18 +1,15 @@
 #include "SDL.h"
 #include <functional>
 
-
-
-
 class sdl_helpers
 {
 public:
 
-	
 	static SDL_Window* InitSDL(std::function<void()> callback)
 	{
 		g_Window = CreateWindow(1920, 1080);
 		callback();
+		return g_Window;
 	}
 
 
@@ -46,7 +43,6 @@ private:
 		SDL_Window* window = SDL_CreateWindow("SDL Vulkan Example", 0, 0, height, width, SDL_WINDOW_SHOWN | SDL_WINDOW_VULKAN);
 		return window;
 	}
-
 	
 	inline static bool p_ShouldRun = true;
 	inline static uint64_t p_LastFrame = 0;

@@ -25,19 +25,35 @@ void CreateInstance()
     // as vulkan is truely platform independent, we need to query the GPU for extensions
     // which tell us what the GPU is capable of doing...
     uint32_t extensionCount = 0;
-    const char** extensionNames;
-    SDL_Vulkan_GetInstanceExtensions(sdl_helpers::g_Window, &extensionCount, extensionNames);
+    if (vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr) != VK_SUCCESS)
+    {
+        std::cerr << "Failed to enumerate supported instance extensions\n";
+    }
+    
+    std::vector<const char*> extensionNames(extensionCount);
+    SDL_Vulkan_GetInstanceExtensions(sdl_helpers::g_Window, &extensionCount, extensionNames.data());
+
+    std::vector<VkExtensionProperties> extensions(extensionCount);
+    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
+
+    for (VkExtensionProperties extensionProps : extensions)
+    {
+
+    }
 
     // setup an instance create info with our extensions & app info to create a vulkan instance
     VkInstanceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     createInfo.pApplicationInfo = &appInfo;
     createInfo.enabledExtensionCount = extensionCount;
-    createInfo.ppEnabledExtensionNames - extensionNames;
+    createInfo.ppEnabledExtensionNames = extensionNames.data();
     createInfo.enabledLayerCount = 0;
 
-    VkInstance^ 
-    vkCreateInstance(&createInfo, NULL, )
+    VkInstance instance;
+    if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
+    {
+        std::cerr << "Failed to create vulkan instance\n";
+    }
    
 }
 
