@@ -1,8 +1,11 @@
 cmake_minimum_required(VERSION 3.14)
 project(lvk)
 
+set (CMAKE_CXX_STANDARD 17)
+
 set(SDL_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/submod/sdl)
 set(GLM_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/submod/glm)
+set(SPD_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/submod/spdlog)
 
 find_package(Vulkan REQUIRED FATAL_ERROR) # error
 
@@ -22,4 +25,10 @@ endif()
 if(NOT TARGET glm)
     add_subdirectory("${GLM_DIRECTORY}")
     target_link_libraries(${PROJECT_NAME} glm)
+endif()
+
+# spdlog
+if(NOT TARGET spdlog)
+    add_subdirectory("${SPD_DIRECTORY}" ${CMAKE_CURRENT_BINARY_DIR}/spdlog)
+    target_link_libraries(${PROJECT_NAME} spdlog)
 endif()

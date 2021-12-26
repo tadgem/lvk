@@ -4,12 +4,29 @@
 #include "SDL.h"
 #include "SDL_vulkan.h"
 #include "glm/glm.hpp"
+#include "spdlog/spdlog.h"
 
 #include "sdl_helpers.hpp"
 
-#undef main
+VkInstance instance;
 
-VkInstance instance; 
+const bool use_validation = true;
+
+bool CheckValidationLayerSupport()
+{
+    uint32_t layerCount;
+    if (vkEnumerateInstanceLayerProperties(&layerCount, nullptr) != VK_SUCCESS)
+    {
+        spdlog::error("Failed to enumerate supported validation layers!");
+    }
+
+    std::vector<VkLayerProperties> availableLayers(layerCount);
+    if (vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data()) != VK_SUCCESS)
+    {
+        spdlog::error("Failed to enumerate supported validation layers!");
+    }
+    return false;
+}
 
 void CreateInstance()
 {
@@ -27,7 +44,7 @@ void CreateInstance()
     uint32_t extensionCount = 0;
     if (vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr) != VK_SUCCESS)
     {
-        std::cerr << "Failed to enumerate supported instance extensions\n";
+        spdlog::error("Failed to enumerate instance extensions!");
     }
     
     std::vector<const char*> extensionNames(extensionCount);
@@ -36,9 +53,10 @@ void CreateInstance()
     std::vector<VkExtensionProperties> extensions(extensionCount);
     vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 
+    spdlog::info("Supported instance extensions: ");
     for (VkExtensionProperties extensionProps : extensions)
     {
-
+        spdlog::info("{0} spec {1}", extensionProps.extensionName, extensionProps.specVersion);
     }
 
     // setup an instance create info with our extensions & app info to create a vulkan instance
@@ -49,28 +67,37 @@ void CreateInstance()
     createInfo.ppEnabledExtensionNames = extensionNames.data();
     createInfo.enabledLayerCount = 0;
 
-    VkInstance instance;
+    
     if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
     {
-        std::cerr << "Failed to create vulkan instance\n";
+        spdlog::error("Failed to create vulkan instance");
     }
    
 }
 
+void Cleanup()
+{
+    vkDestroyInstance(instance, nullptr);
+}
+
 int main()
 {
+
     sdl_helpers::InitSDL([&]()
     {
             CreateInstance();
 
     });
 
-    
+    auto cleanup_callback = [&]()
+    {
+        Cleanup();
+    };
     
     sdl_helpers::RunSDL([&]()
     {
 
-    });
+    }, cleanup_callback);
     
 
     return 1;
