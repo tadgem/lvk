@@ -10,6 +10,29 @@
 
 VkInstance instance;
 VkSurfaceKHR surface;
+VkDebugUtilsMessengerEXT debugMessenger;
+
+static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+    VkDebugUtilsMessageTypeFlagsEXT messageType,
+    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+    void* pUserData) {
+
+    //std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+    if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+    {
+        spdlog::warn("Validation Layer: {0}", pCallbackData->pMessage);
+    }
+    if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
+    {
+        spdlog::info("Validation Layer: {0}", pCallbackData->pMessage);
+    }
+    if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+    {
+        spdlog::error("Validation Layer: {0}", pCallbackData->pMessage);
+    }
+    return VK_FALSE;
+}
 
 const bool use_validation = true;
 
@@ -84,6 +107,25 @@ std::vector<const char*> GetRequiredExtensions()
     return extensionNames;
 }
 
+void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
+{
+    createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+
+    createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT |
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
+
+    createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+        VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+        VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+
+    createInfo.pfnUserCallback = debugCallback;
+    createInfo.pUserData = nullptr; // we can specify some data to pass the callback
+                                    // dont need this right now
+}
+
 void CreateInstance()
 {
     if (use_validation && !CheckValidationLayerSupport())
@@ -110,7 +152,20 @@ void CreateInstance()
     for (const auto& extension : extensions)
     {
         spdlog::info("{0}", extension.extensionName);
-        extensionNames.push_back(extension.extensionName);
+        bool shouldAdd = true;
+        for (int i = 0; i < extensionNames.size(); i++)
+        {
+            if (extensionNames[i] == extension.extensionName)
+            {
+                shouldAdd = false;
+            }
+        }
+
+        if(shouldAdd)
+        {
+            extensionNames.push_back(extension.extensionName);
+        }
+        
     }
         
     // setup an instance create info with our extensions & app info to create a vulkan instance
@@ -119,14 +174,20 @@ void CreateInstance()
     createInfo.pApplicationInfo = &appInfo;
     createInfo.enabledExtensionCount = extensionNames.size();
     createInfo.ppEnabledExtensionNames = extensionNames.data();
+
+    VkDebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo;
     if (use_validation)
     {
         createInfo.enabledLayerCount = (uint32_t) validationLayers.size();
         createInfo.ppEnabledLayerNames = validationLayers.data();
+
+        PopulateDebugMessengerCreateInfo(debugMessengerCreateInfo);
+        createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*) &debugMessengerCreateInfo;
     }
     else
     {
         createInfo.enabledLayerCount = 0;
+        createInfo.pNext = nullptr;
     }
     
     if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
@@ -147,8 +208,52 @@ VkSurfaceKHR CreateSurface()
     return surface;
 }
 
+void SetupDebugOutput()
+{
+    if (!use_validation) return;
+
+    VkDebugUtilsMessengerCreateInfoEXT createInfo{};
+    PopulateDebugMessengerCreateInfo(createInfo);
+
+    PFN_vkVoidFunction rawFunction = vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+    auto function = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(rawFunction);
+
+    if (function == nullptr)
+    {
+        spdlog::error("Could not find vkCreateDebugUtilsMessengerEXT function");
+        std::cerr << "Could not find vkCreateDebugUtilsMessengerEXT function";
+    }
+
+    if (function(instance, &createInfo, nullptr, &debugMessenger))
+    {
+        spdlog::error("Failed to create debug messenger");
+        std::cerr << "Failed to create debug messenger";
+    }
+
+}
+
+void CleanupDebugOutput()
+{
+    PFN_vkVoidFunction rawFunction = vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+    auto function = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(rawFunction);
+
+    if (function != nullptr) {
+        function(instance, debugMessenger, nullptr);
+    }
+    else
+    {
+        spdlog::error("Could not find vkDestroyDebugUtilsMessengerEXT function");
+        std::cerr << "Could not find vkDestroyDebugUtilsMessengerEXT function";
+    }
+}
+
 void Cleanup()
 {
+    if (use_validation)
+    {
+        CleanupDebugOutput();
+    }
+
     vkDestroyInstance(instance, nullptr);
 }
 
@@ -158,6 +263,7 @@ int main()
     sdl_helpers::InitSDL([&]()
     {
             CreateInstance();
+            SetupDebugOutput();
             surface = CreateSurface();
     });
 
