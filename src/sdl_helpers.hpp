@@ -20,7 +20,10 @@ public:
 
 	static void HandleSDLEvent(SDL_Event& sdl_event)
 	{
-
+		if (sdl_event.type == SDL_QUIT)
+		{
+			p_ShouldRun = false;
+		}
 	}
 
 	static void RunSDL(std::function<void()> update_callback, std::function<void()> cleanup_callback)
@@ -46,7 +49,7 @@ private:
 	static SDL_Window* CreateWindow(const uint32_t& height, const uint32_t& width)
 	{
 		SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
-		SDL_Window* window = SDL_CreateWindow("SDL Vulkan Example", 0, 0, height, width, SDL_WINDOW_SHOWN | SDL_WINDOW_VULKAN);
+		SDL_Window* window = SDL_CreateWindow("SDL Vulkan Example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, height, width, SDL_WINDOW_VULKAN);
 		return window;
 	}
 	
