@@ -41,6 +41,7 @@ public:
     QueueFamilyIndices          m_QueueFamilyIndices;
 
     VkQueue                     m_GraphicsQueue     = VK_NULL_HANDLE;
+    VkQueue                     m_PresentQueue      = VK_NULL_HANDLE;
     
     VulkanAPIWindowHandle*      m_WindowHandle;
 

@@ -236,6 +236,13 @@ VulkanAPI::QueueFamilyIndices VulkanAPI::FindQueueFamilies(VkPhysicalDevice m_Ph
         {
             indices.m_QueueFamilies.emplace(QueueFamilyType::Graphics, i);
         }
+
+        VkBool32 presentSupport = false;
+        vkGetPhysicalDeviceSurfaceSupportKHR(m_PhysicalDevice, i, m_Surface, &presentSupport);
+
+        if (presentSupport) {
+            indices.m_QueueFamilies[QueueFamilyType::Presentation] = i;
+        }
     }
     return indices;
 }
@@ -310,23 +317,26 @@ void VulkanAPI::CreateLogicalDevice()
 {
     m_QueueFamilyIndices = FindQueueFamilies(m_PhysicalDevice);
 
-    VkDeviceQueueCreateInfo queueCreateInfo{};
-    queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queueCreateInfo.queueCount = m_QueueFamilyIndices.m_QueueFamilies.size();
-    queueCreateInfo.queueFamilyIndex = m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Graphics];
+    std::vector< VkDeviceQueueCreateInfo> queueCreateInfos;
 
-    float priority = 1.0f;
-    queueCreateInfo.pQueuePriorities = &priority;
+    for (auto const& [type, index] : m_QueueFamilyIndices.m_QueueFamilies)
+    {
+        VkDeviceQueueCreateInfo queueCreateInfo{};
+        queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueCreateInfo.queueCount = 1;
+        queueCreateInfo.queueFamilyIndex = index;
+
+        float priority = 1.0f;
+        queueCreateInfo.pQueuePriorities = &priority;
+    }
 
     VkPhysicalDeviceFeatures physicalDeviceFeatures{};
 
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    createInfo.pQueueCreateInfos = &queueCreateInfo;
-    createInfo.queueCreateInfoCount = 1;
-
+    createInfo.pQueueCreateInfos = queueCreateInfos.data();
+    createInfo.queueCreateInfoCount = queueCreateInfos.size();
     createInfo.pEnabledFeatures = &physicalDeviceFeatures;
-
     createInfo.enabledExtensionCount = 0;
 
     if (p_UseValidation)
@@ -348,13 +358,15 @@ void VulkanAPI::CreateLogicalDevice()
 
 void VulkanAPI::GetQueueHandles()
 {
-    vkGetDeviceQueue(m_LogicalDevice, m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Graphics], 0, &m_GraphicsQueue);
+    vkGetDeviceQueue(m_LogicalDevice, m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Graphics],       0, &m_GraphicsQueue);
+    vkGetDeviceQueue(m_LogicalDevice, m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Presentation],   0, &m_PresentQueue);
 }
 
 void VulkanAPI::InitVulkan()
 {
     CreateInstance();
     SetupDebugOutput();
+    CreateSurface();
     PickPhysicalDevice();
     CreateLogicalDevice();
     GetQueueHandles();
