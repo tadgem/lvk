@@ -1,5 +1,5 @@
 #include <iostream>
-
+#include <map>
 #include <vulkan/vulkan.h>
 #include "SDL.h"
 #include "SDL_vulkan.h"
@@ -8,9 +8,28 @@
 
 #include "sdl_helpers.hpp"
 
-VkInstance instance;
-VkSurfaceKHR surface;
-VkDebugUtilsMessengerEXT debugMessenger;
+struct QueueFamilyIndices
+{
+    std::map<VkQueueFlagBits, uint32_t> m_QueueFamilies;
+
+    bool IsComplete()
+    {
+        bool foundGraphicsQueue = m_QueueFamilies.find(VK_QUEUE_GRAPHICS_BIT) != m_QueueFamilies.end();
+        return foundGraphicsQueue;
+    }
+};
+
+
+VkInstance                  instance;
+VkSurfaceKHR                surface;
+VkDebugUtilsMessengerEXT    debugMessenger;
+VkPhysicalDevice            physicalDevice  = VK_NULL_HANDLE;
+VkDevice                    logicalDevice   = VK_NULL_HANDLE;
+
+QueueFamilyIndices          queueFamilyIndices;
+
+VkQueue                     graphicsQueue   = VK_NULL_HANDLE;
+
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -49,7 +68,7 @@ VkApplicationInfo CreateAppInfo()
     appInfo.applicationVersion = VK_MAKE_VERSION(0, 1, 0);
     appInfo.pEngineName = "None";
     appInfo.engineVersion = VK_MAKE_VERSION(0, 1, 0);
-    appInfo.apiVersion = VK_API_VERSION_1_0;
+    appInfo.apiVersion = VK_API_VERSION_1_1;
 
     return appInfo;
 }
@@ -175,9 +194,9 @@ void CreateInstance()
     createInfo.enabledExtensionCount = extensionNames.size();
     createInfo.ppEnabledExtensionNames = extensionNames.data();
 
-    VkDebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo;
     if (use_validation)
     {
+        VkDebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo;
         createInfo.enabledLayerCount = (uint32_t) validationLayers.size();
         createInfo.ppEnabledLayerNames = validationLayers.data();
 
@@ -247,36 +266,172 @@ void CleanupDebugOutput()
     }
 }
 
-void Cleanup()
+void CleanupVulkan()
 {
     if (use_validation)
     {
         CleanupDebugOutput();
     }
-
+    vkDestroyDevice(logicalDevice, nullptr);
     vkDestroyInstance(instance, nullptr);
+}
+
+QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice physicalDevice)
+{
+    QueueFamilyIndices indices;
+
+    uint32_t queueFamilyCount = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
+
+    std::vector<VkQueueFamilyProperties> queueFamilyProperties(queueFamilyCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilyProperties.data());
+
+    for (int i = 0; i < queueFamilyProperties.size(); i++)
+    {
+        if (queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+        {
+            indices.m_QueueFamilies.emplace(VK_QUEUE_GRAPHICS_BIT, i);
+        }
+    }
+    return indices;
+}
+
+bool IsDeviceSuitable(VkPhysicalDevice physicalDevice)
+{
+    QueueFamilyIndices indices = FindQueueFamilies(physicalDevice);
+    return indices.IsComplete();
+}
+
+uint32_t AssessDeviceSuitability(VkPhysicalDevice physicalDevice)
+{
+    uint32_t score = 0;
+
+    VkPhysicalDeviceProperties deviceProperties;
+    vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
+
+    VkPhysicalDeviceFeatures deviceFeatures;
+    vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
+
+    if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+    {
+        score += 1000;
+    }
+
+    score += deviceFeatures.geometryShader;
+    score += deviceFeatures.shaderStorageImageMultisample;
+    score += deviceFeatures.multiViewport;
+
+    return score;
+}
+
+void PickPhysicalDevice()
+{
+    uint32_t deviceCount = 0;
+    vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+
+    if (deviceCount == 0)
+    {
+        spdlog::error("Failed to find any physical devices.");
+        std::cerr << "Failed to find any physical devices.\n";
+    }
+
+    std::vector<VkPhysicalDevice> physicalDevices(deviceCount);
+    vkEnumeratePhysicalDevices(instance, &deviceCount, physicalDevices.data());
+
+    std::unordered_map<uint32_t, VkPhysicalDevice> deviceScores;
+
+    for (int i = 0; i < physicalDevices.size(); i++)
+    {
+        uint32_t score = AssessDeviceSuitability(physicalDevices[i]);
+        if (IsDeviceSuitable(physicalDevices[i]))
+        {
+            deviceScores.emplace(score, physicalDevices[i]);
+        }
+    }
+
+    if (deviceScores.begin()->first > 0)
+    {
+        physicalDevice = deviceScores.begin()->second;
+    }
+
+    if (physicalDevice == VK_NULL_HANDLE)
+    {
+        spdlog::error("Failed to find a suitable physical device.");
+        std::cerr << "Failed to find a suitable physical device.\n";
+    }
+
+}
+
+void CreateLogicalDevice()
+{
+    queueFamilyIndices = FindQueueFamilies(physicalDevice);
+
+    VkDeviceQueueCreateInfo queueCreateInfo{};
+    queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queueCreateInfo.queueCount = queueFamilyIndices.m_QueueFamilies.size();
+    queueCreateInfo.queueFamilyIndex = queueFamilyIndices.m_QueueFamilies[VK_QUEUE_GRAPHICS_BIT];
+
+    float priority = 1.0f;
+    queueCreateInfo.pQueuePriorities = &priority;
+
+    VkPhysicalDeviceFeatures physicalDeviceFeatures{};
+
+    VkDeviceCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    createInfo.pQueueCreateInfos = &queueCreateInfo;
+    createInfo.queueCreateInfoCount = 1;
+
+    createInfo.pEnabledFeatures = &physicalDeviceFeatures;
+    
+    createInfo.enabledExtensionCount = 0;
+
+    if (use_validation)
+    {
+        createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+        createInfo.ppEnabledLayerNames = validationLayers.data();
+    }
+    else
+    {
+        createInfo.enabledLayerCount = 0;
+    }
+
+    if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &logicalDevice))
+    {
+        spdlog::error("Failed to create logical device.");
+        std::cerr << "Failed to create logical device. \n";
+    }
+}
+
+void GetQueueHandles()
+{
+    vkGetDeviceQueue(logicalDevice, queueFamilyIndices.m_QueueFamilies[VK_QUEUE_GRAPHICS_BIT], 0, &graphicsQueue);
+}
+
+void InitVulkan()
+{
+    CreateInstance();
+    SetupDebugOutput();
+    PickPhysicalDevice();
+    CreateLogicalDevice();
+    GetQueueHandles();
 }
 
 int main()
 {
-
     sdl_helpers::InitSDL([&]()
     {
-            CreateInstance();
-            SetupDebugOutput();
-            surface = CreateSurface();
+            InitVulkan();
     });
 
     auto cleanup_callback = [&]()
     {
-        Cleanup();
+        CleanupVulkan();
     };
     
     sdl_helpers::RunSDL([&]()
     {
 
     }, cleanup_callback);
-    
 
     return 1;
 }
