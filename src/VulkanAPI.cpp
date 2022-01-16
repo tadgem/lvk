@@ -27,7 +27,8 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 
 bool VulkanAPI::QueueFamilyIndices::IsComplete()
 {
-    bool foundGraphicsQueue = m_QueueFamilies.find(VK_QUEUE_GRAPHICS_BIT) != m_QueueFamilies.end();
+    bool foundGraphicsQueue = m_QueueFamilies.find(QueueFamilyType::Graphics) != m_QueueFamilies.end();
+    bool foundPresentQueue  = m_QueueFamilies.find(QueueFamilyType::Presentation) != m_QueueFamilies.end();
     return foundGraphicsQueue;
 }
 
@@ -233,7 +234,7 @@ VulkanAPI::QueueFamilyIndices VulkanAPI::FindQueueFamilies(VkPhysicalDevice m_Ph
     {
         if (queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
         {
-            indices.m_QueueFamilies.emplace(VK_QUEUE_GRAPHICS_BIT, i);
+            indices.m_QueueFamilies.emplace(QueueFamilyType::Graphics, i);
         }
     }
     return indices;
@@ -312,7 +313,7 @@ void VulkanAPI::CreateLogicalDevice()
     VkDeviceQueueCreateInfo queueCreateInfo{};
     queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
     queueCreateInfo.queueCount = m_QueueFamilyIndices.m_QueueFamilies.size();
-    queueCreateInfo.queueFamilyIndex = m_QueueFamilyIndices.m_QueueFamilies[VK_QUEUE_GRAPHICS_BIT];
+    queueCreateInfo.queueFamilyIndex = m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Graphics];
 
     float priority = 1.0f;
     queueCreateInfo.pQueuePriorities = &priority;
@@ -347,7 +348,7 @@ void VulkanAPI::CreateLogicalDevice()
 
 void VulkanAPI::GetQueueHandles()
 {
-    vkGetDeviceQueue(m_LogicalDevice, m_QueueFamilyIndices.m_QueueFamilies[VK_QUEUE_GRAPHICS_BIT], 0, &m_GraphicsQueue);
+    vkGetDeviceQueue(m_LogicalDevice, m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Graphics], 0, &m_GraphicsQueue);
 }
 
 void VulkanAPI::InitVulkan()

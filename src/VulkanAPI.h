@@ -16,9 +16,17 @@ protected:
         "VK_LAYER_KHRONOS_validation"
     };
 public:
+
+    enum class QueueFamilyType
+    {
+        Graphics = VK_QUEUE_GRAPHICS_BIT,
+        Presentation
+
+    };
+
     struct QueueFamilyIndices
     {
-        std::map<VkQueueFlagBits, uint32_t> m_QueueFamilies;
+        std::map<QueueFamilyType, uint32_t> m_QueueFamilies;
 
         bool IsComplete();
         
