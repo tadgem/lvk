@@ -9,7 +9,12 @@ set(SPD_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/submod/spdlog)
 
 find_package(Vulkan REQUIRED FATAL_ERROR) # error
 
-add_executable(${PROJECT_NAME} src/main.cpp src/sdl_helpers.hpp )
+add_executable(${PROJECT_NAME}  src/main.cpp 
+                                src/VulkanAPI.cpp 
+                                src/VulkanAPI.h 
+                                src/VulkanAPI_SDL.cpp 
+                                src/VulkanAPI_SDL.h 
+                                src/sdl_helpers.hpp )
 
 target_include_directories (${PROJECT_NAME} PUBLIC ${Vulkan_INCLUDE_DIRS})
 
