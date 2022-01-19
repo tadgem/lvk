@@ -32,3 +32,7 @@
 *.app
 
 /build
+.vscode/settings.json
+submod/glm/
+submod/sdl/
+submod/spdlog/
