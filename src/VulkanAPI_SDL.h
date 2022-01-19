@@ -14,7 +14,7 @@ class VulkanAPI_SDL : public VulkanAPI
 public:
 	// Inherited via VulkanAPI
 	virtual std::vector<const char*> GetRequiredExtensions() override;
-	virtual VkSurfaceKHR CreateSurface() override;
+	virtual void CreateSurface() override;
 	virtual void CreateWindow(uint32_t width, uint32_t height) override;
 	virtual void CleanupWindow() override;
 

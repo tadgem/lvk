@@ -78,7 +78,30 @@ bool VulkanAPI::CheckValidationLayerSupport()
     return true;
 }
 
+bool VulkanAPI::CheckDeviceExtensionSupport(VkPhysicalDevice device)
+{
+    uint32_t extensionCount;
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
 
+    std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+
+    uint32_t requiredExtensionsFound = 0;
+
+    for (auto const& extension : availableExtensions)
+    {
+        for (auto const& requiredExtensionName : p_DeviceExtensions)
+        {
+            if (extension.extensionName == requiredExtensionName)
+            {
+                requiredExtensionsFound++;
+            }
+        }
+    }
+
+    return requiredExtensionsFound >= p_DeviceExtensions.size();
+
+}
 
 void VulkanAPI::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
 {
@@ -170,7 +193,6 @@ void VulkanAPI::CreateInstance()
 
 }
 
-
 void VulkanAPI::SetupDebugOutput()
 {
     if (!p_UseValidation) return;
@@ -240,7 +262,7 @@ VulkanAPI::QueueFamilyIndices VulkanAPI::FindQueueFamilies(VkPhysicalDevice m_Ph
         VkBool32 presentSupport = false;
         vkGetPhysicalDeviceSurfaceSupportKHR(m_PhysicalDevice, i, m_Surface, &presentSupport);
 
-        if (presentSupport) {
+        if (presentSupport == true) {
             indices.m_QueueFamilies[QueueFamilyType::Presentation] = i;
         }
     }
@@ -250,7 +272,8 @@ VulkanAPI::QueueFamilyIndices VulkanAPI::FindQueueFamilies(VkPhysicalDevice m_Ph
 bool VulkanAPI::IsDeviceSuitable(VkPhysicalDevice m_PhysicalDevice)
 {
     QueueFamilyIndices indices = FindQueueFamilies(m_PhysicalDevice);
-    return indices.IsComplete();
+    bool extensionsSupported = CheckDeviceExtensionSupport(m_PhysicalDevice);
+    return indices.IsComplete() && extensionsSupported;
 }
 
 uint32_t VulkanAPI::AssessDeviceSuitability(VkPhysicalDevice m_PhysicalDevice)
@@ -318,16 +341,15 @@ void VulkanAPI::CreateLogicalDevice()
     m_QueueFamilyIndices = FindQueueFamilies(m_PhysicalDevice);
 
     std::vector< VkDeviceQueueCreateInfo> queueCreateInfos;
-
+    float priority = 1.0f;
     for (auto const& [type, index] : m_QueueFamilyIndices.m_QueueFamilies)
     {
         VkDeviceQueueCreateInfo queueCreateInfo{};
         queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queueCreateInfo.queueCount = 1;
         queueCreateInfo.queueFamilyIndex = index;
-
-        float priority = 1.0f;
         queueCreateInfo.pQueuePriorities = &priority;
+        queueCreateInfos.push_back(queueCreateInfo);
     }
 
     VkPhysicalDeviceFeatures physicalDeviceFeatures{};
@@ -337,6 +359,8 @@ void VulkanAPI::CreateLogicalDevice()
     createInfo.pQueueCreateInfos = queueCreateInfos.data();
     createInfo.queueCreateInfoCount = queueCreateInfos.size();
     createInfo.pEnabledFeatures = &physicalDeviceFeatures;
+
+
     createInfo.enabledExtensionCount = 0;
 
     if (p_UseValidation)

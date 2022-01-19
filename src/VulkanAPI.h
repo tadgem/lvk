@@ -15,6 +15,10 @@ protected:
     const std::vector<const char*> p_ValidationLayers = {
         "VK_LAYER_KHRONOS_validation"
     };
+
+    const std::vector<const char*> p_DeviceExtensions = {
+        "VK_KHR_SWAPCHAIN_EXTENSION_NAME"
+    };
 public:
 
     enum class QueueFamilyType
@@ -47,6 +51,7 @@ public:
 
     VkApplicationInfo           CreateAppInfo();
     bool                        CheckValidationLayerSupport();
+    bool                        CheckDeviceExtensionSupport(VkPhysicalDevice device);
     void                        CreateInstance();
     void                        SetupDebugOutput();
     void                        CleanupDebugOutput();
@@ -59,10 +64,10 @@ public:
     void                        GetQueueHandles();
 
     virtual std::vector<const char*>    GetRequiredExtensions() = 0;
-    virtual VkSurfaceKHR                CreateSurface() = 0;
+    virtual void                        CreateSurface() = 0;
     virtual void                        CreateWindow(uint32_t width, uint32_t height) = 0;
     virtual void                        CleanupWindow() = 0;
-    void                        InitVulkan();
+    void                                InitVulkan();
 
 
     void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);

@@ -22,15 +22,13 @@ std::vector<const char*> VulkanAPI_SDL::GetRequiredExtensions()
     return extensionNames;
 }
 
-VkSurfaceKHR VulkanAPI_SDL::CreateSurface()
+void VulkanAPI_SDL::CreateSurface()
 {
-    VkSurfaceKHR surface;
-    if (!SDL_Vulkan_CreateSurface(m_SdlHandle->m_SdlWindow, m_Instance, &surface))
+    if (!SDL_Vulkan_CreateSurface(m_SdlHandle->m_SdlWindow, m_Instance, &m_Surface))
     {
         spdlog::error("Failed to create SDL Vulkan surface");
         std::cerr << "Failed to create SDL Vulkan surface";
     }
-    return surface;
 }
 
 void VulkanAPI_SDL::CreateWindow(uint32_t width, uint32_t height)
