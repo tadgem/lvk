@@ -361,8 +361,8 @@ void VulkanAPI::CreateLogicalDevice()
     createInfo.queueCreateInfoCount = queueCreateInfos.size();
     createInfo.pEnabledFeatures = &physicalDeviceFeatures;
 
-
-    createInfo.enabledExtensionCount = 0;
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(p_DeviceExtensions.size());
+    createInfo.ppEnabledExtensionNames = p_DeviceExtensions.data();
 
     if (p_UseValidation)
     {
