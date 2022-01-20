@@ -238,6 +238,7 @@ void VulkanAPI::CleanupVulkan()
     {
         CleanupDebugOutput();
     }
+    vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
     vkDestroyDevice(m_LogicalDevice, nullptr);
     vkDestroyInstance(m_Instance, nullptr);
 }
