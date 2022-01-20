@@ -29,7 +29,7 @@ bool VulkanAPI::QueueFamilyIndices::IsComplete()
 {
     bool foundGraphicsQueue = m_QueueFamilies.find(QueueFamilyType::Graphics) != m_QueueFamilies.end();
     bool foundPresentQueue  = m_QueueFamilies.find(QueueFamilyType::Presentation) != m_QueueFamilies.end();
-    return foundGraphicsQueue;
+    return foundGraphicsQueue && foundPresentQueue;
 }
 
 VkApplicationInfo VulkanAPI::CreateAppInfo()
@@ -92,7 +92,7 @@ bool VulkanAPI::CheckDeviceExtensionSupport(VkPhysicalDevice device)
     {
         for (auto const& requiredExtensionName : p_DeviceExtensions)
         {
-            if (extension.extensionName == requiredExtensionName)
+            if (strcmp(requiredExtensionName, extension.extensionName) == 0)
             {
                 requiredExtensionsFound++;
             }

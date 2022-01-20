@@ -17,7 +17,7 @@ protected:
     };
 
     const std::vector<const char*> p_DeviceExtensions = {
-        "VK_KHR_SWAPCHAIN_EXTENSION_NAME"
+        "VK_KHR_swapchain"
     };
 public:
 
