@@ -7,3 +7,6 @@
 [submodule "submod/spdlog"]
 	path = submod/spdlog
 	url = https://github.com/gabime/spdlog.git
+[submodule "submod/imgui"]
+	path = submod/imgui
+	url = https://github.com/ocornut/imgui.git
