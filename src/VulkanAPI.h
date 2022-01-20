@@ -36,6 +36,13 @@ public:
         
     };
 
+    struct SwapChainSupportDetais
+    {
+        VkSurfaceCapabilitiesKHR m_Capabilities;
+        std::vector<VkSurfaceFormatKHR> m_SupportedFormats;
+        std::vector<VkPresentModeKHR> m_SupportedPresentModes;
+    };
+
     VkInstance                  m_Instance;
     VkSurfaceKHR                m_Surface;
     VkDebugUtilsMessengerEXT    m_DebugMessenger;
@@ -57,11 +64,15 @@ public:
     void                        CleanupDebugOutput();
     void                        CleanupVulkan();
     QueueFamilyIndices          FindQueueFamilies(VkPhysicalDevice physicalDevice);
+    SwapChainSupportDetais      GetSwapChainSupportDetails(VkPhysicalDevice physicalDevice);
     bool                        IsDeviceSuitable(VkPhysicalDevice physicalDevice);
     uint32_t                    AssessDeviceSuitability(VkPhysicalDevice physicalDevice);
     void                        PickPhysicalDevice();
     void                        CreateLogicalDevice();
     void                        GetQueueHandles();
+    void                        ListDeviceExtensions(VkPhysicalDevice physicalDevice);
+    
+    std::vector<VkExtensionProperties>  GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice);
 
     virtual std::vector<const char*>    GetRequiredExtensions() = 0;
     virtual void                        CreateSurface() = 0;
