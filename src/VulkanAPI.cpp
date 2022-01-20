@@ -423,6 +423,16 @@ void VulkanAPI::GetQueueHandles()
     vkGetDeviceQueue(m_LogicalDevice, m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Presentation],   0, &m_PresentQueue);
 }
 
+VkSurfaceFormatKHR VulkanAPI::ChooseSurfaceFormat(std::vector<VkSurfaceFormatKHR> availableFormats)
+{
+    return VkSurfaceFormatKHR();
+}
+
+VkPresentModeKHR VulkanAPI::ChoosePresentMode(std::vector<VkPresentModeKHR> availableModes)
+{
+    return VkPresentModeKHR();
+}
+
 void VulkanAPI::ListDeviceExtensions(VkPhysicalDevice physicalDevice)
 {
     std::vector<VkExtensionProperties> extensions = GetDeviceAvailableExtensions(physicalDevice);

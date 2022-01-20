@@ -56,12 +56,17 @@ public:
     
     VulkanAPIWindowHandle*      m_WindowHandle;
 
-    VkApplicationInfo           CreateAppInfo();
+    // Debug
     bool                        CheckValidationLayerSupport();
     bool                        CheckDeviceExtensionSupport(VkPhysicalDevice device);
-    void                        CreateInstance();
     void                        SetupDebugOutput();
     void                        CleanupDebugOutput();
+    void                        ListDeviceExtensions(VkPhysicalDevice physicalDevice);
+    void                        PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+
+    // Main API Functionality
+    VkApplicationInfo           CreateAppInfo();
+    void                        CreateInstance();
     void                        CleanupVulkan();
     QueueFamilyIndices          FindQueueFamilies(VkPhysicalDevice physicalDevice);
     SwapChainSupportDetais      GetSwapChainSupportDetails(VkPhysicalDevice physicalDevice);
@@ -70,10 +75,12 @@ public:
     void                        PickPhysicalDevice();
     void                        CreateLogicalDevice();
     void                        GetQueueHandles();
-    void                        ListDeviceExtensions(VkPhysicalDevice physicalDevice);
+    VkSurfaceFormatKHR          ChooseSurfaceFormat(std::vector<VkSurfaceFormatKHR> availableFormats);
+    VkPresentModeKHR            ChoosePresentMode(std::vector<VkPresentModeKHR> availableModes);
     
     std::vector<VkExtensionProperties>  GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice);
 
+    // Implement for a windowing system (e.g. SDL)
     virtual std::vector<const char*>    GetRequiredExtensions() = 0;
     virtual void                        CreateSurface() = 0;
     virtual void                        CreateWindow(uint32_t width, uint32_t height) = 0;
@@ -81,7 +88,7 @@ public:
     void                                InitVulkan();
 
 
-    void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+    
     
 
 
