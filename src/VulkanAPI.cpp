@@ -197,7 +197,7 @@ void VulkanAPI::SetupDebugOutput()
     PopulateDebugMessengerCreateInfo(createInfo);
 
     PFN_vkVoidFunction rawFunction = vkGetInstanceProcAddr(m_Instance, "vkCreateDebugUtilsMessengerEXT");
-    auto function = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(rawFunction);
+    PFN_vkCreateDebugUtilsMessengerEXT function = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(rawFunction);
 
     if (function == nullptr)
     {
