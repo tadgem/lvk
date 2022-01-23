@@ -164,7 +164,7 @@ void VulkanAPI::CreateInstance()
     VkInstanceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     createInfo.pApplicationInfo = &appInfo;
-    createInfo.enabledExtensionCount = extensionNames.size();
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(extensionNames.size());
     createInfo.ppEnabledExtensionNames = extensionNames.data();
 
     if (p_UseValidation)
@@ -259,7 +259,7 @@ VulkanAPI::QueueFamilyIndices VulkanAPI::FindQueueFamilies(VkPhysicalDevice m_Ph
         VkBool32 presentSupport = false;
         vkGetPhysicalDeviceSurfaceSupportKHR(m_PhysicalDevice, i, m_Surface, &presentSupport);
 
-        if (presentSupport == true) {
+        if (presentSupport == 1) {
             indices.m_QueueFamilies[QueueFamilyType::Presentation] = i;
         }
     }
@@ -394,7 +394,7 @@ void VulkanAPI::CreateLogicalDevice()
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     createInfo.pQueueCreateInfos = queueCreateInfos.data();
-    createInfo.queueCreateInfoCount = queueCreateInfos.size();
+    createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
     createInfo.pEnabledFeatures = &physicalDeviceFeatures;
 
     createInfo.enabledExtensionCount = static_cast<uint32_t>(p_DeviceExtensions.size());

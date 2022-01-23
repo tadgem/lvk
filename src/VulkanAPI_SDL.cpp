@@ -3,8 +3,6 @@
 #include "SDL_vulkan.h"
 std::vector<const char*> VulkanAPI_SDL::GetRequiredExtensions()
 {
-    // as vulkan is truely platform independent, we need to query the GPU for extensions
-    // which tell us what the GPU is capable of doing...
     uint32_t extensionCount = 0;
     if (SDL_Vulkan_GetInstanceExtensions(nullptr, &extensionCount, nullptr) != SDL_TRUE)
     {
