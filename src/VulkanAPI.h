@@ -86,7 +86,7 @@ public:
     VkExtent2D                  ChooseSwapExtent(VkSurfaceCapabilitiesKHR& surfaceCapabilities);
     void                        CreateSwapChain();
     void                        CreateSwapChainImageViews();
-
+    void                        CreateGraphicsPipeline();
 
     std::vector<VkExtensionProperties>  GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice);
 

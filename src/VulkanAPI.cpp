@@ -573,6 +573,10 @@ void VulkanAPI::CreateSwapChainImageViews()
     }
 }
 
+void VulkanAPI::CreateGraphicsPipeline()
+{
+}
+
 void VulkanAPI::ListDeviceExtensions(VkPhysicalDevice physicalDevice)
 {
     std::vector<VkExtensionProperties> extensions = GetDeviceAvailableExtensions(physicalDevice);
