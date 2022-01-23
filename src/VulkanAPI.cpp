@@ -1,6 +1,7 @@
+#include <cstdint>
+#include <fstream>
 #include "VulkanAPI.h"
 #include "spdlog/spdlog.h"
-#include <cstdint>
 
 // comments are largely snippets from: https://vulkan-tutorial.com/. credit: Alexander Overvoorde
 
@@ -575,6 +576,11 @@ void VulkanAPI::CreateSwapChainImageViews()
 
 void VulkanAPI::CreateGraphicsPipeline()
 {
+    auto vert = LoadSpirvBinary("tri.vert.spv");
+    auto frag = LoadSpirvBinary("tri.frag.spv");
+
+    spdlog::info("Loaded vertex and fragment shaders");
+
 }
 
 void VulkanAPI::ListDeviceExtensions(VkPhysicalDevice physicalDevice)
@@ -602,6 +608,26 @@ std::vector<VkExtensionProperties> VulkanAPI::GetDeviceAvailableExtensions(VkPhy
 
 }
 
+std::vector<char> VulkanAPI::LoadSpirvBinary(const std::string& path)
+{
+    std::ifstream file(path, std::ios::ate | std::ios::binary);
+
+    if (!file.is_open())
+    {
+        spdlog::error("Failed to open file at path {0} as binary!", path);
+        std::cerr << "Failed to open file!" << std::endl;
+    }
+
+    size_t fileSize = static_cast<size_t>(file.tellg());
+    std::vector<char> data(fileSize);
+
+    file.seekg(0);
+    file.read(data.data(), fileSize);
+
+    file.close();
+    return data;
+}
+
 void VulkanAPI::InitVulkan()
 {
     CreateInstance();
@@ -612,4 +638,5 @@ void VulkanAPI::InitVulkan()
     GetQueueHandles();
     CreateSwapChain();
     CreateSwapChainImageViews();
+    CreateGraphicsPipeline();
 }

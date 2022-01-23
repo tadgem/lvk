@@ -21,6 +21,12 @@ protected:
     };
 public:
 
+    enum class ShaderStage
+    {
+        Vertex,
+        Fragment
+    };
+
     enum class QueueFamilyType
     {
         Graphics = VK_QUEUE_GRAPHICS_BIT,
@@ -89,6 +95,7 @@ public:
     void                        CreateGraphicsPipeline();
 
     std::vector<VkExtensionProperties>  GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice);
+    std::vector<char>                   LoadSpirvBinary(const std::string& path);
 
     // Implement for a windowing system (e.g. SDL)
     virtual std::vector<const char*>    GetRequiredExtensions() = 0;
