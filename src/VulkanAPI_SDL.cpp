@@ -50,7 +50,15 @@ void VulkanAPI_SDL::CleanupWindow()
     SDL_Quit();
 }
 
-VulkanAPIWindowHandle_SDL::VulkanAPIWindowHandle_SDL(SDL_Window* sdlWindow)
+VkExtent2D VulkanAPI_SDL::GetSurfaceExtent(VkSurfaceCapabilitiesKHR surface)
 {
-    m_SdlWindow = sdlWindow;
+    SDL_DisplayMode displayMode;
+    SDL_GetCurrentDisplayMode(0, &displayMode);
+
+    return VkExtent2D();
+}
+
+VulkanAPIWindowHandle_SDL::VulkanAPIWindowHandle_SDL(SDL_Window* sdlWindow) : m_SdlWindow(sdlWindow)
+{
+    
 }

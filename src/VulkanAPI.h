@@ -24,7 +24,7 @@ public:
     enum class QueueFamilyType
     {
         Graphics = VK_QUEUE_GRAPHICS_BIT,
-        Presentation
+        Present
 
     };
 
@@ -38,13 +38,14 @@ public:
 
     struct SwapChainSupportDetais
     {
-        VkSurfaceCapabilitiesKHR m_Capabilities;
+        VkSurfaceCapabilitiesKHR        m_Capabilities;
         std::vector<VkSurfaceFormatKHR> m_SupportedFormats;
-        std::vector<VkPresentModeKHR> m_SupportedPresentModes;
+        std::vector<VkPresentModeKHR>   m_SupportedPresentModes;
     };
 
     VkInstance                  m_Instance;
     VkSurfaceKHR                m_Surface;
+    VkSwapchainKHR              m_SwapChain;
     VkDebugUtilsMessengerEXT    m_DebugMessenger;
     VkPhysicalDevice            m_PhysicalDevice    = VK_NULL_HANDLE;
     VkDevice                    m_LogicalDevice     = VK_NULL_HANDLE;
@@ -55,6 +56,11 @@ public:
     VkQueue                     m_PresentQueue      = VK_NULL_HANDLE;
     
     VulkanAPIWindowHandle*      m_WindowHandle;
+
+    std::vector<VkImage>        m_SwapChainImages;
+    std::vector<VkImageView>    m_SwapChainImageViews;
+    VkFormat                    m_SwapChainImageFormat;
+    VkExtent2D                  m_SwapChainImageExtent;
 
     // Debug
     bool                        CheckValidationLayerSupport();
@@ -75,9 +81,13 @@ public:
     void                        PickPhysicalDevice();
     void                        CreateLogicalDevice();
     void                        GetQueueHandles();
-    VkSurfaceFormatKHR          ChooseSurfaceFormat(std::vector<VkSurfaceFormatKHR> availableFormats);
-    VkPresentModeKHR            ChoosePresentMode(std::vector<VkPresentModeKHR> availableModes);
-    
+    VkSurfaceFormatKHR          ChooseSwapChainSurfaceFormat(std::vector<VkSurfaceFormatKHR> availableFormats);
+    VkPresentModeKHR            ChooseSwapChainPresentMode(std::vector<VkPresentModeKHR> availableModes);
+    VkExtent2D                  ChooseSwapExtent(VkSurfaceCapabilitiesKHR& surfaceCapabilities);
+    void                        CreateSwapChain();
+    void                        CreateSwapChainImageViews();
+
+
     std::vector<VkExtensionProperties>  GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice);
 
     // Implement for a windowing system (e.g. SDL)
@@ -85,6 +95,7 @@ public:
     virtual void                        CreateSurface() = 0;
     virtual void                        CreateWindow(uint32_t width, uint32_t height) = 0;
     virtual void                        CleanupWindow() = 0;
+    virtual VkExtent2D                  GetSurfaceExtent(VkSurfaceCapabilitiesKHR surface) = 0;
     void                                InitVulkan();
 
 

@@ -1,6 +1,8 @@
 #include "VulkanAPI.h"
 #include "spdlog/spdlog.h"
+#include <cstdint>
 
+// comments are largely snippets from: https://vulkan-tutorial.com/. credit: Alexander Overvoorde
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -11,15 +13,15 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     //std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
     if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
     {
-        spdlog::warn("Validation Layer: {0}", pCallbackData->pMessage);
+        spdlog::warn("VL: {0}", pCallbackData->pMessage);
     }
     if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
     {
-        spdlog::info("Validation Layer: {0}", pCallbackData->pMessage);
+        spdlog::info("VL: {0}", pCallbackData->pMessage);
     }
     if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
     {
-        spdlog::error("Validation Layer: {0}", pCallbackData->pMessage);
+        spdlog::error("VL: {0}", pCallbackData->pMessage);
     }
     return VK_FALSE;
 }
@@ -28,7 +30,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 bool VulkanAPI::QueueFamilyIndices::IsComplete()
 {
     bool foundGraphicsQueue = m_QueueFamilies.find(QueueFamilyType::Graphics) != m_QueueFamilies.end();
-    bool foundPresentQueue  = m_QueueFamilies.find(QueueFamilyType::Presentation) != m_QueueFamilies.end();
+    bool foundPresentQueue  = m_QueueFamilies.find(QueueFamilyType::Present) != m_QueueFamilies.end();
     return foundGraphicsQueue && foundPresentQueue;
 }
 
@@ -234,6 +236,11 @@ void VulkanAPI::CleanupVulkan()
     {
         CleanupDebugOutput();
     }
+    for (int i = 0; i < m_SwapChainImageViews.size(); i++)
+    {
+        vkDestroyImageView(m_LogicalDevice, m_SwapChainImageViews[i], nullptr);
+    }
+    vkDestroySwapchainKHR(m_LogicalDevice, m_SwapChain, nullptr);
     vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
     vkDestroyDevice(m_LogicalDevice, nullptr);
     vkDestroyInstance(m_Instance, nullptr);
@@ -256,11 +263,11 @@ VulkanAPI::QueueFamilyIndices VulkanAPI::FindQueueFamilies(VkPhysicalDevice m_Ph
             indices.m_QueueFamilies.emplace(QueueFamilyType::Graphics, i);
         }
 
-        VkBool32 presentSupport = false;
+        VkBool32 presentSupport = VK_FALSE;
         vkGetPhysicalDeviceSurfaceSupportKHR(m_PhysicalDevice, i, m_Surface, &presentSupport);
 
-        if (presentSupport == 1) {
-            indices.m_QueueFamilies[QueueFamilyType::Presentation] = i;
+        if (presentSupport == VK_TRUE) {
+            indices.m_QueueFamilies[QueueFamilyType::Present] = i;
         }
     }
     return indices;
@@ -419,18 +426,151 @@ void VulkanAPI::CreateLogicalDevice()
 
 void VulkanAPI::GetQueueHandles()
 {
-    vkGetDeviceQueue(m_LogicalDevice, m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Graphics],       0, &m_GraphicsQueue);
-    vkGetDeviceQueue(m_LogicalDevice, m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Presentation],   0, &m_PresentQueue);
+    vkGetDeviceQueue(m_LogicalDevice, m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Graphics],      0, &m_GraphicsQueue);
+    vkGetDeviceQueue(m_LogicalDevice, m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Present],       0, &m_PresentQueue);
 }
 
-VkSurfaceFormatKHR VulkanAPI::ChooseSurfaceFormat(std::vector<VkSurfaceFormatKHR> availableFormats)
+VkSurfaceFormatKHR VulkanAPI::ChooseSwapChainSurfaceFormat(std::vector<VkSurfaceFormatKHR> availableFormats)
 {
-    return VkSurfaceFormatKHR();
+    if (availableFormats.size() == 0)
+    {
+        spdlog::error("Could not find any suitable Swapchain Surface Format in provided collection!");
+        std::cerr << "Could not find any suitable Swapchain Surface Format in provided collection!" << std::endl;
+    }
+
+    for (auto const& format : availableFormats)
+    {
+        if (format.format == VK_FORMAT_B8G8R8A8_SRGB && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+        {
+            return format;
+        }
+    }
+
+    spdlog::error("Could not find suitable Swapchain Surface Format in provided collection!");
+    std::cerr << "Could not find suitable Swapchain Surface Format in provided collection!" << std::endl;
+    return availableFormats[0];
 }
 
-VkPresentModeKHR VulkanAPI::ChoosePresentMode(std::vector<VkPresentModeKHR> availableModes)
+VkPresentModeKHR VulkanAPI::ChooseSwapChainPresentMode(std::vector<VkPresentModeKHR> availableModes)
 {
-    return VkPresentModeKHR();
+    for (auto const& presentMode : availableModes)
+    {
+        if (presentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+        {
+            return presentMode;
+        }
+    }
+    return VK_PRESENT_MODE_FIFO_KHR;
+}
+
+VkExtent2D VulkanAPI::ChooseSwapExtent(VkSurfaceCapabilitiesKHR& surfaceCapabilities)
+{
+    if(surfaceCapabilities.currentExtent.width != UINT32_MAX)
+    {
+        return surfaceCapabilities.currentExtent;
+    }
+    else
+    {
+        return GetSurfaceExtent(surfaceCapabilities);
+    }
+}
+
+void VulkanAPI::CreateSwapChain()
+{
+    SwapChainSupportDetais swapChainDetails = GetSwapChainSupportDetails(m_PhysicalDevice);
+
+    VkSurfaceFormatKHR format       = ChooseSwapChainSurfaceFormat(swapChainDetails.m_SupportedFormats);
+    VkPresentModeKHR presentMode    = ChooseSwapChainPresentMode(swapChainDetails.m_SupportedPresentModes);
+    VkExtent2D surfaceExtent        = ChooseSwapExtent(swapChainDetails.m_Capabilities);
+    // request one more than minimum supported number of images in swap chain
+    // from vk-tutorial : "we may sometimes have to wait on the driver to complete
+    // internal operations before we can acquire another image to render to. 
+    // Therefore it is recommended to request at least one more image than the minimum"
+    uint32_t swapChainImageCount = swapChainDetails.m_Capabilities.minImageCount + 1;
+    if (swapChainImageCount > swapChainDetails.m_Capabilities.maxImageCount)
+    {
+        swapChainImageCount = swapChainDetails.m_Capabilities.maxImageCount;
+    }
+
+    VkSwapchainCreateInfoKHR createInfo{};
+    createInfo.sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    createInfo.surface          = m_Surface;
+    createInfo.minImageCount    = swapChainImageCount;
+    createInfo.clipped          = VK_TRUE;
+    createInfo.imageFormat      = format.format;
+    createInfo.imageColorSpace  = format.colorSpace;
+    createInfo.presentMode      = presentMode;
+    createInfo.imageExtent      = surfaceExtent;
+    // This is always 1 unless you are developing a stereoscopic 3D application
+    createInfo.imageArrayLayers = 1;
+    createInfo.imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+    uint32_t queueFamilyIndices[] = { m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Graphics], m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Present] };
+
+    if (m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Graphics] != m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Present])
+    {
+        createInfo.imageSharingMode         = VK_SHARING_MODE_CONCURRENT;
+        createInfo.queueFamilyIndexCount    = 2;
+        createInfo.pQueueFamilyIndices      = queueFamilyIndices;
+    }
+    else
+    {
+        createInfo.imageSharingMode         = VK_SHARING_MODE_EXCLUSIVE;
+        createInfo.queueFamilyIndexCount    = 0;
+        createInfo.pQueueFamilyIndices      = nullptr;
+    }
+    // flip, rotate, if specified possible in capabilities.
+    createInfo.preTransform     = swapChainDetails.m_Capabilities.currentTransform;
+    // specifies if the alpha channel should be used for blending with other windows in the window system.
+    // You'll almost always want to simply ignore the alpha channel, hence OPAQUE_BIT_KHR.
+    createInfo.compositeAlpha   = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    createInfo.oldSwapchain     = VK_NULL_HANDLE;
+
+    if (vkCreateSwapchainKHR(m_LogicalDevice, &createInfo, nullptr, &m_SwapChain) != VK_SUCCESS)
+    {
+        spdlog::error("Failed to create swapchain.");
+        std::cerr << "Failed to create swapchain" << std::endl;
+    }
+
+    vkGetSwapchainImagesKHR(m_LogicalDevice, m_SwapChain, &swapChainImageCount, nullptr);
+    m_SwapChainImages.resize(swapChainImageCount);
+    vkGetSwapchainImagesKHR(m_LogicalDevice, m_SwapChain, &swapChainImageCount, m_SwapChainImages.data());
+
+    m_SwapChainImageFormat = format.format;
+    m_SwapChainImageExtent = surfaceExtent;
+}
+
+void VulkanAPI::CreateSwapChainImageViews()
+{
+    m_SwapChainImageViews.resize(m_SwapChainImages.size());
+
+    for (uint32_t i = 0; i < m_SwapChainImages.size(); i++)
+    {
+        VkImageViewCreateInfo createInfo{};
+        createInfo.sType            = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        createInfo.image            = m_SwapChainImages[i];
+
+        createInfo.viewType         = VK_IMAGE_VIEW_TYPE_2D;
+        createInfo.format           = m_SwapChainImageFormat;
+
+        createInfo.components.r     = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.g     = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.b     = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.a     = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+        // wtf
+        createInfo.subresourceRange.aspectMask      = VK_IMAGE_ASPECT_COLOR_BIT; // ?
+        createInfo.subresourceRange.baseMipLevel    = 0; // just use the texture, no mip mapping
+        createInfo.subresourceRange.levelCount      = 1; // only 1 layer as it is not stereoscopic
+        createInfo.subresourceRange.baseArrayLayer  = 0; // index of the layer ( 0 because there is only 1?)
+        createInfo.subresourceRange.layerCount      = 1; // only 1 layer as 2D
+
+        if (vkCreateImageView(m_LogicalDevice, &createInfo, nullptr, &m_SwapChainImageViews[i]) != VK_SUCCESS)
+        {
+            spdlog::error("Failed to create image view!");
+            std::cerr << "Failed to create image view" << std::endl;
+        }
+    }
 }
 
 void VulkanAPI::ListDeviceExtensions(VkPhysicalDevice physicalDevice)
@@ -466,4 +606,6 @@ void VulkanAPI::InitVulkan()
     PickPhysicalDevice();
     CreateLogicalDevice();
     GetQueueHandles();
+    CreateSwapChain();
+    CreateSwapChainImageViews();
 }

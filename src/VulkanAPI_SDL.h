@@ -17,6 +17,8 @@ public:
 	virtual void CreateSurface() override;
 	virtual void CreateWindow(uint32_t width, uint32_t height) override;
 	virtual void CleanupWindow() override;
+	
+	virtual VkExtent2D	GetSurfaceExtent(VkSurfaceCapabilitiesKHR surface) override;
 
 	VulkanAPIWindowHandle_SDL* m_SdlHandle;
 
