@@ -576,11 +576,34 @@ void VulkanAPI::CreateSwapChainImageViews()
 
 void VulkanAPI::CreateGraphicsPipeline()
 {
-    auto vert = LoadSpirvBinary("tri.vert.spv");
-    auto frag = LoadSpirvBinary("tri.frag.spv");
+    auto vertBin = LoadSpirvBinary("tri.vert.spv");
+    auto fragBin = LoadSpirvBinary("tri.frag.spv");
 
-    spdlog::info("Loaded vertex and fragment shaders");
+    VkShaderModule vertShaderModule = CreateShaderModule(vertBin);
+    VkShaderModule fragShaderModule = CreateShaderModule(fragBin);
+    spdlog::info("Loaded vertex and fragment shaders & created shader modules");
 
+    // ..
+
+    vkDestroyShaderModule(m_LogicalDevice, vertShaderModule, nullptr);
+    vkDestroyShaderModule(m_LogicalDevice, fragShaderModule, nullptr);
+    spdlog::info("Destroyed vertex and fragment shader modules");
+}
+
+VkShaderModule VulkanAPI::CreateShaderModule(const std::vector<char>& data)
+{
+    VkShaderModuleCreateInfo createInfo{};
+    createInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    createInfo.codeSize = static_cast<uint32_t>(data.size());
+    createInfo.pCode    = reinterpret_cast<const uint32_t*>(data.data());
+    
+    VkShaderModule shaderModule;
+    if (vkCreateShaderModule(m_LogicalDevice, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
+    {
+        spdlog::error("Failed to create shader module!");
+        std::cerr << "Failed to create shader module" << std::endl;
+    }
+    return shaderModule;
 }
 
 void VulkanAPI::ListDeviceExtensions(VkPhysicalDevice physicalDevice)

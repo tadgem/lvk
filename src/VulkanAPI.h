@@ -93,6 +93,7 @@ public:
     void                        CreateSwapChain();
     void                        CreateSwapChainImageViews();
     void                        CreateGraphicsPipeline();
+    VkShaderModule              CreateShaderModule(const std::vector<char>& data);
 
     std::vector<VkExtensionProperties>  GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice);
     std::vector<char>                   LoadSpirvBinary(const std::string& path);
