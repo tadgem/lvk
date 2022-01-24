@@ -241,6 +241,7 @@ void VulkanAPI::CleanupVulkan()
     {
         vkDestroyImageView(m_LogicalDevice, m_SwapChainImageViews[i], nullptr);
     }
+    vkDestroyPipelineLayout(m_LogicalDevice, m_PipelineLayout, nullptr);
     vkDestroySwapchainKHR(m_LogicalDevice, m_SwapChain, nullptr);
     vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
     vkDestroyDevice(m_LogicalDevice, nullptr);
@@ -400,22 +401,22 @@ void VulkanAPI::CreateLogicalDevice()
     VkPhysicalDeviceFeatures physicalDeviceFeatures{};
 
     VkDeviceCreateInfo createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    createInfo.pQueueCreateInfos = queueCreateInfos.data();
-    createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
-    createInfo.pEnabledFeatures = &physicalDeviceFeatures;
+    createInfo.sType                    = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    createInfo.pQueueCreateInfos        = queueCreateInfos.data();
+    createInfo.queueCreateInfoCount     = static_cast<uint32_t>(queueCreateInfos.size());
+    createInfo.pEnabledFeatures         = &physicalDeviceFeatures;
 
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(p_DeviceExtensions.size());
-    createInfo.ppEnabledExtensionNames = p_DeviceExtensions.data();
+    createInfo.enabledExtensionCount    = static_cast<uint32_t>(p_DeviceExtensions.size());
+    createInfo.ppEnabledExtensionNames  = p_DeviceExtensions.data();
 
     if (p_UseValidation)
     {
-        createInfo.enabledLayerCount = static_cast<uint32_t>(p_ValidationLayers.size());
-        createInfo.ppEnabledLayerNames = p_ValidationLayers.data();
+        createInfo.enabledLayerCount    = static_cast<uint32_t>(p_ValidationLayers.size());
+        createInfo.ppEnabledLayerNames  = p_ValidationLayers.data();
     }
     else
     {
-        createInfo.enabledLayerCount = 0;
+        createInfo.enabledLayerCount    = 0;
     }
 
     if (vkCreateDevice(m_PhysicalDevice, &createInfo, nullptr, &m_LogicalDevice))
@@ -584,6 +585,125 @@ void VulkanAPI::CreateGraphicsPipeline()
     spdlog::info("Loaded vertex and fragment shaders & created shader modules");
 
     // ..
+    VkPipelineShaderStageCreateInfo vertexShaderStageInfo{};
+    vertexShaderStageInfo.sType         = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vertexShaderStageInfo.stage         = VK_SHADER_STAGE_VERTEX_BIT;
+    vertexShaderStageInfo.module        = vertShaderModule;
+    vertexShaderStageInfo.pName         = "main";
+
+    VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
+    vertexShaderStageInfo.sType         = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vertexShaderStageInfo.stage         = VK_SHADER_STAGE_FRAGMENT_BIT;
+    vertexShaderStageInfo.module        = fragShaderModule;
+    vertexShaderStageInfo.pName         = "main";
+
+    VkPipelineShaderStageCreateInfo shaderStageCreateInfos[] = { vertexShaderStageInfo, fragShaderStageInfo };
+
+    VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+    vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vertexInputInfo.vertexBindingDescriptionCount   = 0;
+    vertexInputInfo.pVertexBindingDescriptions      = nullptr;
+    vertexInputInfo.vertexAttributeDescriptionCount = 0;
+    vertexInputInfo.pVertexAttributeDescriptions    = nullptr;
+
+    VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo{};
+    inputAssemblyInfo.sType                     = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    inputAssemblyInfo.topology                  = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    inputAssemblyInfo.primitiveRestartEnable    = VK_FALSE;
+
+    VkViewport viewport{};
+    viewport.x          = 0.0f;
+    viewport.x          = 0.0f;
+    viewport.width      = m_SwapChainImageExtent.width;
+    viewport.height     = m_SwapChainImageExtent.height;
+    viewport.minDepth   = 0.0f;
+    viewport.maxDepth   = 1.0f;
+
+    VkRect2D scissor{};
+    scissor.offset = { 0,0 };
+    scissor.extent = m_SwapChainImageExtent;
+
+    VkPipelineViewportStateCreateInfo viewportInfo{};
+    viewportInfo.sType          = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    viewportInfo.viewportCount  = 1;
+    viewportInfo.pViewports     = &viewport;
+    viewportInfo.scissorCount   = 1;
+    viewportInfo.pScissors      = &scissor;
+
+    VkPipelineRasterizationStateCreateInfo rasterizerInfo{};
+    rasterizerInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rasterizerInfo.depthClampEnable         = VK_FALSE;
+
+    rasterizerInfo.rasterizerDiscardEnable  = VK_FALSE;
+    // using anything other than FILL requires enableing a gpu feature.
+    rasterizerInfo.polygonMode              = VK_POLYGON_MODE_FILL;
+    // thickness of lines in terms of pixels. > 1.0f requires wide lines gpu feature.
+    rasterizerInfo.lineWidth                = 1.0f;
+
+    rasterizerInfo.cullMode                 = VK_CULL_MODE_NONE;
+    // From vk-tutorial: The frontFace variable specifies the vertex order 
+    // for faces to be considered front-facing and can be clockwise or counterclockwise.
+    // ??
+    rasterizerInfo.frontFace                = VK_FRONT_FACE_CLOCKWISE;
+    rasterizerInfo.depthBiasEnable          = VK_FALSE;
+    rasterizerInfo.depthBiasConstantFactor  = 0.0f;
+    rasterizerInfo.depthBiasClamp           = 0.0f;
+    rasterizerInfo.depthBiasSlopeFactor     = 0.0f;
+    
+    VkPipelineMultisampleStateCreateInfo multisampleInfo{};
+    multisampleInfo.sType                   = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    multisampleInfo.sampleShadingEnable     = VK_FALSE;
+    multisampleInfo.rasterizationSamples    = VK_SAMPLE_COUNT_1_BIT;
+    multisampleInfo.minSampleShading        = 1.0f;
+    multisampleInfo.pSampleMask             = nullptr;
+    multisampleInfo.alphaToCoverageEnable   = VK_FALSE;
+    multisampleInfo.alphaToOneEnable        = VK_FALSE;
+
+    VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+    colorBlendAttachment.colorWriteMask         =   VK_COLOR_COMPONENT_R_BIT |
+                                                    VK_COLOR_COMPONENT_G_BIT |
+                                                    VK_COLOR_COMPONENT_B_BIT |
+                                                    VK_COLOR_COMPONENT_A_BIT;
+
+    colorBlendAttachment.blendEnable            = VK_FALSE;
+    colorBlendAttachment.srcColorBlendFactor    = VK_BLEND_FACTOR_ONE;
+    colorBlendAttachment.dstColorBlendFactor    = VK_BLEND_FACTOR_ZERO;
+    colorBlendAttachment.colorBlendOp           = VK_BLEND_OP_ADD;
+    colorBlendAttachment.srcAlphaBlendFactor    = VK_BLEND_FACTOR_ONE;
+    colorBlendAttachment.dstAlphaBlendFactor    = VK_BLEND_FACTOR_ZERO;
+    colorBlendAttachment.alphaBlendOp           = VK_BLEND_OP_ADD;
+
+    VkPipelineColorBlendStateCreateInfo colorBlendStateInfo{};
+    colorBlendStateInfo.sType               = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    colorBlendStateInfo.logicOpEnable       = VK_FALSE;
+    colorBlendStateInfo.logicOp             = VK_LOGIC_OP_COPY;
+    colorBlendStateInfo.attachmentCount     = 1;
+    colorBlendStateInfo.pAttachments        = &colorBlendAttachment;
+
+    VkDynamicState dynamicStates[] =
+    {
+        VK_DYNAMIC_STATE_VIEWPORT,
+        VK_DYNAMIC_STATE_LINE_WIDTH
+    };
+
+    VkPipelineDynamicStateCreateInfo dynamicStateInfo{};
+    dynamicStateInfo.sType              = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamicStateInfo.dynamicStateCount  = 2;
+    dynamicStateInfo.pDynamicStates     = dynamicStates;
+
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+    pipelineLayoutInfo.sType                    = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutInfo.setLayoutCount           = 0;
+    pipelineLayoutInfo.pSetLayouts              = nullptr;
+    pipelineLayoutInfo.pushConstantRangeCount   = 0;
+    pipelineLayoutInfo.pPushConstantRanges      = 0;
+
+    if (vkCreatePipelineLayout(m_LogicalDevice, &pipelineLayoutInfo, nullptr, &m_PipelineLayout) != VK_SUCCESS)
+    {
+        spdlog::error("Failed to create pipeline layout object!");
+        std::cerr << "Failed to create pipeline layout object!" << std::endl;
+    }
+
 
     vkDestroyShaderModule(m_LogicalDevice, vertShaderModule, nullptr);
     vkDestroyShaderModule(m_LogicalDevice, fragShaderModule, nullptr);

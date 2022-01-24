@@ -55,7 +55,7 @@ public:
     VkDebugUtilsMessengerEXT    m_DebugMessenger;
     VkPhysicalDevice            m_PhysicalDevice    = VK_NULL_HANDLE;
     VkDevice                    m_LogicalDevice     = VK_NULL_HANDLE;
-
+    VkPipelineLayout            m_PipelineLayout;
     QueueFamilyIndices          m_QueueFamilyIndices;
 
     VkQueue                     m_GraphicsQueue     = VK_NULL_HANDLE;
