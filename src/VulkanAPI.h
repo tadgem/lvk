@@ -55,6 +55,7 @@ public:
     VkDebugUtilsMessengerEXT    m_DebugMessenger;
     VkPhysicalDevice            m_PhysicalDevice    = VK_NULL_HANDLE;
     VkDevice                    m_LogicalDevice     = VK_NULL_HANDLE;
+    VkRenderPass                m_RenderPass;
     VkPipelineLayout            m_PipelineLayout;
     QueueFamilyIndices          m_QueueFamilyIndices;
 
@@ -94,6 +95,7 @@ public:
     void                        CreateSwapChainImageViews();
     void                        CreateGraphicsPipeline();
     VkShaderModule              CreateShaderModule(const std::vector<char>& data);
+    void                        CreateRenderPass();
 
     std::vector<VkExtensionProperties>  GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice);
     std::vector<char>                   LoadSpirvBinary(const std::string& path);

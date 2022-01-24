@@ -242,6 +242,7 @@ void VulkanAPI::CleanupVulkan()
         vkDestroyImageView(m_LogicalDevice, m_SwapChainImageViews[i], nullptr);
     }
     vkDestroyPipelineLayout(m_LogicalDevice, m_PipelineLayout, nullptr);
+    vkDestroyRenderPass(m_LogicalDevice, m_RenderPass, nullptr);
     vkDestroySwapchainKHR(m_LogicalDevice, m_SwapChain, nullptr);
     vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
     vkDestroyDevice(m_LogicalDevice, nullptr);
@@ -704,7 +705,6 @@ void VulkanAPI::CreateGraphicsPipeline()
         std::cerr << "Failed to create pipeline layout object!" << std::endl;
     }
 
-
     vkDestroyShaderModule(m_LogicalDevice, vertShaderModule, nullptr);
     vkDestroyShaderModule(m_LogicalDevice, fragShaderModule, nullptr);
     spdlog::info("Destroyed vertex and fragment shader modules");
@@ -724,6 +724,45 @@ VkShaderModule VulkanAPI::CreateShaderModule(const std::vector<char>& data)
         std::cerr << "Failed to create shader module" << std::endl;
     }
     return shaderModule;
+}
+
+void VulkanAPI::CreateRenderPass()
+{
+    VkAttachmentDescription colorAttachment{};
+    colorAttachment.format          = m_SwapChainImageFormat;
+    colorAttachment.samples         = VK_SAMPLE_COUNT_1_BIT;
+    // clear image each frame and store contents after rendering.
+    colorAttachment.loadOp          = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    colorAttachment.storeOp         = VK_ATTACHMENT_STORE_OP_STORE;
+    // ignore stencil for now
+    colorAttachment.stencilLoadOp   = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachment.stencilStoreOp  = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    // from vk-tutorial : images need to be transitioned to specific layouts
+    // that are suitable for the operation that they're going to be involved in next.
+    colorAttachment.initialLayout   = VK_IMAGE_LAYOUT_UNDEFINED;
+    colorAttachment.finalLayout     = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    VkAttachmentReference colorAttachmentReference{};
+    colorAttachmentReference.attachment     = 0;
+    colorAttachmentReference.layout         = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount    = 1;
+    subpass.pColorAttachments       = &colorAttachmentReference;
+
+    VkRenderPassCreateInfo createInfo{};
+    createInfo.sType            = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    createInfo.attachmentCount  = 1;
+    createInfo.pAttachments     = &colorAttachment;
+    createInfo.subpassCount     = 1;
+    createInfo.pSubpasses       = &subpass;
+
+    if (vkCreateRenderPass(m_LogicalDevice, &createInfo, nullptr, &m_RenderPass) != VK_SUCCESS)
+    {
+        spdlog::error("Failed to create Render Pass!");
+        std::cerr << "Failed to create Render Pass!" << std::endl;
+    }
 }
 
 void VulkanAPI::ListDeviceExtensions(VkPhysicalDevice physicalDevice)
@@ -781,5 +820,6 @@ void VulkanAPI::InitVulkan()
     GetQueueHandles();
     CreateSwapChain();
     CreateSwapChainImageViews();
+    CreateRenderPass();
     CreateGraphicsPipeline();
 }
