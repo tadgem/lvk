@@ -241,6 +241,7 @@ void VulkanAPI::CleanupVulkan()
     {
         vkDestroyImageView(m_LogicalDevice, m_SwapChainImageViews[i], nullptr);
     }
+    vkDestroyPipeline(m_LogicalDevice, m_Pipeline, nullptr);
     vkDestroyPipelineLayout(m_LogicalDevice, m_PipelineLayout, nullptr);
     vkDestroyRenderPass(m_LogicalDevice, m_RenderPass, nullptr);
     vkDestroySwapchainKHR(m_LogicalDevice, m_SwapChain, nullptr);
@@ -583,6 +584,7 @@ void VulkanAPI::CreateGraphicsPipeline()
 
     VkShaderModule vertShaderModule = CreateShaderModule(vertBin);
     VkShaderModule fragShaderModule = CreateShaderModule(fragBin);
+
     spdlog::info("Loaded vertex and fragment shaders & created shader modules");
 
     // ..
@@ -593,12 +595,12 @@ void VulkanAPI::CreateGraphicsPipeline()
     vertexShaderStageInfo.pName         = "main";
 
     VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
-    vertexShaderStageInfo.sType         = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    vertexShaderStageInfo.stage         = VK_SHADER_STAGE_FRAGMENT_BIT;
-    vertexShaderStageInfo.module        = fragShaderModule;
-    vertexShaderStageInfo.pName         = "main";
+    fragShaderStageInfo.sType           = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    fragShaderStageInfo.stage           = VK_SHADER_STAGE_FRAGMENT_BIT;
+    fragShaderStageInfo.module          = fragShaderModule;
+    fragShaderStageInfo.pName           = "main";
 
-    VkPipelineShaderStageCreateInfo shaderStageCreateInfos[] = { vertexShaderStageInfo, fragShaderStageInfo };
+    std::vector<VkPipelineShaderStageCreateInfo> shaderStageCreateInfos = { vertexShaderStageInfo, fragShaderStageInfo };
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -703,6 +705,31 @@ void VulkanAPI::CreateGraphicsPipeline()
     {
         spdlog::error("Failed to create pipeline layout object!");
         std::cerr << "Failed to create pipeline layout object!" << std::endl;
+    }
+
+    VkGraphicsPipelineCreateInfo pipelineCreateInfo{};
+    pipelineCreateInfo.sType                = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    pipelineCreateInfo.stageCount           = 2;
+    pipelineCreateInfo.pStages              = shaderStageCreateInfos.data();
+
+    pipelineCreateInfo.pVertexInputState    = &vertexInputInfo;
+    pipelineCreateInfo.pInputAssemblyState  = &inputAssemblyInfo;
+    pipelineCreateInfo.pViewportState       = &viewportInfo;
+    pipelineCreateInfo.pRasterizationState  = &rasterizerInfo;
+    pipelineCreateInfo.pMultisampleState    = &multisampleInfo;
+    pipelineCreateInfo.pDepthStencilState   = nullptr;
+    pipelineCreateInfo.pColorBlendState     = &colorBlendStateInfo;    
+    pipelineCreateInfo.pDynamicState        = nullptr;
+
+    pipelineCreateInfo.layout               = m_PipelineLayout;
+    
+    pipelineCreateInfo.renderPass           = m_RenderPass;
+    pipelineCreateInfo.subpass              = 0;
+
+    if (vkCreateGraphicsPipelines(m_LogicalDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &m_Pipeline) != VK_SUCCESS)
+    {
+        spdlog::error("Failed to create graphics pipeline!");
+        std::cerr << "Failed to create graphics pipeline!" << std::endl;
     }
 
     vkDestroyShaderModule(m_LogicalDevice, vertShaderModule, nullptr);

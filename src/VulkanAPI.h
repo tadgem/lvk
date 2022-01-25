@@ -57,6 +57,7 @@ public:
     VkDevice                    m_LogicalDevice     = VK_NULL_HANDLE;
     VkRenderPass                m_RenderPass;
     VkPipelineLayout            m_PipelineLayout;
+    VkPipeline                  m_Pipeline;
     QueueFamilyIndices          m_QueueFamilyIndices;
 
     VkQueue                     m_GraphicsQueue     = VK_NULL_HANDLE;
