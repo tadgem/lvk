@@ -58,6 +58,7 @@ public:
     VkRenderPass                m_RenderPass;
     VkPipelineLayout            m_PipelineLayout;
     VkPipeline                  m_Pipeline;
+    VkCommandPool               m_CommandPool;
     QueueFamilyIndices          m_QueueFamilyIndices;
 
     VkQueue                     m_GraphicsQueue     = VK_NULL_HANDLE;
@@ -99,6 +100,7 @@ public:
     VkShaderModule              CreateShaderModule(const std::vector<char>& data);
     void                        CreateRenderPass();
     void                        CreateFramebuffers();
+    void                        CreateCommandPool();
 
     std::vector<VkExtensionProperties>  GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice);
     std::vector<char>                   LoadSpirvBinary(const std::string& path);

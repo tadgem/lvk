@@ -237,6 +237,7 @@ void VulkanAPI::CleanupVulkan()
     {
         CleanupDebugOutput();
     }
+    vkDestroyCommandPool(m_LogicalDevice, m_CommandPool, nullptr);
     for (int i = 0; i < m_SwapChainFramebuffers.size(); i++)
     {
         vkDestroyFramebuffer(m_LogicalDevice, m_SwapChainFramebuffers[i], nullptr);
@@ -809,19 +810,33 @@ void VulkanAPI::CreateFramebuffers()
         };
 
         VkFramebufferCreateInfo framebufferCreateInfo{};
-        framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferCreateInfo.attachmentCount = 1;
-        framebufferCreateInfo.pAttachments = attachments;
+        framebufferCreateInfo.sType             = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebufferCreateInfo.attachmentCount   = 1;
+        framebufferCreateInfo.pAttachments      = attachments;
         framebufferCreateInfo.layers = 1;
-        framebufferCreateInfo.renderPass = m_RenderPass;
-        framebufferCreateInfo.height = m_SwapChainImageExtent.height;
-        framebufferCreateInfo.width = m_SwapChainImageExtent.width;
+        framebufferCreateInfo.renderPass        = m_RenderPass;
+        framebufferCreateInfo.height            = m_SwapChainImageExtent.height;
+        framebufferCreateInfo.width             = m_SwapChainImageExtent.width;
 
         if (vkCreateFramebuffer(m_LogicalDevice, &framebufferCreateInfo, nullptr, &m_SwapChainFramebuffers[i]) != VK_SUCCESS)
         {
             spdlog::error("Failed to create Framebuffer!");
             std::cerr << "Failed to create Framebuffer!" << std::endl;
         }
+    }
+}
+
+void VulkanAPI::CreateCommandPool()
+{
+    VkCommandPoolCreateInfo createInfo{};
+    createInfo.sType                = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    createInfo.queueFamilyIndex     = m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Graphics];
+    createInfo.flags                = 0;
+
+    if(vkCreateCommandPool(m_LogicalDevice, &createInfo, nullptr, &m_CommandPool) != VK_SUCCESS)
+    {
+        spdlog::error("Failed to create Command Pool!");
+        std::cerr << "Failed to create Command Pool!" << std::endl;
     }
 }
 
@@ -883,4 +898,5 @@ void VulkanAPI::InitVulkan()
     CreateRenderPass();
     CreateGraphicsPipeline();
     CreateFramebuffers();
+    CreateCommandPool();
 }
