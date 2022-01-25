@@ -66,11 +66,12 @@ public:
     
     VulkanAPIWindowHandle*      m_WindowHandle;
 
-    std::vector<VkImage>        m_SwapChainImages;
-    std::vector<VkImageView>    m_SwapChainImageViews;
-    std::vector<VkFramebuffer>  m_SwapChainFramebuffers;
-    VkFormat                    m_SwapChainImageFormat;
-    VkExtent2D                  m_SwapChainImageExtent;
+    std::vector<VkImage>            m_SwapChainImages;
+    std::vector<VkImageView>        m_SwapChainImageViews;
+    std::vector<VkFramebuffer>      m_SwapChainFramebuffers;
+    std::vector<VkCommandBuffer>    m_CommandBuffers;
+    VkFormat                        m_SwapChainImageFormat;
+    VkExtent2D                      m_SwapChainImageExtent;
 
     // Debug
     bool                        CheckValidationLayerSupport();
@@ -101,6 +102,7 @@ public:
     void                        CreateRenderPass();
     void                        CreateFramebuffers();
     void                        CreateCommandPool();
+    void                        CreateCommandBuffers();
 
     std::vector<VkExtensionProperties>  GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice);
     std::vector<char>                   LoadSpirvBinary(const std::string& path);

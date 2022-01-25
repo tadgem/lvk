@@ -840,6 +840,62 @@ void VulkanAPI::CreateCommandPool()
     }
 }
 
+void VulkanAPI::CreateCommandBuffers()
+{
+    m_CommandBuffers.resize(m_SwapChainFramebuffers.size());
+
+    VkCommandBufferAllocateInfo allocateInfo{};
+    allocateInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocateInfo.commandPool        = m_CommandPool;
+    allocateInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocateInfo.commandBufferCount = m_CommandBuffers.size();
+
+    if (vkAllocateCommandBuffers(m_LogicalDevice, &allocateInfo, m_CommandBuffers.data()) != VK_SUCCESS)
+    {
+        spdlog::error("Failed to create Command Buffers!");
+        std::cerr << "Failed to create Command Buffers!" << std::endl;
+    }
+
+    for (uint32_t i = 0; i < m_CommandBuffers.size(); i++)
+    {
+        VkCommandBufferBeginInfo commandBufferBeginInfo{};
+        commandBufferBeginInfo.sType                = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        commandBufferBeginInfo.flags                = 0;
+        commandBufferBeginInfo.pInheritanceInfo     = nullptr;
+
+        if (vkBeginCommandBuffer(m_CommandBuffers[i], &commandBufferBeginInfo) != VK_SUCCESS)
+        {
+            spdlog::error("Failed to begin recording to Command Buffer!");
+            std::cerr << "Failed to begin recording to Command Buffer!" << std::endl;
+        }
+
+        VkRenderPassBeginInfo renderPassInfo{};
+        renderPassInfo.sType                = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        renderPassInfo.renderPass           = m_RenderPass;
+        renderPassInfo.framebuffer          = m_SwapChainFramebuffers[i];
+        renderPassInfo.renderArea.offset    = { 0,0 };
+        renderPassInfo.renderArea.extent    = m_SwapChainImageExtent;
+        
+        VkClearValue clearValue             = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
+        renderPassInfo.clearValueCount      = 1;
+        renderPassInfo.pClearValues         = &clearValue;
+
+        vkCmdBeginRenderPass(m_CommandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+        vkCmdBindPipeline(m_CommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
+
+        vkCmdDraw(m_CommandBuffers[i], 3, 1, 0, 0);
+
+        vkCmdEndRenderPass(m_CommandBuffers[i]);
+
+        if (vkEndCommandBuffer(m_CommandBuffers[i]) != VK_SUCCESS)
+        {
+            spdlog::error("Failed to finalize recording Command Buffer!");
+            std::cerr << "Failed to finalize recording Command Buffer!" << std::endl;
+        }
+    }
+}
+
 void VulkanAPI::ListDeviceExtensions(VkPhysicalDevice physicalDevice)
 {
     std::vector<VkExtensionProperties> extensions = GetDeviceAvailableExtensions(physicalDevice);
@@ -899,4 +955,5 @@ void VulkanAPI::InitVulkan()
     CreateGraphicsPipeline();
     CreateFramebuffers();
     CreateCommandPool();
+    CreateCommandBuffers();
 }
