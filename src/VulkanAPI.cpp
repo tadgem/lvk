@@ -623,8 +623,8 @@ void VulkanAPI::CreateGraphicsPipeline()
     VkViewport viewport{};
     viewport.x          = 0.0f;
     viewport.x          = 0.0f;
-    viewport.width      = m_SwapChainImageExtent.width;
-    viewport.height     = m_SwapChainImageExtent.height;
+    viewport.width      = static_cast<float>(m_SwapChainImageExtent.width);
+    viewport.height     = static_cast<float>(m_SwapChainImageExtent.height);
     viewport.minDepth   = 0.0f;
     viewport.maxDepth   = 1.0f;
 
@@ -848,7 +848,7 @@ void VulkanAPI::CreateCommandBuffers()
     allocateInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocateInfo.commandPool        = m_CommandPool;
     allocateInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocateInfo.commandBufferCount = m_CommandBuffers.size();
+    allocateInfo.commandBufferCount = static_cast<uint32_t>(m_CommandBuffers.size());
 
     if (vkAllocateCommandBuffers(m_LogicalDevice, &allocateInfo, m_CommandBuffers.data()) != VK_SUCCESS)
     {

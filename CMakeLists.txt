@@ -13,8 +13,8 @@ add_executable(${PROJECT_NAME}  src/main.cpp
                                 src/VulkanAPI.cpp 
                                 src/VulkanAPI.h 
                                 src/VulkanAPI_SDL.cpp 
-                                src/VulkanAPI_SDL.h 
-                                src/sdl_helpers.hpp )
+                                src/VulkanAPI_SDL.h
+                                )
 
 target_include_directories (${PROJECT_NAME} PUBLIC ${Vulkan_INCLUDE_DIRS})
 

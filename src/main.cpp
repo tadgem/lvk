@@ -1,5 +1,4 @@
 #include "VulkanAPI_SDL.h"
-#include "sdl_helpers.hpp"
 
 int main()
 {
@@ -7,7 +6,7 @@ int main()
     api.CreateWindow(1280, 720);
     api.InitVulkan();
         
-    sdl_helpers::RunSDL([&]()
+    api.Run([&]()
     {
 
     });

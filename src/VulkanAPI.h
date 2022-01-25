@@ -2,6 +2,7 @@
 #include <iostream>
 #include <map>
 #include <vector>
+#include <functional>
 #include <vulkan/vulkan.h>
 
 class VulkanAPIWindowHandle
@@ -73,6 +74,8 @@ public:
     VkFormat                        m_SwapChainImageFormat;
     VkExtent2D                      m_SwapChainImageExtent;
 
+    double                          m_DeltaTime;
+
     // Debug
     bool                        CheckValidationLayerSupport();
     bool                        CheckDeviceExtensionSupport(VkPhysicalDevice device);
@@ -113,9 +116,12 @@ public:
     virtual void                        CreateWindow(uint32_t width, uint32_t height) = 0;
     virtual void                        CleanupWindow() = 0;
     virtual VkExtent2D                  GetSurfaceExtent(VkSurfaceCapabilitiesKHR surface) = 0;
+    virtual void                        Run(std::function<void()> callback) = 0;
     void                                InitVulkan();
 
-
+    protected:
+        bool    p_ShouldRun;
+        double  p_LastFrameTime;
     
     
 

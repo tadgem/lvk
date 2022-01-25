@@ -1,6 +1,13 @@
 #include "VulkanAPI_SDL.h"
 #include "spdlog/spdlog.h"
 #include "SDL_vulkan.h"
+void VulkanAPI_SDL::HandleSDLEvent(SDL_Event& sdl_event)
+{
+    if (sdl_event.type == SDL_QUIT)
+    {
+        p_ShouldRun = false;
+    }
+}
 std::vector<const char*> VulkanAPI_SDL::GetRequiredExtensions()
 {
     uint32_t extensionCount = 0;
@@ -48,6 +55,23 @@ void VulkanAPI_SDL::CleanupWindow()
     }
     SDL_DestroyWindow(m_SdlHandle->m_SdlWindow);
     SDL_Quit();
+}
+
+void VulkanAPI_SDL::Run(std::function<void()> callback)
+{
+    p_ShouldRun = true;
+    while (p_ShouldRun)
+    {
+        uint64_t currentFrame = SDL_GetPerformanceCounter();
+        m_DeltaTime = (currentFrame - p_LastFrameTime) / (double)SDL_GetPerformanceFrequency();
+        SDL_Event sdl_event;
+        while (SDL_PollEvent(&sdl_event))
+        {
+            HandleSDLEvent(sdl_event);
+        }
+
+        callback();
+    }
 }
 
 VkExtent2D VulkanAPI_SDL::GetSurfaceExtent(VkSurfaceCapabilitiesKHR surface)
