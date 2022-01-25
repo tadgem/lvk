@@ -237,12 +237,13 @@ void VulkanAPI::CleanupVulkan()
     {
         CleanupDebugOutput();
     }
+    vkDestroySemaphore(m_LogicalDevice, m_ImageAvailableSemaphore, nullptr);
+    vkDestroySemaphore(m_LogicalDevice, m_RenderFinishedSemaphore, nullptr);
     vkDestroyCommandPool(m_LogicalDevice, m_CommandPool, nullptr);
     for (int i = 0; i < m_SwapChainFramebuffers.size(); i++)
     {
         vkDestroyFramebuffer(m_LogicalDevice, m_SwapChainFramebuffers[i], nullptr);
     }
-
     for (int i = 0; i < m_SwapChainImageViews.size(); i++)
     {
         vkDestroyImageView(m_LogicalDevice, m_SwapChainImageViews[i], nullptr);
@@ -784,12 +785,26 @@ void VulkanAPI::CreateRenderPass()
     subpass.colorAttachmentCount    = 1;
     subpass.pColorAttachments       = &colorAttachmentReference;
 
+    VkSubpassDependency subpassDependency{};
+    // implicit subpasses 
+    subpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    // our pass
+    subpassDependency.dstSubpass = 0;
+    // wait for the colour output stage to finish
+    subpassDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    subpassDependency.srcAccessMask = 0;
+    // wait until we can write to the color attachment
+    subpassDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    subpassDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
     VkRenderPassCreateInfo createInfo{};
     createInfo.sType            = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     createInfo.attachmentCount  = 1;
     createInfo.pAttachments     = &colorAttachment;
     createInfo.subpassCount     = 1;
     createInfo.pSubpasses       = &subpass;
+    createInfo.dependencyCount  = 1;
+    createInfo.pDependencies    = &subpassDependency;
 
     if (vkCreateRenderPass(m_LogicalDevice, &createInfo, nullptr, &m_RenderPass) != VK_SUCCESS)
     {
@@ -896,6 +911,57 @@ void VulkanAPI::CreateCommandBuffers()
     }
 }
 
+void VulkanAPI::CreateSemaphores()
+{
+    VkSemaphoreCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    if (vkCreateSemaphore(m_LogicalDevice, &createInfo, nullptr, &m_ImageAvailableSemaphore) != VK_SUCCESS  ||
+        vkCreateSemaphore(m_LogicalDevice, &createInfo, nullptr, &m_RenderFinishedSemaphore) != VK_SUCCESS  )
+    {
+        spdlog::error("Failed to create semaphores!");
+        std::cerr << "Failed to create semaphores!" << std::endl;
+    }
+}
+
+void VulkanAPI::DrawFrame()
+{
+    uint32_t imageIndex;
+    vkAcquireNextImageKHR(m_LogicalDevice, m_SwapChain, UINT64_MAX, m_ImageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    
+    VkSemaphore waitSemaphores[]        = { m_ImageAvailableSemaphore };
+    VkSemaphore signalSemaphores[]       = { m_RenderFinishedSemaphore };
+    VkPipelineStageFlags waitStages[]   = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+    submitInfo.waitSemaphoreCount       = 1;
+    submitInfo.pWaitSemaphores          = waitSemaphores;
+    submitInfo.pWaitDstStageMask        = waitStages;
+    submitInfo.commandBufferCount       = 1;
+    submitInfo.pCommandBuffers          = &m_CommandBuffers[imageIndex];
+    submitInfo.signalSemaphoreCount     = 1;
+    submitInfo.pSignalSemaphores        = signalSemaphores;
+
+    if (vkQueueSubmit(m_GraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
+    {
+        spdlog::error("Failed to submit draw command buffer!");
+        std::cerr << "Failed to submit draw command buffer!" << std::endl;
+    }
+
+    VkPresentInfoKHR presentInfo{};
+    presentInfo.sType               = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.waitSemaphoreCount  = 1;
+    presentInfo.pWaitSemaphores     = signalSemaphores;
+    presentInfo.swapchainCount      = 1;
+    VkSwapchainKHR swapchains[]     = { m_SwapChain };
+    presentInfo.pSwapchains         = swapchains;
+    presentInfo.pImageIndices       = &imageIndex;
+    presentInfo.pResults            = nullptr;
+
+    vkQueuePresentKHR(m_GraphicsQueue, &presentInfo);
+}
+
 void VulkanAPI::ListDeviceExtensions(VkPhysicalDevice physicalDevice)
 {
     std::vector<VkExtensionProperties> extensions = GetDeviceAvailableExtensions(physicalDevice);
@@ -956,4 +1022,5 @@ void VulkanAPI::InitVulkan()
     CreateFramebuffers();
     CreateCommandPool();
     CreateCommandBuffers();
+    CreateSemaphores();
 }

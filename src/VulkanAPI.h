@@ -60,6 +60,8 @@ public:
     VkPipelineLayout            m_PipelineLayout;
     VkPipeline                  m_Pipeline;
     VkCommandPool               m_CommandPool;
+    VkSemaphore                 m_ImageAvailableSemaphore;
+    VkSemaphore                 m_RenderFinishedSemaphore;
     QueueFamilyIndices          m_QueueFamilyIndices;
 
     VkQueue                     m_GraphicsQueue     = VK_NULL_HANDLE;
@@ -106,6 +108,8 @@ public:
     void                        CreateFramebuffers();
     void                        CreateCommandPool();
     void                        CreateCommandBuffers();
+    void                        CreateSemaphores();
+    void                        DrawFrame();
 
     std::vector<VkExtensionProperties>  GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice);
     std::vector<char>                   LoadSpirvBinary(const std::string& path);

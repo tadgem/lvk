@@ -70,6 +70,8 @@ void VulkanAPI_SDL::Run(std::function<void()> callback)
             HandleSDLEvent(sdl_event);
         }
 
+        DrawFrame();
+
         callback();
     }
 }
