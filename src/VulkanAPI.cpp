@@ -237,6 +237,11 @@ void VulkanAPI::CleanupVulkan()
     {
         CleanupDebugOutput();
     }
+    for (int i = 0; i < m_SwapChainFramebuffers.size(); i++)
+    {
+        vkDestroyFramebuffer(m_LogicalDevice, m_SwapChainFramebuffers[i], nullptr);
+    }
+
     for (int i = 0; i < m_SwapChainImageViews.size(); i++)
     {
         vkDestroyImageView(m_LogicalDevice, m_SwapChainImageViews[i], nullptr);
@@ -792,6 +797,34 @@ void VulkanAPI::CreateRenderPass()
     }
 }
 
+void VulkanAPI::CreateFramebuffers()
+{
+    m_SwapChainFramebuffers.resize(m_SwapChainImageViews.size());
+
+    for (uint32_t i = 0; i < m_SwapChainImageViews.size(); i++)
+    {
+        VkImageView attachments[] =
+        {
+            m_SwapChainImageViews[i]
+        };
+
+        VkFramebufferCreateInfo framebufferCreateInfo{};
+        framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebufferCreateInfo.attachmentCount = 1;
+        framebufferCreateInfo.pAttachments = attachments;
+        framebufferCreateInfo.layers = 1;
+        framebufferCreateInfo.renderPass = m_RenderPass;
+        framebufferCreateInfo.height = m_SwapChainImageExtent.height;
+        framebufferCreateInfo.width = m_SwapChainImageExtent.width;
+
+        if (vkCreateFramebuffer(m_LogicalDevice, &framebufferCreateInfo, nullptr, &m_SwapChainFramebuffers[i]) != VK_SUCCESS)
+        {
+            spdlog::error("Failed to create Framebuffer!");
+            std::cerr << "Failed to create Framebuffer!" << std::endl;
+        }
+    }
+}
+
 void VulkanAPI::ListDeviceExtensions(VkPhysicalDevice physicalDevice)
 {
     std::vector<VkExtensionProperties> extensions = GetDeviceAvailableExtensions(physicalDevice);
@@ -849,4 +882,5 @@ void VulkanAPI::InitVulkan()
     CreateSwapChainImageViews();
     CreateRenderPass();
     CreateGraphicsPipeline();
+    CreateFramebuffers();
 }

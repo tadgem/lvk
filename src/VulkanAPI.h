@@ -67,6 +67,7 @@ public:
 
     std::vector<VkImage>        m_SwapChainImages;
     std::vector<VkImageView>    m_SwapChainImageViews;
+    std::vector<VkFramebuffer>  m_SwapChainFramebuffers;
     VkFormat                    m_SwapChainImageFormat;
     VkExtent2D                  m_SwapChainImageExtent;
 
@@ -97,6 +98,7 @@ public:
     void                        CreateGraphicsPipeline();
     VkShaderModule              CreateShaderModule(const std::vector<char>& data);
     void                        CreateRenderPass();
+    void                        CreateFramebuffers();
 
     std::vector<VkExtensionProperties>  GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice);
     std::vector<char>                   LoadSpirvBinary(const std::string& path);
