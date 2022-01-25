@@ -74,6 +74,7 @@ void VulkanAPI_SDL::Run(std::function<void()> callback)
 
         callback();
     }
+    vkDeviceWaitIdle(m_LogicalDevice);
 }
 
 VkExtent2D VulkanAPI_SDL::GetSurfaceExtent(VkSurfaceCapabilitiesKHR surface)
