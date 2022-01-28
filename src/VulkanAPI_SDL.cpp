@@ -74,7 +74,11 @@ void VulkanAPI_SDL::Run(std::function<void()> callback)
 
         callback();
     }
-    vkDeviceWaitIdle(m_LogicalDevice);
+    if (vkDeviceWaitIdle(m_LogicalDevice) != VK_SUCCESS)
+    {
+        spdlog::error("Failed to wait for device idle");
+        std::cerr << "Failed to wait for device idle" << std::endl;
+    }
 }
 
 VkExtent2D VulkanAPI_SDL::GetSurfaceExtent(VkSurfaceCapabilitiesKHR surface)

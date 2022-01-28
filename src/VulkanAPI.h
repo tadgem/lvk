@@ -5,6 +5,7 @@
 #include <functional>
 #include <vulkan/vulkan.h>
 
+
 class VulkanAPIWindowHandle
 {
 };
@@ -60,8 +61,10 @@ public:
     VkPipelineLayout            m_PipelineLayout;
     VkPipeline                  m_Pipeline;
     VkCommandPool               m_CommandPool;
-    VkSemaphore                 m_ImageAvailableSemaphore;
-    VkSemaphore                 m_RenderFinishedSemaphore;
+    std::vector<VkSemaphore>    m_ImageAvailableSemaphores;
+    std::vector<VkSemaphore>    m_RenderFinishedSemaphores;
+    std::vector<VkFence>        m_FrameInFlightFences;
+    std::vector<VkFence>        m_ImagesInFlight;
     QueueFamilyIndices          m_QueueFamilyIndices;
 
     VkQueue                     m_GraphicsQueue     = VK_NULL_HANDLE;
@@ -109,6 +112,7 @@ public:
     void                        CreateCommandPool();
     void                        CreateCommandBuffers();
     void                        CreateSemaphores();
+    void                        CreateFences();
     void                        DrawFrame();
 
     std::vector<VkExtensionProperties>  GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice);
@@ -126,8 +130,8 @@ public:
     protected:
         bool    p_ShouldRun;
         double  p_LastFrameTime;
-    
-    
+        int     p_CurrentFrameIndex;
+        const int MAX_FRAMES_IN_FLIGHT = 2;
 
 
 
