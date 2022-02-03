@@ -1,6 +1,7 @@
 #include "VulkanAPI_SDL.h"
 #include "spdlog/spdlog.h"
 #include "SDL_vulkan.h"
+
 void VulkanAPI_SDL::HandleSDLEvent(SDL_Event& sdl_event)
 {
     if (sdl_event.type == SDL_QUIT)
@@ -34,14 +35,6 @@ void VulkanAPI_SDL::CreateSurface()
         spdlog::error("Failed to create SDL Vulkan surface");
         std::cerr << "Failed to create SDL Vulkan surface";
     }
-}
-
-void VulkanAPI_SDL::CreateWindow(uint32_t width, uint32_t height)
-{
-    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
-    SDL_Window* window = SDL_CreateWindow("SDL Vulkan Example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_VULKAN);
-    m_SdlHandle = new VulkanAPIWindowHandle_SDL(window);
-    m_WindowHandle = m_SdlHandle;
 }
 
 void VulkanAPI_SDL::CleanupWindow()
@@ -93,3 +86,4 @@ VulkanAPIWindowHandle_SDL::VulkanAPIWindowHandle_SDL(SDL_Window* sdlWindow) : m_
 {
     
 }
+

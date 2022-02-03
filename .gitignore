@@ -31,7 +31,8 @@
 *.out
 *.app
 
-/build
+build/
+out/
 .vscode/settings.json
 submod/glm/
 submod/sdl/
