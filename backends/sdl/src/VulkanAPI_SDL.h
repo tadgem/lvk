@@ -1,6 +1,5 @@
 #pragma once
 #include "VulkanAPI.h"
-#include "VulkanAPI_SDL.h"
 #include "SDL.h"
 #undef main // why is this a thing SDL?!
 class VulkanAPIWindowHandle_SDL : public VulkanAPIWindowHandle
@@ -14,20 +13,20 @@ class VulkanAPI_SDL : public VulkanAPI
 {
 public:
 
-	void HandleSDLEvent(SDL_Event& sdl_event);
+	void 								HandleSDLEvent(SDL_Event& sdl_event);
 	// Inherited via VulkanAPI
-	virtual std::vector<const char*> GetRequiredExtensions() override;
-	virtual void CreateSurface() override;
-	virtual void CreateWindow(uint32_t width, uint32_t height) override
+	virtual std::vector<const char*> 	GetRequiredExtensions() override;
+	virtual void 						CreateSurface() override;
+	virtual void 						CreateWindow(uint32_t width, uint32_t height) override
 	{
 		SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
 		SDL_Window* window = SDL_CreateWindow("SDL Vulkan Example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_VULKAN);
 		m_SdlHandle = new VulkanAPIWindowHandle_SDL(window);
 		m_WindowHandle = m_SdlHandle;
 	}
-	virtual void CleanupWindow() override;
-	virtual void Run(std::function<void()> callback) override;
-	virtual VkExtent2D	GetSurfaceExtent(VkSurfaceCapabilitiesKHR surface) override;
+	virtual void 						CleanupWindow() override;
+	virtual void 						Run(std::function<void()> callback) override;
+	virtual VkExtent2D					GetSurfaceExtent(VkSurfaceCapabilitiesKHR surface) override;
 
 	VulkanAPIWindowHandle_SDL* m_SdlHandle;
 

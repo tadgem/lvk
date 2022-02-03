@@ -1,4 +1,5 @@
 #include "VulkanAPI_SDL.h"
+
 #include "spdlog/spdlog.h"
 #include "SDL_vulkan.h"
 

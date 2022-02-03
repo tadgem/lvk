@@ -1,10 +1,10 @@
 #pragma once
+
 #include <iostream>
 #include <map>
 #include <vector>
 #include <functional>
 #include <vulkan/vulkan.h>
-
 
 class VulkanAPIWindowHandle
 {
@@ -51,26 +51,26 @@ public:
         std::vector<VkPresentModeKHR>   m_SupportedPresentModes;
     };
 
-    VkInstance                  m_Instance;
-    VkSurfaceKHR                m_Surface;
-    VkSwapchainKHR              m_SwapChain;
-    VkDebugUtilsMessengerEXT    m_DebugMessenger;
-    VkPhysicalDevice            m_PhysicalDevice    = VK_NULL_HANDLE;
-    VkDevice                    m_LogicalDevice     = VK_NULL_HANDLE;
-    VkRenderPass                m_RenderPass;
-    VkPipelineLayout            m_PipelineLayout;
-    VkPipeline                  m_Pipeline;
-    VkCommandPool               m_CommandPool;
-    std::vector<VkSemaphore>    m_ImageAvailableSemaphores;
-    std::vector<VkSemaphore>    m_RenderFinishedSemaphores;
-    std::vector<VkFence>        m_FrameInFlightFences;
-    std::vector<VkFence>        m_ImagesInFlight;
-    QueueFamilyIndices          m_QueueFamilyIndices;
+    VkInstance                      m_Instance;
+    VkSurfaceKHR                    m_Surface;
+    VkSwapchainKHR                  m_SwapChain;
+    VkDebugUtilsMessengerEXT        m_DebugMessenger;
+    VkPhysicalDevice                m_PhysicalDevice    = VK_NULL_HANDLE;
+    VkDevice                        m_LogicalDevice     = VK_NULL_HANDLE;
+    VkRenderPass                    m_RenderPass;
+    VkPipelineLayout                m_PipelineLayout;
+    VkPipeline                      m_Pipeline;
+    VkCommandPool                   m_CommandPool;
+    std::vector<VkSemaphore>        m_ImageAvailableSemaphores;
+    std::vector<VkSemaphore>        m_RenderFinishedSemaphores;
+    std::vector<VkFence>            m_FrameInFlightFences;
+    std::vector<VkFence>            m_ImagesInFlight;
+    QueueFamilyIndices              m_QueueFamilyIndices;
 
-    VkQueue                     m_GraphicsQueue     = VK_NULL_HANDLE;
-    VkQueue                     m_PresentQueue      = VK_NULL_HANDLE;
+    VkQueue                         m_GraphicsQueue     = VK_NULL_HANDLE;
+    VkQueue                         m_PresentQueue      = VK_NULL_HANDLE;
     
-    VulkanAPIWindowHandle*      m_WindowHandle;
+    VulkanAPIWindowHandle*          m_WindowHandle;
 
     std::vector<VkImage>            m_SwapChainImages;
     std::vector<VkImageView>        m_SwapChainImageViews;
@@ -82,38 +82,39 @@ public:
     double                          m_DeltaTime;
 
     // Debug
-    bool                        CheckValidationLayerSupport();
-    bool                        CheckDeviceExtensionSupport(VkPhysicalDevice device);
-    void                        SetupDebugOutput();
-    void                        CleanupDebugOutput();
-    void                        ListDeviceExtensions(VkPhysicalDevice physicalDevice);
-    void                        PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+    bool                                CheckValidationLayerSupport();
+    bool                                CheckDeviceExtensionSupport(VkPhysicalDevice device);
+    void                                SetupDebugOutput();
+    void                                CleanupDebugOutput();
+    void                                ListDeviceExtensions(VkPhysicalDevice physicalDevice);
+    void                                PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 
     // Main API Functionality
-    VkApplicationInfo           CreateAppInfo();
-    void                        CreateInstance();
-    void                        CleanupVulkan();
-    QueueFamilyIndices          FindQueueFamilies(VkPhysicalDevice physicalDevice);
-    SwapChainSupportDetais      GetSwapChainSupportDetails(VkPhysicalDevice physicalDevice);
-    bool                        IsDeviceSuitable(VkPhysicalDevice physicalDevice);
-    uint32_t                    AssessDeviceSuitability(VkPhysicalDevice physicalDevice);
-    void                        PickPhysicalDevice();
-    void                        CreateLogicalDevice();
-    void                        GetQueueHandles();
-    VkSurfaceFormatKHR          ChooseSwapChainSurfaceFormat(std::vector<VkSurfaceFormatKHR> availableFormats);
-    VkPresentModeKHR            ChooseSwapChainPresentMode(std::vector<VkPresentModeKHR> availableModes);
-    VkExtent2D                  ChooseSwapExtent(VkSurfaceCapabilitiesKHR& surfaceCapabilities);
-    void                        CreateSwapChain();
-    void                        CreateSwapChainImageViews();
-    void                        CreateGraphicsPipeline();
-    VkShaderModule              CreateShaderModule(const std::vector<char>& data);
-    void                        CreateRenderPass();
-    void                        CreateFramebuffers();
-    void                        CreateCommandPool();
-    void                        CreateCommandBuffers();
-    void                        CreateSemaphores();
-    void                        CreateFences();
-    void                        DrawFrame();
+    VkApplicationInfo                   CreateAppInfo();
+    void                                CreateInstance();
+    void                                Cleanup();
+    void                                CleanupVulkan();
+    QueueFamilyIndices                  FindQueueFamilies(VkPhysicalDevice physicalDevice);
+    SwapChainSupportDetais              GetSwapChainSupportDetails(VkPhysicalDevice physicalDevice);
+    bool                                IsDeviceSuitable(VkPhysicalDevice physicalDevice);
+    uint32_t                            AssessDeviceSuitability(VkPhysicalDevice physicalDevice);
+    void                                PickPhysicalDevice();
+    void                                CreateLogicalDevice();
+    void                                GetQueueHandles();
+    VkSurfaceFormatKHR                  ChooseSwapChainSurfaceFormat(std::vector<VkSurfaceFormatKHR> availableFormats);
+    VkPresentModeKHR                    ChooseSwapChainPresentMode(std::vector<VkPresentModeKHR> availableModes);
+    VkExtent2D                          ChooseSwapExtent(VkSurfaceCapabilitiesKHR& surfaceCapabilities);
+    void                                CreateSwapChain();
+    void                                CreateSwapChainImageViews();
+    void                                CreateGraphicsPipeline();
+    VkShaderModule                      CreateShaderModule(const std::vector<char>& data);
+    void                                CreateRenderPass();
+    void                                CreateFramebuffers();
+    void                                CreateCommandPool();
+    void                                CreateCommandBuffers();
+    void                                CreateSemaphores();
+    void                                CreateFences();
+    void                                DrawFrame();
 
     std::vector<VkExtensionProperties>  GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice);
     std::vector<char>                   LoadSpirvBinary(const std::string& path);
@@ -128,11 +129,8 @@ public:
     void                                InitVulkan();
 
     protected:
-        bool    p_ShouldRun;
-        double  p_LastFrameTime;
-        int     p_CurrentFrameIndex;
-        const int MAX_FRAMES_IN_FLIGHT = 2;
-
-
-
+    bool            p_ShouldRun;
+    double          p_LastFrameTime;
+    int             p_CurrentFrameIndex;
+    const int       MAX_FRAMES_IN_FLIGHT = 2;
 };

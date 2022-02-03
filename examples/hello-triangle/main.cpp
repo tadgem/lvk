@@ -11,7 +11,6 @@ int main()
 
     });
 
-    api.CleanupWindow();
-    api.CleanupVulkan();
+    api.Cleanup();
     return 1;
 }

@@ -1,6 +1,7 @@
+#include "VulkanAPI.h"
+
 #include <cstdint>
 #include <fstream>
-#include "VulkanAPI.h"
 #include "spdlog/spdlog.h"
 
 // comments are largely snippets from: https://vulkan-tutorial.com/. credit: Alexander Overvoorde
@@ -190,6 +191,12 @@ void VulkanAPI::CreateInstance()
         spdlog::error("Failed to create vulkan m_Instance");
     }
 
+}
+
+void VulkanAPI::Cleanup()
+{
+    CleanupWindow();
+    CleanupVulkan();
 }
 
 void VulkanAPI::SetupDebugOutput()
