@@ -1,6 +1,7 @@
 #pragma once
 #include "VulkanAPI.h"
 #include "SDL.h"
+
 #undef main // why is this a thing SDL?!
 class VulkanAPIWindowHandle_SDL : public VulkanAPIWindowHandle
 {

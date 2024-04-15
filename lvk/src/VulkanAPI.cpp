@@ -599,8 +599,8 @@ void VulkanAPI::CreateSwapChainImageViews()
 
 void VulkanAPI::CreateGraphicsPipeline()
 {
-    auto vertBin = LoadSpirvBinary("tri.vert.spv");
-    auto fragBin = LoadSpirvBinary("tri.frag.spv");
+    auto vertBin = LoadSpirvBinary("shaders/tri.vert.spv");
+    auto fragBin = LoadSpirvBinary("shaders/tri.frag.spv");
 
     VkShaderModule vertShaderModule = CreateShaderModule(vertBin);
     VkShaderModule fragShaderModule = CreateShaderModule(fragBin);
@@ -1046,6 +1046,7 @@ std::vector<char> VulkanAPI::LoadSpirvBinary(const std::string& path)
     {
         spdlog::error("Failed to open file at path {0} as binary!", path);
         std::cerr << "Failed to open file!" << std::endl;
+        return std::vector<char>();
     }
 
     size_t fileSize = static_cast<size_t>(file.tellg());

@@ -38,3 +38,5 @@ submod/glm/
 submod/sdl/
 submod/spdlog/
 submod/imgui
+
+vs22/
