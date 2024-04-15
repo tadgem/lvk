@@ -1,6 +1,7 @@
 #include "VulkanAPI.h"
 
 #include <cstdint>
+#include <algorithm>
 #include <fstream>
 #include "spdlog/spdlog.h"
 
@@ -13,15 +14,15 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     void* pUserData) {
 
     //std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
-    if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+    if (messageSeverity && VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
     {
         spdlog::warn("VL: {0}", pCallbackData->pMessage);
     }
-    if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
+    if (messageSeverity && VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
     {
         spdlog::info("VL: {0}", pCallbackData->pMessage);
     }
-    if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+    if (messageSeverity && VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
     {
         spdlog::error("VL: {0}", pCallbackData->pMessage);
     }
@@ -45,7 +46,7 @@ VkApplicationInfo VulkanAPI::CreateAppInfo()
     appInfo.applicationVersion = VK_MAKE_VERSION(0, 1, 0);
     appInfo.pEngineName = "None";
     appInfo.engineVersion = VK_MAKE_VERSION(0, 1, 0);
-    appInfo.apiVersion = VK_API_VERSION_1_1;
+    appInfo.apiVersion = VK_API_VERSION_1_3;
 
     return appInfo;
 }
@@ -373,22 +374,26 @@ void VulkanAPI::PickPhysicalDevice()
 
     std::vector<VkPhysicalDevice> physicalDevices(deviceCount);
     vkEnumeratePhysicalDevices(m_Instance, &deviceCount, physicalDevices.data());
-
-    std::unordered_map<uint32_t, VkPhysicalDevice> deviceScores;
+    VkPhysicalDevice physicalDeviceCandidate = VK_NULL_HANDLE;
+    uint32_t bestScore = 0;
 
     for (int i = 0; i < physicalDevices.size(); i++)
     {
         uint32_t score = AssessDeviceSuitability(physicalDevices[i]);
-        if (IsDeviceSuitable(physicalDevices[i]))
+        if (IsDeviceSuitable(physicalDevices[i]) && score > bestScore)
         {
-            deviceScores.emplace(score, physicalDevices[i]);
+            physicalDeviceCandidate = physicalDevices[i];
+            bestScore = score;
         }
     }
 
-    if (deviceScores.begin()->first > 0)
+    if (bestScore == 0)
     {
-        m_PhysicalDevice = deviceScores.begin()->second;
+        spdlog::error("failed to find a suitable device.");
+        return;
     }
+
+    m_PhysicalDevice = physicalDeviceCandidate;
 
     if (m_PhysicalDevice == VK_NULL_HANDLE)
     {
