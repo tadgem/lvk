@@ -60,7 +60,7 @@ public:
     VkRenderPass                    m_RenderPass;
     VkPipelineLayout                m_PipelineLayout;
     VkPipeline                      m_Pipeline;
-    VkCommandPool                   m_CommandPool;
+    VkCommandPool                   m_GraphicsQueueCommandPool;
     std::vector<VkSemaphore>        m_ImageAvailableSemaphores;
     std::vector<VkSemaphore>        m_RenderFinishedSemaphores;
     std::vector<VkFence>            m_FrameInFlightFences;
@@ -103,18 +103,20 @@ public:
     void                                GetQueueHandles();
     VkSurfaceFormatKHR                  ChooseSwapChainSurfaceFormat(std::vector<VkSurfaceFormatKHR> availableFormats);
     VkPresentModeKHR                    ChooseSwapChainPresentMode(std::vector<VkPresentModeKHR> availableModes);
-    VkExtent2D                          ChooseSwapExtent(VkSurfaceCapabilitiesKHR& surfaceCapabilities);
     void                                CreateSwapChain();
+    void                                CreateSwapChainFramebuffers();
     void                                CreateSwapChainImageViews();
-    void                                CreateGraphicsPipeline();
+    VkExtent2D                          ChooseSwapExtent(VkSurfaceCapabilitiesKHR& surfaceCapabilities);
     VkShaderModule                      CreateShaderModule(const std::vector<char>& data);
     void                                CreateRenderPass();
-    void                                CreateFramebuffers();
     void                                CreateCommandPool();
-    void                                CreateCommandBuffers();
     void                                CreateSemaphores();
     void                                CreateFences();
     void                                DrawFrame();
+
+    // App specific
+    void                                CreateGraphicsPipeline();
+    void                                CreateCommandBuffers();
 
     std::vector<VkExtensionProperties>  GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice);
     std::vector<char>                   LoadSpirvBinary(const std::string& path);
