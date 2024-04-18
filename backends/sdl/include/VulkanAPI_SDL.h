@@ -28,6 +28,9 @@ public:
 	virtual void 						CleanupWindow() override;
 	virtual void 						Run(std::function<void()> callback) override;
 	virtual VkExtent2D					GetSurfaceExtent(VkSurfaceCapabilitiesKHR surface) override;
+	virtual bool						ShouldRun() override;
+	virtual void 						PreFrame() override;
+	virtual void 						PostFrame() override;
 
 	VulkanAPIWindowHandle_SDL* m_SdlHandle;
 

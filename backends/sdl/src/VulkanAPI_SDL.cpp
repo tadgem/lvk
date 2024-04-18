@@ -51,6 +51,31 @@ void VulkanAPI_SDL::CleanupWindow()
     SDL_Quit();
 }
 
+bool VulkanAPI_SDL::ShouldRun()
+{
+    return p_ShouldRun;
+}
+
+void VulkanAPI_SDL::PreFrame()
+{
+    uint64_t currentFrame = SDL_GetPerformanceCounter();
+    m_DeltaTime = (currentFrame - p_LastFrameTime) / (double)SDL_GetPerformanceFrequency();
+    SDL_Event sdl_event;
+    while (SDL_PollEvent(&sdl_event))
+    {
+        HandleSDLEvent(sdl_event);
+    }
+}
+
+void VulkanAPI_SDL::PostFrame()
+{
+    if (vkDeviceWaitIdle(m_LogicalDevice) != VK_SUCCESS)
+    {
+        spdlog::error("Failed to wait for device idle");
+        std::cerr << "Failed to wait for device idle" << std::endl;
+    }
+}
+
 void VulkanAPI_SDL::Run(std::function<void()> callback)
 {
     p_ShouldRun = true;
@@ -64,9 +89,9 @@ void VulkanAPI_SDL::Run(std::function<void()> callback)
             HandleSDLEvent(sdl_event);
         }
 
-        DrawFrame();
-
         callback();
+
+        DrawFrame();
     }
     if (vkDeviceWaitIdle(m_LogicalDevice) != VK_SUCCESS)
     {

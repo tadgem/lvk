@@ -58,8 +58,6 @@ public:
     VkPhysicalDevice                m_PhysicalDevice    = VK_NULL_HANDLE;
     VkDevice                        m_LogicalDevice     = VK_NULL_HANDLE;
     VkRenderPass                    m_RenderPass;
-    VkPipelineLayout                m_PipelineLayout;
-    VkPipeline                      m_Pipeline;
     VkCommandPool                   m_GraphicsQueueCommandPool;
     std::vector<VkSemaphore>        m_ImageAvailableSemaphores;
     std::vector<VkSemaphore>        m_RenderFinishedSemaphores;
@@ -108,16 +106,15 @@ public:
     void                                CreateSwapChainImageViews();
     VkExtent2D                          ChooseSwapExtent(VkSurfaceCapabilitiesKHR& surfaceCapabilities);
     VkShaderModule                      CreateShaderModule(const std::vector<char>& data);
-    void                                CreateRenderPass();
     void                                CreateCommandPool();
     void                                CreateSemaphores();
     void                                CreateFences();
     void                                DrawFrame();
+    inline int                          GetFrameIndex() { return p_CurrentFrameIndex; }
 
-    // App specific
-    void                                CreateGraphicsPipeline();
-    void                                CreateCommandBuffers();
-
+    // todo: app specific
+    void                                CreateRenderPass();
+    
     std::vector<VkExtensionProperties>  GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice);
     std::vector<char>                   LoadSpirvBinary(const std::string& path);
 
@@ -127,11 +124,14 @@ public:
     virtual void                        CreateWindow(uint32_t width, uint32_t height) = 0;
     virtual void                        CleanupWindow() = 0;
     virtual VkExtent2D                  GetSurfaceExtent(VkSurfaceCapabilitiesKHR surface) = 0;
+    virtual bool                        ShouldRun() = 0;
+    virtual void                        PreFrame() = 0;
+    virtual void                        PostFrame() = 0;
     virtual void                        Run(std::function<void()> callback) = 0;
     void                                InitVulkan();
 
-    protected:
-    bool            p_ShouldRun;
+protected:
+    bool            p_ShouldRun = true;
     double          p_LastFrameTime;
     int             p_CurrentFrameIndex;
     const int       MAX_FRAMES_IN_FLIGHT = 2;
