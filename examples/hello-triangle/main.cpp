@@ -241,12 +241,15 @@ int main()
     
     while (vk.ShouldRun())
     {
+    
         vk.PreFrame();
 
         vk.DrawFrame();
 
         vk.PostFrame();
     }
+    vkDestroyPipeline(vk.m_LogicalDevice, pipeline, nullptr);
     vk.Cleanup();
+
     return 0;
 }

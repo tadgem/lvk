@@ -104,6 +104,8 @@ public:
     void                                CreateSwapChain();
     void                                CreateSwapChainFramebuffers();
     void                                CreateSwapChainImageViews();
+    void                                CleanupSwapChain();
+    void                                RecreateSwapChain();
     VkExtent2D                          ChooseSwapExtent(VkSurfaceCapabilitiesKHR& surfaceCapabilities);
     VkShaderModule                      CreateShaderModule(const std::vector<char>& data);
     void                                CreateCommandPool();

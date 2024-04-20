@@ -6,7 +6,9 @@ set (CMAKE_CXX_STANDARD 17)
 find_package(Vulkan REQUIRED FATAL_ERROR) # error
 
 add_library(${PROJECT_NAME} src/VulkanAPI.cpp 
+                            src/spirv_reflect.c
                             include/VulkanAPI.h
+                            include/spirv_reflect.h
                             )
 
 set(LVK_INCLUDES ${Vulkan_INCLUDE_DIRS} ${SPDLOG_INCLUDES} ${GLM_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR}/include)

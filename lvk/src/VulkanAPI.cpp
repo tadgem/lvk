@@ -1,5 +1,5 @@
 #include "VulkanAPI.h"
-
+#include "spirv_reflect.h"
 #include <cstdint>
 #include <algorithm>
 #include <fstream>
@@ -241,6 +241,8 @@ void VulkanAPI::CleanupDebugOutput()
 
 void VulkanAPI::CleanupVulkan()
 {
+    CleanupSwapChain();
+
     if (p_UseValidation)
     {
         CleanupDebugOutput();
@@ -254,16 +256,9 @@ void VulkanAPI::CleanupVulkan()
 
     vkDestroyCommandPool(m_LogicalDevice, m_GraphicsQueueCommandPool, nullptr);
 
-    for (int i = 0; i < m_SwapChainFramebuffers.size(); i++)
-    {
-        vkDestroyFramebuffer(m_LogicalDevice, m_SwapChainFramebuffers[i], nullptr);
-    }
-    for (int i = 0; i < m_SwapChainImageViews.size(); i++)
-    {
-        vkDestroyImageView(m_LogicalDevice, m_SwapChainImageViews[i], nullptr);
-    }
     vkDestroyRenderPass(m_LogicalDevice, m_RenderPass, nullptr);
-    vkDestroySwapchainKHR(m_LogicalDevice, m_SwapChain, nullptr);
+    
+
     vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
     vkDestroyDevice(m_LogicalDevice, nullptr);
     vkDestroyInstance(m_Instance, nullptr);
@@ -600,6 +595,30 @@ void VulkanAPI::CreateSwapChainImageViews()
     }
 }
 
+void VulkanAPI::CleanupSwapChain()
+{
+    for (int i = 0; i < m_SwapChainFramebuffers.size(); i++)
+    {
+        vkDestroyFramebuffer(m_LogicalDevice, m_SwapChainFramebuffers[i], nullptr);
+    }
+    for (int i = 0; i < m_SwapChainImageViews.size(); i++)
+    {
+        vkDestroyImageView(m_LogicalDevice, m_SwapChainImageViews[i], nullptr);
+    }
+    vkDestroySwapchainKHR(m_LogicalDevice, m_SwapChain, nullptr);
+}
+
+void VulkanAPI::RecreateSwapChain()
+{
+    vkDeviceWaitIdle(m_LogicalDevice);
+
+    CleanupSwapChain();
+
+    CreateSwapChain();
+    CreateSwapChainImageViews();
+    CreateSwapChainFramebuffers();
+}
+
 VkShaderModule VulkanAPI::CreateShaderModule(const std::vector<char>& data)
 {
     VkShaderModuleCreateInfo createInfo{};
@@ -752,10 +771,21 @@ void VulkanAPI::CreateFences()
 void VulkanAPI::DrawFrame()
 {
     vkWaitForFences(m_LogicalDevice, 1, &m_FrameInFlightFences[p_CurrentFrameIndex], VK_TRUE, UINT64_MAX);
-    vkResetFences(m_LogicalDevice, 1, &m_FrameInFlightFences[p_CurrentFrameIndex]);
 
     uint32_t imageIndex;
-    vkAcquireNextImageKHR(m_LogicalDevice, m_SwapChain, UINT64_MAX, m_ImageAvailableSemaphores[p_CurrentFrameIndex], VK_NULL_HANDLE, &imageIndex);
+    VkResult result = vkAcquireNextImageKHR(m_LogicalDevice, m_SwapChain, UINT64_MAX, m_ImageAvailableSemaphores[p_CurrentFrameIndex], VK_NULL_HANDLE, &imageIndex);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+        spdlog::info("resizing swapchain");
+        RecreateSwapChain();
+        return;
+    }
+    else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+        spdlog::error("failed to acquire swap chain image!");
+        return;
+    }
+
+    vkResetFences(m_LogicalDevice, 1, &m_FrameInFlightFences[p_CurrentFrameIndex]);
 
     if (m_ImagesInFlight[imageIndex] != VK_NULL_HANDLE)
     {
@@ -795,7 +825,14 @@ void VulkanAPI::DrawFrame()
     presentInfo.pImageIndices       = &imageIndex;
     presentInfo.pResults            = nullptr;
 
-    vkQueuePresentKHR(m_GraphicsQueue, &presentInfo);
+    result = vkQueuePresentKHR(m_GraphicsQueue, &presentInfo);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+        RecreateSwapChain();
+    }
+    else if (result != VK_SUCCESS) {
+        spdlog::error("Error presenting");
+    }
 
     p_CurrentFrameIndex = (p_CurrentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
 }
