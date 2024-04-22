@@ -1,12 +1,67 @@
 #include "VulkanAPI_SDL.h"
 #include "spdlog/spdlog.h"
 #include "glm/glm.hpp"
+#include <array>
 
 struct VertexData
 {
     glm::vec3 Position;
     glm::vec3 Colour;
+
+    static VkVertexInputBindingDescription GetBindingDescription() {
+        VkVertexInputBindingDescription bindingDescription{};
+
+        bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+        bindingDescription.stride = sizeof(VertexData);
+        bindingDescription.binding = 0;
+
+        return bindingDescription;
+    }
+
+    static std::array<VkVertexInputAttributeDescription, 2> GetAttributeDescriptions() {
+        std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+
+        attributeDescriptions[0].binding = 0;
+        attributeDescriptions[0].location = 0;
+        attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+        attributeDescriptions[0].offset = offsetof(VertexData, Position);
+
+        attributeDescriptions[1].binding = 0;
+        attributeDescriptions[1].location = 1;
+        attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+        attributeDescriptions[1].offset = offsetof(VertexData, Colour);
+
+        return attributeDescriptions;
+    }
 };
+
+std::vector<VertexData> BuildVertexData()
+{
+    return std::vector<VertexData>
+    {
+        { {-0.5, -0.5, 0.0}, { 1.0, 0.0, 0.0 } },
+        { {0.0, 0.5, 0.0}, {0.0, 1.0, 0.0} },
+        { {0.5, -0.5, 0.0}, {0.0, 0.0, 1.0} },
+    };
+}
+
+VkBuffer CreateVertexBuffer(VulkanAPI_SDL& vk)
+{
+    auto data = BuildVertexData();
+    VkBufferCreateInfo bufferInfo{};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = sizeof(data[0]) * data.size();
+    bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    VkBuffer buffer{};
+    if (vkCreateBuffer(vk.m_LogicalDevice, &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
+    {
+        spdlog::error("failed to create a vertex buffer");
+    }
+    return buffer;
+
+}
 
 void CreateCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline)
 {
@@ -104,12 +159,15 @@ VkPipeline CreateGraphicsPipeline(VulkanAPI_SDL& vk)
 
     std::vector<VkPipelineShaderStageCreateInfo> shaderStageCreateInfos = { vertexShaderStageInfo, fragShaderStageInfo };
 
+    auto bindingDescription = VertexData::GetBindingDescription();
+    auto attributeDescriptions = VertexData::GetAttributeDescriptions();
+
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount = 0;
-    vertexInputInfo.pVertexBindingDescriptions = nullptr;
-    vertexInputInfo.vertexAttributeDescriptionCount = 0;
-    vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+    vertexInputInfo.vertexBindingDescriptionCount = 1;
+    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+    vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
     VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo{};
     inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -247,14 +305,14 @@ VkPipeline CreateGraphicsPipeline(VulkanAPI_SDL& vk)
     return pipeline;
 }
 
-std::vector<VertexData> BuildVertexData()
-{
-    return std::vector<VertexData>
-    {
-        { {-0.5, -0.5, 0.0}, {1.0, 0.0, 0.0} },
-        { {0.0, 0.5, 0.0}, {0.0, 1.0, 0.0} },
-        { {0.5, -0.5, 0.0}, {0.0, 0.0, 1.0} },
-    };
+uint32_t DecideMemoryType(VulkanAPI_SDL& vk, VkPhysicalDeviceMemoryProperties& memProperties, uint32_t typeFilter, VkMemoryPropertyFlags properties) {
+    
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+        if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+            return i;
+        }
+    }
+    return UINT32_MAX;
 }
 
 int main()
@@ -265,6 +323,32 @@ int main()
 
     VkPipeline pipeline = CreateGraphicsPipeline(vk);
     // draw the triangles
+    VkBuffer vertexBuffer = CreateVertexBuffer(vk);
+
+    VkMemoryRequirements memRequirements;
+    vkGetBufferMemoryRequirements(vk.m_LogicalDevice, vertexBuffer, &memRequirements);
+
+    VkPhysicalDeviceMemoryProperties memProperties;
+    vkGetPhysicalDeviceMemoryProperties(vk.m_PhysicalDevice, &memProperties);
+
+    uint32_t decidedMemoryType = DecideMemoryType(vk, memProperties, memRequirements.memoryTypeBits,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    
+    VkMemoryAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = decidedMemoryType;
+
+    VkDeviceMemory vertexBufferMemory;
+
+    if (vkAllocateMemory(vk.m_LogicalDevice, &allocInfo, nullptr, &vertexBufferMemory) != VK_SUCCESS)
+    {
+        spdlog::error("failed to allocate memory for vertex buffer");
+        return -1;
+    }
+
+    vkBindBufferMemory(vk.m_LogicalDevice, vertexBuffer, vertexBufferMemory, 0);
+    
     CreateCommandBuffers(vk, pipeline);
     
     while (vk.ShouldRun())
@@ -285,6 +369,8 @@ int main()
         ClearCommandBuffers(vk);
 
     }
+    vkDestroyBuffer(vk.m_LogicalDevice, vertexBuffer, nullptr);
+    vkFreeMemory(vk.m_LogicalDevice, vertexBufferMemory, nullptr);
     vkDestroyPipeline(vk.m_LogicalDevice, pipeline, nullptr);
     vk.Cleanup();
 
