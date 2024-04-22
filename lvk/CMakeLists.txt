@@ -9,6 +9,7 @@ add_library(${PROJECT_NAME} src/VulkanAPI.cpp
                             src/spirv_reflect.c
                             include/VulkanAPI.h
                             include/spirv_reflect.h
+                            include/VulkanMemoryAllocator.h
                             )
 
 set(LVK_INCLUDES ${Vulkan_INCLUDE_DIRS} ${SPDLOG_INCLUDES} ${GLM_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR}/include)
