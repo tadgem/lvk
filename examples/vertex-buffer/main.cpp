@@ -47,10 +47,30 @@ std::vector<VertexData> BuildVertexData()
 
 void CreateVertexBuffer(VulkanAPI_SDL& vk, VkBuffer& buffer, VkDeviceMemory& deviceMemory)
 {
-    auto data = BuildVertexData();
-    VkDeviceSize bufferSize = sizeof(data[0]) * data.size();
-    vk.CreateBuffer(bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, buffer, deviceMemory);
-    
+    auto vertices = BuildVertexData();
+    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+
+    // create a CPU side buffer to dump vertex data into
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+    vk.CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+    // dump vert data
+    void* data;
+    vkMapMemory(vk.m_LogicalDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
+    memcpy(data, vertices.data(), bufferSize);
+    vkUnmapMemory(vk.m_LogicalDevice, stagingBufferMemory);
+
+    // create GPU side buffer
+    vk.CreateBuffer(bufferSize,
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        buffer, deviceMemory);
+
+    vk.CopyBuffer(stagingBuffer, buffer, bufferSize);
+
+    vkDestroyBuffer(vk.m_LogicalDevice, stagingBuffer, nullptr);
+    vkFreeMemory(vk.m_LogicalDevice, stagingBufferMemory, nullptr);
 }
 
 void CreateCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline)
@@ -312,21 +332,14 @@ int main()
     VkDeviceMemory vertexBufferMemory;
     CreateVertexBuffer(vk, vertexBuffer, vertexBufferMemory);
 
-    auto vertices = BuildVertexData();
-    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
-
-    void* data;
-    vkMapMemory(vk.m_LogicalDevice, vertexBufferMemory, 0, bufferSize, 0, &data);
-    memcpy(data, vertices.data(), bufferSize);
-    vkUnmapMemory(vk.m_LogicalDevice, vertexBufferMemory);
-
+   
     CreateCommandBuffers(vk, pipeline);
     
     while (vk.ShouldRun())
     {    
         vk.PreFrame();
         
-        RecordCommandBuffers(vk, pipeline, vertexBuffer, vertices.size());
+        RecordCommandBuffers(vk, pipeline, vertexBuffer, 3);
 
         vk.DrawFrame();
         
