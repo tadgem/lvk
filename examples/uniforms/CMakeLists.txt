@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(example-hello-triangle)
+project(example-uniforms)
 
 set (CMAKE_CXX_STANDARD 17)
 

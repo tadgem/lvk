@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(vertex-index-buffer)
+project(example-vertex-index-buffer)
 
 set (CMAKE_CXX_STANDARD 17)
 
