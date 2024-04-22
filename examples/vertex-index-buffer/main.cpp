@@ -35,19 +35,19 @@ struct VertexData
     }
 };
 
-std::vector<VertexData> BuildVertexData()
-{
-    return std::vector<VertexData>
-    {
-        { {0.0, -0.5, 0.0}, { 1.0, 0.0, 0.0 } },
-        { {0.5, 0.5, 0.0}, {0.0, 1.0, 0.0} },
-        { {-0.5, 0.5, 0.0}, {0.0, 0.0, 1.0} },
-    };
-}
+const std::vector<VertexData> vertices = {
+    {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+    {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+    {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}}
+};
+
+const std::vector<uint16_t> indices = {
+    0, 1, 2, 2, 3, 0
+};
 
 void CreateVertexBuffer(VulkanAPI_SDL& vk, VkBuffer& buffer, VkDeviceMemory& deviceMemory)
 {
-    auto vertices = BuildVertexData();
     VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
     // create a CPU side buffer to dump vertex data into
@@ -64,6 +64,33 @@ void CreateVertexBuffer(VulkanAPI_SDL& vk, VkBuffer& buffer, VkDeviceMemory& dev
     // create GPU side buffer
     vk.CreateBuffer(bufferSize,
         VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        buffer, deviceMemory);
+
+    vk.CopyBuffer(stagingBuffer, buffer, bufferSize);
+
+    vkDestroyBuffer(vk.m_LogicalDevice, stagingBuffer, nullptr);
+    vkFreeMemory(vk.m_LogicalDevice, stagingBufferMemory, nullptr);
+}
+
+void CreateIndexBuffer(VulkanAPI_SDL& vk, VkBuffer& buffer, VkDeviceMemory& deviceMemory)
+{
+    VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+
+    // create a CPU side buffer to dump vertex data into
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+    vk.CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+    // dump vert data
+    void* data;
+    vkMapMemory(vk.m_LogicalDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
+    memcpy(data, indices.data(), bufferSize);
+    vkUnmapMemory(vk.m_LogicalDevice, stagingBufferMemory);
+
+    // create GPU side buffer
+    vk.CreateBuffer(bufferSize,
+        VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
         buffer, deviceMemory);
 
@@ -90,7 +117,7 @@ void CreateCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline)
     }
 }
 
-void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkBuffer& vertexBuffer, uint32_t numVertices)
+void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkBuffer& vertexBuffer, VkBuffer& indexBuffer, uint32_t numIndices)
 {
     for (uint32_t i = 0; i < vk.m_CommandBuffers.size(); i++)
     {
@@ -122,10 +149,12 @@ void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkBuffer& ver
 
         vkCmdBindPipeline(vk.m_CommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
-        VkBuffer buffers[]{ vertexBuffer };
+        VkBuffer vertexBuffers[]{ vertexBuffer };
         VkDeviceSize sizes[] = { 0 };
-        vkCmdBindVertexBuffers(vk.m_CommandBuffers[i], 0, 1, buffers, sizes);
-        vkCmdDraw(vk.m_CommandBuffers[i], numVertices, 1, 0, 0);
+        vkCmdBindVertexBuffers(vk.m_CommandBuffers[i], 0, 1, vertexBuffers, sizes);
+
+        vkCmdBindIndexBuffer(vk.m_CommandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+        vkCmdDrawIndexed(vk.m_CommandBuffers[i], numIndices, 1, 0, 0, 0);
 
         vkCmdEndRenderPass(vk.m_CommandBuffers[i]);
 
@@ -330,8 +359,10 @@ int main()
     // draw the triangles
     VkBuffer vertexBuffer; 
     VkDeviceMemory vertexBufferMemory;
+    VkBuffer indexBuffer;
+    VkDeviceMemory indexBufferMemory;
     CreateVertexBuffer(vk, vertexBuffer, vertexBufferMemory);
-
+    CreateIndexBuffer(vk, indexBuffer, indexBufferMemory);
    
     CreateCommandBuffers(vk, pipeline);
     
@@ -339,7 +370,7 @@ int main()
     {    
         vk.PreFrame();
         
-        RecordCommandBuffers(vk, pipeline, vertexBuffer, 3);
+        RecordCommandBuffers(vk, pipeline, vertexBuffer, indexBuffer, indices.size());
 
         vk.DrawFrame();
         
@@ -350,6 +381,8 @@ int main()
     }
     vkDestroyBuffer(vk.m_LogicalDevice, vertexBuffer, nullptr);
     vkFreeMemory(vk.m_LogicalDevice, vertexBufferMemory, nullptr);
+    vkDestroyBuffer(vk.m_LogicalDevice, indexBuffer, nullptr);
+    vkFreeMemory(vk.m_LogicalDevice, indexBufferMemory, nullptr);
     vkDestroyPipeline(vk.m_LogicalDevice, pipeline, nullptr);
     vk.Cleanup();
 

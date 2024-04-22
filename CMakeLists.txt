@@ -23,5 +23,5 @@ set_target_properties(uninstall PROPERTIES FOLDER "ThirdParty/CMake")
 add_subdirectory(lvk)
 add_subdirectory(backends/sdl)
 add_subdirectory(examples/hello-triangle)
-add_subdirectory(examples/vertex-buffer)
+add_subdirectory(examples/vertex-index-buffer)
 
