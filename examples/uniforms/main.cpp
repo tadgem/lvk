@@ -179,7 +179,7 @@ void ClearCommandBuffers(VulkanAPI_SDL& vk)
 VkPipeline CreateGraphicsPipeline(VulkanAPI_SDL& vk)
 {
     auto vertBin = vk.LoadSpirvBinary("shaders/uniform.vert.spv");
-    auto fragBin = vk.LoadSpirvBinary("shaders/uniform.frag.spv")uniform
+    auto fragBin = vk.LoadSpirvBinary("shaders/uniform.frag.spv");
     VkShaderModule vertShaderModule = vk.CreateShaderModule(vertBin);
     VkShaderModule fragShaderModule = vk.CreateShaderModule(fragBin);
 
