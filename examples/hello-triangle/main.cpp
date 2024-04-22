@@ -16,13 +16,16 @@ void CreateCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline)
         spdlog::error("Failed to create Command Buffers!");
         std::cerr << "Failed to create Command Buffers!" << std::endl;
     }
+}
 
+void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline)
+{
     for (uint32_t i = 0; i < vk.m_CommandBuffers.size(); i++)
     {
         VkCommandBufferBeginInfo commandBufferBeginInfo{};
-        commandBufferBeginInfo.sType                = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        commandBufferBeginInfo.flags                = 0;
-        commandBufferBeginInfo.pInheritanceInfo     = nullptr;
+        commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        commandBufferBeginInfo.flags = 0;
+        commandBufferBeginInfo.pInheritanceInfo = nullptr;
 
         if (vkBeginCommandBuffer(vk.m_CommandBuffers[i], &commandBufferBeginInfo) != VK_SUCCESS)
         {
@@ -33,15 +36,15 @@ void CreateCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline)
         // push to example
 
         VkRenderPassBeginInfo renderPassInfo{};
-        renderPassInfo.sType                = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass           = vk.m_RenderPass;
-        renderPassInfo.framebuffer          = vk.m_SwapChainFramebuffers[i];
-        renderPassInfo.renderArea.offset    = { 0,0 };
-        renderPassInfo.renderArea.extent    = vk.m_SwapChainImageExtent;
-        
-        VkClearValue clearValue             = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
-        renderPassInfo.clearValueCount      = 1;
-        renderPassInfo.pClearValues         = &clearValue;
+        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        renderPassInfo.renderPass = vk.m_RenderPass;
+        renderPassInfo.framebuffer = vk.m_SwapChainFramebuffers[i];
+        renderPassInfo.renderArea.offset = { 0,0 };
+        renderPassInfo.renderArea.extent = vk.m_SwapChainImageExtent;
+
+        VkClearValue clearValue = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
+        renderPassInfo.clearValueCount = 1;
+        renderPassInfo.pClearValues = &clearValue;
 
         vkCmdBeginRenderPass(vk.m_CommandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -58,6 +61,14 @@ void CreateCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline)
             spdlog::error("Failed to finalize recording Command Buffer!");
             std::cerr << "Failed to finalize recording Command Buffer!" << std::endl;
         }
+    }
+}
+
+void ClearCommandBuffers(VulkanAPI_SDL& vk)
+{
+    for (uint32_t i = 0; i < vk.m_CommandBuffers.size(); i++)
+    {
+        vkResetCommandBuffer(vk.m_CommandBuffers[i], 0);
     }
 }
 
@@ -240,13 +251,16 @@ int main()
     CreateCommandBuffers(vk, pipeline);
     
     while (vk.ShouldRun())
-    {
-    
+    {    
         vk.PreFrame();
-
+        
+        RecordCommandBuffers(vk, pipeline);
+        
         vk.DrawFrame();
 
         vk.PostFrame();
+
+        ClearCommandBuffers(vk);
     }
     vkDestroyPipeline(vk.m_LogicalDevice, pipeline, nullptr);
     vk.Cleanup();

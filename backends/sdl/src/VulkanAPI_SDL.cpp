@@ -9,6 +9,11 @@ void VulkanAPI_SDL::HandleSDLEvent(SDL_Event& sdl_event)
     {
         p_ShouldRun = false;
     }
+    if (sdl_event.type == SDL_WINDOWEVENT) {
+        if (sdl_event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
+            RecreateSwapChain();
+        }
+    }
 }
 std::vector<const char*> VulkanAPI_SDL::GetRequiredExtensions()
 {
@@ -61,7 +66,7 @@ void VulkanAPI_SDL::PreFrame()
     uint64_t currentFrame = SDL_GetPerformanceCounter();
     m_DeltaTime = (currentFrame - p_LastFrameTime) / (double)SDL_GetPerformanceFrequency();
     SDL_Event sdl_event;
-    while (SDL_PollEvent(&sdl_event))
+    while (SDL_PollEvent(&sdl_event) > 0)
     {
         HandleSDLEvent(sdl_event);
     }

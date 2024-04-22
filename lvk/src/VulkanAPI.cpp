@@ -25,6 +25,8 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
     {
         spdlog::error("VL: {0}", pCallbackData->pMessage);
+        VulkanAPI* api = (VulkanAPI*)pUserData;
+        api->Quit();
     }
     return VK_FALSE;
 }
@@ -119,7 +121,7 @@ void VulkanAPI::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfo
         VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
 
     createInfo.pfnUserCallback = debugCallback;
-    createInfo.pUserData = nullptr; // we can specify some data to pass the callback
+    createInfo.pUserData = this; // we can specify some data to pass the callback
                                     // dont need this right now
 }
 
@@ -262,6 +264,11 @@ void VulkanAPI::CleanupVulkan()
     vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
     vkDestroyDevice(m_LogicalDevice, nullptr);
     vkDestroyInstance(m_Instance, nullptr);
+}
+
+void VulkanAPI::Quit()
+{
+    p_ShouldRun = false;
 }
 
 VulkanAPI::QueueFamilyIndices VulkanAPI::FindQueueFamilies(VkPhysicalDevice m_PhysicalDevice)
@@ -610,7 +617,7 @@ void VulkanAPI::CleanupSwapChain()
 
 void VulkanAPI::RecreateSwapChain()
 {
-    vkDeviceWaitIdle(m_LogicalDevice);
+    while (vkDeviceWaitIdle(m_LogicalDevice) != VK_SUCCESS);
 
     CleanupSwapChain();
 
@@ -721,7 +728,7 @@ void VulkanAPI::CreateCommandPool()
     VkCommandPoolCreateInfo createInfo{};
     createInfo.sType                = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     createInfo.queueFamilyIndex     = m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Graphics];
-    createInfo.flags                = 0;
+    createInfo.flags                = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
     if(vkCreateCommandPool(m_LogicalDevice, &createInfo, nullptr, &m_GraphicsQueueCommandPool) != VK_SUCCESS)
     {
@@ -777,7 +784,6 @@ void VulkanAPI::DrawFrame()
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
         spdlog::info("resizing swapchain");
-        RecreateSwapChain();
         return;
     }
     else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
@@ -828,7 +834,7 @@ void VulkanAPI::DrawFrame()
     result = vkQueuePresentKHR(m_GraphicsQueue, &presentInfo);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-        RecreateSwapChain();
+        return;
     }
     else if (result != VK_SUCCESS) {
         spdlog::error("Error presenting");

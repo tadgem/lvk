@@ -92,6 +92,7 @@ public:
     void                                CreateInstance();
     void                                Cleanup();
     void                                CleanupVulkan();
+    void                                Quit();
     QueueFamilyIndices                  FindQueueFamilies(VkPhysicalDevice physicalDevice);
     SwapChainSupportDetais              GetSwapChainSupportDetails(VkPhysicalDevice physicalDevice);
     bool                                IsDeviceSuitable(VkPhysicalDevice physicalDevice);
