@@ -252,15 +252,21 @@ int main()
     
     while (vk.ShouldRun())
     {    
+        spdlog::info("preframe");
         vk.PreFrame();
         
+        spdlog::info("record command buffer");
         RecordCommandBuffers(vk, pipeline);
-        
-        vk.DrawFrame();
 
+        spdlog::info("draw frame");
+        vk.DrawFrame();
+        
+        spdlog::info("post frame");
         vk.PostFrame();
 
+        spdlog::info("clear command buffers");
         ClearCommandBuffers(vk);
+
     }
     vkDestroyPipeline(vk.m_LogicalDevice, pipeline, nullptr);
     vk.Cleanup();
