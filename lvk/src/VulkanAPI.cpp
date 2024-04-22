@@ -779,11 +779,9 @@ void VulkanAPI::CreateFences()
 
 void VulkanAPI::DrawFrame()
 {
-    spdlog::info("waiting on image in flight fence");
     vkWaitForFences(m_LogicalDevice, 1, &m_FrameInFlightFences[p_CurrentFrameIndex], VK_TRUE, UINT64_MAX);
 
     uint32_t imageIndex;
-    spdlog::info("acquire next image from swapchain");
     VkResult result = vkAcquireNextImageKHR(m_LogicalDevice, m_SwapChain, UINT64_MAX, m_ImageAvailableSemaphores[p_CurrentFrameIndex], VK_NULL_HANDLE, &imageIndex);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
@@ -796,7 +794,6 @@ void VulkanAPI::DrawFrame()
         return;
     }
 
-    spdlog::info("reset image in flight fence");
     vkResetFences(m_LogicalDevice, 1, &m_FrameInFlightFences[p_CurrentFrameIndex]);
 
     m_ImagesInFlight[imageIndex] = m_FrameInFlightFences[p_CurrentFrameIndex];
@@ -815,10 +812,8 @@ void VulkanAPI::DrawFrame()
     submitInfo.signalSemaphoreCount     = 1;
     submitInfo.pSignalSemaphores        = signalSemaphores;
 
-    spdlog::info("reset image in flight fence");
     vkResetFences(m_LogicalDevice, 1, &m_FrameInFlightFences[p_CurrentFrameIndex]);
 
-    spdlog::info("subnit gpu queue to current gpu fence?");
     if (vkQueueSubmit(m_GraphicsQueue, 1, &submitInfo, m_FrameInFlightFences[p_CurrentFrameIndex]) != VK_SUCCESS)
     {
         spdlog::error("Failed to submit draw command buffer!");
@@ -835,7 +830,6 @@ void VulkanAPI::DrawFrame()
     presentInfo.pImageIndices       = &imageIndex;
     presentInfo.pResults            = nullptr;
 
-    spdlog::info("present");
     result = vkQueuePresentKHR(m_GraphicsQueue, &presentInfo);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {

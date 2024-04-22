@@ -39,9 +39,9 @@ std::vector<VertexData> BuildVertexData()
 {
     return std::vector<VertexData>
     {
-        { {-0.5, -0.5, 0.0}, { 1.0, 0.0, 0.0 } },
-        { {0.0, 0.5, 0.0}, {0.0, 1.0, 0.0} },
-        { {0.5, -0.5, 0.0}, {0.0, 0.0, 1.0} },
+        { {0.0, -0.5, 0.0}, { 1.0, 0.0, 0.0 } },
+        { {0.5, 0.5, 0.0}, {0.0, 1.0, 0.0} },
+        { {-0.5, 0.5, 0.0}, {0.0, 0.0, 1.0} },
     };
 }
 
@@ -80,7 +80,7 @@ void CreateCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline)
     }
 }
 
-void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline)
+void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkBuffer& vertexBuffer, uint32_t numVertices)
 {
     for (uint32_t i = 0; i < vk.m_CommandBuffers.size(); i++)
     {
@@ -112,7 +112,10 @@ void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline)
 
         vkCmdBindPipeline(vk.m_CommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
-        vkCmdDraw(vk.m_CommandBuffers[i], 3, 1, 0, 0);
+        VkBuffer buffers[]{ vertexBuffer };
+        VkDeviceSize sizes[] = { 0 };
+        vkCmdBindVertexBuffers(vk.m_CommandBuffers[i], 0, 1, buffers, sizes);
+        vkCmdDraw(vk.m_CommandBuffers[i], numVertices, 1, 0, 0);
 
         vkCmdEndRenderPass(vk.m_CommandBuffers[i]);
 
@@ -349,23 +352,24 @@ int main()
 
     vkBindBufferMemory(vk.m_LogicalDevice, vertexBuffer, vertexBufferMemory, 0);
     
+    void* data;
+    vkMapMemory(vk.m_LogicalDevice, vertexBufferMemory, 0, memRequirements.size, 0, &data);
+    auto vertices = BuildVertexData();
+    memcpy(data, vertices.data(), memRequirements.size);
+    vkUnmapMemory(vk.m_LogicalDevice, vertexBufferMemory);
+
     CreateCommandBuffers(vk, pipeline);
     
     while (vk.ShouldRun())
     {    
-        spdlog::info("preframe");
         vk.PreFrame();
         
-        spdlog::info("record command buffer");
-        RecordCommandBuffers(vk, pipeline);
+        RecordCommandBuffers(vk, pipeline, vertexBuffer, vertices.size());
 
-        spdlog::info("draw frame");
         vk.DrawFrame();
         
-        spdlog::info("post frame");
         vk.PostFrame();
 
-        spdlog::info("clear command buffers");
         ClearCommandBuffers(vk);
 
     }
