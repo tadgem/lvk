@@ -115,6 +115,11 @@ public:
     void                                DrawFrame();
     inline int                          GetFrameIndex() { return p_CurrentFrameIndex; }
 
+    // helpers
+    uint32_t                            DecideMemoryType(VkPhysicalDeviceMemoryProperties& memProperties, uint32_t typeFilter, VkMemoryPropertyFlags properties);
+    void                                CreateBuffer(
+        VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+
     // todo: app specific
     void                                CreateRenderPass();
     

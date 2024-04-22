@@ -45,22 +45,12 @@ std::vector<VertexData> BuildVertexData()
     };
 }
 
-VkBuffer CreateVertexBuffer(VulkanAPI_SDL& vk)
+void CreateVertexBuffer(VulkanAPI_SDL& vk, VkBuffer& buffer, VkDeviceMemory& deviceMemory)
 {
     auto data = BuildVertexData();
-    VkBufferCreateInfo bufferInfo{};
-    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferInfo.size = sizeof(data[0]) * data.size();
-    bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    VkBuffer buffer{};
-    if (vkCreateBuffer(vk.m_LogicalDevice, &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
-    {
-        spdlog::error("failed to create a vertex buffer");
-    }
-    return buffer;
-
+    VkDeviceSize bufferSize = sizeof(data[0]) * data.size();
+    vk.CreateBuffer(bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, buffer, deviceMemory);
+    
 }
 
 void CreateCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline)
@@ -308,15 +298,7 @@ VkPipeline CreateGraphicsPipeline(VulkanAPI_SDL& vk)
     return pipeline;
 }
 
-uint32_t DecideMemoryType(VulkanAPI_SDL& vk, VkPhysicalDeviceMemoryProperties& memProperties, uint32_t typeFilter, VkMemoryPropertyFlags properties) {
-    
-    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-        if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
-            return i;
-        }
-    }
-    return UINT32_MAX;
-}
+
 
 int main()
 {
@@ -326,36 +308,16 @@ int main()
 
     VkPipeline pipeline = CreateGraphicsPipeline(vk);
     // draw the triangles
-    VkBuffer vertexBuffer = CreateVertexBuffer(vk);
-
-    VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(vk.m_LogicalDevice, vertexBuffer, &memRequirements);
-
-    VkPhysicalDeviceMemoryProperties memProperties;
-    vkGetPhysicalDeviceMemoryProperties(vk.m_PhysicalDevice, &memProperties);
-
-    uint32_t decidedMemoryType = DecideMemoryType(vk, memProperties, memRequirements.memoryTypeBits,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    
-    VkMemoryAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = decidedMemoryType;
-
+    VkBuffer vertexBuffer; 
     VkDeviceMemory vertexBufferMemory;
+    CreateVertexBuffer(vk, vertexBuffer, vertexBufferMemory);
 
-    if (vkAllocateMemory(vk.m_LogicalDevice, &allocInfo, nullptr, &vertexBufferMemory) != VK_SUCCESS)
-    {
-        spdlog::error("failed to allocate memory for vertex buffer");
-        return -1;
-    }
-
-    vkBindBufferMemory(vk.m_LogicalDevice, vertexBuffer, vertexBufferMemory, 0);
-    
-    void* data;
-    vkMapMemory(vk.m_LogicalDevice, vertexBufferMemory, 0, memRequirements.size, 0, &data);
     auto vertices = BuildVertexData();
-    memcpy(data, vertices.data(), memRequirements.size);
+    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+
+    void* data;
+    vkMapMemory(vk.m_LogicalDevice, vertexBufferMemory, 0, bufferSize, 0, &data);
+    memcpy(data, vertices.data(), bufferSize);
     vkUnmapMemory(vk.m_LogicalDevice, vertexBufferMemory);
 
     CreateCommandBuffers(vk, pipeline);

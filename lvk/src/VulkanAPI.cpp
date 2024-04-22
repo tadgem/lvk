@@ -644,6 +644,47 @@ VkShaderModule VulkanAPI::CreateShaderModule(const std::vector<char>& data)
     return shaderModule;
 }
 
+uint32_t VulkanAPI::DecideMemoryType(VkPhysicalDeviceMemoryProperties& memProperties, uint32_t typeFilter, VkMemoryPropertyFlags properties)
+{
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+        if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+            return i;
+        }
+    }
+    return UINT32_MAX;
+}
+
+
+void VulkanAPI::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
+{
+    VkBufferCreateInfo bufferInfo{};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = size;
+    bufferInfo.usage = usage;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (vkCreateBuffer(m_LogicalDevice, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create buffer!");
+    }
+
+    VkPhysicalDeviceMemoryProperties deviceMemProperties;
+    vkGetPhysicalDeviceMemoryProperties(m_PhysicalDevice, &deviceMemProperties);
+
+    VkMemoryRequirements memRequirements;
+    vkGetBufferMemoryRequirements(m_LogicalDevice, buffer, &memRequirements);
+
+    VkMemoryAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = DecideMemoryType(deviceMemProperties,memRequirements.memoryTypeBits, properties);
+
+    if (vkAllocateMemory(m_LogicalDevice, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate buffer memory!");
+    }
+
+    vkBindBufferMemory(m_LogicalDevice, buffer, bufferMemory, 0);
+}
+
 void VulkanAPI::CreateRenderPass()
 {
     VkAttachmentDescription colorAttachment{};
