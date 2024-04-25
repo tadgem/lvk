@@ -123,7 +123,7 @@ void CreateDescriptorSetLayout(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descrip
 
 }
 
-void CreateUniformBuffers(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSetLayout, VkPipelineLayout& pipelineLayout)
+void CreateUniformBuffers(VulkanAPI_SDL& vk)
 {
     VkDeviceSize bufferSize = sizeof(MvpData);
 
@@ -388,7 +388,7 @@ int main()
 
     CreateVertexBuffer(vk, vertexBuffer, vertexBufferMemory);
     CreateIndexBuffer(vk, indexBuffer, indexBufferMemory);
-    
+    CreateUniformBuffers(vk);
 
     CreateCommandBuffers(vk, pipeline);
     

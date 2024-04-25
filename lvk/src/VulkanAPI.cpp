@@ -7,6 +7,8 @@
 
 // comments are largely snippets from: https://vulkan-tutorial.com/. credit: Alexander Overvoorde
 
+static const bool QUIT_ON_ERROR = false;
+
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -25,6 +27,10 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
     {
         spdlog::error("VL: {0}", pCallbackData->pMessage);
+        if (!QUIT_ON_ERROR)
+        {
+            return VK_FALSE;
+        }
         VulkanAPI* api = (VulkanAPI*)pUserData;
         api->Quit();
     }
