@@ -27,7 +27,7 @@
               "state": {
                 "file": "Resources.md",
                 "mode": "preview",
-                "source": true
+                "source": false
               }
             }
           }
@@ -170,7 +170,8 @@
   },
   "active": "6f86414c1e89fb77",
   "lastOpenFiles": [
-    "LVK.md",
-    "Resources.md"
+    "Untitled.canvas",
+    "Resources.md",
+    "LVK.md"
   ]
 }

@@ -51,6 +51,9 @@ const std::vector<VertexData> vertices = {
 const std::vector<uint16_t> indices = {
     0, 1, 2, 2, 3, 0
 };
+static std::vector<VkBuffer>           uniformBuffers;
+static std::vector<VkDeviceMemory>     uniformBuffersMemory;
+static std::vector<void*>              uniformBuffersMapped;
 
 void CreateVertexBuffer(VulkanAPI_SDL& vk, VkBuffer& buffer, VkDeviceMemory& deviceMemory)
 {
@@ -127,14 +130,14 @@ void CreateUniformBuffers(VulkanAPI_SDL& vk)
 {
     VkDeviceSize bufferSize = sizeof(MvpData);
 
-    vk.m_UniformBuffers.resize(vk.MAX_FRAMES_IN_FLIGHT);
-    vk.m_UniformBuffersMemory.resize(vk.MAX_FRAMES_IN_FLIGHT);
-    vk.m_UniformBuffersMapped.resize(vk.MAX_FRAMES_IN_FLIGHT);
+    uniformBuffers.resize(vk.MAX_FRAMES_IN_FLIGHT);
+    uniformBuffersMemory.resize(vk.MAX_FRAMES_IN_FLIGHT);
+    uniformBuffersMapped.resize(vk.MAX_FRAMES_IN_FLIGHT);
 
     for (size_t i = 0; i < vk.MAX_FRAMES_IN_FLIGHT; i++) {
-        vk.CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, vk.m_UniformBuffers[i], vk.m_UniformBuffersMemory[i]);
+        vk.CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
 
-        VK_CHECK(vkMapMemory(vk.m_LogicalDevice, vk.m_UniformBuffersMemory[i], 0, bufferSize, 0, &vk.m_UniformBuffersMapped[i]))
+        VK_CHECK(vkMapMemory(vk.m_LogicalDevice, uniformBuffersMemory[i], 0, bufferSize, 0, &uniformBuffersMapped[i]))
     }
 
 }
@@ -404,6 +407,11 @@ int main()
 
         ClearCommandBuffers(vk);
 
+    }
+
+    for (size_t i = 0; i < vk.MAX_FRAMES_IN_FLIGHT; i++) {
+        vkDestroyBuffer(vk.m_LogicalDevice, uniformBuffers[i], nullptr);
+        vkFreeMemory(vk.m_LogicalDevice, uniformBuffersMemory[i], nullptr);
     }
 
     vkDestroyDescriptorSetLayout(vk.m_LogicalDevice, descriptorSetLayout, nullptr);

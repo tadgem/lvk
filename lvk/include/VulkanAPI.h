@@ -28,6 +28,8 @@ protected:
     };
 public:
 
+    static constexpr int       MAX_FRAMES_IN_FLIGHT = 2;
+
     enum class ShaderStage
     {
         Vertex,
@@ -81,9 +83,6 @@ public:
     std::vector<VkImageView>        m_SwapChainImageViews;
     std::vector<VkFramebuffer>      m_SwapChainFramebuffers;
     std::vector<VkCommandBuffer>    m_CommandBuffers;
-    std::vector<VkBuffer>           m_UniformBuffers;
-    std::vector<VkDeviceMemory>     m_UniformBuffersMemory;
-    std::vector<void*>              m_UniformBuffersMapped;
 
     VkFormat                        m_SwapChainImageFormat;
     VkExtent2D                      m_SwapChainImageExtent;
@@ -148,7 +147,6 @@ public:
     virtual void                        Run(std::function<void()> callback) = 0;
     void                                InitVulkan();
 
-    const int       MAX_FRAMES_IN_FLIGHT = 2;
 protected:
     bool            p_ShouldRun = true;
     double          p_LastFrameTime;
