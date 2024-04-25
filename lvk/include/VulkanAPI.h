@@ -7,9 +7,9 @@
 #include <vulkan/vulkan.h>
 #include "spdlog/spdlog.h"
 
-#define VK_CHECK(X)\
+#define VK_CHECK(X) {int _lineNumber = __LINE__; const char* _filePath = __FILE__;\
 if(X != VK_TRUE){\
-spdlog::error("VK Check Failed! : {}", #X);}
+spdlog::error("VK check failed at {} Line {} : {}",_filePath, _lineNumber, #X);}}
 
 class VulkanAPIWindowHandle
 {
