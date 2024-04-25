@@ -35,6 +35,12 @@ struct VertexData
     }
 };
 
+struct MvpData {
+    glm::mat4 Model;
+    glm::mat4 View;
+    glm::mat4 Proj;
+};
+
 const std::vector<VertexData> vertices = {
     {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
     {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
@@ -100,6 +106,39 @@ void CreateIndexBuffer(VulkanAPI_SDL& vk, VkBuffer& buffer, VkDeviceMemory& devi
     vkFreeMemory(vk.m_LogicalDevice, stagingBufferMemory, nullptr);
 }
 
+void CreateDescriptorSetLayout(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSetLayout, VkPipelineLayout& pipelineLayout)
+{
+    VkDescriptorSetLayoutBinding uboLayoutBinding{};
+    uboLayoutBinding.binding = 0;
+    uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uboLayoutBinding.descriptorCount = 1;
+    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = 1;
+    layoutInfo.pBindings = &uboLayoutBinding;
+
+    VK_CHECK(vkCreateDescriptorSetLayout(vk.m_LogicalDevice, &layoutInfo, nullptr, & descriptorSetLayout))
+
+}
+
+void CreateUniformBuffers(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSetLayout, VkPipelineLayout& pipelineLayout)
+{
+    VkDeviceSize bufferSize = sizeof(MvpData);
+
+    vk.m_UniformBuffers.resize(vk.MAX_FRAMES_IN_FLIGHT);
+    vk.m_UniformBuffersMemory.resize(vk.MAX_FRAMES_IN_FLIGHT);
+    vk.m_UniformBuffersMapped.resize(vk.MAX_FRAMES_IN_FLIGHT);
+
+    for (size_t i = 0; i < vk.MAX_FRAMES_IN_FLIGHT; i++) {
+        vk.CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, vk.m_UniformBuffers[i], vk.m_UniformBuffersMemory[i]);
+
+        VK_CHECK(vkMapMemory(vk.m_LogicalDevice, vk.m_UniformBuffersMemory[i], 0, bufferSize, 0, &vk.m_UniformBuffersMapped[i]))
+    }
+
+}
+
 void CreateCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline)
 {
     vk.m_CommandBuffers.resize(vk.m_SwapChainFramebuffers.size());
@@ -110,11 +149,8 @@ void CreateCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline)
     allocateInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocateInfo.commandBufferCount = static_cast<uint32_t>(vk.m_CommandBuffers.size());
 
-    if (vkAllocateCommandBuffers(vk.m_LogicalDevice, &allocateInfo, vk.m_CommandBuffers.data()) != VK_SUCCESS)
-    {
-        spdlog::error("Failed to create Command Buffers!");
-        std::cerr << "Failed to create Command Buffers!" << std::endl;
-    }
+    VK_CHECK(vkAllocateCommandBuffers(vk.m_LogicalDevice, &allocateInfo, vk.m_CommandBuffers.data()))
+    
 }
 
 void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkBuffer& vertexBuffer, VkBuffer& indexBuffer, uint32_t numIndices)
@@ -126,11 +162,8 @@ void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkBuffer& ver
         commandBufferBeginInfo.flags = 0;
         commandBufferBeginInfo.pInheritanceInfo = nullptr;
 
-        if (vkBeginCommandBuffer(vk.m_CommandBuffers[i], &commandBufferBeginInfo) != VK_SUCCESS)
-        {
-            spdlog::error("Failed to begin recording to Command Buffer!");
-            std::cerr << "Failed to begin recording to Command Buffer!" << std::endl;
-        }
+        VK_CHECK(vkBeginCommandBuffer(vk.m_CommandBuffers[i], &commandBufferBeginInfo))
+        
 
         // push to example
 
@@ -160,11 +193,7 @@ void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkBuffer& ver
 
         // pop example
 
-        if (vkEndCommandBuffer(vk.m_CommandBuffers[i]) != VK_SUCCESS)
-        {
-            spdlog::error("Failed to finalize recording Command Buffer!");
-            std::cerr << "Failed to finalize recording Command Buffer!" << std::endl;
-        }
+        VK_CHECK(vkEndCommandBuffer(vk.m_CommandBuffers[i]))
     }
 }
 
@@ -176,7 +205,7 @@ void ClearCommandBuffers(VulkanAPI_SDL& vk)
     }
 }
 
-VkPipeline CreateGraphicsPipeline(VulkanAPI_SDL& vk)
+VkPipeline CreateGraphicsPipeline(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSetLayout)
 {
     auto vertBin = vk.LoadSpirvBinary("shaders/uniform.vert.spv");
     auto fragBin = vk.LoadSpirvBinary("shaders/uniform.frag.spv");
@@ -297,18 +326,15 @@ VkPipeline CreateGraphicsPipeline(VulkanAPI_SDL& vk)
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = 0;
-    pipelineLayoutInfo.pSetLayouts = nullptr;
+    pipelineLayoutInfo.setLayoutCount = 1;
+    pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
     pipelineLayoutInfo.pushConstantRangeCount = 0;
     pipelineLayoutInfo.pPushConstantRanges = 0;
 
     VkPipelineLayout pipelineLayout;
 
-    if (vkCreatePipelineLayout(vk.m_LogicalDevice, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
-    {
-        spdlog::error("Failed to create pipeline layout object!");
-        std::cerr << "Failed to create pipeline layout object!" << std::endl;
-    }
+    VK_CHECK(vkCreatePipelineLayout(vk.m_LogicalDevice, &pipelineLayoutInfo, nullptr, &pipelineLayout))
+    
 
     VkGraphicsPipelineCreateInfo pipelineCreateInfo{};
     pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -331,11 +357,7 @@ VkPipeline CreateGraphicsPipeline(VulkanAPI_SDL& vk)
 
     VkPipeline pipeline;
 
-    if (vkCreateGraphicsPipelines(vk.m_LogicalDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &pipeline) != VK_SUCCESS)
-    {
-        spdlog::error("Failed to create graphics pipeline!");
-        std::cerr << "Failed to create graphics pipeline!" << std::endl;
-    }
+    VK_CHECK(vkCreateGraphicsPipelines(vk.m_LogicalDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &pipeline))
 
     vkDestroyShaderModule(vk.m_LogicalDevice, vertShaderModule, nullptr);
     vkDestroyShaderModule(vk.m_LogicalDevice, fragShaderModule, nullptr);
@@ -346,23 +368,28 @@ VkPipeline CreateGraphicsPipeline(VulkanAPI_SDL& vk)
     return pipeline;
 }
 
-
-
 int main()
 {
     VulkanAPI_SDL vk;
     vk.CreateWindow(1280, 720);
     vk.InitVulkan();
 
-    VkPipeline pipeline = CreateGraphicsPipeline(vk);
-    // draw the triangles
+    VkDescriptorSetLayout descriptorSetLayout;
+    VkPipelineLayout pipelineLayout;
+    CreateDescriptorSetLayout(vk, descriptorSetLayout, pipelineLayout);
+    
+    VkPipeline pipeline = CreateGraphicsPipeline(vk, descriptorSetLayout);
+
+    // create vertex and index buffer
     VkBuffer vertexBuffer; 
     VkDeviceMemory vertexBufferMemory;
     VkBuffer indexBuffer;
     VkDeviceMemory indexBufferMemory;
+
     CreateVertexBuffer(vk, vertexBuffer, vertexBufferMemory);
     CreateIndexBuffer(vk, indexBuffer, indexBufferMemory);
-   
+    
+
     CreateCommandBuffers(vk, pipeline);
     
     while (vk.ShouldRun())
@@ -378,6 +405,9 @@ int main()
         ClearCommandBuffers(vk);
 
     }
+
+    vkDestroyDescriptorSetLayout(vk.m_LogicalDevice, descriptorSetLayout, nullptr);
+
     vkDestroyBuffer(vk.m_LogicalDevice, vertexBuffer, nullptr);
     vkFreeMemory(vk.m_LogicalDevice, vertexBufferMemory, nullptr);
     vkDestroyBuffer(vk.m_LogicalDevice, indexBuffer, nullptr);

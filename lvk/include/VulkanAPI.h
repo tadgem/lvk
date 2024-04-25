@@ -5,6 +5,11 @@
 #include <vector>
 #include <functional>
 #include <vulkan/vulkan.h>
+#include "spdlog/spdlog.h"
+
+#define VK_CHECK(X)\
+if(X != VK_TRUE){\
+spdlog::error("VK Check Failed! : {}", #X);}
 
 class VulkanAPIWindowHandle
 {
@@ -74,6 +79,10 @@ public:
     std::vector<VkImageView>        m_SwapChainImageViews;
     std::vector<VkFramebuffer>      m_SwapChainFramebuffers;
     std::vector<VkCommandBuffer>    m_CommandBuffers;
+    std::vector<VkBuffer>           m_UniformBuffers;
+    std::vector<VkDeviceMemory>     m_UniformBuffersMemory;
+    std::vector<void*>              m_UniformBuffersMapped;
+
     VkFormat                        m_SwapChainImageFormat;
     VkExtent2D                      m_SwapChainImageExtent;
 
@@ -137,9 +146,9 @@ public:
     virtual void                        Run(std::function<void()> callback) = 0;
     void                                InitVulkan();
 
+    const int       MAX_FRAMES_IN_FLIGHT = 2;
 protected:
     bool            p_ShouldRun = true;
     double          p_LastFrameTime;
     int             p_CurrentFrameIndex;
-    const int       MAX_FRAMES_IN_FLIGHT = 2;
 };
