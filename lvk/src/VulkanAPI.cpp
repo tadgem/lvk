@@ -263,6 +263,7 @@ void VulkanAPI::CleanupVulkan()
     }
 
     vkDestroyCommandPool(m_LogicalDevice, m_GraphicsQueueCommandPool, nullptr);
+    vkDestroyDescriptorPool(m_LogicalDevice, m_DescriptorPool, nullptr);
 
     vkDestroyRenderPass(m_LogicalDevice, m_RenderPass, nullptr);
     
@@ -827,6 +828,22 @@ void VulkanAPI::CreateCommandPool()
     }
 }
 
+void VulkanAPI::CreateDescriptorPool()
+{
+    VkDescriptorPoolSize poolSize{};
+    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSize.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+
+    VkDescriptorPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = 1;
+    poolInfo.pPoolSizes = &poolSize;
+
+    poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+
+    VK_CHECK(vkCreateDescriptorPool(m_LogicalDevice, &poolInfo, nullptr, &m_DescriptorPool) != VK_SUCCESS);
+}
+
 void VulkanAPI::CreateSemaphores()
 {
     m_ImageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
@@ -991,6 +1008,7 @@ void VulkanAPI::InitVulkan()
     CreateRenderPass();
     CreateSwapChainFramebuffers();
     CreateCommandPool();
+    CreateDescriptorPool();
     CreateSemaphores();
     CreateFences();
 }

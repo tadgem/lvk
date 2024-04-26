@@ -8,7 +8,7 @@
 #include "spdlog/spdlog.h"
 
 #define VK_CHECK(X) {int _lineNumber = __LINE__; const char* _filePath = __FILE__;\
-if(X != VK_TRUE){\
+if(X != VK_SUCCESS){\
 spdlog::error("VK check failed at {} Line {} : {}",_filePath, _lineNumber, #X);}}
 
 class VulkanAPIWindowHandle
@@ -68,6 +68,8 @@ public:
     VkDevice                        m_LogicalDevice     = VK_NULL_HANDLE;
     VkRenderPass                    m_RenderPass;
     VkCommandPool                   m_GraphicsQueueCommandPool;
+    VkDescriptorPool                m_DescriptorPool;
+
     std::vector<VkSemaphore>        m_ImageAvailableSemaphores;
     std::vector<VkSemaphore>        m_RenderFinishedSemaphores;
     std::vector<VkFence>            m_FrameInFlightFences;
@@ -120,6 +122,7 @@ public:
     VkExtent2D                          ChooseSwapExtent(VkSurfaceCapabilitiesKHR& surfaceCapabilities);
     VkShaderModule                      CreateShaderModule(const std::vector<char>& data);
     void                                CreateCommandPool();
+    void                                CreateDescriptorPool();
     void                                CreateSemaphores();
     void                                CreateFences();
     void                                DrawFrame();
