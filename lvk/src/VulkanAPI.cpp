@@ -901,7 +901,7 @@ void VulkanAPI::DrawFrame()
 
     vkResetFences(m_LogicalDevice, 1, &m_FrameInFlightFences[p_CurrentFrameIndex]);
 
-    m_ImagesInFlight[imageIndex] = m_FrameInFlightFences[p_CurrentFrameIndex];
+     m_ImagesInFlight[imageIndex] = m_FrameInFlightFences[p_CurrentFrameIndex];
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;

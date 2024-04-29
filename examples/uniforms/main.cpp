@@ -1,6 +1,7 @@
 #include "VulkanAPI_SDL.h"
 #include "spdlog/spdlog.h"
 #include "glm/glm.hpp"
+#include <glm/gtc/matrix_transform.hpp>
 #include <array>
 
 struct VertexData
@@ -51,9 +52,10 @@ const std::vector<VertexData> vertices = {
 const std::vector<uint16_t> indices = {
     0, 1, 2, 2, 3, 0
 };
-static std::vector<VkBuffer>           uniformBuffers;
-static std::vector<VkDeviceMemory>     uniformBuffersMemory;
-static std::vector<void*>              uniformBuffersMapped;
+static std::vector<VkBuffer>            uniformBuffers;
+static std::vector<VkDeviceMemory>      uniformBuffersMemory;
+static std::vector<void*>               uniformBuffersMapped;
+static std::vector<VkDescriptorSet>     descriptorSets;
 
 void CreateVertexBuffer(VulkanAPI_SDL& vk, VkBuffer& buffer, VkDeviceMemory& deviceMemory)
 {
@@ -109,7 +111,7 @@ void CreateIndexBuffer(VulkanAPI_SDL& vk, VkBuffer& buffer, VkDeviceMemory& devi
     vkFreeMemory(vk.m_LogicalDevice, stagingBufferMemory, nullptr);
 }
 
-void CreateDescriptorSetLayout(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSetLayout, VkPipelineLayout& pipelineLayout)
+void CreateDescriptorSetLayout(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSetLayout)
 {
     VkDescriptorSetLayoutBinding uboLayoutBinding{};
     uboLayoutBinding.binding = 0;
@@ -156,7 +158,7 @@ void CreateCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline)
     
 }
 
-void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkBuffer& vertexBuffer, VkBuffer& indexBuffer, uint32_t numIndices)
+void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout, VkBuffer& vertexBuffer, VkBuffer& indexBuffer, uint32_t numIndices)
 {
     for (uint32_t i = 0; i < vk.m_CommandBuffers.size(); i++)
     {
@@ -190,6 +192,7 @@ void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkBuffer& ver
         vkCmdBindVertexBuffers(vk.m_CommandBuffers[i], 0, 1, vertexBuffers, sizes);
 
         vkCmdBindIndexBuffer(vk.m_CommandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+        vkCmdBindDescriptorSets(vk.m_CommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[vk.GetFrameIndex()], 0, nullptr);
         vkCmdDrawIndexed(vk.m_CommandBuffers[i], numIndices, 1, 0, 0, 0);
 
         vkCmdEndRenderPass(vk.m_CommandBuffers[i]);
@@ -208,7 +211,7 @@ void ClearCommandBuffers(VulkanAPI_SDL& vk)
     }
 }
 
-VkPipeline CreateGraphicsPipeline(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSetLayout)
+VkPipeline CreateGraphicsPipeline(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSetLayout, VkPipelineLayout& layout)
 {
     auto vertBin = vk.LoadSpirvBinary("shaders/uniform.vert.spv");
     auto fragBin = vk.LoadSpirvBinary("shaders/uniform.frag.spv");
@@ -276,11 +279,15 @@ VkPipeline CreateGraphicsPipeline(VulkanAPI_SDL& vk, VkDescriptorSetLayout& desc
     // thickness of lines in terms of pixels. > 1.0f requires wide lines gpu feature.
     rasterizerInfo.lineWidth = 1.0f;
 
+    //rasterizerInfo.cullMode = VK_CULL_MODE_NONE;
+    //// From vk-tutorial: The frontFace variable specifies the vertex order 
+    //// for faces to be considered front-facing and can be clockwise or counterclockwise.
+    //// ??
+    //rasterizerInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
+
     rasterizerInfo.cullMode = VK_CULL_MODE_NONE;
-    // From vk-tutorial: The frontFace variable specifies the vertex order 
-    // for faces to be considered front-facing and can be clockwise or counterclockwise.
-    // ??
-    rasterizerInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    rasterizerInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+
     rasterizerInfo.depthBiasEnable = VK_FALSE;
     rasterizerInfo.depthBiasConstantFactor = 0.0f;
     rasterizerInfo.depthBiasClamp = 0.0f;
@@ -334,11 +341,8 @@ VkPipeline CreateGraphicsPipeline(VulkanAPI_SDL& vk, VkDescriptorSetLayout& desc
     pipelineLayoutInfo.pushConstantRangeCount = 0;
     pipelineLayoutInfo.pPushConstantRanges = 0;
 
-    VkPipelineLayout pipelineLayout;
-
-    VK_CHECK(vkCreatePipelineLayout(vk.m_LogicalDevice, &pipelineLayoutInfo, nullptr, &pipelineLayout))
+    VK_CHECK(vkCreatePipelineLayout(vk.m_LogicalDevice, &pipelineLayoutInfo, nullptr, &layout))
     
-
     VkGraphicsPipelineCreateInfo pipelineCreateInfo{};
     pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipelineCreateInfo.stageCount = 2;
@@ -353,7 +357,7 @@ VkPipeline CreateGraphicsPipeline(VulkanAPI_SDL& vk, VkDescriptorSetLayout& desc
     pipelineCreateInfo.pColorBlendState = &colorBlendStateInfo;
     pipelineCreateInfo.pDynamicState = nullptr;
 
-    pipelineCreateInfo.layout = pipelineLayout;
+    pipelineCreateInfo.layout = layout;
 
     pipelineCreateInfo.renderPass = vk.m_RenderPass;
     pipelineCreateInfo.subpass = 0;
@@ -365,10 +369,62 @@ VkPipeline CreateGraphicsPipeline(VulkanAPI_SDL& vk, VkDescriptorSetLayout& desc
     vkDestroyShaderModule(vk.m_LogicalDevice, vertShaderModule, nullptr);
     vkDestroyShaderModule(vk.m_LogicalDevice, fragShaderModule, nullptr);
 
-    vkDestroyPipelineLayout(vk.m_LogicalDevice, pipelineLayout, nullptr);
+    // vkDestroyPipelineLayout(vk.m_LogicalDevice, pipelineLayout, nullptr);
     spdlog::info("Destroyed vertex and fragment shader modules");
 
     return pipeline;
+}
+
+void UpdateUniformBuffer(VulkanAPI_SDL& vk)
+{
+    static auto startTime = std::chrono::high_resolution_clock::now();
+
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+    MvpData ubo{};
+    ubo.Model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+    ubo.View = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+    ubo.Proj = glm::perspective(glm::radians(45.0f), vk.m_SwapChainImageExtent.width / (float)vk.m_SwapChainImageExtent.height, 0.1f, 10.0f);
+    ubo.Proj[1][1] *= -1;
+
+    memcpy(uniformBuffersMapped[vk.GetFrameIndex()], &ubo, sizeof(ubo));
+}
+
+void CreateDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSetLayout)
+{
+    std::vector<VkDescriptorSetLayout> layouts(vk.MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = vk.m_DescriptorPool;
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(vk.MAX_FRAMES_IN_FLIGHT);
+    allocInfo.pSetLayouts = layouts.data();
+
+    descriptorSets.resize(vk.MAX_FRAMES_IN_FLIGHT);
+    VK_CHECK(vkAllocateDescriptorSets(vk.m_LogicalDevice, &allocInfo, descriptorSets.data()));
+
+    for (size_t i = 0; i < vk.MAX_FRAMES_IN_FLIGHT; i++) {
+        VkDescriptorBufferInfo bufferInfo{};
+        bufferInfo.buffer = uniformBuffers[i];
+        bufferInfo.offset = 0;
+        bufferInfo.range = sizeof(MvpData);
+
+        VkWriteDescriptorSet descriptorWrite{};
+        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite.dstSet = descriptorSets[i];
+        descriptorWrite.dstBinding = 0;
+        descriptorWrite.dstArrayElement = 0;
+        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrite.descriptorCount = 1;
+        descriptorWrite.pBufferInfo = &bufferInfo;
+        descriptorWrite.pImageInfo = nullptr; // Optional
+        descriptorWrite.pTexelBufferView = nullptr; // Optional
+
+        vkUpdateDescriptorSets(vk.m_LogicalDevice, 1, &descriptorWrite, 0, nullptr);
+    }
+
 }
 
 int main()
@@ -378,10 +434,10 @@ int main()
     vk.InitVulkan();
 
     VkDescriptorSetLayout descriptorSetLayout;
-    VkPipelineLayout pipelineLayout;
-    CreateDescriptorSetLayout(vk, descriptorSetLayout, pipelineLayout);
+    CreateDescriptorSetLayout(vk, descriptorSetLayout);
     
-    VkPipeline pipeline = CreateGraphicsPipeline(vk, descriptorSetLayout);
+    VkPipelineLayout pipelineLayout;
+    VkPipeline pipeline = CreateGraphicsPipeline(vk, descriptorSetLayout, pipelineLayout);
 
     // create vertex and index buffer
     VkBuffer vertexBuffer; 
@@ -393,13 +449,16 @@ int main()
     CreateIndexBuffer(vk, indexBuffer, indexBufferMemory);
     CreateUniformBuffers(vk);
 
+    CreateDescriptorSets(vk, descriptorSetLayout);
     CreateCommandBuffers(vk, pipeline);
     
     while (vk.ShouldRun())
     {    
         vk.PreFrame();
         
-        RecordCommandBuffers(vk, pipeline, vertexBuffer, indexBuffer, indices.size());
+        UpdateUniformBuffer(vk);
+
+        RecordCommandBuffers(vk, pipeline, pipelineLayout,  vertexBuffer, indexBuffer, indices.size());
 
         vk.DrawFrame();
         
