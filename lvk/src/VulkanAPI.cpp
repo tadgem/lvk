@@ -994,6 +994,31 @@ std::vector<char> VulkanAPI::LoadSpirvBinary(const std::string& path)
     return data;
 }
 
+// this is probably agnostic of each app, can move to api
+void VulkanAPI::CreateCommandBuffers()
+{
+    m_CommandBuffers.resize(m_SwapChainFramebuffers.size());
+
+    VkCommandBufferAllocateInfo allocateInfo{};
+    allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocateInfo.commandPool = m_GraphicsQueueCommandPool;
+    allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocateInfo.commandBufferCount = static_cast<uint32_t>(m_CommandBuffers.size());
+
+    VK_CHECK(vkAllocateCommandBuffers(m_LogicalDevice, &allocateInfo, m_CommandBuffers.data()))
+
+}
+
+
+void VulkanAPI::ClearCommandBuffers()
+{
+    for (uint32_t i = 0; i < m_CommandBuffers.size(); i++)
+    {
+        vkResetCommandBuffer(m_CommandBuffers[i], 0);
+    }
+}
+
+
 void VulkanAPI::InitVulkan()
 {
     p_CurrentFrameIndex = 0;
@@ -1011,4 +1036,5 @@ void VulkanAPI::InitVulkan()
     CreateDescriptorPool();
     CreateSemaphores();
     CreateFences();
+    CreateCommandBuffers();
 }

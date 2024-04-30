@@ -100,23 +100,6 @@ void CreateIndexBuffer(VulkanAPI_SDL& vk, VkBuffer& buffer, VkDeviceMemory& devi
     vkFreeMemory(vk.m_LogicalDevice, stagingBufferMemory, nullptr);
 }
 
-void CreateCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline)
-{
-    vk.m_CommandBuffers.resize(vk.m_SwapChainFramebuffers.size());
-
-    VkCommandBufferAllocateInfo allocateInfo{};
-    allocateInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocateInfo.commandPool        = vk.m_GraphicsQueueCommandPool;
-    allocateInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocateInfo.commandBufferCount = static_cast<uint32_t>(vk.m_CommandBuffers.size());
-
-    if (vkAllocateCommandBuffers(vk.m_LogicalDevice, &allocateInfo, vk.m_CommandBuffers.data()) != VK_SUCCESS)
-    {
-        spdlog::error("Failed to create Command Buffers!");
-        std::cerr << "Failed to create Command Buffers!" << std::endl;
-    }
-}
-
 void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkBuffer& vertexBuffer, VkBuffer& indexBuffer, uint32_t numIndices)
 {
     for (uint32_t i = 0; i < vk.m_CommandBuffers.size(); i++)
@@ -165,14 +148,6 @@ void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkBuffer& ver
             spdlog::error("Failed to finalize recording Command Buffer!");
             std::cerr << "Failed to finalize recording Command Buffer!" << std::endl;
         }
-    }
-}
-
-void ClearCommandBuffers(VulkanAPI_SDL& vk)
-{
-    for (uint32_t i = 0; i < vk.m_CommandBuffers.size(); i++)
-    {
-        vkResetCommandBuffer(vk.m_CommandBuffers[i], 0);
     }
 }
 
@@ -363,8 +338,6 @@ int main()
     VkDeviceMemory indexBufferMemory;
     CreateVertexBuffer(vk, vertexBuffer, vertexBufferMemory);
     CreateIndexBuffer(vk, indexBuffer, indexBufferMemory);
-   
-    CreateCommandBuffers(vk, pipeline);
     
     while (vk.ShouldRun())
     {    
@@ -376,7 +349,7 @@ int main()
         
         vk.PostFrame();
 
-        ClearCommandBuffers(vk);
+        vk.ClearCommandBuffers();
 
     }
     vkDestroyBuffer(vk.m_LogicalDevice, vertexBuffer, nullptr);

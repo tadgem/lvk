@@ -126,6 +126,9 @@ public:
     void                                CreateSemaphores();
     void                                CreateFences();
     void                                DrawFrame();
+    void                                CreateCommandBuffers();
+    void                                ClearCommandBuffers();
+
     inline int                          GetFrameIndex() { return p_CurrentFrameIndex; }
 
     // helpers

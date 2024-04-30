@@ -111,8 +111,11 @@ void CreateIndexBuffer(VulkanAPI_SDL& vk, VkBuffer& buffer, VkDeviceMemory& devi
     vkFreeMemory(vk.m_LogicalDevice, stagingBufferMemory, nullptr);
 }
 
+// this probably could be created by spirv reflect
+// this should likely be part of shader abstraction
 void CreateDescriptorSetLayout(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSetLayout)
 {
+    // MVP Data binding
     VkDescriptorSetLayoutBinding uboLayoutBinding{};
     uboLayoutBinding.binding = 0;
     uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -121,6 +124,7 @@ void CreateDescriptorSetLayout(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descrip
 
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    // this could be 2 and pBindings would point to an array of VkDescriptorSetLayoutBinding
     layoutInfo.bindingCount = 1;
     layoutInfo.pBindings = &uboLayoutBinding;
 
@@ -144,19 +148,7 @@ void CreateUniformBuffers(VulkanAPI_SDL& vk)
 
 }
 
-void CreateCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline)
-{
-    vk.m_CommandBuffers.resize(vk.m_SwapChainFramebuffers.size());
 
-    VkCommandBufferAllocateInfo allocateInfo{};
-    allocateInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocateInfo.commandPool        = vk.m_GraphicsQueueCommandPool;
-    allocateInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocateInfo.commandBufferCount = static_cast<uint32_t>(vk.m_CommandBuffers.size());
-
-    VK_CHECK(vkAllocateCommandBuffers(vk.m_LogicalDevice, &allocateInfo, vk.m_CommandBuffers.data()))
-    
-}
 
 void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout, VkBuffer& vertexBuffer, VkBuffer& indexBuffer, uint32_t numIndices)
 {
@@ -200,14 +192,6 @@ void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkPipelineLay
         // pop example
 
         VK_CHECK(vkEndCommandBuffer(vk.m_CommandBuffers[i]))
-    }
-}
-
-void ClearCommandBuffers(VulkanAPI_SDL& vk)
-{
-    for (uint32_t i = 0; i < vk.m_CommandBuffers.size(); i++)
-    {
-        vkResetCommandBuffer(vk.m_CommandBuffers[i], 0);
     }
 }
 
@@ -450,8 +434,7 @@ int main()
     CreateUniformBuffers(vk);
 
     CreateDescriptorSets(vk, descriptorSetLayout);
-    CreateCommandBuffers(vk, pipeline);
-    
+
     while (vk.ShouldRun())
     {    
         vk.PreFrame();
@@ -464,7 +447,7 @@ int main()
         
         vk.PostFrame();
 
-        ClearCommandBuffers(vk);
+        vk.ClearCommandBuffers();
 
     }
 
@@ -475,6 +458,7 @@ int main()
 
     vkDestroyDescriptorSetLayout(vk.m_LogicalDevice, descriptorSetLayout, nullptr);
 
+    vkDestroyPipelineLayout(vk.m_LogicalDevice, pipelineLayout, nullptr);
     vkDestroyBuffer(vk.m_LogicalDevice, vertexBuffer, nullptr);
     vkFreeMemory(vk.m_LogicalDevice, vertexBufferMemory, nullptr);
     vkDestroyBuffer(vk.m_LogicalDevice, indexBuffer, nullptr);

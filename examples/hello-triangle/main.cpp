@@ -1,22 +1,6 @@
 #include "VulkanAPI_SDL.h"
 #include "spdlog/spdlog.h"
 
-void CreateCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline)
-{
-    vk.m_CommandBuffers.resize(vk.m_SwapChainFramebuffers.size());
-
-    VkCommandBufferAllocateInfo allocateInfo{};
-    allocateInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocateInfo.commandPool        = vk.m_GraphicsQueueCommandPool;
-    allocateInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocateInfo.commandBufferCount = static_cast<uint32_t>(vk.m_CommandBuffers.size());
-
-    if (vkAllocateCommandBuffers(vk.m_LogicalDevice, &allocateInfo, vk.m_CommandBuffers.data()) != VK_SUCCESS)
-    {
-        spdlog::error("Failed to create Command Buffers!");
-        std::cerr << "Failed to create Command Buffers!" << std::endl;
-    }
-}
 
 void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline)
 {
@@ -61,14 +45,6 @@ void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline)
             spdlog::error("Failed to finalize recording Command Buffer!");
             std::cerr << "Failed to finalize recording Command Buffer!" << std::endl;
         }
-    }
-}
-
-void ClearCommandBuffers(VulkanAPI_SDL& vk)
-{
-    for (uint32_t i = 0; i < vk.m_CommandBuffers.size(); i++)
-    {
-        vkResetCommandBuffer(vk.m_CommandBuffers[i], 0);
     }
 }
 
@@ -247,8 +223,6 @@ int main()
     vk.InitVulkan();
 
     VkPipeline pipeline = CreateGraphicsPipeline(vk);
-    // draw the triangles
-    CreateCommandBuffers(vk, pipeline);
     
     while (vk.ShouldRun())
     {    
@@ -265,7 +239,7 @@ int main()
         vk.PostFrame();
 
         spdlog::info("clear command buffers");
-        ClearCommandBuffers(vk);
+        vk.ClearCommandBuffers();
 
     }
     vkDestroyPipeline(vk.m_LogicalDevice, pipeline, nullptr);
