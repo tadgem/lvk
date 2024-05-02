@@ -4,3 +4,6 @@
 [submodule "submodules/spdlog"]
 	path = submodules/spdlog
 	url = https://github.com/gabime/spdlog.git
+[submodule "submodules/slang"]
+	path = submodules/slang
+	url = https://github.com/shader-slang/slang.git

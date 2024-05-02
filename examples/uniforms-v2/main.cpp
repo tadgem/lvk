@@ -1,4 +1,3 @@
-#define VMA_IMPLEMENTATION
 #include "VulkanAPI_SDL.h"
 #include "spdlog/spdlog.h"
 #include "glm/glm.hpp"
@@ -54,6 +53,7 @@ const std::vector<VertexData> vertices = {
 const std::vector<uint16_t> indices = {
     0, 1, 2, 2, 3, 0
 };
+
 static std::vector<VkBuffer>            uniformBuffers;
 static std::vector<VkDeviceMemory>      uniformBuffersMemory;
 static std::vector<void*>               uniformBuffersMapped;
@@ -111,6 +111,13 @@ void CreateIndexBuffer(VulkanAPI_SDL& vk, VkBuffer& buffer, VkDeviceMemory& devi
 
     vkDestroyBuffer(vk.m_LogicalDevice, stagingBuffer, nullptr);
     vkFreeMemory(vk.m_LogicalDevice, stagingBufferMemory, nullptr);
+}
+
+// this probably could be created by spirv reflect
+// this should likely be part of shader abstraction
+void CreateDescriptorSetLayout(VulkanAPI_SDL& vk, DescriptorSetLayoutData& layoutData,  VkDescriptorSetLayout& descriptorSetLayout)
+{
+    VK_CHECK(vkCreateDescriptorSetLayout(vk.m_LogicalDevice, &layoutData.m_CreateInfo, nullptr, & descriptorSetLayout))
 }
 
 void CreateUniformBuffers(VulkanAPI_SDL& vk)
@@ -388,18 +395,64 @@ void CreateDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSe
 
 }
 
+std::vector<DescriptorSetLayoutData> CreateDescriptorSetLayoutDatasSVR(VulkanAPI_SDL& vk, std::vector<char>& stageBin)
+{
+    SpvReflectShaderModule shaderReflectModule;
+    SpvReflectResult result = spvReflectCreateShaderModule(stageBin.size(), stageBin.data(), &shaderReflectModule);
+
+    uint32_t descriptorSetCount = 0;
+    spvReflectEnumerateDescriptorSets(&shaderReflectModule, &descriptorSetCount, nullptr);
+
+    std::vector<SpvReflectDescriptorSet*> reflectedDescriptorSets;
+    reflectedDescriptorSets.resize(descriptorSetCount);
+    spvReflectEnumerateDescriptorSets(&shaderReflectModule, &descriptorSetCount, &reflectedDescriptorSets[0]);
+
+    std::vector<DescriptorSetLayoutData> layoutDatas(descriptorSetCount, DescriptorSetLayoutData{});
+    
+    for (int i = 0; i < reflectedDescriptorSets.size(); i++)
+    {
+        const SpvReflectDescriptorSet& reflectedSet = *reflectedDescriptorSets[i];
+        DescriptorSetLayoutData& layoutData = layoutDatas[i];
+
+        layoutData.m_Bindings.resize(reflectedSet.binding_count);
+        for (int bc = 0; bc < reflectedSet.binding_count; bc++)
+        {
+            const SpvReflectDescriptorBinding& reflectedBinding = *reflectedSet.bindings[bc];
+            VkDescriptorSetLayoutBinding& layoutBinding = layoutData.m_Bindings[bc];
+            layoutBinding.binding = reflectedBinding.binding;
+            layoutBinding.descriptorType = static_cast<VkDescriptorType>(reflectedBinding.descriptor_type);
+            layoutBinding.descriptorCount = 1; // sus
+            for (uint32_t i_dim = 0; i_dim < reflectedBinding.array.dims_count; ++i_dim) {
+                layoutBinding.descriptorCount *= reflectedBinding.array.dims[i_dim];
+            }
+            layoutBinding.stageFlags = static_cast<VkShaderStageFlagBits>(shaderReflectModule.shader_stage);
+            layoutData.m_BindingDatas.push_back(DescriptorSetLayoutBindingData{ reflectedBinding.block.size });
+        }
+
+        layoutData.m_SetNumber = reflectedSet.set;
+        layoutData.m_CreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        layoutData.m_CreateInfo.bindingCount = reflectedSet.binding_count;
+        layoutData.m_CreateInfo.pBindings = layoutData.m_Bindings.data();
+    }
+
+    return layoutDatas;
+
+}
 int main()
 {
     VulkanAPI_SDL vk;
     vk.CreateWindow(1280, 720);
     vk.InitVulkan();
 
-    auto vert = vk.LoadShaderModule("shaders/uniform.vert.spv");
-    auto frag = vk.LoadShaderModule("shaders/uniform.frag.spv");
+    auto vertBin = vk.LoadSpirvBinary("shaders/uniform.vert.spv");
+    auto fragBin = vk.LoadSpirvBinary("shaders/uniform.frag.spv");
+
+    auto layoutDatas = CreateDescriptorSetLayoutDatasSVR(vk, vertBin);
+    VkDescriptorSetLayout descriptorSetLayout;
+    CreateDescriptorSetLayout(vk,layoutDatas[0], descriptorSetLayout);
 
     VkPipelineLayout pipelineLayout;
-    VkDescriptorSetLayout& descriptorSetLayout = vert.m_DescriptorSetLayoutData[0].m_Layout;
-    VkPipeline pipeline = CreateGraphicsPipeline(vk, vert.m_DescriptorSetLayoutData[0].m_Layout, pipelineLayout, vert.m_Binary, frag.m_Binary);
+    VkPipeline pipeline = CreateGraphicsPipeline(vk, descriptorSetLayout, pipelineLayout, vertBin, fragBin);
 
     // create vertex and index buffer
     VkBuffer vertexBuffer; 
