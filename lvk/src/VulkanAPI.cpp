@@ -1,9 +1,11 @@
+#define VMA_IMPLEMENTATION
 #include "VulkanAPI.h"
 #include "spirv_reflect.h"
 #include <cstdint>
 #include <algorithm>
 #include <fstream>
 #include "spdlog/spdlog.h"
+using namespace lvk;
 
 // comments are largely snippets from: https://vulkan-tutorial.com/. credit: Alexander Overvoorde
 
@@ -37,15 +39,14 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     return VK_FALSE;
 }
 
-
-bool VulkanAPI::QueueFamilyIndices::IsComplete()
+bool lvk::VulkanAPI::QueueFamilyIndices::IsComplete()
 {
     bool foundGraphicsQueue = m_QueueFamilies.find(QueueFamilyType::Graphics) != m_QueueFamilies.end();
     bool foundPresentQueue  = m_QueueFamilies.find(QueueFamilyType::Present) != m_QueueFamilies.end();
     return foundGraphicsQueue && foundPresentQueue;
 }
 
-VkApplicationInfo VulkanAPI::CreateAppInfo()
+VkApplicationInfo lvk::VulkanAPI::CreateAppInfo()
 {
     VkApplicationInfo appInfo{};
     // each struct needs to explicitly be told its type
@@ -59,7 +60,7 @@ VkApplicationInfo VulkanAPI::CreateAppInfo()
     return appInfo;
 }
 
-bool VulkanAPI::CheckValidationLayerSupport()
+bool lvk::VulkanAPI::CheckValidationLayerSupport()
 {
     uint32_t layerCount;
     if (vkEnumerateInstanceLayerProperties(&layerCount, nullptr) != VK_SUCCESS)
@@ -91,7 +92,7 @@ bool VulkanAPI::CheckValidationLayerSupport()
     return true;
 }
 
-bool VulkanAPI::CheckDeviceExtensionSupport(VkPhysicalDevice device)
+bool lvk::VulkanAPI::CheckDeviceExtensionSupport(VkPhysicalDevice device)
 {
     std::vector<VkExtensionProperties> availableExtensions = GetDeviceAvailableExtensions(device);
 
@@ -112,7 +113,7 @@ bool VulkanAPI::CheckDeviceExtensionSupport(VkPhysicalDevice device)
 
 }
 
-void VulkanAPI::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
+void lvk::VulkanAPI::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
 {
     createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -131,7 +132,7 @@ void VulkanAPI::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfo
                                     // dont need this right now
 }
 
-void VulkanAPI::CreateInstance()
+void lvk::VulkanAPI::CreateInstance()
 {
     if (p_UseValidation && !CheckValidationLayerSupport())
     {
@@ -202,13 +203,13 @@ void VulkanAPI::CreateInstance()
 
 }
 
-void VulkanAPI::Cleanup()
+void lvk::VulkanAPI::Cleanup()
 {
     CleanupWindow();
     CleanupVulkan();
 }
 
-void VulkanAPI::SetupDebugOutput()
+void lvk::VulkanAPI::SetupDebugOutput()
 {
     if (!p_UseValidation) return;
 
@@ -232,7 +233,7 @@ void VulkanAPI::SetupDebugOutput()
 
 }
 
-void VulkanAPI::CleanupDebugOutput()
+void lvk::VulkanAPI::CleanupDebugOutput()
 {
     PFN_vkVoidFunction rawFunction = vkGetInstanceProcAddr(m_Instance, "vkDestroyDebugUtilsMessengerEXT");
     auto function = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(rawFunction);
@@ -247,7 +248,7 @@ void VulkanAPI::CleanupDebugOutput()
     }
 }
 
-void VulkanAPI::CleanupVulkan()
+void lvk::VulkanAPI::CleanupVulkan()
 {
     CleanupSwapChain();
 
@@ -271,14 +272,15 @@ void VulkanAPI::CleanupVulkan()
     vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
     vkDestroyDevice(m_LogicalDevice, nullptr);
     vkDestroyInstance(m_Instance, nullptr);
+    vmaDestroyAllocator(m_Allocator);
 }
 
-void VulkanAPI::Quit()
+void lvk::VulkanAPI::Quit()
 {
     p_ShouldRun = false;
 }
 
-VulkanAPI::QueueFamilyIndices VulkanAPI::FindQueueFamilies(VkPhysicalDevice m_PhysicalDevice)
+lvk::VulkanAPI::QueueFamilyIndices lvk::VulkanAPI::FindQueueFamilies(VkPhysicalDevice m_PhysicalDevice)
 {
     QueueFamilyIndices indices;
 
@@ -305,7 +307,7 @@ VulkanAPI::QueueFamilyIndices VulkanAPI::FindQueueFamilies(VkPhysicalDevice m_Ph
     return indices;
 }
 
-VulkanAPI::SwapChainSupportDetais VulkanAPI::GetSwapChainSupportDetails(VkPhysicalDevice physicalDevice)
+lvk::VulkanAPI::SwapChainSupportDetais lvk::VulkanAPI::GetSwapChainSupportDetails(VkPhysicalDevice physicalDevice)
 {
     SwapChainSupportDetais details;
 
@@ -332,7 +334,7 @@ VulkanAPI::SwapChainSupportDetais VulkanAPI::GetSwapChainSupportDetails(VkPhysic
     return details;
 }
 
-bool VulkanAPI::IsDeviceSuitable(VkPhysicalDevice physicalDevice)
+bool lvk::VulkanAPI::IsDeviceSuitable(VkPhysicalDevice physicalDevice)
 {
     QueueFamilyIndices indices = FindQueueFamilies(physicalDevice);
     bool extensionsSupported = CheckDeviceExtensionSupport(physicalDevice);
@@ -346,7 +348,7 @@ bool VulkanAPI::IsDeviceSuitable(VkPhysicalDevice physicalDevice)
     return indices.IsComplete() && extensionsSupported && swapChainSupport;
 }
 
-uint32_t VulkanAPI::AssessDeviceSuitability(VkPhysicalDevice m_PhysicalDevice)
+uint32_t lvk::VulkanAPI::AssessDeviceSuitability(VkPhysicalDevice m_PhysicalDevice)
 {
     uint32_t score = 0;
 
@@ -368,7 +370,7 @@ uint32_t VulkanAPI::AssessDeviceSuitability(VkPhysicalDevice m_PhysicalDevice)
     return score;
 }
 
-void VulkanAPI::PickPhysicalDevice()
+void lvk::VulkanAPI::PickPhysicalDevice()
 {
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(m_Instance, &deviceCount, nullptr);
@@ -416,7 +418,7 @@ void VulkanAPI::PickPhysicalDevice()
 
 }
 
-void VulkanAPI::CreateLogicalDevice()
+void lvk::VulkanAPI::CreateLogicalDevice()
 {
     m_QueueFamilyIndices = FindQueueFamilies(m_PhysicalDevice);
 
@@ -460,13 +462,13 @@ void VulkanAPI::CreateLogicalDevice()
     }
 }
 
-void VulkanAPI::GetQueueHandles()
+void lvk::VulkanAPI::GetQueueHandles()
 {
     vkGetDeviceQueue(m_LogicalDevice, m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Graphics],      0, &m_GraphicsQueue);
     vkGetDeviceQueue(m_LogicalDevice, m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Present],       0, &m_PresentQueue);
 }
 
-VkSurfaceFormatKHR VulkanAPI::ChooseSwapChainSurfaceFormat(std::vector<VkSurfaceFormatKHR> availableFormats)
+VkSurfaceFormatKHR lvk::VulkanAPI::ChooseSwapChainSurfaceFormat(std::vector<VkSurfaceFormatKHR> availableFormats)
 {
     if (availableFormats.size() == 0)
     {
@@ -487,7 +489,7 @@ VkSurfaceFormatKHR VulkanAPI::ChooseSwapChainSurfaceFormat(std::vector<VkSurface
     return availableFormats[0];
 }
 
-VkPresentModeKHR VulkanAPI::ChooseSwapChainPresentMode(std::vector<VkPresentModeKHR> availableModes)
+VkPresentModeKHR lvk::VulkanAPI::ChooseSwapChainPresentMode(std::vector<VkPresentModeKHR> availableModes)
 {
     for (auto const& presentMode : availableModes)
     {
@@ -499,7 +501,7 @@ VkPresentModeKHR VulkanAPI::ChooseSwapChainPresentMode(std::vector<VkPresentMode
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D VulkanAPI::ChooseSwapExtent(VkSurfaceCapabilitiesKHR& surfaceCapabilities)
+VkExtent2D lvk::VulkanAPI::ChooseSwapExtent(VkSurfaceCapabilitiesKHR& surfaceCapabilities)
 {
     if(surfaceCapabilities.currentExtent.width != UINT32_MAX)
     {
@@ -511,7 +513,7 @@ VkExtent2D VulkanAPI::ChooseSwapExtent(VkSurfaceCapabilitiesKHR& surfaceCapabili
     }
 }
 
-void VulkanAPI::CreateSwapChain()
+void lvk::VulkanAPI::CreateSwapChain()
 {
     SwapChainSupportDetais swapChainDetails = GetSwapChainSupportDetails(m_PhysicalDevice);
 
@@ -576,7 +578,7 @@ void VulkanAPI::CreateSwapChain()
     m_SwapChainImageExtent = surfaceExtent;
 }
 
-void VulkanAPI::CreateSwapChainImageViews()
+void lvk::VulkanAPI::CreateSwapChainImageViews()
 {
     m_SwapChainImageViews.resize(m_SwapChainImages.size());
 
@@ -609,7 +611,7 @@ void VulkanAPI::CreateSwapChainImageViews()
     }
 }
 
-void VulkanAPI::CleanupSwapChain()
+void lvk::VulkanAPI::CleanupSwapChain()
 {
     for (int i = 0; i < m_SwapChainFramebuffers.size(); i++)
     {
@@ -623,7 +625,7 @@ void VulkanAPI::CleanupSwapChain()
     vkDestroySwapchainKHR(m_LogicalDevice, m_SwapChain, nullptr);
 }
 
-void VulkanAPI::RecreateSwapChain()
+void lvk::VulkanAPI::RecreateSwapChain()
 {
     spdlog::info("resize swapchain function");
     while (vkDeviceWaitIdle(m_LogicalDevice) != VK_SUCCESS);
@@ -635,7 +637,7 @@ void VulkanAPI::RecreateSwapChain()
     CreateSwapChainFramebuffers();
 }
 
-VkShaderModule VulkanAPI::CreateShaderModule(const std::vector<char>& data)
+VkShaderModule lvk::VulkanAPI::CreateShaderModule(const std::vector<char>& data)
 {
     VkShaderModuleCreateInfo createInfo{};
     createInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -651,7 +653,7 @@ VkShaderModule VulkanAPI::CreateShaderModule(const std::vector<char>& data)
     return shaderModule;
 }
 
-uint32_t VulkanAPI::DecideMemoryType(VkPhysicalDeviceMemoryProperties& memProperties, uint32_t typeFilter, VkMemoryPropertyFlags properties)
+uint32_t lvk::VulkanAPI::DecideMemoryType(VkPhysicalDeviceMemoryProperties& memProperties, uint32_t typeFilter, VkMemoryPropertyFlags properties)
 {
     for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
         if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
@@ -661,18 +663,26 @@ uint32_t VulkanAPI::DecideMemoryType(VkPhysicalDeviceMemoryProperties& memProper
     return UINT32_MAX;
 }
 
-
-void VulkanAPI::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
+void lvk::VulkanAPI::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
 {
     VkBufferCreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = size;
     bufferInfo.usage = usage;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    
+#ifdef LVK_USE_VMA
+    VmaAllocationCreateInfo allocInfo = {};
+    allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
+    allocInfo.requiredFlags = properties;
 
-    if (vkCreateBuffer(m_LogicalDevice, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create buffer!");
-    }
+    VmaAllocation allocation;
+
+    vmaCreateBuffer(m_Allocator, &bufferInfo, &allocInfo, &buffer, &allocation, nullptr);
+
+    deviceMemory = allocation->GetMemory();
+#endif
+    VK_CHECK(vkCreateBuffer(m_LogicalDevice, &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
 
     VkPhysicalDeviceMemoryProperties deviceMemProperties;
     vkGetPhysicalDeviceMemoryProperties(m_PhysicalDevice, &deviceMemProperties);
@@ -683,16 +693,14 @@ void VulkanAPI::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemo
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = DecideMemoryType(deviceMemProperties,memRequirements.memoryTypeBits, properties);
+    allocInfo.memoryTypeIndex = DecideMemoryType(deviceMemProperties, memRequirements.memoryTypeBits, properties);
 
-    if (vkAllocateMemory(m_LogicalDevice, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate buffer memory!");
-    }
-
+    VK_CHECK(vkAllocateMemory(m_LogicalDevice, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS)
     vkBindBufferMemory(m_LogicalDevice, buffer, bufferMemory, 0);
+    
 }
 
-void VulkanAPI::CopyBuffer(VkBuffer& src, VkBuffer& dst, VkDeviceSize size)
+void lvk::VulkanAPI::CopyBuffer(VkBuffer& src, VkBuffer& dst, VkDeviceSize size)
 {
     // create a new command from existing graphics queue pool
     // TODO: create a dedicated pool for transient one hit commands
@@ -733,7 +741,7 @@ void VulkanAPI::CopyBuffer(VkBuffer& src, VkBuffer& dst, VkDeviceSize size)
     vkFreeCommandBuffers(m_LogicalDevice, m_GraphicsQueueCommandPool, 1, &commandBuffer);
 }
 
-void VulkanAPI::CreateRenderPass()
+void lvk::VulkanAPI::CreateRenderPass()
 {
     VkAttachmentDescription colorAttachment{};
     colorAttachment.format          = m_SwapChainImageFormat;
@@ -786,7 +794,7 @@ void VulkanAPI::CreateRenderPass()
     }
 }
 
-void VulkanAPI::CreateSwapChainFramebuffers()
+void lvk::VulkanAPI::CreateSwapChainFramebuffers()
 {
     m_SwapChainFramebuffers.resize(m_SwapChainImageViews.size());
 
@@ -814,7 +822,7 @@ void VulkanAPI::CreateSwapChainFramebuffers()
     }
 }
 
-void VulkanAPI::CreateCommandPool()
+void lvk::VulkanAPI::CreateCommandPool()
 {
     VkCommandPoolCreateInfo createInfo{};
     createInfo.sType                = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -828,7 +836,7 @@ void VulkanAPI::CreateCommandPool()
     }
 }
 
-void VulkanAPI::CreateDescriptorPool()
+void lvk::VulkanAPI::CreateDescriptorPool()
 {
     VkDescriptorPoolSize poolSize{};
     poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -844,7 +852,7 @@ void VulkanAPI::CreateDescriptorPool()
     VK_CHECK(vkCreateDescriptorPool(m_LogicalDevice, &poolInfo, nullptr, &m_DescriptorPool) != VK_SUCCESS);
 }
 
-void VulkanAPI::CreateSemaphores()
+void lvk::VulkanAPI::CreateSemaphores()
 {
     m_ImageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     m_RenderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
@@ -863,7 +871,7 @@ void VulkanAPI::CreateSemaphores()
     
 }
 
-void VulkanAPI::CreateFences()
+void lvk::VulkanAPI::CreateFences()
 {
     m_FrameInFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
     m_ImagesInFlight.resize(m_SwapChainImages.size(), VK_NULL_HANDLE);
@@ -882,7 +890,7 @@ void VulkanAPI::CreateFences()
     }
 }
 
-void VulkanAPI::DrawFrame()
+void lvk::VulkanAPI::DrawFrame()
 {
     vkWaitForFences(m_LogicalDevice, 1, &m_FrameInFlightFences[p_CurrentFrameIndex], VK_TRUE, UINT64_MAX);
 
@@ -948,7 +956,7 @@ void VulkanAPI::DrawFrame()
     p_CurrentFrameIndex = (p_CurrentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-void VulkanAPI::ListDeviceExtensions(VkPhysicalDevice physicalDevice)
+void lvk::VulkanAPI::ListDeviceExtensions(VkPhysicalDevice physicalDevice)
 {
     std::vector<VkExtensionProperties> extensions = GetDeviceAvailableExtensions(physicalDevice);
 
@@ -960,7 +968,7 @@ void VulkanAPI::ListDeviceExtensions(VkPhysicalDevice physicalDevice)
     }
 }
 
-std::vector<VkExtensionProperties> VulkanAPI::GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice)
+std::vector<VkExtensionProperties> lvk::VulkanAPI::GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice)
 {
     uint32_t extensionCount;
     vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
@@ -973,7 +981,7 @@ std::vector<VkExtensionProperties> VulkanAPI::GetDeviceAvailableExtensions(VkPhy
 
 }
 
-std::vector<char> VulkanAPI::LoadSpirvBinary(const std::string& path)
+std::vector<char> lvk::VulkanAPI::LoadSpirvBinary(const std::string& path)
 {
     std::ifstream file(path, std::ios::ate | std::ios::binary);
 
@@ -994,8 +1002,93 @@ std::vector<char> VulkanAPI::LoadSpirvBinary(const std::string& path)
     return data;
 }
 
+ShaderModule lvk::VulkanAPI::LoadShaderModule(const std::string& path)
+{
+    ShaderModule sm{};
+
+    sm.m_Binary = LoadSpirvBinary(path);
+    sm.m_DescriptorSetLayoutData = CreateDescriptorSetLayoutDatas(sm.m_Binary);
+    return sm;
+}
+
+VkDescriptorSet lvk::VulkanAPI::CreateDescriptorSet(DescriptorSetLayoutData& layoutData)
+{
+    VkDescriptorSet descriptorSet;
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = m_DescriptorPool;
+    allocInfo.descriptorSetCount = 1;
+    allocInfo.pSetLayouts = &layoutData.m_Layout;
+
+    VK_CHECK(vkAllocateDescriptorSets(m_LogicalDevice, &allocInfo, &descriptorSet));
+
+    VkDescriptorBufferInfo bufferInfo{};
+    // bufferInfo.buffer = uniformBuffers[i];
+    bufferInfo.offset = 0;
+    // bufferInfo.range = sizeof(MvpData);
+
+    VkWriteDescriptorSet descriptorWrite{};
+    descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    // descriptorWrite.dstSet = descriptorSets[i];
+    descriptorWrite.dstBinding = 0;
+    descriptorWrite.dstArrayElement = 0;
+    descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptorWrite.descriptorCount = 1;
+    descriptorWrite.pBufferInfo = &bufferInfo;
+    descriptorWrite.pImageInfo = nullptr; // Optional
+    descriptorWrite.pTexelBufferView = nullptr; // Optional
+
+    vkUpdateDescriptorSets(m_LogicalDevice, 1, &descriptorWrite, 0, nullptr);
+    return descriptorSet;
+}
+
+Vector<DescriptorSetLayoutData> lvk::VulkanAPI::CreateDescriptorSetLayoutDatas(Vector<char>& stageBin)
+{
+    SpvReflectShaderModule shaderReflectModule;
+    SpvReflectResult result = spvReflectCreateShaderModule(stageBin.size(), stageBin.data(), &shaderReflectModule);
+
+    uint32_t descriptorSetCount = 0;
+    spvReflectEnumerateDescriptorSets(&shaderReflectModule, &descriptorSetCount, nullptr);
+
+    std::vector<SpvReflectDescriptorSet*> reflectedDescriptorSets;
+    reflectedDescriptorSets.resize(descriptorSetCount);
+    spvReflectEnumerateDescriptorSets(&shaderReflectModule, &descriptorSetCount, &reflectedDescriptorSets[0]);
+
+    std::vector<DescriptorSetLayoutData> layoutDatas(descriptorSetCount, DescriptorSetLayoutData{});
+
+    for (int i = 0; i < reflectedDescriptorSets.size(); i++)
+    {
+        const SpvReflectDescriptorSet& reflectedSet = *reflectedDescriptorSets[i];
+        DescriptorSetLayoutData& layoutData = layoutDatas[i];
+
+        layoutData.m_Bindings.resize(reflectedSet.binding_count);
+        for (int bc = 0; bc < reflectedSet.binding_count; bc++)
+        {
+            const SpvReflectDescriptorBinding& reflectedBinding = *reflectedSet.bindings[bc];
+            VkDescriptorSetLayoutBinding& layoutBinding = layoutData.m_Bindings[bc];
+            layoutBinding.binding = reflectedBinding.binding;
+            layoutBinding.descriptorType = static_cast<VkDescriptorType>(reflectedBinding.descriptor_type);
+            layoutBinding.descriptorCount = 1; // sus
+            for (uint32_t i_dim = 0; i_dim < reflectedBinding.array.dims_count; ++i_dim) {
+                layoutBinding.descriptorCount *= reflectedBinding.array.dims[i_dim];
+            }
+            layoutBinding.stageFlags = static_cast<VkShaderStageFlagBits>(shaderReflectModule.shader_stage);
+            layoutData.m_BindingDatas.push_back(DescriptorSetLayoutBindingData{ reflectedBinding.block.size });
+        }
+
+        layoutData.m_SetNumber = reflectedSet.set;
+        layoutData.m_CreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        layoutData.m_CreateInfo.bindingCount = reflectedSet.binding_count;
+        layoutData.m_CreateInfo.pBindings = layoutData.m_Bindings.data();
+
+        VK_CHECK(vkCreateDescriptorSetLayout(m_LogicalDevice, &layoutData.m_CreateInfo, nullptr, &layoutData.m_Layout))
+    }
+
+    return layoutDatas;
+}
+
 // this is probably agnostic of each app, can move to api
-void VulkanAPI::CreateCommandBuffers()
+void lvk::VulkanAPI::CreateCommandBuffers()
 {
     m_CommandBuffers.resize(m_SwapChainFramebuffers.size());
 
@@ -1009,8 +1102,7 @@ void VulkanAPI::CreateCommandBuffers()
 
 }
 
-
-void VulkanAPI::ClearCommandBuffers()
+void lvk::VulkanAPI::ClearCommandBuffers()
 {
     for (uint32_t i = 0; i < m_CommandBuffers.size(); i++)
     {
@@ -1018,8 +1110,24 @@ void VulkanAPI::ClearCommandBuffers()
     }
 }
 
+void lvk::VulkanAPI::CreateVmaAllocator()
+{
+    VmaVulkanFunctions vulkanFunctions = {};
+    vulkanFunctions.vkGetInstanceProcAddr = &vkGetInstanceProcAddr;
+    vulkanFunctions.vkGetDeviceProcAddr = &vkGetDeviceProcAddr;
 
-void VulkanAPI::InitVulkan()
+    VmaAllocatorCreateInfo allocatorCreateInfo = {};
+    allocatorCreateInfo.flags = VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT;
+    allocatorCreateInfo.vulkanApiVersion = VK_API_VERSION_1_3;
+    allocatorCreateInfo.physicalDevice = m_PhysicalDevice;
+    allocatorCreateInfo.device = m_LogicalDevice;
+    allocatorCreateInfo.instance = m_Instance;
+    allocatorCreateInfo.pVulkanFunctions = &vulkanFunctions;
+
+    VK_CHECK(vmaCreateAllocator(&allocatorCreateInfo, &m_Allocator));
+}
+
+void lvk::VulkanAPI::InitVulkan()
 {
     p_CurrentFrameIndex = 0;
     CreateInstance();
@@ -1037,4 +1145,8 @@ void VulkanAPI::InitVulkan()
     CreateSemaphores();
     CreateFences();
     CreateCommandBuffers();
+    CreateVmaAllocator();
+
+
+  
 }

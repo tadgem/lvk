@@ -1,9 +1,8 @@
 #include "VulkanAPI_SDL.h"
-
 #include "spdlog/spdlog.h"
 #include "SDL_vulkan.h"
 
-void VulkanAPI_SDL::HandleSDLEvent(SDL_Event& sdl_event)
+void lvk::VulkanAPI_SDL::HandleSDLEvent(SDL_Event& sdl_event)
 {
     if (sdl_event.type == SDL_QUIT)
     {
@@ -15,7 +14,7 @@ void VulkanAPI_SDL::HandleSDLEvent(SDL_Event& sdl_event)
         }
     }
 }
-std::vector<const char*> VulkanAPI_SDL::GetRequiredExtensions()
+std::vector<const char*> lvk::VulkanAPI_SDL::GetRequiredExtensions()
 {
     uint32_t extensionCount = 0;
     if (SDL_Vulkan_GetInstanceExtensions(nullptr, &extensionCount, nullptr) != SDL_TRUE)
@@ -34,7 +33,7 @@ std::vector<const char*> VulkanAPI_SDL::GetRequiredExtensions()
     return extensionNames;
 }
 
-void VulkanAPI_SDL::CreateSurface()
+void lvk::VulkanAPI_SDL::CreateSurface()
 {
     if (!SDL_Vulkan_CreateSurface(m_SdlHandle->m_SdlWindow, m_Instance, &m_Surface))
     {
@@ -43,7 +42,7 @@ void VulkanAPI_SDL::CreateSurface()
     }
 }
 
-void VulkanAPI_SDL::CleanupWindow()
+void lvk::VulkanAPI_SDL::CleanupWindow()
 {
     VulkanAPIWindowHandle_SDL* derived = static_cast<VulkanAPIWindowHandle_SDL*>(m_WindowHandle);
 
@@ -56,12 +55,12 @@ void VulkanAPI_SDL::CleanupWindow()
     SDL_Quit();
 }
 
-bool VulkanAPI_SDL::ShouldRun()
+bool lvk::VulkanAPI_SDL::ShouldRun()
 {
     return p_ShouldRun;
 }
 
-void VulkanAPI_SDL::PreFrame()
+void lvk::VulkanAPI_SDL::PreFrame()
 {
     uint64_t currentFrame = SDL_GetPerformanceCounter();
     m_DeltaTime = (currentFrame - p_LastFrameTime) / (double)SDL_GetPerformanceFrequency();
@@ -72,7 +71,7 @@ void VulkanAPI_SDL::PreFrame()
     }
 }
 
-void VulkanAPI_SDL::PostFrame()
+void lvk::VulkanAPI_SDL::PostFrame()
 {
     if (vkDeviceWaitIdle(m_LogicalDevice) != VK_SUCCESS)
     {
@@ -81,7 +80,7 @@ void VulkanAPI_SDL::PostFrame()
     }
 }
 
-void VulkanAPI_SDL::Run(std::function<void()> callback)
+void lvk::VulkanAPI_SDL::Run(std::function<void()> callback)
 {
     p_ShouldRun = true;
     while (p_ShouldRun)
@@ -105,7 +104,7 @@ void VulkanAPI_SDL::Run(std::function<void()> callback)
     }
 }
 
-VkExtent2D VulkanAPI_SDL::GetSurfaceExtent(VkSurfaceCapabilitiesKHR surface)
+VkExtent2D lvk::VulkanAPI_SDL::GetSurfaceExtent(VkSurfaceCapabilitiesKHR surface)
 {
     SDL_DisplayMode displayMode;
     SDL_GetCurrentDisplayMode(0, &displayMode);
@@ -113,7 +112,7 @@ VkExtent2D VulkanAPI_SDL::GetSurfaceExtent(VkSurfaceCapabilitiesKHR surface)
     return VkExtent2D();
 }
 
-VulkanAPIWindowHandle_SDL::VulkanAPIWindowHandle_SDL(SDL_Window* sdlWindow) : m_SdlWindow(sdlWindow)
+lvk::VulkanAPIWindowHandle_SDL::VulkanAPIWindowHandle_SDL(SDL_Window* sdlWindow) : m_SdlWindow(sdlWindow)
 {
     
 }
