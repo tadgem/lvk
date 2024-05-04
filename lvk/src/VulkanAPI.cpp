@@ -250,6 +250,7 @@ void lvk::VulkanAPI::CleanupDebugOutput()
 
 void lvk::VulkanAPI::CleanupVulkan()
 {
+    vmaDestroyAllocator(m_Allocator);
     CleanupSwapChain();
 
     if (p_UseValidation)
@@ -272,7 +273,6 @@ void lvk::VulkanAPI::CleanupVulkan()
     vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
     vkDestroyDevice(m_LogicalDevice, nullptr);
     vkDestroyInstance(m_Instance, nullptr);
-    vmaDestroyAllocator(m_Allocator);
 }
 
 void lvk::VulkanAPI::Quit()
@@ -696,8 +696,31 @@ void lvk::VulkanAPI::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, V
     allocInfo.memoryTypeIndex = DecideMemoryType(deviceMemProperties, memRequirements.memoryTypeBits, properties);
 
     VK_CHECK(vkAllocateMemory(m_LogicalDevice, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS)
-    vkBindBufferMemory(m_LogicalDevice, buffer, bufferMemory, 0);
+    VK_CHECK(vkBindBufferMemory(m_LogicalDevice, buffer, bufferMemory, 0))
     
+}
+
+void lvk::VulkanAPI::CreateBufferVMA(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VmaAllocation& allocation)
+{
+    VkBufferCreateInfo bufferInfo{};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = size;
+    bufferInfo.usage = usage;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    VmaAllocationCreateInfo allocInfo = {};
+    allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
+    allocInfo.requiredFlags = properties;
+
+    if (properties && VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)
+    {
+        // if we access members of the array non sequentially,
+        // we may need to request random access instead of sequential
+        // VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT
+        allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+    }
+
+    VK_CHECK(vmaCreateBuffer(m_Allocator, &bufferInfo, &allocInfo, &buffer, &allocation, nullptr));
 }
 
 void lvk::VulkanAPI::CopyBuffer(VkBuffer& src, VkBuffer& dst, VkDeviceSize size)

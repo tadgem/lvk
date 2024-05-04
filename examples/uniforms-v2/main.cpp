@@ -55,27 +55,27 @@ const std::vector<uint16_t> indices = {
 };
 
 static std::vector<VkBuffer>            uniformBuffers;
-static std::vector<VkDeviceMemory>      uniformBuffersMemory;
+static std::vector<VmaAllocation>       uniformBuffersMemory;
 static std::vector<void*>               uniformBuffersMapped;
 static std::vector<VkDescriptorSet>     descriptorSets;
 
-void CreateVertexBuffer(VulkanAPI_SDL& vk, VkBuffer& buffer, VkDeviceMemory& deviceMemory)
+void CreateVertexBuffer(VulkanAPI_SDL& vk, VkBuffer& buffer, VmaAllocation& deviceMemory)
 {
     VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
     // create a CPU side buffer to dump vertex data into
     VkBuffer stagingBuffer;
-    VkDeviceMemory stagingBufferMemory;
-    vk.CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+    VmaAllocation stagingBufferMemory;
+    vk.CreateBufferVMA(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
     // dump vert data
     void* data;
-    vkMapMemory(vk.m_LogicalDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
+    vmaMapMemory(vk.m_Allocator, stagingBufferMemory, &data);
     memcpy(data, vertices.data(), bufferSize);
-    vkUnmapMemory(vk.m_LogicalDevice, stagingBufferMemory);
+    vmaUnmapMemory(vk.m_Allocator, stagingBufferMemory);
 
     // create GPU side buffer
-    vk.CreateBuffer(bufferSize,
+    vk.CreateBufferVMA(bufferSize,
         VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
         buffer, deviceMemory);
@@ -83,26 +83,26 @@ void CreateVertexBuffer(VulkanAPI_SDL& vk, VkBuffer& buffer, VkDeviceMemory& dev
     vk.CopyBuffer(stagingBuffer, buffer, bufferSize);
 
     vkDestroyBuffer(vk.m_LogicalDevice, stagingBuffer, nullptr);
-    vkFreeMemory(vk.m_LogicalDevice, stagingBufferMemory, nullptr);
+    vmaFreeMemory(vk.m_Allocator, stagingBufferMemory);
 }
 
-void CreateIndexBuffer(VulkanAPI_SDL& vk, VkBuffer& buffer, VkDeviceMemory& deviceMemory)
+void CreateIndexBuffer(VulkanAPI_SDL& vk, VkBuffer& buffer, VmaAllocation& deviceMemory)
 {
     VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
 
     // create a CPU side buffer to dump vertex data into
     VkBuffer stagingBuffer;
-    VkDeviceMemory stagingBufferMemory;
-    vk.CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+    VmaAllocation stagingBufferMemory;
+    vk.CreateBufferVMA(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
     // dump vert data
     void* data;
-    vkMapMemory(vk.m_LogicalDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
+    vmaMapMemory(vk.m_Allocator, stagingBufferMemory, &data);
     memcpy(data, indices.data(), bufferSize);
-    vkUnmapMemory(vk.m_LogicalDevice, stagingBufferMemory);
+    vmaUnmapMemory(vk.m_Allocator, stagingBufferMemory);
 
     // create GPU side buffer
-    vk.CreateBuffer(bufferSize,
+    vk.CreateBufferVMA(bufferSize,
         VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
         buffer, deviceMemory);
@@ -110,7 +110,7 @@ void CreateIndexBuffer(VulkanAPI_SDL& vk, VkBuffer& buffer, VkDeviceMemory& devi
     vk.CopyBuffer(stagingBuffer, buffer, bufferSize);
 
     vkDestroyBuffer(vk.m_LogicalDevice, stagingBuffer, nullptr);
-    vkFreeMemory(vk.m_LogicalDevice, stagingBufferMemory, nullptr);
+    vmaFreeMemory(vk.m_Allocator, stagingBufferMemory);
 }
 
 // this probably could be created by spirv reflect
@@ -129,9 +129,9 @@ void CreateUniformBuffers(VulkanAPI_SDL& vk)
     uniformBuffersMapped.resize(vk.MAX_FRAMES_IN_FLIGHT);
 
     for (size_t i = 0; i < vk.MAX_FRAMES_IN_FLIGHT; i++) {
-        vk.CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
+        vk.CreateBufferVMA(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
 
-        VK_CHECK(vkMapMemory(vk.m_LogicalDevice, uniformBuffersMemory[i], 0, bufferSize, 0, &uniformBuffersMapped[i]))
+        VK_CHECK(vmaMapMemory(vk.m_Allocator, uniformBuffersMemory[i], &uniformBuffersMapped[i]))
     }
 
 }
@@ -456,9 +456,9 @@ int main()
 
     // create vertex and index buffer
     VkBuffer vertexBuffer; 
-    VkDeviceMemory vertexBufferMemory;
+    VmaAllocation vertexBufferMemory;
     VkBuffer indexBuffer;
-    VkDeviceMemory indexBufferMemory;
+    VmaAllocation indexBufferMemory;
 
     CreateVertexBuffer(vk, vertexBuffer, vertexBufferMemory);
     CreateIndexBuffer(vk, indexBuffer, indexBufferMemory);
@@ -483,17 +483,18 @@ int main()
     }
 
     for (size_t i = 0; i < vk.MAX_FRAMES_IN_FLIGHT; i++) {
+        vmaUnmapMemory(vk.m_Allocator, uniformBuffersMemory[i]);
         vkDestroyBuffer(vk.m_LogicalDevice, uniformBuffers[i], nullptr);
-        vkFreeMemory(vk.m_LogicalDevice, uniformBuffersMemory[i], nullptr);
+        vmaFreeMemory(vk.m_Allocator, uniformBuffersMemory[i]);
     }
 
     vkDestroyDescriptorSetLayout(vk.m_LogicalDevice, descriptorSetLayout, nullptr);
 
     vkDestroyPipelineLayout(vk.m_LogicalDevice, pipelineLayout, nullptr);
     vkDestroyBuffer(vk.m_LogicalDevice, vertexBuffer, nullptr);
-    vkFreeMemory(vk.m_LogicalDevice, vertexBufferMemory, nullptr);
+    vmaFreeMemory(vk.m_Allocator, vertexBufferMemory);
     vkDestroyBuffer(vk.m_LogicalDevice, indexBuffer, nullptr);
-    vkFreeMemory(vk.m_LogicalDevice, indexBufferMemory, nullptr);
+    vmaFreeMemory(vk.m_Allocator, indexBufferMemory);
     vkDestroyPipeline(vk.m_LogicalDevice, pipeline, nullptr);
     vk.Cleanup();
 

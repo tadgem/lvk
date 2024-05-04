@@ -430,6 +430,7 @@ int main()
     }
 
     for (size_t i = 0; i < vk.MAX_FRAMES_IN_FLIGHT; i++) {
+
         vkDestroyBuffer(vk.m_LogicalDevice, uniformBuffers[i], nullptr);
         vkFreeMemory(vk.m_LogicalDevice, uniformBuffersMemory[i], nullptr);
     }
