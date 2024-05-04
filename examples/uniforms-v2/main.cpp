@@ -152,7 +152,7 @@ void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkPipelineLay
 
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = vk.m_RenderPass;
+        renderPassInfo.renderPass = vk.m_SwapchainImageRenderPass;
         renderPassInfo.framebuffer = vk.m_SwapChainFramebuffers[i];
         renderPassInfo.renderArea.offset = { 0,0 };
         renderPassInfo.renderArea.extent = vk.m_SwapChainImageExtent;
@@ -327,7 +327,7 @@ VkPipeline CreateGraphicsPipeline(VulkanAPI_SDL& vk, VkDescriptorSetLayout& desc
 
     pipelineCreateInfo.layout = layout;
 
-    pipelineCreateInfo.renderPass = vk.m_RenderPass;
+    pipelineCreateInfo.renderPass = vk.m_SwapchainImageRenderPass;
     pipelineCreateInfo.subpass = 0;
 
     VkPipeline pipeline;

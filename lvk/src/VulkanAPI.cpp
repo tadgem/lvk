@@ -267,7 +267,7 @@ void lvk::VulkanAPI::CleanupVulkan()
     vkDestroyCommandPool(m_LogicalDevice, m_GraphicsQueueCommandPool, nullptr);
     vkDestroyDescriptorPool(m_LogicalDevice, m_DescriptorPool, nullptr);
 
-    vkDestroyRenderPass(m_LogicalDevice, m_RenderPass, nullptr);
+    vkDestroyRenderPass(m_LogicalDevice, m_SwapchainImageRenderPass, nullptr);
     
 
     vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
@@ -810,7 +810,7 @@ void lvk::VulkanAPI::CreateRenderPass()
     createInfo.dependencyCount  = 1;
     createInfo.pDependencies    = &subpassDependency;
 
-    if (vkCreateRenderPass(m_LogicalDevice, &createInfo, nullptr, &m_RenderPass) != VK_SUCCESS)
+    if (vkCreateRenderPass(m_LogicalDevice, &createInfo, nullptr, &m_SwapchainImageRenderPass) != VK_SUCCESS)
     {
         spdlog::error("Failed to create Render Pass!");
         std::cerr << "Failed to create Render Pass!" << std::endl;
@@ -833,7 +833,7 @@ void lvk::VulkanAPI::CreateSwapChainFramebuffers()
         framebufferCreateInfo.attachmentCount   = 1;
         framebufferCreateInfo.pAttachments      = attachments;
         framebufferCreateInfo.layers = 1;
-        framebufferCreateInfo.renderPass        = m_RenderPass;
+        framebufferCreateInfo.renderPass        = m_SwapchainImageRenderPass;
         framebufferCreateInfo.height            = m_SwapChainImageExtent.height;
         framebufferCreateInfo.width             = m_SwapChainImageExtent.width;
 

@@ -85,7 +85,7 @@ namespace lvk
         VkDebugUtilsMessengerEXT        m_DebugMessenger;
         VkPhysicalDevice                m_PhysicalDevice = VK_NULL_HANDLE;
         VkDevice                        m_LogicalDevice = VK_NULL_HANDLE;
-        VkRenderPass                    m_RenderPass;
+        VkRenderPass                    m_SwapchainImageRenderPass;
         VkCommandPool                   m_GraphicsQueueCommandPool;
         VkDescriptorPool                m_DescriptorPool;
         VmaAllocator                    m_Allocator;
