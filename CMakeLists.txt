@@ -9,15 +9,9 @@ set(CMAKE_SKIP_INSTALL_RULES true)
 set(SDL2_DISABLE_SDL2MAIN       ON      CACHE BOOL "Disable SDL Entrypoint")
 set(SDL2_DISABLE_INSTALL        ON      CACHE BOOL "Disable SDL Install")
 set(SDL2_DISABLE_UNINSTALL      ON      CACHE BOOL "Disable SDL Uninstall")
-# set(SLANG_ENABLE_GFX            FALSE     CACHE BOOL "Disable building Slang GPU api")
-# set(SLANG_ENABLE_TESTS          FALSE     CACHE BOOL "Disable building Slang Tests")
-# set(SLANG_ENABLE_EXAMPLES       FALSE     CACHE BOOL "Disable building Slang Examples")
-# set(SLANG_LIB_TYPE              STATIC     CACHE STRING "Build Slang Statically")
-
 
 add_subdirectory(submodules/glm)
 add_subdirectory(submodules/spdlog)
-#add_subdirectory(submodules/slang)
 add_subdirectory(third-party/sdl)
 
 set(GLM_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/submodules/glm CACHE INTERNAL "")
@@ -35,5 +29,5 @@ add_subdirectory(backends/sdl)
 add_subdirectory(examples/hello-triangle)
 add_subdirectory(examples/vertex-index-buffer)
 add_subdirectory(examples/uniforms)
-add_subdirectory(examples/uniforms-v2)
+add_subdirectory(examples/texture-mapping)
 

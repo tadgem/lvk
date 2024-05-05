@@ -1,4 +1,5 @@
 #define VMA_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
 #include "VulkanAPI.h"
 #include "spirv_reflect.h"
 #include <cstdint>
@@ -653,8 +654,10 @@ VkShaderModule lvk::VulkanAPI::CreateShaderModule(const std::vector<char>& data)
     return shaderModule;
 }
 
-uint32_t lvk::VulkanAPI::DecideMemoryType(VkPhysicalDeviceMemoryProperties& memProperties, uint32_t typeFilter, VkMemoryPropertyFlags properties)
+uint32_t lvk::VulkanAPI::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
 {
+    VkPhysicalDeviceMemoryProperties memProperties;
+    vkGetPhysicalDeviceMemoryProperties(m_PhysicalDevice, &memProperties);
     for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
         if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
             return i;
@@ -684,16 +687,13 @@ void lvk::VulkanAPI::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, V
 #endif
     VK_CHECK(vkCreateBuffer(m_LogicalDevice, &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
 
-    VkPhysicalDeviceMemoryProperties deviceMemProperties;
-    vkGetPhysicalDeviceMemoryProperties(m_PhysicalDevice, &deviceMemProperties);
-
     VkMemoryRequirements memRequirements;
     vkGetBufferMemoryRequirements(m_LogicalDevice, buffer, &memRequirements);
 
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = DecideMemoryType(deviceMemProperties, memRequirements.memoryTypeBits, properties);
+    allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
 
     VK_CHECK(vkAllocateMemory(m_LogicalDevice, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS)
     VK_CHECK(vkBindBufferMemory(m_LogicalDevice, buffer, bufferMemory, 0))
@@ -721,6 +721,40 @@ void lvk::VulkanAPI::CreateBufferVMA(VkDeviceSize size, VkBufferUsageFlags usage
     }
 
     VK_CHECK(vmaCreateBuffer(m_Allocator, &bufferInfo, &allocInfo, &buffer, &allocation, nullptr));
+}
+
+void lvk::VulkanAPI::CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory)
+{
+    VkImageCreateInfo imageInfo{};
+    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageInfo.extent.width = width;
+    imageInfo.extent.height = height;
+    imageInfo.extent.depth = 1;
+    imageInfo.mipLevels = 1;
+    imageInfo.arrayLayers = 1;
+    imageInfo.format = format;
+    imageInfo.tiling = tiling;
+    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageInfo.usage = usage;
+    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (vkCreateImage(m_LogicalDevice, &imageInfo, nullptr, &image) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create image!");
+    }
+
+    VkMemoryRequirements memRequirements;
+    vkGetImageMemoryRequirements(m_LogicalDevice, image, &memRequirements);
+
+    VkMemoryAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
+
+    VK_CHECK(vkAllocateMemory(m_LogicalDevice, &allocInfo, nullptr, &imageMemory))
+
+    vkBindImageMemory(m_LogicalDevice, image, imageMemory, 0);
 }
 
 void lvk::VulkanAPI::CopyBuffer(VkBuffer& src, VkBuffer& dst, VkDeviceSize size)

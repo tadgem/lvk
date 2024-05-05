@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(example-uniformsv2)
+project(example-texture-mapping)
 
 set (CMAKE_CXX_STANDARD 17)
 
@@ -11,3 +11,4 @@ target_include_directories (${PROJECT_NAME} PUBLIC ${LVK_SDL_INCLUDES} )
 target_link_libraries (${PROJECT_NAME} lvk lvk-sdl)
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/shaders DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/assets DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

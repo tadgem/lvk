@@ -7,6 +7,7 @@
 if(X != VK_SUCCESS){\
 spdlog::error("VK check failed at {} Line {} : {}",_filePath, _lineNumber, #X);}}
 #include "VulkanMemoryAllocator.h"
+#include "stb_image.h"
 
 namespace lvk
 {
@@ -153,9 +154,11 @@ namespace lvk
         inline int                          GetFrameIndex() { return p_CurrentFrameIndex; }
 
         // helpers
-        uint32_t                            DecideMemoryType(VkPhysicalDeviceMemoryProperties& memProperties, uint32_t typeFilter, VkMemoryPropertyFlags properties);
+        uint32_t                            FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
         void                                CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& allocation);
         void                                CreateBufferVMA(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VmaAllocation& allocation);
+        void                                CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+        
         void                                CopyBuffer(VkBuffer& src, VkBuffer& dst, VkDeviceSize size);
         // todo: app specific
         void                                CreateRenderPass();

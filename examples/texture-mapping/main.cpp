@@ -395,6 +395,41 @@ void CreateDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSe
 
 }
 
+void CreateTextureImage(VulkanAPI_SDL& vk, const String& texturePath)
+{
+    int texWidth, texHeight, texChannels;
+    stbi_uc* pixels = stbi_load(texturePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    VkDeviceSize imageSize = texWidth * texHeight * 4;
+
+    if (!pixels)
+    {
+        spdlog::error("Failed to load texture image at path {}", texturePath);
+        return;
+    }
+
+    // create staging buffer to copy texture to gpu
+    VkBuffer stagingBuffer;
+    VmaAllocation stagingBufferMemory;
+    constexpr VkBufferUsageFlags bufferUsageFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    constexpr VkMemoryPropertyFlags memoryPropertiesFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    vk.CreateBufferVMA(imageSize, bufferUsageFlags, memoryPropertiesFlags, stagingBuffer, stagingBufferMemory);
+
+    void* data;
+    vmaMapMemory(vk.m_Allocator, stagingBufferMemory, &data);
+    memcpy(data, pixels, static_cast<size_t>(imageSize));
+    vmaUnmapMemory(vk.m_Allocator, stagingBufferMemory);
+    stbi_image_free(pixels);
+
+
+    VkImage textureImage;
+    VkDeviceMemory textureMemory;
+
+    vk.CreateImage(texWidth, texHeight, 
+        VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, 
+        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
+        textureImage, textureMemory);
+}
+
 std::vector<DescriptorSetLayoutData> CreateDescriptorSetLayoutDatasSVR(VulkanAPI_SDL& vk, std::vector<char>& stageBin)
 {
     SpvReflectShaderModule shaderReflectModule;
@@ -444,12 +479,14 @@ int main()
     vk.CreateWindow(1280, 720);
     vk.InitVulkan();
 
-    auto vertBin = vk.LoadSpirvBinary("shaders/uniform.vert.spv");
-    auto fragBin = vk.LoadSpirvBinary("shaders/uniform.frag.spv");
+    auto vertBin = vk.LoadSpirvBinary("shaders/texture.vert.spv");
+    auto fragBin = vk.LoadSpirvBinary("shaders/texture.frag.spv");
 
     auto layoutDatas = CreateDescriptorSetLayoutDatasSVR(vk, vertBin);
     VkDescriptorSetLayout descriptorSetLayout;
     CreateDescriptorSetLayout(vk,layoutDatas[0], descriptorSetLayout);
+
+    // CreateTextureImage(vk, "assets/crate.jpg");
 
     VkPipelineLayout pipelineLayout;
     VkPipeline pipeline = CreateGraphicsPipeline(vk, descriptorSetLayout, pipelineLayout, vertBin, fragBin);

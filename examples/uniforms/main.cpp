@@ -1,4 +1,3 @@
-#define VMA_IMPLEMENTATION
 #include "VulkanAPI_SDL.h"
 #include "spdlog/spdlog.h"
 #include "glm/glm.hpp"
@@ -54,28 +53,29 @@ const std::vector<VertexData> vertices = {
 const std::vector<uint16_t> indices = {
     0, 1, 2, 2, 3, 0
 };
+
 static std::vector<VkBuffer>            uniformBuffers;
-static std::vector<VkDeviceMemory>      uniformBuffersMemory;
+static std::vector<VmaAllocation>       uniformBuffersMemory;
 static std::vector<void*>               uniformBuffersMapped;
 static std::vector<VkDescriptorSet>     descriptorSets;
 
-void CreateVertexBuffer(VulkanAPI_SDL& vk, VkBuffer& buffer, VkDeviceMemory& deviceMemory)
+void CreateVertexBuffer(VulkanAPI_SDL& vk, VkBuffer& buffer, VmaAllocation& deviceMemory)
 {
     VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
     // create a CPU side buffer to dump vertex data into
     VkBuffer stagingBuffer;
-    VkDeviceMemory stagingBufferMemory;
-    vk.CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+    VmaAllocation stagingBufferMemory;
+    vk.CreateBufferVMA(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
     // dump vert data
     void* data;
-    vkMapMemory(vk.m_LogicalDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
+    vmaMapMemory(vk.m_Allocator, stagingBufferMemory, &data);
     memcpy(data, vertices.data(), bufferSize);
-    vkUnmapMemory(vk.m_LogicalDevice, stagingBufferMemory);
+    vmaUnmapMemory(vk.m_Allocator, stagingBufferMemory);
 
     // create GPU side buffer
-    vk.CreateBuffer(bufferSize,
+    vk.CreateBufferVMA(bufferSize,
         VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
         buffer, deviceMemory);
@@ -83,26 +83,26 @@ void CreateVertexBuffer(VulkanAPI_SDL& vk, VkBuffer& buffer, VkDeviceMemory& dev
     vk.CopyBuffer(stagingBuffer, buffer, bufferSize);
 
     vkDestroyBuffer(vk.m_LogicalDevice, stagingBuffer, nullptr);
-    vkFreeMemory(vk.m_LogicalDevice, stagingBufferMemory, nullptr);
+    vmaFreeMemory(vk.m_Allocator, stagingBufferMemory);
 }
 
-void CreateIndexBuffer(VulkanAPI_SDL& vk, VkBuffer& buffer, VkDeviceMemory& deviceMemory)
+void CreateIndexBuffer(VulkanAPI_SDL& vk, VkBuffer& buffer, VmaAllocation& deviceMemory)
 {
     VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
 
     // create a CPU side buffer to dump vertex data into
     VkBuffer stagingBuffer;
-    VkDeviceMemory stagingBufferMemory;
-    vk.CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+    VmaAllocation stagingBufferMemory;
+    vk.CreateBufferVMA(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
     // dump vert data
     void* data;
-    vkMapMemory(vk.m_LogicalDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
+    vmaMapMemory(vk.m_Allocator, stagingBufferMemory, &data);
     memcpy(data, indices.data(), bufferSize);
-    vkUnmapMemory(vk.m_LogicalDevice, stagingBufferMemory);
+    vmaUnmapMemory(vk.m_Allocator, stagingBufferMemory);
 
     // create GPU side buffer
-    vk.CreateBuffer(bufferSize,
+    vk.CreateBufferVMA(bufferSize,
         VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
         buffer, deviceMemory);
@@ -110,7 +110,14 @@ void CreateIndexBuffer(VulkanAPI_SDL& vk, VkBuffer& buffer, VkDeviceMemory& devi
     vk.CopyBuffer(stagingBuffer, buffer, bufferSize);
 
     vkDestroyBuffer(vk.m_LogicalDevice, stagingBuffer, nullptr);
-    vkFreeMemory(vk.m_LogicalDevice, stagingBufferMemory, nullptr);
+    vmaFreeMemory(vk.m_Allocator, stagingBufferMemory);
+}
+
+// this probably could be created by spirv reflect
+// this should likely be part of shader abstraction
+void CreateDescriptorSetLayout(VulkanAPI_SDL& vk, DescriptorSetLayoutData& layoutData,  VkDescriptorSetLayout& descriptorSetLayout)
+{
+    VK_CHECK(vkCreateDescriptorSetLayout(vk.m_LogicalDevice, &layoutData.m_CreateInfo, nullptr, & descriptorSetLayout))
 }
 
 void CreateUniformBuffers(VulkanAPI_SDL& vk)
@@ -122,9 +129,9 @@ void CreateUniformBuffers(VulkanAPI_SDL& vk)
     uniformBuffersMapped.resize(vk.MAX_FRAMES_IN_FLIGHT);
 
     for (size_t i = 0; i < vk.MAX_FRAMES_IN_FLIGHT; i++) {
-        vk.CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
+        vk.CreateBufferVMA(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
 
-        VK_CHECK(vkMapMemory(vk.m_LogicalDevice, uniformBuffersMemory[i], 0, bufferSize, 0, &uniformBuffersMapped[i]))
+        VK_CHECK(vmaMapMemory(vk.m_Allocator, uniformBuffersMemory[i], &uniformBuffersMapped[i]))
     }
 
 }
@@ -388,24 +395,70 @@ void CreateDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSe
 
 }
 
+std::vector<DescriptorSetLayoutData> CreateDescriptorSetLayoutDatasSVR(VulkanAPI_SDL& vk, std::vector<char>& stageBin)
+{
+    SpvReflectShaderModule shaderReflectModule;
+    SpvReflectResult result = spvReflectCreateShaderModule(stageBin.size(), stageBin.data(), &shaderReflectModule);
+
+    uint32_t descriptorSetCount = 0;
+    spvReflectEnumerateDescriptorSets(&shaderReflectModule, &descriptorSetCount, nullptr);
+
+    std::vector<SpvReflectDescriptorSet*> reflectedDescriptorSets;
+    reflectedDescriptorSets.resize(descriptorSetCount);
+    spvReflectEnumerateDescriptorSets(&shaderReflectModule, &descriptorSetCount, &reflectedDescriptorSets[0]);
+
+    std::vector<DescriptorSetLayoutData> layoutDatas(descriptorSetCount, DescriptorSetLayoutData{});
+    
+    for (int i = 0; i < reflectedDescriptorSets.size(); i++)
+    {
+        const SpvReflectDescriptorSet& reflectedSet = *reflectedDescriptorSets[i];
+        DescriptorSetLayoutData& layoutData = layoutDatas[i];
+
+        layoutData.m_Bindings.resize(reflectedSet.binding_count);
+        for (int bc = 0; bc < reflectedSet.binding_count; bc++)
+        {
+            const SpvReflectDescriptorBinding& reflectedBinding = *reflectedSet.bindings[bc];
+            VkDescriptorSetLayoutBinding& layoutBinding = layoutData.m_Bindings[bc];
+            layoutBinding.binding = reflectedBinding.binding;
+            layoutBinding.descriptorType = static_cast<VkDescriptorType>(reflectedBinding.descriptor_type);
+            layoutBinding.descriptorCount = 1; // sus
+            for (uint32_t i_dim = 0; i_dim < reflectedBinding.array.dims_count; ++i_dim) {
+                layoutBinding.descriptorCount *= reflectedBinding.array.dims[i_dim];
+            }
+            layoutBinding.stageFlags = static_cast<VkShaderStageFlagBits>(shaderReflectModule.shader_stage);
+            layoutData.m_BindingDatas.push_back(DescriptorSetLayoutBindingData{ reflectedBinding.block.size });
+        }
+
+        layoutData.m_SetNumber = reflectedSet.set;
+        layoutData.m_CreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        layoutData.m_CreateInfo.bindingCount = reflectedSet.binding_count;
+        layoutData.m_CreateInfo.pBindings = layoutData.m_Bindings.data();
+    }
+
+    return layoutDatas;
+
+}
 int main()
 {
     VulkanAPI_SDL vk;
     vk.CreateWindow(1280, 720);
     vk.InitVulkan();
 
-    auto vert = vk.LoadShaderModule("shaders/uniform.vert.spv");
-    auto frag = vk.LoadShaderModule("shaders/uniform.frag.spv");
+    auto vertBin = vk.LoadSpirvBinary("shaders/uniform.vert.spv");
+    auto fragBin = vk.LoadSpirvBinary("shaders/uniform.frag.spv");
+
+    auto layoutDatas = CreateDescriptorSetLayoutDatasSVR(vk, vertBin);
+    VkDescriptorSetLayout descriptorSetLayout;
+    CreateDescriptorSetLayout(vk,layoutDatas[0], descriptorSetLayout);
 
     VkPipelineLayout pipelineLayout;
-    VkDescriptorSetLayout& descriptorSetLayout = vert.m_DescriptorSetLayoutData[0].m_Layout;
-    VkPipeline pipeline = CreateGraphicsPipeline(vk, vert.m_DescriptorSetLayoutData[0].m_Layout, pipelineLayout, vert.m_Binary, frag.m_Binary);
+    VkPipeline pipeline = CreateGraphicsPipeline(vk, descriptorSetLayout, pipelineLayout, vertBin, fragBin);
 
     // create vertex and index buffer
     VkBuffer vertexBuffer; 
-    VkDeviceMemory vertexBufferMemory;
+    VmaAllocation vertexBufferMemory;
     VkBuffer indexBuffer;
-    VkDeviceMemory indexBufferMemory;
+    VmaAllocation indexBufferMemory;
 
     CreateVertexBuffer(vk, vertexBuffer, vertexBufferMemory);
     CreateIndexBuffer(vk, indexBuffer, indexBufferMemory);
@@ -430,18 +483,18 @@ int main()
     }
 
     for (size_t i = 0; i < vk.MAX_FRAMES_IN_FLIGHT; i++) {
-
+        vmaUnmapMemory(vk.m_Allocator, uniformBuffersMemory[i]);
         vkDestroyBuffer(vk.m_LogicalDevice, uniformBuffers[i], nullptr);
-        vkFreeMemory(vk.m_LogicalDevice, uniformBuffersMemory[i], nullptr);
+        vmaFreeMemory(vk.m_Allocator, uniformBuffersMemory[i]);
     }
 
     vkDestroyDescriptorSetLayout(vk.m_LogicalDevice, descriptorSetLayout, nullptr);
 
     vkDestroyPipelineLayout(vk.m_LogicalDevice, pipelineLayout, nullptr);
     vkDestroyBuffer(vk.m_LogicalDevice, vertexBuffer, nullptr);
-    vkFreeMemory(vk.m_LogicalDevice, vertexBufferMemory, nullptr);
+    vmaFreeMemory(vk.m_Allocator, vertexBufferMemory);
     vkDestroyBuffer(vk.m_LogicalDevice, indexBuffer, nullptr);
-    vkFreeMemory(vk.m_LogicalDevice, indexBufferMemory, nullptr);
+    vmaFreeMemory(vk.m_Allocator, indexBufferMemory);
     vkDestroyPipeline(vk.m_LogicalDevice, pipeline, nullptr);
     vk.Cleanup();
 
