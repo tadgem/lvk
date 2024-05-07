@@ -476,7 +476,7 @@ std::vector<DescriptorSetLayoutData> CreateDescriptorSetLayoutDatasSVR(VulkanAPI
 int main()
 {
     VulkanAPI_SDL vk;
-    vk.CreateWindow(1280, 720);
+    vk.CreateWindow(1920, 1000);
     vk.InitVulkan();
 
     auto vertBin = vk.LoadSpirvBinary("shaders/texture.vert.spv");

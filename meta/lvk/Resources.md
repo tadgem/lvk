@@ -5,6 +5,21 @@ https://github.com/SaschaWillems/Vulkan/tree/master/examples
 https://github.com/nvpro-samples/vk_mini_samples
 https://github.com/jpbruyere/vkvg/tree/master
 
+
+## Links (Raytracing)
+- [Introduction to Real-Time Ray Tracing with Vulkan](https://devblogs.nvidia.com/vulkan-raytracing)
+- [NVIDIA Vulkan Ray Tracing Tutorial](https://developer.nvidia.com/rtx/raytracing/vkray)
+- [NVIDIA Vulkan Ray Tracing Helpers: Introduction](https://developer.nvidia.com/rtx/raytracing/vkray_helpers)
+- [Fast and Fun: My First Real-Time Ray Tracing Demo](https://devblogs.nvidia.com/my-first-ray-tracing-demo/)
+- [Getting Started with RTX Ray Tracing](https://github.com/NVIDIAGameWorks/GettingStartedWithRTXRayTracing)
+- [D3D12 Raytracing Samples](https://github.com/Microsoft/DirectX-Graphics-Samples/tree/master/Samples/Desktop/D3D12Raytracing)
+- [George Ouzounoudis's vk_exp](https://github.com/georgeouzou/vk_exp)
+- [NVIDIA Vulkan Forums](https://devtalk.nvidia.com/default/board/166/vulkan)
+- [Profiling DXR shaders with Timer Instrumentation](https://www.reddit.com/r/vulkan/comments/hhyeyj/profiling_dxr_shaders_with_timer_instrumentation/)
+- [Khronos Vulkan Registry](https://www.khronos.org/registry/vulkan/)
+- [NVIDIA Vulkan Ray Tracing Tutorial (VK_KHR_ray_tracing)](https://github.com/nvpro-samples/vk_raytracing_tutorial_KHR)
+- [NVIDIA Converting VK_NV_ray_tracing to VK_KHR_ray_tracing](https://nvpro-samples.github.io/vk_raytracing_tutorial_KHR/NV_to_KHR.md.htm)
+- [Vulkan Ray Tracing Final Specification Release](https://www.khronos.org/blog/vulkan-ray-tracing-final-specification-release)
 ## Videos
 
 ```vid 
