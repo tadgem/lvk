@@ -158,7 +158,7 @@ namespace lvk
         void                                CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& allocation);
         void                                CreateBufferVMA(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VmaAllocation& allocation);
         void                                CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
-        
+        void                                CreateImageView(VkImage& image, VkFormat format, VkImageView& imageView);
         void                                CopyBuffer(VkBuffer& src, VkBuffer& dst, VkDeviceSize size);
         void                                CopyBufferToImage(VkBuffer& src, VkImage& image,  uint32_t width, uint32_t height);
         VkCommandBuffer                     BeginSingleTimeCommands();

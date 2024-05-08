@@ -585,30 +585,7 @@ void lvk::VulkanAPI::CreateSwapChainImageViews()
 
     for (uint32_t i = 0; i < m_SwapChainImages.size(); i++)
     {
-        VkImageViewCreateInfo createInfo{};
-        createInfo.sType            = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        createInfo.image            = m_SwapChainImages[i];
-
-        createInfo.viewType         = VK_IMAGE_VIEW_TYPE_2D;
-        createInfo.format           = m_SwapChainImageFormat;
-
-        createInfo.components.r     = VK_COMPONENT_SWIZZLE_IDENTITY;
-        createInfo.components.g     = VK_COMPONENT_SWIZZLE_IDENTITY;
-        createInfo.components.b     = VK_COMPONENT_SWIZZLE_IDENTITY;
-        createInfo.components.a     = VK_COMPONENT_SWIZZLE_IDENTITY;
-
-        // wtf
-        createInfo.subresourceRange.aspectMask      = VK_IMAGE_ASPECT_COLOR_BIT; // ?
-        createInfo.subresourceRange.baseMipLevel    = 0; // just use the texture, no mip mapping
-        createInfo.subresourceRange.levelCount      = 1; // only 1 layer as it is not stereoscopic
-        createInfo.subresourceRange.baseArrayLayer  = 0; // index of the layer ( 0 because there is only 1?)
-        createInfo.subresourceRange.layerCount      = 1; // only 1 layer as 2D
-
-        if (vkCreateImageView(m_LogicalDevice, &createInfo, nullptr, &m_SwapChainImageViews[i]) != VK_SUCCESS)
-        {
-            spdlog::error("Failed to create image view!");
-            std::cerr << "Failed to create image view" << std::endl;
-        }
+        CreateImageView(m_SwapChainImages[i], m_SwapChainImageFormat, m_SwapChainImageViews[i]);
     }
 }
 
@@ -755,6 +732,22 @@ void lvk::VulkanAPI::CreateImage(uint32_t width, uint32_t height, VkFormat forma
     VK_CHECK(vkAllocateMemory(m_LogicalDevice, &allocInfo, nullptr, &imageMemory))
 
     vkBindImageMemory(m_LogicalDevice, image, imageMemory, 0);
+}
+
+void lvk::VulkanAPI::CreateImageView(VkImage& image, VkFormat format, VkImageView& imageView)
+{
+    VkImageViewCreateInfo viewInfo{};
+    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewInfo.image = image;
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.format = format;
+    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    viewInfo.subresourceRange.baseMipLevel = 0;
+    viewInfo.subresourceRange.levelCount = 1;
+    viewInfo.subresourceRange.baseArrayLayer = 0;
+    viewInfo.subresourceRange.layerCount = 1;
+
+    VK_CHECK(vkCreateImageView(m_LogicalDevice, &viewInfo, nullptr, &imageView))
 }
 
 void lvk::VulkanAPI::CopyBuffer(VkBuffer& src, VkBuffer& dst, VkDeviceSize size)

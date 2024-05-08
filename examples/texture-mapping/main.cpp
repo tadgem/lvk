@@ -434,6 +434,11 @@ void CreateTextureImage(VulkanAPI_SDL& vk, const String& texturePath, VkImage& t
     vmaFreeMemory(vk.m_Allocator, stagingBufferMemory);
 }
 
+void CreateTextureImageView(VulkanAPI_SDL& vk, VkImage& image, VkImageView& imageView)
+{
+    vk.CreateImageView(image, VK_FORMAT_R8G8B8A8_SRGB, imageView);
+}
+
 std::vector<DescriptorSetLayoutData> CreateDescriptorSetLayoutDatasSVR(VulkanAPI_SDL& vk, std::vector<char>& stageBin)
 {
     SpvReflectShaderModule shaderReflectModule;
@@ -493,6 +498,8 @@ int main()
     VkImage textureImage;
     VkDeviceMemory textureMemory;
     CreateTextureImage(vk, "assets/crate.jpg", textureImage, textureMemory);
+    VkImageView imageView;
+    CreateTextureImageView(vk, textureImage, imageView);
 
     VkPipelineLayout pipelineLayout;
     VkPipeline pipeline = CreateGraphicsPipeline(vk, descriptorSetLayout, pipelineLayout, vertBin, fragBin);
@@ -531,6 +538,7 @@ int main()
         vmaFreeMemory(vk.m_Allocator, uniformBuffersMemory[i]);
     }
 
+    vkDestroyImageView(vk.m_LogicalDevice, imageView, nullptr);
     vkDestroyImage(vk.m_LogicalDevice, textureImage, nullptr);
     vkFreeMemory(vk.m_LogicalDevice, textureMemory, nullptr);
     vkDestroyDescriptorSetLayout(vk.m_LogicalDevice, descriptorSetLayout, nullptr);
