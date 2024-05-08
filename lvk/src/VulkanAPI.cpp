@@ -346,7 +346,10 @@ bool lvk::VulkanAPI::IsDeviceSuitable(VkPhysicalDevice physicalDevice)
         swapChainSupport = swapChainDetails.m_SupportedFormats.size() > 0 && swapChainDetails.m_SupportedPresentModes.size() > 0;
     }
 
-    return indices.IsComplete() && extensionsSupported && swapChainSupport;
+    VkPhysicalDeviceFeatures supportedFeatures;
+    vkGetPhysicalDeviceFeatures(physicalDevice, &supportedFeatures);
+
+    return indices.IsComplete() && extensionsSupported && swapChainSupport && supportedFeatures.samplerAnisotropy;
 }
 
 uint32_t lvk::VulkanAPI::AssessDeviceSuitability(VkPhysicalDevice m_PhysicalDevice)
@@ -436,6 +439,7 @@ void lvk::VulkanAPI::CreateLogicalDevice()
     }
 
     VkPhysicalDeviceFeatures physicalDeviceFeatures{};
+    physicalDeviceFeatures.samplerAnisotropy = VK_TRUE;
 
     VkDeviceCreateInfo createInfo{};
     createInfo.sType                    = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
