@@ -160,9 +160,13 @@ namespace lvk
         void                                CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
         
         void                                CopyBuffer(VkBuffer& src, VkBuffer& dst, VkDeviceSize size);
+        void                                CopyBufferToImage(VkBuffer& src, VkImage& image,  uint32_t width, uint32_t height);
+        VkCommandBuffer                     BeginSingleTimeCommands();
+        void                                EndSingleTimeCommands(VkCommandBuffer& commandBuffer);
+        void                                TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+
         // todo: app specific
         void                                CreateRenderPass();
-
         Vector<VkExtensionProperties>       GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice);
         Vector<char>                        LoadSpirvBinary(const std::string& path);
         ShaderModule                        LoadShaderModule(const std::string& path);

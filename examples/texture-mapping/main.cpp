@@ -395,7 +395,7 @@ void CreateDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSe
 
 }
 
-void CreateTextureImage(VulkanAPI_SDL& vk, const String& texturePath)
+void CreateTextureImage(VulkanAPI_SDL& vk, const String& texturePath, VkImage& textureImage, VkDeviceMemory& textureMemory)
 {
     int texWidth, texHeight, texChannels;
     stbi_uc* pixels = stbi_load(texturePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
@@ -421,13 +421,17 @@ void CreateTextureImage(VulkanAPI_SDL& vk, const String& texturePath)
     stbi_image_free(pixels);
 
 
-    VkImage textureImage;
-    VkDeviceMemory textureMemory;
-
     vk.CreateImage(texWidth, texHeight, 
         VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, 
         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
         textureImage, textureMemory);
+
+    vk.TransitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    vk.CopyBufferToImage(stagingBuffer, textureImage, texWidth, texHeight);
+    vk.TransitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    
+    vkDestroyBuffer(vk.m_LogicalDevice, stagingBuffer, nullptr);
+    vmaFreeMemory(vk.m_Allocator, stagingBufferMemory);
 }
 
 std::vector<DescriptorSetLayoutData> CreateDescriptorSetLayoutDatasSVR(VulkanAPI_SDL& vk, std::vector<char>& stageBin)
@@ -486,7 +490,9 @@ int main()
     VkDescriptorSetLayout descriptorSetLayout;
     CreateDescriptorSetLayout(vk,layoutDatas[0], descriptorSetLayout);
 
-    // CreateTextureImage(vk, "assets/crate.jpg");
+    VkImage textureImage;
+    VkDeviceMemory textureMemory;
+    CreateTextureImage(vk, "assets/crate.jpg", textureImage, textureMemory);
 
     VkPipelineLayout pipelineLayout;
     VkPipeline pipeline = CreateGraphicsPipeline(vk, descriptorSetLayout, pipelineLayout, vertBin, fragBin);
@@ -525,8 +531,9 @@ int main()
         vmaFreeMemory(vk.m_Allocator, uniformBuffersMemory[i]);
     }
 
+    vkDestroyImage(vk.m_LogicalDevice, textureImage, nullptr);
+    vkFreeMemory(vk.m_LogicalDevice, textureMemory, nullptr);
     vkDestroyDescriptorSetLayout(vk.m_LogicalDevice, descriptorSetLayout, nullptr);
-
     vkDestroyPipelineLayout(vk.m_LogicalDevice, pipelineLayout, nullptr);
     vkDestroyBuffer(vk.m_LogicalDevice, vertexBuffer, nullptr);
     vmaFreeMemory(vk.m_Allocator, vertexBufferMemory);

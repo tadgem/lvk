@@ -1,3 +1,5 @@
+### _THE SPEC_ 
+[Vulkan® 1.3.284 - A Specification (with all registered extensions)](https://registry.khronos.org/vulkan/specs/1.3-extensions/html/)
 ## Links
 https://vkguide.dev/
 https://vkguide.dev/docs/new_chapter_2/vulkan_imgui_setup/
@@ -20,6 +22,11 @@ https://github.com/jpbruyere/vkvg/tree/master
 - [NVIDIA Vulkan Ray Tracing Tutorial (VK_KHR_ray_tracing)](https://github.com/nvpro-samples/vk_raytracing_tutorial_KHR)
 - [NVIDIA Converting VK_NV_ray_tracing to VK_KHR_ray_tracing](https://nvpro-samples.github.io/vk_raytracing_tutorial_KHR/NV_to_KHR.md.htm)
 - [Vulkan Ray Tracing Final Specification Release](https://www.khronos.org/blog/vulkan-ray-tracing-final-specification-release)
+- [GDC Vault - Temporal Reprojection Anti-Aliasing in INSIDE](https://www.gdcvault.com/play/1022970/Temporal-Reprojection-Anti-Aliasing-in)
+- [Ray Tracing Denoising](https://alain.xyz/blog/ray-tracing-denoising)
+- [GitHub - lukedan/ReSTIR-Vulkan: Vulkan implementation of ReSTIR](https://github.com/lukedan/ReSTIR-Vulkan)
+- [Spatiotemporal Reservoir Resampling (ReSTIR) - Theory and Basic Implementation | Shubham Sachdeva Blog](https://gamehacker1999.github.io/posts/restir/)
+- [A Gentle Introduction to ReSTIR Path Reuse in Real-Time | ACM SIGGRAPH 2023 Courses](https://dl.acm.org/doi/10.1145/3587423.3595511)
 ## Videos
 
 ```vid 
