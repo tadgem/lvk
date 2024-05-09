@@ -63,7 +63,7 @@ const std::vector<VertexData> vertices = {
     {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
 };
 
-const std::vector<uint16_t> indices = {
+const std::vector<uint32_t> indices = {
     0, 1, 2, 2, 3, 0,
     4, 5, 6, 6, 7, 4
 };
@@ -73,70 +73,8 @@ static std::vector<VmaAllocation>       uniformBuffersMemory;
 static std::vector<void*>               uniformBuffersMapped;
 static std::vector<VkDescriptorSet>     descriptorSets;
 
-void CreateVertexBuffer(VulkanAPI_SDL& vk, VkBuffer& buffer, VmaAllocation& deviceMemory)
-{
-    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
-
-    // create a CPU side buffer to dump vertex data into
-    VkBuffer stagingBuffer;
-    VmaAllocation stagingBufferMemory;
-    vk.CreateBufferVMA(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-
-    // dump vert data
-    void* data;
-    vmaMapMemory(vk.m_Allocator, stagingBufferMemory, &data);
-    memcpy(data, vertices.data(), bufferSize);
-    vmaUnmapMemory(vk.m_Allocator, stagingBufferMemory);
-
-    // create GPU side buffer
-    vk.CreateBufferVMA(bufferSize,
-        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        buffer, deviceMemory);
-
-    vk.CopyBuffer(stagingBuffer, buffer, bufferSize);
-
-    vkDestroyBuffer(vk.m_LogicalDevice, stagingBuffer, nullptr);
-    vmaFreeMemory(vk.m_Allocator, stagingBufferMemory);
-}
-
-void CreateIndexBuffer(VulkanAPI_SDL& vk, VkBuffer& buffer, VmaAllocation& deviceMemory)
-{
-    VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
-
-    // create a CPU side buffer to dump vertex data into
-    VkBuffer stagingBuffer;
-    VmaAllocation stagingBufferMemory;
-    vk.CreateBufferVMA(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-
-    // dump vert data
-    void* data;
-    vmaMapMemory(vk.m_Allocator, stagingBufferMemory, &data);
-    memcpy(data, indices.data(), bufferSize);
-    vmaUnmapMemory(vk.m_Allocator, stagingBufferMemory);
-
-    // create GPU side buffer
-    vk.CreateBufferVMA(bufferSize,
-        VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        buffer, deviceMemory);
-
-    vk.CopyBuffer(stagingBuffer, buffer, bufferSize);
-
-    vkDestroyBuffer(vk.m_LogicalDevice, stagingBuffer, nullptr);
-    vmaFreeMemory(vk.m_Allocator, stagingBufferMemory);
-}
-
-// this probably could be created by spirv reflect
-// this should likely be part of shader abstraction
-void CreateDescriptorSetLayout(VulkanAPI_SDL& vk, DescriptorSetLayoutData& layoutData,  VkDescriptorSetLayout& descriptorSetLayout)
-{
-    VK_CHECK(vkCreateDescriptorSetLayout(vk.m_LogicalDevice, &layoutData.m_CreateInfo, nullptr, & descriptorSetLayout))
-}
-
-void CreateDescriptorSetLayoutV2(VulkanAPI_SDL& vk, std::vector<DescriptorSetLayoutData>& vertLayoutDatas, std::vector<DescriptorSetLayoutData>& fragLayoutDatas, VkDescriptorSetLayout& descriptorSetLayout)
+void CreateDescriptorSetLayout(VulkanAPI_SDL& vk, std::vector<DescriptorSetLayoutData>& vertLayoutDatas, std::vector<DescriptorSetLayoutData>& fragLayoutDatas, VkDescriptorSetLayout& descriptorSetLayout)
 { 
-    //VK_CHECK(vkCreateDescriptorSetLayout(vk.m_LogicalDevice, &layoutData.m_CreateInfo, nullptr, &descriptorSetLayout))
     std::vector<VkDescriptorSetLayoutBinding> bindings;
     bindings.resize(vertLayoutDatas.size() + fragLayoutDatas.size());
 
@@ -211,7 +149,7 @@ void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkPipelineLay
         VkDeviceSize sizes[] = { 0 };
         vkCmdBindVertexBuffers(vk.m_CommandBuffers[i], 0, 1, vertexBuffers, sizes);
 
-        vkCmdBindIndexBuffer(vk.m_CommandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+        vkCmdBindIndexBuffer(vk.m_CommandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
         vkCmdBindDescriptorSets(vk.m_CommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[vk.GetFrameIndex()], 0, nullptr);
         vkCmdDrawIndexed(vk.m_CommandBuffers[i], numIndices, 1, 0, 0, 0);
 
@@ -580,7 +518,7 @@ int main()
     auto vertexLayoutDatas = CreateDescriptorSetLayoutDatasSVR(vk, vertBin);
     auto fragmentLayoutDatas = CreateDescriptorSetLayoutDatasSVR(vk, fragBin);
     VkDescriptorSetLayout descriptorSetLayout;
-    CreateDescriptorSetLayoutV2(vk,vertexLayoutDatas, fragmentLayoutDatas, descriptorSetLayout);
+    CreateDescriptorSetLayout(vk,vertexLayoutDatas, fragmentLayoutDatas, descriptorSetLayout);
 
     VkImage textureImage;
     VkDeviceMemory textureMemory;
@@ -599,8 +537,8 @@ int main()
     VkBuffer indexBuffer;
     VmaAllocation indexBufferMemory;
 
-    CreateVertexBuffer(vk, vertexBuffer, vertexBufferMemory);
-    CreateIndexBuffer(vk, indexBuffer, indexBufferMemory);
+    vk.CreateVertexBuffer<VertexData>(vertices, vertexBuffer, vertexBufferMemory);
+    vk.CreateIndexBuffer(indices, indexBuffer, indexBufferMemory);
     CreateUniformBuffers(vk);
 
     CreateDescriptorSets(vk, descriptorSetLayout, imageView, imageSampler);

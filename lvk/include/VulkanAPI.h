@@ -165,6 +165,37 @@ namespace lvk
         void                                EndSingleTimeCommands(VkCommandBuffer& commandBuffer);
         void                                TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 
+
+        void CreateIndexBuffer(std::vector<uint32_t> indices, VkBuffer& buffer, VmaAllocation& deviceMemory);
+        template<typename _Ty>
+        void CreateVertexBuffer(std::vector<_Ty> verts, VkBuffer& buffer, VmaAllocation& deviceMemory)
+        {
+            VkDeviceSize bufferSize = sizeof(_Ty) * verts.size();
+
+            // create a CPU side buffer to dump vertex data into
+            VkBuffer stagingBuffer;
+            VmaAllocation stagingBufferMemory;
+            CreateBufferVMA(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+            // dump vert data
+            void* data;
+            vmaMapMemory(m_Allocator, stagingBufferMemory, &data);
+            memcpy(data, verts.data(), bufferSize);
+            vmaUnmapMemory(m_Allocator, stagingBufferMemory);
+
+            // create GPU side buffer
+            CreateBufferVMA(bufferSize,
+                VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                buffer, deviceMemory);
+
+            CopyBuffer(stagingBuffer, buffer, bufferSize);
+
+            vkDestroyBuffer(m_LogicalDevice, stagingBuffer, nullptr);
+            vmaFreeMemory(m_Allocator, stagingBufferMemory);
+        }
+
+
         // todo: app specific
         void                                CreateRenderPass();
         Vector<VkExtensionProperties>       GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice);
