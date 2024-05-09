@@ -109,6 +109,9 @@ namespace lvk
 
         VkFormat                        m_SwapChainImageFormat;
         VkExtent2D                      m_SwapChainImageExtent;
+        VkImage                         m_SwapChainDepthImage;
+        VkDeviceMemory                  m_SwapChainDepthImageMemory;
+        VkImageView                     m_SwapChainDepthImageView;
 
         double                          m_DeltaTime;
 
@@ -140,6 +143,7 @@ namespace lvk
         void                                CreateSwapChainImageViews();
         void                                CleanupSwapChain();
         void                                RecreateSwapChain();
+        void                                CreateSwapChainDepthTexture();
         VkExtent2D                          ChooseSwapExtent(VkSurfaceCapabilitiesKHR& surfaceCapabilities);
         VkShaderModule                      CreateShaderModule(const Vector<char>& data);
         void                                CreateCommandPool();
@@ -151,14 +155,18 @@ namespace lvk
         void                                ClearCommandBuffers();
         void                                CreateVmaAllocator();
 
+
         inline int                          GetFrameIndex() { return p_CurrentFrameIndex; }
 
         // helpers
         uint32_t                            FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+        VkFormat                            FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+        VkFormat                            FindDepthFormat();
+        bool                                HasStencilComponent(VkFormat& format);
         void                                CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& allocation);
         void                                CreateBufferVMA(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VmaAllocation& allocation);
         void                                CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
-        void                                CreateImageView(VkImage& image, VkFormat format, VkImageView& imageView);
+        void                                CreateImageView(VkImage& image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageView& imageView);
         void                                CopyBuffer(VkBuffer& src, VkBuffer& dst, VkDeviceSize size);
         void                                CopyBufferToImage(VkBuffer& src, VkImage& image,  uint32_t width, uint32_t height);
         VkCommandBuffer                     BeginSingleTimeCommands();
