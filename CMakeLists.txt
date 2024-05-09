@@ -30,4 +30,5 @@ add_subdirectory(examples/hello-triangle)
 add_subdirectory(examples/vertex-index-buffer)
 add_subdirectory(examples/uniforms)
 add_subdirectory(examples/texture-mapping)
+add_subdirectory(examples/depth)
 
