@@ -9,6 +9,7 @@ struct VertexData
 {
     glm::vec3 Position;
     glm::vec3 Colour;
+    glm::vec2 UV;
 
     static VkVertexInputBindingDescription GetBindingDescription() {
         VkVertexInputBindingDescription bindingDescription{};
@@ -20,8 +21,8 @@ struct VertexData
         return bindingDescription;
     }
 
-    static std::array<VkVertexInputAttributeDescription, 2> GetAttributeDescriptions() {
-        std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+    static std::array<VkVertexInputAttributeDescription, 3> GetAttributeDescriptions() {
+        std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
 
         attributeDescriptions[0].binding = 0;
         attributeDescriptions[0].location = 0;
@@ -33,6 +34,11 @@ struct VertexData
         attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
         attributeDescriptions[1].offset = offsetof(VertexData, Colour);
 
+        attributeDescriptions[2].binding = 0;
+        attributeDescriptions[2].location = 2;
+        attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+        attributeDescriptions[2].offset = offsetof(VertexData, UV);
+
         return attributeDescriptions;
     }
 };
@@ -42,14 +48,12 @@ struct MvpData {
     glm::mat4 View;
     glm::mat4 Proj;
 };
-
 const std::vector<VertexData> vertices = {
-    {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-    {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-    {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
-    {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}}
+    { { -0.5f, -0.5f , 0.0f}, { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f } },
+    { {0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f} },
+    { {0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f} },
+    { {-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f} }
 };
-
 const std::vector<uint16_t> indices = {
     0, 1, 2, 2, 3, 0
 };
@@ -118,6 +122,34 @@ void CreateIndexBuffer(VulkanAPI_SDL& vk, VkBuffer& buffer, VmaAllocation& devic
 void CreateDescriptorSetLayout(VulkanAPI_SDL& vk, DescriptorSetLayoutData& layoutData,  VkDescriptorSetLayout& descriptorSetLayout)
 {
     VK_CHECK(vkCreateDescriptorSetLayout(vk.m_LogicalDevice, &layoutData.m_CreateInfo, nullptr, & descriptorSetLayout))
+}
+
+void CreateDescriptorSetLayoutV2(VulkanAPI_SDL& vk, std::vector<DescriptorSetLayoutData>& vertLayoutDatas, std::vector<DescriptorSetLayoutData>& fragLayoutDatas, VkDescriptorSetLayout& descriptorSetLayout)
+{ 
+    //VK_CHECK(vkCreateDescriptorSetLayout(vk.m_LogicalDevice, &layoutData.m_CreateInfo, nullptr, &descriptorSetLayout))
+    std::vector<VkDescriptorSetLayoutBinding> bindings;
+    bindings.resize(vertLayoutDatas.size() + fragLayoutDatas.size());
+
+    // .. do the things
+    uint8_t count = 0;
+    for (auto& vertLayoutData : vertLayoutDatas)
+    {
+        bindings[count] = vertLayoutData.m_Bindings.front();
+        count++;
+    }
+
+    for (auto& fragLayoutData : fragLayoutDatas)
+    {
+        bindings[count] = fragLayoutData.m_Bindings.front();
+        count++;
+    }
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+    layoutInfo.pBindings = bindings.data();
+
+    VK_CHECK(vkCreateDescriptorSetLayout(vk.m_LogicalDevice, &layoutInfo, nullptr, &descriptorSetLayout))
 }
 
 void CreateUniformBuffers(VulkanAPI_SDL& vk)
@@ -361,7 +393,7 @@ void UpdateUniformBuffer(VulkanAPI_SDL& vk)
     memcpy(uniformBuffersMapped[vk.GetFrameIndex()], &ubo, sizeof(ubo));
 }
 
-void CreateDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSetLayout)
+void CreateDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler)
 {
     std::vector<VkDescriptorSetLayout> layouts(vk.MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -379,18 +411,30 @@ void CreateDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSe
         bufferInfo.offset = 0;
         bufferInfo.range = sizeof(MvpData);
 
-        VkWriteDescriptorSet descriptorWrite{};
-        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrite.dstSet = descriptorSets[i];
-        descriptorWrite.dstBinding = 0;
-        descriptorWrite.dstArrayElement = 0;
-        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrite.descriptorCount = 1;
-        descriptorWrite.pBufferInfo = &bufferInfo;
-        descriptorWrite.pImageInfo = nullptr; // Optional
-        descriptorWrite.pTexelBufferView = nullptr; // Optional
+        VkDescriptorImageInfo imageInfo{};
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageView = textureImageView;
+        imageInfo.sampler = textureSampler;
 
-        vkUpdateDescriptorSets(vk.m_LogicalDevice, 1, &descriptorWrite, 0, nullptr);
+        std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
+
+        descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[0].dstSet = descriptorSets[i];
+        descriptorWrites[0].dstBinding = 0;
+        descriptorWrites[0].dstArrayElement = 0;
+        descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrites[0].descriptorCount = 1;
+        descriptorWrites[0].pBufferInfo = &bufferInfo;
+
+        descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[1].dstSet = descriptorSets[i];
+        descriptorWrites[1].dstBinding = 1;
+        descriptorWrites[1].dstArrayElement = 0;
+        descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[1].descriptorCount = 1;
+        descriptorWrites[1].pImageInfo = &imageInfo;
+
+        vkUpdateDescriptorSets(vk.m_LogicalDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
     }
 
 }
@@ -523,9 +567,10 @@ int main()
     auto vertBin = vk.LoadSpirvBinary("shaders/texture.vert.spv");
     auto fragBin = vk.LoadSpirvBinary("shaders/texture.frag.spv");
 
-    auto layoutDatas = CreateDescriptorSetLayoutDatasSVR(vk, vertBin);
+    auto vertexLayoutDatas = CreateDescriptorSetLayoutDatasSVR(vk, vertBin);
+    auto fragmentLayoutDatas = CreateDescriptorSetLayoutDatasSVR(vk, fragBin);
     VkDescriptorSetLayout descriptorSetLayout;
-    CreateDescriptorSetLayout(vk,layoutDatas[0], descriptorSetLayout);
+    CreateDescriptorSetLayoutV2(vk,vertexLayoutDatas, fragmentLayoutDatas, descriptorSetLayout);
 
     VkImage textureImage;
     VkDeviceMemory textureMemory;
@@ -548,7 +593,7 @@ int main()
     CreateIndexBuffer(vk, indexBuffer, indexBufferMemory);
     CreateUniformBuffers(vk);
 
-    CreateDescriptorSets(vk, descriptorSetLayout);
+    CreateDescriptorSets(vk, descriptorSetLayout, imageView, imageSampler);
 
     while (vk.ShouldRun())
     {    
