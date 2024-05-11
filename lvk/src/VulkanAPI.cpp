@@ -531,7 +531,7 @@ void lvk::VulkanAPI::CreateSwapChain()
     // from vk-tutorial : "we may sometimes have to wait on the driver to complete
     // internal operations before we can acquire another image to render to. 
     // Therefore it is recommended to request at least one more image than the minimum"
-    uint32_t swapChainImageCount = swapChainDetails.m_Capabilities.minImageCount + 1;
+    uint32_t swapChainImageCount = swapChainDetails.m_Capabilities.minImageCount;
     if (swapChainImageCount > swapChainDetails.m_Capabilities.maxImageCount)
     {
         swapChainImageCount = swapChainDetails.m_Capabilities.maxImageCount;
@@ -1605,6 +1605,24 @@ void lvk::VulkanAPI::EndSingleTimeCommands(VkCommandBuffer& commandBuffer)
     vkFreeCommandBuffers(m_LogicalDevice , m_GraphicsQueueCommandPool, 1, &commandBuffer);
 }
 
+void lvk::VulkanAPI::RecordGraphicsCommands(std::function<void(VkCommandBuffer&, uint32_t)> graphicsCommandsCallback)
+{
+    for (uint32_t i = 0; i < m_CommandBuffers.size(); i++)
+    {
+        VkCommandBufferBeginInfo commandBufferBeginInfo{};
+        commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        commandBufferBeginInfo.flags = 0;
+        commandBufferBeginInfo.pInheritanceInfo = nullptr;
+
+        VK_CHECK(vkBeginCommandBuffer(m_CommandBuffers[i], &commandBufferBeginInfo))
+
+        // Callback 
+        graphicsCommandsCallback(m_CommandBuffers[i], i);
+
+        VK_CHECK(vkEndCommandBuffer(m_CommandBuffers[i]))
+    }
+}
+
 void lvk::VulkanAPI::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
 {
     VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
@@ -1679,7 +1697,7 @@ void lvk::VulkanAPI::TransitionImageLayout(VkImage image, VkFormat format, VkIma
 
 void lvk::VulkanAPI::CreateIndexBuffer(std::vector<uint32_t> indices, VkBuffer& buffer, VmaAllocation& deviceMemory)
 {
-    VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+    VkDeviceSize bufferSize = sizeof(uint32_t) * indices.size();
 
     // create a CPU side buffer to dump vertex data into
     VkBuffer stagingBuffer;

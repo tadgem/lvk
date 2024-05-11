@@ -12,8 +12,10 @@ set(SDL2_DISABLE_UNINSTALL      ON      CACHE BOOL "Disable SDL Uninstall")
 
 add_subdirectory(submodules/glm)
 add_subdirectory(submodules/spdlog)
+add_subdirectory(submodules/assimp)
 add_subdirectory(third-party/sdl)
 
+set(ASSIMP_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/submodules/assimp/include CACHE INTERNAL "")
 set(GLM_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/submodules/glm CACHE INTERNAL "")
 set(SPDLOG_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/submodules/spdlog/include CACHE INTERNAL "")
 set(SDL_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/third-party/sdl/include CACHE INTERNAL "")
@@ -31,4 +33,5 @@ add_subdirectory(examples/vertex-index-buffer)
 add_subdirectory(examples/uniforms)
 add_subdirectory(examples/texture-mapping)
 add_subdirectory(examples/depth)
+add_subdirectory(examples/model)
 

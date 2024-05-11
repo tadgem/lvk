@@ -5,7 +5,7 @@
 #include <array>
 using namespace lvk;
 
-struct VertexData
+struct VertexDataCol
 {
     glm::vec3 Position;
     glm::vec3 Colour;
@@ -14,7 +14,7 @@ struct VertexData
         VkVertexInputBindingDescription bindingDescription{};
 
         bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-        bindingDescription.stride = sizeof(VertexData);
+        bindingDescription.stride = sizeof(VertexDataCol);
         bindingDescription.binding = 0;
 
         return bindingDescription;
@@ -26,12 +26,12 @@ struct VertexData
         attributeDescriptions[0].binding = 0;
         attributeDescriptions[0].location = 0;
         attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[0].offset = offsetof(VertexData, Position);
+        attributeDescriptions[0].offset = offsetof(VertexDataCol, Position);
 
         attributeDescriptions[1].binding = 0;
         attributeDescriptions[1].location = 1;
         attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[1].offset = offsetof(VertexData, Colour);
+        attributeDescriptions[1].offset = offsetof(VertexDataCol, Colour);
 
         return attributeDescriptions;
     }
@@ -43,7 +43,7 @@ struct MvpData {
     glm::mat4 Proj;
 };
 
-const std::vector<VertexData> vertices = {
+const std::vector<VertexDataCol> vertices = {
     {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
     {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
     {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
@@ -203,8 +203,8 @@ VkPipeline CreateGraphicsPipeline(VulkanAPI_SDL& vk, VkDescriptorSetLayout& desc
 
     std::vector<VkPipelineShaderStageCreateInfo> shaderStageCreateInfos = { vertexShaderStageInfo, fragShaderStageInfo };
 
-    auto bindingDescription = VertexData::GetBindingDescription();
-    auto attributeDescriptions = VertexData::GetAttributeDescriptions();
+    auto bindingDescription = VertexDataCol::GetBindingDescription();
+    auto attributeDescriptions = VertexDataCol::GetAttributeDescriptions();
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;

@@ -167,14 +167,13 @@ public:
         void                                CreateImageView(VkImage& image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageView& imageView);
         void                                CreateImageSampler(VkImageView& imageView, VkFilter filterMode, VkSamplerAddressMode addressMode, VkSampler& sampler);
         void                                CreateTexture(const String& path, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory);
-        
         void                                CopyBuffer(VkBuffer& src, VkBuffer& dst, VkDeviceSize size);
         void                                CopyBufferToImage(VkBuffer& src, VkImage& image,  uint32_t width, uint32_t height);
         VkCommandBuffer                     BeginSingleTimeCommands();
         void                                EndSingleTimeCommands(VkCommandBuffer& commandBuffer);
+        void                                RecordGraphicsCommands(std::function<void(VkCommandBuffer&, uint32_t)> graphicsCommandsCallback);
         void                                TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
         void                                CreateIndexBuffer(Vector<uint32_t> indices, VkBuffer& buffer, VmaAllocation& deviceMemory);
-        
         template<typename _Ty>
         void                                CreateVertexBuffer(Vector<_Ty> verts, VkBuffer& buffer, VmaAllocation& deviceMemory)
         {
@@ -225,7 +224,6 @@ public:
         StageBinary                         LoadSpirvBinary(const String& path);
         ShaderModule                        LoadShaderModule(const String& path);
         VkShaderModule                      CreateShaderModule(const StageBinary& data);
-        
         template<typename _Ty>
         void                                CreateUniformBuffers(Vector<VkBuffer>& uniformBuffersFrames, Vector<VmaAllocation>& uniformBuffersMemoryFrames, Vector<void*>& uniformBufferMappedMemoryFrames)
         {
@@ -245,6 +243,7 @@ public:
 
         Vector<DescriptorSetLayoutData>     ReflectDescriptorSetLayouts(StageBinary& stageBin);
         VkDescriptorSet                     CreateDescriptorSet(DescriptorSetLayoutData& layoutData);
+
 
         void                                Start(uint32_t width, uint32_t height);
         // Implement for a windowing system (e.g. SDL)
