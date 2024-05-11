@@ -2,6 +2,12 @@
 #include "spdlog/spdlog.h"
 #include "SDL_vulkan.h"
 
+
+lvk::VulkanAPI_SDL::~VulkanAPI_SDL()
+{
+    Cleanup();
+}
+
 void lvk::VulkanAPI_SDL::HandleSDLEvent(SDL_Event& sdl_event)
 {
     if (sdl_event.type == SDL_QUIT)
@@ -73,11 +79,15 @@ void lvk::VulkanAPI_SDL::PreFrame()
 
 void lvk::VulkanAPI_SDL::PostFrame()
 {
+    DrawFrame(); 
+
     if (vkDeviceWaitIdle(m_LogicalDevice) != VK_SUCCESS)
     {
         spdlog::error("Failed to wait for device idle");
         std::cerr << "Failed to wait for device idle" << std::endl;
     }
+
+    ClearCommandBuffers();
 }
 
 void lvk::VulkanAPI_SDL::Run(std::function<void()> callback)

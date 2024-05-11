@@ -13,6 +13,7 @@ namespace lvk {
 	class VulkanAPI_SDL : public VulkanAPI
 	{
 	public:
+		virtual ~VulkanAPI_SDL();
 		void 								HandleSDLEvent(SDL_Event& sdl_event);
 		// Inherited via VulkanAPI
 		virtual std::vector<const char*> 	GetRequiredExtensions() override;

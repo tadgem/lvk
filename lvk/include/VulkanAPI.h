@@ -11,7 +11,7 @@ spdlog::error("VK check failed at {} Line {} : {}",_filePath, _lineNumber, #X);}
 
 namespace lvk
 {
-
+    using StageBinary = std::vector<char>;
     class VulkanAPIWindowHandle
     {
     };
@@ -32,7 +32,7 @@ namespace lvk
     struct ShaderModule
     {
         Vector<DescriptorSetLayoutData>    m_DescriptorSetLayoutData;
-        Vector<char>                       m_Binary;
+        StageBinary                       m_Binary;
     };
 
     class VulkanAPI
@@ -114,7 +114,7 @@ namespace lvk
         VkImageView                     m_SwapChainDepthImageView;
 
         double                          m_DeltaTime;
-
+    protected:
         // Debug
         bool                                CheckValidationLayerSupport();
         bool                                CheckDeviceExtensionSupport(VkPhysicalDevice device);
@@ -123,12 +123,11 @@ namespace lvk
         void                                ListDeviceExtensions(VkPhysicalDevice physicalDevice);
         void                                PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 
-        // Main API Functionality
+        void                                InitVulkan();
         VkApplicationInfo                   CreateAppInfo();
         void                                CreateInstance();
         void                                Cleanup();
         void                                CleanupVulkan();
-        void                                Quit();
         QueueFamilyIndices                  FindQueueFamilies(VkPhysicalDevice physicalDevice);
         SwapChainSupportDetais              GetSwapChainSupportDetails(VkPhysicalDevice physicalDevice);
         bool                                IsDeviceSuitable(VkPhysicalDevice physicalDevice);
@@ -145,7 +144,6 @@ namespace lvk
         void                                RecreateSwapChain();
         void                                CreateSwapChainDepthTexture();
         VkExtent2D                          ChooseSwapExtent(VkSurfaceCapabilitiesKHR& surfaceCapabilities);
-        VkShaderModule                      CreateShaderModule(const Vector<char>& data);
         void                                CreateCommandPool();
         void                                CreateDescriptorPool();
         void                                CreateSemaphores();
@@ -154,13 +152,13 @@ namespace lvk
         void                                CreateCommandBuffers();
         void                                ClearCommandBuffers();
         void                                CreateVmaAllocator();
-
-
+public:
+        void                                Quit();
         inline int                          GetFrameIndex() { return p_CurrentFrameIndex; }
 
         // helpers
         uint32_t                            FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
-        VkFormat                            FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+        VkFormat                            FindSupportedFormat(const Vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
         VkFormat                            FindDepthFormat();
         bool                                HasStencilComponent(VkFormat& format);
         void                                CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& allocation);
@@ -175,10 +173,10 @@ namespace lvk
         VkCommandBuffer                     BeginSingleTimeCommands();
         void                                EndSingleTimeCommands(VkCommandBuffer& commandBuffer);
         void                                TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
-        void                                CreateIndexBuffer(std::vector<uint32_t> indices, VkBuffer& buffer, VmaAllocation& deviceMemory);
+        void                                CreateIndexBuffer(Vector<uint32_t> indices, VkBuffer& buffer, VmaAllocation& deviceMemory);
         
         template<typename _Ty>
-        void                                CreateVertexBuffer(std::vector<_Ty> verts, VkBuffer& buffer, VmaAllocation& deviceMemory)
+        void                                CreateVertexBuffer(Vector<_Ty> verts, VkBuffer& buffer, VmaAllocation& deviceMemory)
         {
             VkDeviceSize bufferSize = sizeof(_Ty) * verts.size();
 
@@ -204,17 +202,32 @@ namespace lvk
             vkDestroyBuffer(m_LogicalDevice, stagingBuffer, nullptr);
             vmaFreeMemory(m_Allocator, stagingBufferMemory);
         }
-        void                                CreateDescriptorSetLayout(std::vector<DescriptorSetLayoutData>& vertLayoutDatas, std::vector<DescriptorSetLayoutData>& fragLayoutDatas, VkDescriptorSetLayout& descriptorSetLayout);
+        void                                CreateDescriptorSetLayout(Vector<DescriptorSetLayoutData>& vertLayoutDatas, Vector<DescriptorSetLayoutData>& fragLayoutDatas, VkDescriptorSetLayout& descriptorSetLayout);
         
 
         // todo: app specific
         void                                CreateRenderPass();
+        VkPipeline                          CreateRasterizationGraphicsPipeline(
+                                            StageBinary& vert, 
+                                            StageBinary& frag, 
+                                            VkDescriptorSetLayout& descriptorSetLayout, 
+                                            Vector<VkVertexInputBindingDescription>& vertexBindingDescriptions,
+                                            Vector<VkVertexInputAttributeDescription>& vertexAttributeDescriptions,
+                                            VkRenderPass& pipelineRenderPass,
+                                            uint32_t width, uint32_t height,
+                                            VkPolygonMode polyMode,
+                                            VkCullModeFlags cullMode,
+                                            bool enableMultisampling,
+                                            VkCompareOp depthCompareOp,
+                                            VkPipelineLayout& pipelineLayout);
+
         Vector<VkExtensionProperties>       GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice);
-        Vector<char>                        LoadSpirvBinary(const std::string& path);
-        ShaderModule                        LoadShaderModule(const std::string& path);
+        StageBinary                         LoadSpirvBinary(const String& path);
+        ShaderModule                        LoadShaderModule(const String& path);
+        VkShaderModule                      CreateShaderModule(const StageBinary& data);
         
         template<typename _Ty>
-        void                                CreateUniformBuffers(std::vector<VkBuffer>& uniformBuffersFrames, std::vector<VmaAllocation>& uniformBuffersMemoryFrames, std::vector<void*>& uniformBufferMappedMemoryFrames)
+        void                                CreateUniformBuffers(Vector<VkBuffer>& uniformBuffersFrames, Vector<VmaAllocation>& uniformBuffersMemoryFrames, Vector<void*>& uniformBufferMappedMemoryFrames)
         {
             VkDeviceSize bufferSize = sizeof(_Ty);
 
@@ -230,12 +243,12 @@ namespace lvk
 
         }
 
-        Vector<DescriptorSetLayoutData>     CreateDescriptorSetLayoutDatas(std::vector<char>& stageBin);
+        Vector<DescriptorSetLayoutData>     ReflectDescriptorSetLayouts(StageBinary& stageBin);
         VkDescriptorSet                     CreateDescriptorSet(DescriptorSetLayoutData& layoutData);
-            
 
+        void                                Start(uint32_t width, uint32_t height);
         // Implement for a windowing system (e.g. SDL)
-        virtual Vector<const char*>    GetRequiredExtensions() = 0;
+        virtual Vector<const char*>         GetRequiredExtensions() = 0;
         virtual void                        CreateSurface() = 0;
         virtual void                        CreateWindow(uint32_t width, uint32_t height) = 0;
         virtual void                        CleanupWindow() = 0;
@@ -244,7 +257,6 @@ namespace lvk
         virtual void                        PreFrame() = 0;
         virtual void                        PostFrame() = 0;
         virtual void                        Run(std::function<void()> callback) = 0;
-        void                                InitVulkan();
 
     protected:
         bool            p_ShouldRun = true;
