@@ -167,16 +167,18 @@ namespace lvk
         void                                CreateBufferVMA(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VmaAllocation& allocation);
         void                                CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
         void                                CreateImageView(VkImage& image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageView& imageView);
+        void                                CreateImageSampler(VkImageView& imageView, VkFilter filterMode, VkSamplerAddressMode addressMode, VkSampler& sampler);
+        void                                CreateTexture(const String& path, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory);
+        
         void                                CopyBuffer(VkBuffer& src, VkBuffer& dst, VkDeviceSize size);
         void                                CopyBufferToImage(VkBuffer& src, VkImage& image,  uint32_t width, uint32_t height);
         VkCommandBuffer                     BeginSingleTimeCommands();
         void                                EndSingleTimeCommands(VkCommandBuffer& commandBuffer);
         void                                TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
-
-
-        void CreateIndexBuffer(std::vector<uint32_t> indices, VkBuffer& buffer, VmaAllocation& deviceMemory);
+        void                                CreateIndexBuffer(std::vector<uint32_t> indices, VkBuffer& buffer, VmaAllocation& deviceMemory);
+        
         template<typename _Ty>
-        void CreateVertexBuffer(std::vector<_Ty> verts, VkBuffer& buffer, VmaAllocation& deviceMemory)
+        void                                CreateVertexBuffer(std::vector<_Ty> verts, VkBuffer& buffer, VmaAllocation& deviceMemory)
         {
             VkDeviceSize bufferSize = sizeof(_Ty) * verts.size();
 
@@ -202,13 +204,31 @@ namespace lvk
             vkDestroyBuffer(m_LogicalDevice, stagingBuffer, nullptr);
             vmaFreeMemory(m_Allocator, stagingBufferMemory);
         }
-
+        void                                CreateDescriptorSetLayout(std::vector<DescriptorSetLayoutData>& vertLayoutDatas, std::vector<DescriptorSetLayoutData>& fragLayoutDatas, VkDescriptorSetLayout& descriptorSetLayout);
+        
 
         // todo: app specific
         void                                CreateRenderPass();
         Vector<VkExtensionProperties>       GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice);
         Vector<char>                        LoadSpirvBinary(const std::string& path);
         ShaderModule                        LoadShaderModule(const std::string& path);
+        
+        template<typename _Ty>
+        void                                CreateUniformBuffers(std::vector<VkBuffer>& uniformBuffersFrames, std::vector<VmaAllocation>& uniformBuffersMemoryFrames, std::vector<void*>& uniformBufferMappedMemoryFrames)
+        {
+            VkDeviceSize bufferSize = sizeof(_Ty);
+
+            uniformBuffersFrames.resize(MAX_FRAMES_IN_FLIGHT);
+            uniformBuffersMemoryFrames.resize(MAX_FRAMES_IN_FLIGHT);
+            uniformBufferMappedMemoryFrames.resize(MAX_FRAMES_IN_FLIGHT);
+
+            for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+                CreateBufferVMA(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffersFrames[i], uniformBuffersMemoryFrames[i]);
+
+                VK_CHECK(vmaMapMemory(m_Allocator, uniformBuffersMemoryFrames[i], &uniformBufferMappedMemoryFrames[i]))
+            }
+
+        }
 
         Vector<DescriptorSetLayoutData>     CreateDescriptorSetLayoutDatas(std::vector<char>& stageBin);
         VkDescriptorSet                     CreateDescriptorSet(DescriptorSetLayoutData& layoutData);

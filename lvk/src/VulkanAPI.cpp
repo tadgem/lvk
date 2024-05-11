@@ -807,6 +807,75 @@ void lvk::VulkanAPI::CreateImageView(VkImage& image, VkFormat format, VkImageAsp
     VK_CHECK(vkCreateImageView(m_LogicalDevice, &viewInfo, nullptr, &imageView))
 }
 
+void lvk::VulkanAPI::CreateImageSampler(VkImageView& imageView, VkFilter filterMode, VkSamplerAddressMode addressMode, VkSampler& sampler)
+{
+    VkSamplerCreateInfo samplerInfo{};
+    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter = filterMode;
+    samplerInfo.minFilter = filterMode;
+
+    samplerInfo.addressModeU = addressMode;
+    samplerInfo.addressModeV = addressMode;
+    samplerInfo.addressModeW = addressMode;
+
+    VkPhysicalDeviceProperties properties{};
+    vkGetPhysicalDeviceProperties(m_PhysicalDevice, &properties);
+
+    samplerInfo.anisotropyEnable = VK_TRUE;
+    samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+    samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    samplerInfo.unnormalizedCoordinates = VK_FALSE;
+    samplerInfo.compareEnable = VK_FALSE;
+    samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+
+    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerInfo.mipLodBias = 0.0f;
+    samplerInfo.minLod = 0.0f;
+    samplerInfo.maxLod = 0.0f;
+
+    VK_CHECK(vkCreateSampler(m_LogicalDevice, &samplerInfo, nullptr, &sampler))
+}
+
+void lvk::VulkanAPI::CreateTexture(const String& path, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory)
+{
+    int texWidth, texHeight, texChannels;
+    stbi_uc* pixels = stbi_load(path.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    VkDeviceSize imageSize = texWidth * texHeight * 4;
+
+    if (!pixels)
+    {
+        spdlog::error("Failed to load texture image at path {}", path);
+        return;
+    }
+
+    // create staging buffer to copy texture to gpu
+    VkBuffer stagingBuffer;
+    VmaAllocation stagingBufferMemory;
+    constexpr VkBufferUsageFlags bufferUsageFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    constexpr VkMemoryPropertyFlags memoryPropertiesFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    CreateBufferVMA(imageSize, bufferUsageFlags, memoryPropertiesFlags, stagingBuffer, stagingBufferMemory);
+
+    void* data;
+    vmaMapMemory(m_Allocator, stagingBufferMemory, &data);
+    memcpy(data, pixels, static_cast<size_t>(imageSize));
+    vmaUnmapMemory(m_Allocator, stagingBufferMemory);
+    stbi_image_free(pixels);
+
+
+    CreateImage(texWidth, texHeight,
+        format, VK_IMAGE_TILING_OPTIMAL,
+        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        image, imageMemory);
+    CreateImageView(image, format, VK_IMAGE_ASPECT_COLOR_BIT, imageView);
+
+    TransitionImageLayout(image, format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    CopyBufferToImage(stagingBuffer, image, texWidth, texHeight);
+    TransitionImageLayout(image, format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    vkDestroyBuffer(m_LogicalDevice, stagingBuffer, nullptr);
+    vmaFreeMemory(m_Allocator, stagingBufferMemory);
+}
+
 void lvk::VulkanAPI::CopyBuffer(VkBuffer& src, VkBuffer& dst, VkDeviceSize size)
 {
     // create a new command buffer to record the buffer copy
@@ -845,6 +914,51 @@ void lvk::VulkanAPI::CopyBufferToImage(VkBuffer& src, VkImage& image, uint32_t w
     vkCmdCopyBufferToImage(commandBuffer, src, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
     EndSingleTimeCommands(commandBuffer);
+}
+
+void lvk::VulkanAPI::CreateDescriptorSetLayout(std::vector<DescriptorSetLayoutData>& vertLayoutDatas, std::vector<DescriptorSetLayoutData>& fragLayoutDatas, VkDescriptorSetLayout& descriptorSetLayout)
+{
+    std::vector<VkDescriptorSetLayoutBinding> bindings;
+    uint8_t count = 0;
+
+    for (auto& vertLayoutData : vertLayoutDatas)
+    {
+        count += vertLayoutData.m_Bindings.size();
+    }
+
+    for (auto& fragLayoutData : fragLayoutDatas)
+    {
+        count += fragLayoutData.m_Bindings.size();
+    }
+
+    bindings.resize(count);
+
+    count = 0;
+    // .. do the things
+    for (auto& vertLayoutData : vertLayoutDatas)
+    {
+        for (auto& binding : vertLayoutData.m_Bindings)
+        {
+            bindings[count] = binding;
+            count++;
+        }
+    }
+
+    for (auto& fragLayoutData : fragLayoutDatas)
+    {
+        for (auto& binding : fragLayoutData.m_Bindings)
+        {
+            bindings[count] = binding;
+            count++;
+        }
+    }
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+    layoutInfo.pBindings = bindings.data();
+
+    VK_CHECK(vkCreateDescriptorSetLayout(m_LogicalDevice, &layoutInfo, nullptr, &descriptorSetLayout))
 }
 
 void lvk::VulkanAPI::CreateRenderPass()

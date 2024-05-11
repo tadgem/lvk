@@ -3,10 +3,12 @@ project(example-depth-test)
 
 set (CMAKE_CXX_STANDARD 17)
 
-add_executable(${PROJECT_NAME}  main.cpp
-                                )
+add_executable(${PROJECT_NAME} main.cpp)
 
-target_include_directories (${PROJECT_NAME} PUBLIC ${LVK_SDL_INCLUDES} )
+get_filename_component(EXAMPLES_DIR ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY)
+
+
+target_include_directories (${PROJECT_NAME} PUBLIC ${LVK_SDL_INCLUDES} ${EXAMPLES_DIR})
 
 target_link_libraries (${PROJECT_NAME} lvk lvk-sdl)
 

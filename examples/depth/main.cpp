@@ -1,55 +1,5 @@
-#include <array>
-#include "VulkanAPI_SDL.h"
-#include "spdlog/spdlog.h"
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include "glm/glm.hpp"
-#include <glm/gtc/matrix_transform.hpp>
+#include "example-common.h"
 using namespace lvk;
-
-struct VertexData
-{
-    glm::vec3 Position;
-    glm::vec3 Colour;
-    glm::vec2 UV;
-
-    static VkVertexInputBindingDescription GetBindingDescription() {
-        VkVertexInputBindingDescription bindingDescription{};
-
-        bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-        bindingDescription.stride = sizeof(VertexData);
-        bindingDescription.binding = 0;
-
-        return bindingDescription;
-    }
-
-    static std::array<VkVertexInputAttributeDescription, 3> GetAttributeDescriptions() {
-        std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
-
-        attributeDescriptions[0].binding = 0;
-        attributeDescriptions[0].location = 0;
-        attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[0].offset = offsetof(VertexData, Position);
-
-        attributeDescriptions[1].binding = 0;
-        attributeDescriptions[1].location = 1;
-        attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[1].offset = offsetof(VertexData, Colour);
-
-        attributeDescriptions[2].binding = 0;
-        attributeDescriptions[2].location = 2;
-        attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-        attributeDescriptions[2].offset = offsetof(VertexData, UV);
-
-        return attributeDescriptions;
-    }
-};
-
-struct MvpData {
-    glm::mat4 Model;
-    glm::mat4 View;
-    glm::mat4 Proj;
-};
 
 const std::vector<VertexData> vertices = {
     {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
@@ -72,49 +22,6 @@ static std::vector<VkBuffer>            uniformBuffers;
 static std::vector<VmaAllocation>       uniformBuffersMemory;
 static std::vector<void*>               uniformBuffersMapped;
 static std::vector<VkDescriptorSet>     descriptorSets;
-
-void CreateDescriptorSetLayout(VulkanAPI_SDL& vk, std::vector<DescriptorSetLayoutData>& vertLayoutDatas, std::vector<DescriptorSetLayoutData>& fragLayoutDatas, VkDescriptorSetLayout& descriptorSetLayout)
-{ 
-    std::vector<VkDescriptorSetLayoutBinding> bindings;
-    bindings.resize(vertLayoutDatas.size() + fragLayoutDatas.size());
-
-    // .. do the things
-    uint8_t count = 0;
-    for (auto& vertLayoutData : vertLayoutDatas)
-    {
-        bindings[count] = vertLayoutData.m_Bindings.front();
-        count++;
-    }
-
-    for (auto& fragLayoutData : fragLayoutDatas)
-    {
-        bindings[count] = fragLayoutData.m_Bindings.front();
-        count++;
-    }
-
-    VkDescriptorSetLayoutCreateInfo layoutInfo{};
-    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-    layoutInfo.pBindings = bindings.data();
-
-    VK_CHECK(vkCreateDescriptorSetLayout(vk.m_LogicalDevice, &layoutInfo, nullptr, &descriptorSetLayout))
-}
-
-void CreateUniformBuffers(VulkanAPI_SDL& vk)
-{
-    VkDeviceSize bufferSize = sizeof(MvpData);
-
-    uniformBuffers.resize(vk.MAX_FRAMES_IN_FLIGHT);
-    uniformBuffersMemory.resize(vk.MAX_FRAMES_IN_FLIGHT);
-    uniformBuffersMapped.resize(vk.MAX_FRAMES_IN_FLIGHT);
-
-    for (size_t i = 0; i < vk.MAX_FRAMES_IN_FLIGHT; i++) {
-        vk.CreateBufferVMA(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
-
-        VK_CHECK(vmaMapMemory(vk.m_Allocator, uniformBuffersMemory[i], &uniformBuffersMapped[i]))
-    }
-
-}
 
 void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout, VkBuffer& vertexBuffer, VkBuffer& indexBuffer, uint32_t numIndices)
 {
@@ -403,50 +310,6 @@ void CreateDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSe
 
 }
 
-void CreateTextureImage(VulkanAPI_SDL& vk, const String& texturePath, VkImage& textureImage, VkDeviceMemory& textureMemory)
-{
-    int texWidth, texHeight, texChannels;
-    stbi_uc* pixels = stbi_load(texturePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-    VkDeviceSize imageSize = texWidth * texHeight * 4;
-
-    if (!pixels)
-    {
-        spdlog::error("Failed to load texture image at path {}", texturePath);
-        return;
-    }
-
-    // create staging buffer to copy texture to gpu
-    VkBuffer stagingBuffer;
-    VmaAllocation stagingBufferMemory;
-    constexpr VkBufferUsageFlags bufferUsageFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-    constexpr VkMemoryPropertyFlags memoryPropertiesFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    vk.CreateBufferVMA(imageSize, bufferUsageFlags, memoryPropertiesFlags, stagingBuffer, stagingBufferMemory);
-
-    void* data;
-    vmaMapMemory(vk.m_Allocator, stagingBufferMemory, &data);
-    memcpy(data, pixels, static_cast<size_t>(imageSize));
-    vmaUnmapMemory(vk.m_Allocator, stagingBufferMemory);
-    stbi_image_free(pixels);
-
-
-    vk.CreateImage(texWidth, texHeight, 
-        VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, 
-        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
-        textureImage, textureMemory);
-
-    vk.TransitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    vk.CopyBufferToImage(stagingBuffer, textureImage, texWidth, texHeight);
-    vk.TransitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    
-    vkDestroyBuffer(vk.m_LogicalDevice, stagingBuffer, nullptr);
-    vmaFreeMemory(vk.m_Allocator, stagingBufferMemory);
-}
-
-void CreateTextureImageView(VulkanAPI_SDL& vk, VkImage& image, VkImageView& imageView)
-{
-    vk.CreateImageView(image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, imageView);
-}
-
 std::vector<DescriptorSetLayoutData> CreateDescriptorSetLayoutDatasSVR(VulkanAPI_SDL& vk, std::vector<char>& stageBin)
 {
     SpvReflectShaderModule shaderReflectModule;
@@ -491,37 +354,6 @@ std::vector<DescriptorSetLayoutData> CreateDescriptorSetLayoutDatasSVR(VulkanAPI
 
 }
 
-void CreateTextureSampler(VulkanAPI_SDL& vk, VkImageView& imageView, VkSampler& sampler)
-{
-    VkSamplerCreateInfo samplerInfo{};
-    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    samplerInfo.magFilter = VK_FILTER_LINEAR;
-    samplerInfo.minFilter = VK_FILTER_LINEAR;
-
-    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-
-    VkPhysicalDeviceProperties properties{};
-    vkGetPhysicalDeviceProperties(vk.m_PhysicalDevice, &properties);
-    
-    samplerInfo.anisotropyEnable = VK_TRUE;
-    samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
-    samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-    samplerInfo.unnormalizedCoordinates = VK_FALSE;
-    samplerInfo.compareEnable = VK_FALSE;
-    samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-
-    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    samplerInfo.mipLodBias = 0.0f;
-    samplerInfo.minLod = 0.0f;
-    samplerInfo.maxLod = 0.0f;
-
-    VK_CHECK(vkCreateSampler(vk.m_LogicalDevice, &samplerInfo, nullptr, &sampler))
-
-
-}
-
 int main()
 {
     VulkanAPI_SDL vk;
@@ -534,15 +366,14 @@ int main()
     auto vertexLayoutDatas = CreateDescriptorSetLayoutDatasSVR(vk, vertBin);
     auto fragmentLayoutDatas = CreateDescriptorSetLayoutDatasSVR(vk, fragBin);
     VkDescriptorSetLayout descriptorSetLayout;
-    CreateDescriptorSetLayout(vk,vertexLayoutDatas, fragmentLayoutDatas, descriptorSetLayout);
+    vk.CreateDescriptorSetLayout(vertexLayoutDatas, fragmentLayoutDatas, descriptorSetLayout);
 
     VkImage textureImage;
-    VkDeviceMemory textureMemory;
-    CreateTextureImage(vk, "assets/crate.jpg", textureImage, textureMemory);
     VkImageView imageView;
-    CreateTextureImageView(vk, textureImage, imageView);
+    VkDeviceMemory textureMemory;
+    vk.CreateTexture("assets/crate.jpg", VK_FORMAT_R8G8B8A8_SRGB, textureImage, imageView, textureMemory);
     VkSampler imageSampler;
-    CreateTextureSampler(vk, imageView, imageSampler);
+    vk.CreateImageSampler(imageView, VK_FILTER_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, imageSampler);
 
     VkPipelineLayout pipelineLayout;
     VkPipeline pipeline = CreateGraphicsPipeline(vk, descriptorSetLayout, pipelineLayout, vertBin, fragBin);
@@ -555,7 +386,7 @@ int main()
 
     vk.CreateVertexBuffer<VertexData>(vertices, vertexBuffer, vertexBufferMemory);
     vk.CreateIndexBuffer(indices, indexBuffer, indexBufferMemory);
-    CreateUniformBuffers(vk);
+    vk.CreateUniformBuffers<MvpData>(uniformBuffers, uniformBuffersMemory, uniformBuffersMapped);
 
     CreateDescriptorSets(vk, descriptorSetLayout, imageView, imageSampler);
 
