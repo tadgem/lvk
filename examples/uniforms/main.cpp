@@ -441,8 +441,7 @@ std::vector<DescriptorSetLayoutData> CreateDescriptorSetLayoutDatasSVR(VulkanAPI
 int main()
 {
     VulkanAPI_SDL vk;
-    vk.CreateWindow(1280, 720);
-    vk.InitVulkan();
+    vk.Start(1280, 720);
 
     auto vertBin = vk.LoadSpirvBinary("shaders/uniform.vert.spv");
     auto fragBin = vk.LoadSpirvBinary("shaders/uniform.frag.spv");
@@ -473,13 +472,8 @@ int main()
         UpdateUniformBuffer(vk);
 
         RecordCommandBuffers(vk, pipeline, pipelineLayout,  vertexBuffer, indexBuffer, indices.size());
-
-        vk.DrawFrame();
-        
+                
         vk.PostFrame();
-
-        vk.ClearCommandBuffers();
-
     }
 
     for (size_t i = 0; i < vk.MAX_FRAMES_IN_FLIGHT; i++) {
@@ -496,7 +490,6 @@ int main()
     vkDestroyBuffer(vk.m_LogicalDevice, indexBuffer, nullptr);
     vmaFreeMemory(vk.m_Allocator, indexBufferMemory);
     vkDestroyPipeline(vk.m_LogicalDevice, pipeline, nullptr);
-    vk.Cleanup();
-
+    
     return 0;
 }

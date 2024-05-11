@@ -1,6 +1,7 @@
 #include "VulkanAPI_SDL.h"
 #include "spdlog/spdlog.h"
 
+using namespace lvk;
 
 void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline)
 {
@@ -21,7 +22,7 @@ void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline)
 
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = vk.m_RenderPass;
+        renderPassInfo.renderPass = vk.m_SwapchainImageRenderPass;
         renderPassInfo.framebuffer = vk.m_SwapChainFramebuffers[i];
         renderPassInfo.renderArea.offset = { 0,0 };
         renderPassInfo.renderArea.extent = vk.m_SwapChainImageExtent;
@@ -196,7 +197,7 @@ VkPipeline CreateGraphicsPipeline(VulkanAPI_SDL& vk)
 
     pipelineCreateInfo.layout = pipelineLayout;
 
-    pipelineCreateInfo.renderPass = vk.m_RenderPass;
+    pipelineCreateInfo.renderPass = vk.m_SwapchainImageRenderPass;
     pipelineCreateInfo.subpass = 0;
 
     VkPipeline pipeline;
@@ -219,31 +220,16 @@ VkPipeline CreateGraphicsPipeline(VulkanAPI_SDL& vk)
 int main()
 {
     VulkanAPI_SDL vk;
-    vk.CreateWindow(1280, 720);
-    vk.InitVulkan();
+    vk.Start(1280, 720);
 
     VkPipeline pipeline = CreateGraphicsPipeline(vk);
     
     while (vk.ShouldRun())
     {    
-        spdlog::info("preframe");
-        vk.PreFrame();
-        
-        spdlog::info("record command buffer");
+        vk.PreFrame();        
         RecordCommandBuffers(vk, pipeline);
-
-        spdlog::info("draw frame");
-        vk.DrawFrame();
-        
-        spdlog::info("post frame");
         vk.PostFrame();
-
-        spdlog::info("clear command buffers");
-        vk.ClearCommandBuffers();
-
     }
     vkDestroyPipeline(vk.m_LogicalDevice, pipeline, nullptr);
-    vk.Cleanup();
-
     return 0;
 }
