@@ -256,7 +256,7 @@ int main()
     VkImage textureImage;
     VkImageView imageView;
     VkDeviceMemory textureMemory;
-    vk.CreateTexture("assets/viking_room.png", VK_FORMAT_R8G8B8A8_SRGB, textureImage, imageView, textureMemory);
+    vk.CreateTexture("assets/viking_room.png", VK_FORMAT_R8G8B8A8_UNORM, textureImage, imageView, textureMemory);
     VkSampler imageSampler;
     vk.CreateImageSampler(imageView, VK_FILTER_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, imageSampler);
 
