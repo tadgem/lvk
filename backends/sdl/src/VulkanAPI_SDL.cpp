@@ -87,6 +87,9 @@ void lvk::VulkanAPI_SDL::PostFrame()
 {
     DrawFrame(); 
 
+    ImGui::UpdatePlatformWindows();
+    ImGui::RenderPlatformWindowsDefault();
+
     if (vkDeviceWaitIdle(m_LogicalDevice) != VK_SUCCESS)
     {
         spdlog::error("Failed to wait for device idle");

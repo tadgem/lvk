@@ -1156,6 +1156,7 @@ VkPipeline lvk::VulkanAPI::CreateRasterizationGraphicsPipeline(StageBinary& vert
     VkDynamicState dynamicStates[] =
     {
         VK_DYNAMIC_STATE_VIEWPORT,
+        VK_DYNAMIC_STATE_SCISSOR,
         VK_DYNAMIC_STATE_LINE_WIDTH
     };
 
@@ -1197,7 +1198,7 @@ VkPipeline lvk::VulkanAPI::CreateRasterizationGraphicsPipeline(StageBinary& vert
     pipelineCreateInfo.pMultisampleState = &multisampleInfo;
     pipelineCreateInfo.pDepthStencilState = nullptr;
     pipelineCreateInfo.pColorBlendState = &colorBlendStateInfo;
-    pipelineCreateInfo.pDynamicState = nullptr;
+    pipelineCreateInfo.pDynamicState = &dynamicStateInfo;
     pipelineCreateInfo.pDepthStencilState = &depthStencil;
 
     pipelineCreateInfo.layout = pipelineLayout;
@@ -1607,6 +1608,8 @@ void lvk::VulkanAPI::InitImGui()
 {
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     
     ImGui::GetStyle().Alpha = 1.0f;
     InitImGuiBackend();

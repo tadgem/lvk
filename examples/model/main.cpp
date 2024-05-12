@@ -150,6 +150,23 @@ void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkPipelineLay
             VkBuffer vertexBuffers[]{ mesh.m_VertexBuffer};
             VkDeviceSize sizes[] = { 0 };
 
+            VkViewport viewport{};
+            viewport.x = 0.0f;
+            viewport.x = 0.0f;
+            viewport.width = static_cast<float>(vk.m_SwapChainImageExtent.width);
+            viewport.height = static_cast<float>(vk.m_SwapChainImageExtent.height);
+            viewport.minDepth = 0.0f;
+            viewport.maxDepth = 1.0f;
+
+            VkRect2D scissor{};
+            scissor.offset = { 0,0 };
+            scissor.extent = VkExtent2D{ 
+                static_cast<uint32_t>(vk.m_SwapChainImageExtent.width) , 
+                static_cast<uint32_t>(vk.m_SwapChainImageExtent.height)
+            };
+
+            vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+            vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
             vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, sizes);
             vkCmdBindIndexBuffer(commandBuffer, mesh.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
             vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[frameIndex], 0, nullptr);
