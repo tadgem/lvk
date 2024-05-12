@@ -156,7 +156,6 @@ void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkPipelineLay
             vkCmdDrawIndexed(commandBuffer, mesh.m_IndexCount, 1, 0, 0, 0);
         }
         vkCmdEndRenderPass(commandBuffer);
-
     });
 }
 
@@ -270,7 +269,14 @@ int main()
         vk.PreFrame();
         
         UpdateUniformBuffer(vk);
+
+        if (ImGui::Begin("Help"))
+        {
+
+        }
+        ImGui::End();
         RecordCommandBuffers(vk, pipeline, pipelineLayout, model);
+
         vk.PostFrame();
     }
 

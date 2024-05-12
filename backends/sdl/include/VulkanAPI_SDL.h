@@ -31,6 +31,8 @@ namespace lvk {
 		virtual bool						ShouldRun() override;
 		virtual void 						PreFrame() override;
 		virtual void 						PostFrame() override;
+		virtual void                        InitImGuiBackend() override;
+		virtual void                        CleanupImGuiBackend() override;
 
 		VulkanAPIWindowHandle_SDL* m_SdlHandle;
 	};

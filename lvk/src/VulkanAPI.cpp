@@ -7,6 +7,7 @@
 #include "VulkanAPI.h"
 #include "spirv_reflect.h"
 #include "spdlog/spdlog.h"
+#include "ImGui/imgui_impl_vulkan.h"
 
 using namespace lvk;
 
@@ -206,6 +207,12 @@ void lvk::VulkanAPI::CreateInstance()
 
 void lvk::VulkanAPI::Cleanup()
 {
+    if (p_UseImGui)
+    {
+        vkDestroyRenderPass(m_LogicalDevice, m_ImGuiRenderPass, nullptr);
+        ImGui_ImplVulkan_Shutdown();
+        CleanupImGuiBackend();
+    }
     CleanupWindow();
     CleanupVulkan();
 }
@@ -958,13 +965,13 @@ void lvk::VulkanAPI::CreateDescriptorSetLayout(std::vector<DescriptorSetLayoutDa
     VK_CHECK(vkCreateDescriptorSetLayout(m_LogicalDevice, &layoutInfo, nullptr, &descriptorSetLayout))
 }
 
-void lvk::VulkanAPI::CreateRenderPass()
+void lvk::VulkanAPI::CreateRenderPass(VkRenderPass& renderPass, VkAttachmentLoadOp attachmentLoadOp)
 {
     VkAttachmentDescription colorAttachment{};
     colorAttachment.format          = m_SwapChainImageFormat;
     colorAttachment.samples         = VK_SAMPLE_COUNT_1_BIT;
     // clear image each frame and store contents after rendering.
-    colorAttachment.loadOp          = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    colorAttachment.loadOp          = attachmentLoadOp;
     colorAttachment.storeOp         = VK_ATTACHMENT_STORE_OP_STORE;
     // ignore stencil for now
     colorAttachment.stencilLoadOp   = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -977,7 +984,7 @@ void lvk::VulkanAPI::CreateRenderPass()
     VkAttachmentDescription depthAttachment{};
     depthAttachment.format = FindDepthFormat();
     depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depthAttachment.loadOp = attachmentLoadOp;
     depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -1021,7 +1028,7 @@ void lvk::VulkanAPI::CreateRenderPass()
     createInfo.dependencyCount  = 1;
     createInfo.pDependencies    = &subpassDependency;
 
-    if (vkCreateRenderPass(m_LogicalDevice, &createInfo, nullptr, &m_SwapchainImageRenderPass) != VK_SUCCESS)
+    if (vkCreateRenderPass(m_LogicalDevice, &createInfo, nullptr, &renderPass) != VK_SUCCESS)
     {
         spdlog::error("Failed to create Render Pass!");
         std::cerr << "Failed to create Render Pass!" << std::endl;
@@ -1254,15 +1261,15 @@ void lvk::VulkanAPI::CreateDescriptorPool()
 {
     std::array<VkDescriptorPoolSize, 2> poolSizes{};
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+    poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT * 64);
     poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+    poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT * 64);
 
     VkDescriptorPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+    poolInfo.poolSizeCount = static_cast<uint32_t>(2);
     poolInfo.pPoolSizes = poolSizes.data();
-    poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+    poolInfo.maxSets = static_cast<uint32_t>(2 * MAX_FRAMES_IN_FLIGHT * 64);
 
     VK_CHECK(vkCreateDescriptorPool(m_LogicalDevice, &poolInfo, nullptr, &m_DescriptorPool) != VK_SUCCESS);
 }
@@ -1348,6 +1355,28 @@ void lvk::VulkanAPI::DrawFrame()
         std::cerr << "Failed to submit draw command buffer!" << std::endl;
     }
 
+    // ImGui Render
+    ImGui::Render();
+    VkCommandBuffer imguiCommandBuffer = BeginSingleTimeCommands();
+    
+    VkRenderPassBeginInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = m_ImGuiRenderPass;
+    renderPassInfo.framebuffer = m_SwapChainFramebuffers[GetFrameIndex()];
+    renderPassInfo.renderArea.offset = { 0,0 };
+    renderPassInfo.renderArea.extent = m_SwapChainImageExtent;
+
+    std::array<VkClearValue, 2> clearValues{};
+    clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
+    clearValues[1].depthStencil = { 1.0f, 0 };
+
+    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+    renderPassInfo.pClearValues = clearValues.data();
+
+    vkCmdBeginRenderPass(imguiCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), imguiCommandBuffer);
+    vkCmdEndRenderPass(imguiCommandBuffer);
+    EndSingleTimeCommands(imguiCommandBuffer);
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType               = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.waitSemaphoreCount  = 1;
@@ -1564,7 +1593,8 @@ void lvk::VulkanAPI::InitVulkan()
     CreateSwapChain();
     CreateSwapChainImageViews();
     CreateSwapChainDepthTexture();
-    CreateRenderPass();
+    CreateRenderPass(m_SwapchainImageRenderPass, VK_ATTACHMENT_LOAD_OP_CLEAR);
+    CreateRenderPass(m_ImGuiRenderPass, VK_ATTACHMENT_LOAD_OP_DONT_CARE);
     CreateSwapChainFramebuffers();
     CreateDescriptorPool();
     CreateSemaphores();
@@ -1575,6 +1605,28 @@ void lvk::VulkanAPI::InitVulkan()
 
 void lvk::VulkanAPI::InitImGui()
 {
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    
+    ImGui::GetStyle().Alpha = 1.0f;
+    InitImGuiBackend();
+
+    ImGui_ImplVulkan_InitInfo init_info = {};
+
+    init_info.Instance = m_Instance;
+    init_info.PhysicalDevice = m_PhysicalDevice;
+    init_info.Device = m_LogicalDevice;
+    init_info.QueueFamily = m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Graphics];
+    init_info.Queue = m_GraphicsQueue;
+    init_info.PipelineCache = VK_NULL_HANDLE;
+    init_info.DescriptorPool = m_DescriptorPool;
+    init_info.Allocator = nullptr;
+    init_info.MinImageCount = 2;
+    init_info.ImageCount = 2;
+    init_info.RenderPass = m_ImGuiRenderPass;
+        
+    ImGui_ImplVulkan_Init(&init_info);
+
 }
 
 VkCommandBuffer lvk::VulkanAPI::BeginSingleTimeCommands()
@@ -1626,8 +1678,9 @@ void lvk::VulkanAPI::RecordGraphicsCommands(std::function<void(VkCommandBuffer&,
         // Callback 
         graphicsCommandsCallback(m_CommandBuffers[i], i);
 
+
         VK_CHECK(vkEndCommandBuffer(m_CommandBuffers[i]))
-    }
+    } 
 }
 
 void lvk::VulkanAPI::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)

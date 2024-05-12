@@ -1,6 +1,8 @@
 #include "VulkanAPI_SDL.h"
 #include "spdlog/spdlog.h"
 #include "SDL_vulkan.h"
+#include "ImGui/imgui_impl_sdl2.h"
+#include "ImGui/imgui_impl_vulkan.h"
 
 
 lvk::VulkanAPI_SDL::~VulkanAPI_SDL()
@@ -74,7 +76,11 @@ void lvk::VulkanAPI_SDL::PreFrame()
     while (SDL_PollEvent(&sdl_event) > 0)
     {
         HandleSDLEvent(sdl_event);
+        ImGui_ImplSDL2_ProcessEvent(&sdl_event);
     }
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplSDL2_NewFrame();
+    ImGui::NewFrame();
 }
 
 void lvk::VulkanAPI_SDL::PostFrame()
@@ -88,6 +94,16 @@ void lvk::VulkanAPI_SDL::PostFrame()
     }
 
     ClearCommandBuffers();
+}
+
+void lvk::VulkanAPI_SDL::InitImGuiBackend()
+{
+    ImGui_ImplSDL2_InitForVulkan(m_SdlHandle->m_SdlWindow);
+}
+
+void lvk::VulkanAPI_SDL::CleanupImGuiBackend()
+{
+    ImGui_ImplSDL2_Shutdown();
 }
 
 void lvk::VulkanAPI_SDL::Run(std::function<void()> callback)

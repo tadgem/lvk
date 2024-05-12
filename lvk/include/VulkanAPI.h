@@ -8,6 +8,7 @@ if(X != VK_SUCCESS){\
 spdlog::error("VK check failed at {} Line {} : {}",_filePath, _lineNumber, #X);}}
 #include "VulkanMemoryAllocator.h"
 #include "stb_image.h"
+#include "ImGui/imgui.h"
 
 namespace lvk
 {
@@ -88,6 +89,7 @@ namespace lvk
         VkPhysicalDevice                m_PhysicalDevice = VK_NULL_HANDLE;
         VkDevice                        m_LogicalDevice = VK_NULL_HANDLE;
         VkRenderPass                    m_SwapchainImageRenderPass;
+        VkRenderPass                    m_ImGuiRenderPass;
         VkCommandPool                   m_GraphicsQueueCommandPool;
         VkDescriptorPool                m_DescriptorPool;
         VmaAllocator                    m_Allocator;
@@ -207,7 +209,7 @@ public:
         
 
         // todo: app specific
-        void                                CreateRenderPass();
+        void                                CreateRenderPass(VkRenderPass& renderPass, VkAttachmentLoadOp attachmentLoadOp);
         VkPipeline                          CreateRasterizationGraphicsPipeline(
                                             StageBinary& vert, 
                                             StageBinary& frag, 
@@ -258,6 +260,8 @@ public:
         virtual void                        PreFrame() = 0;
         virtual void                        PostFrame() = 0;
         virtual void                        Run(std::function<void()> callback) = 0;
+        virtual void                        InitImGuiBackend() = 0;
+        virtual void                        CleanupImGuiBackend() = 0;
 
     protected:
         bool            p_ShouldRun = true;
