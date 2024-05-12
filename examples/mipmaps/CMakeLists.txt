@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(example-lights)
+project(example-mipmaps)
 
 set (CMAKE_CXX_STANDARD 17)
 

@@ -34,5 +34,5 @@ add_subdirectory(examples/uniforms)
 add_subdirectory(examples/texture-mapping)
 add_subdirectory(examples/depth)
 add_subdirectory(examples/model)
-add_subdirectory(examples/lights)
+add_subdirectory(examples/mipmaps)
 

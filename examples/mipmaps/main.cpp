@@ -150,13 +150,29 @@ void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkPipelineLay
             VkBuffer vertexBuffers[]{ mesh.m_VertexBuffer};
             VkDeviceSize sizes[] = { 0 };
 
+            VkViewport viewport{};
+            viewport.x = 0.0f;
+            viewport.x = 0.0f;
+            viewport.width = static_cast<float>(vk.m_SwapChainImageExtent.width);
+            viewport.height = static_cast<float>(vk.m_SwapChainImageExtent.height);
+            viewport.minDepth = 0.0f;
+            viewport.maxDepth = 1.0f;
+
+            VkRect2D scissor{};
+            scissor.offset = { 0,0 };
+            scissor.extent = VkExtent2D{ 
+                static_cast<uint32_t>(vk.m_SwapChainImageExtent.width) , 
+                static_cast<uint32_t>(vk.m_SwapChainImageExtent.height)
+            };
+
+            vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+            vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
             vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, sizes);
             vkCmdBindIndexBuffer(commandBuffer, mesh.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
             vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[frameIndex], 0, nullptr);
             vkCmdDrawIndexed(commandBuffer, mesh.m_IndexCount, 1, 0, 0, 0);
         }
         vkCmdEndRenderPass(commandBuffer);
-
     });
 }
 
@@ -240,7 +256,7 @@ int main()
     VkImage textureImage;
     VkImageView imageView;
     VkDeviceMemory textureMemory;
-    vk.CreateTexture("assets/viking_room.png", VK_FORMAT_R8G8B8A8_SRGB, textureImage, imageView, textureMemory);
+    vk.CreateTexture("assets/viking_room.png", VK_FORMAT_R8G8B8A8_UNORM, textureImage, imageView, textureMemory);
     VkSampler imageSampler;
     vk.CreateImageSampler(imageView, VK_FILTER_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, imageSampler);
 
@@ -270,7 +286,14 @@ int main()
         vk.PreFrame();
         
         UpdateUniformBuffer(vk);
+
+        if (ImGui::Begin("Help"))
+        {
+
+        }
+        ImGui::End();
         RecordCommandBuffers(vk, pipeline, pipelineLayout, model);
+
         vk.PostFrame();
     }
 
