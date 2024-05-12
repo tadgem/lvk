@@ -39,6 +39,7 @@ namespace lvk
     {
     protected:
         const bool                  p_UseValidation = true;
+        const bool                  p_UseImGui      = true;
         const Vector<const char*> p_ValidationLayers = {
             "VK_LAYER_KHRONOS_validation"
         };
@@ -124,6 +125,7 @@ namespace lvk
         void                                PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 
         void                                InitVulkan();
+        void                                InitImGui();
         VkApplicationInfo                   CreateAppInfo();
         void                                CreateInstance();
         void                                Cleanup();

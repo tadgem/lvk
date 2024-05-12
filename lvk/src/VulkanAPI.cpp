@@ -1,16 +1,14 @@
 #define VMA_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
-#include "VulkanAPI.h"
-#include "spirv_reflect.h"
 #include <cstdint>
 #include <algorithm>
 #include <fstream>
-#include "spdlog/spdlog.h"
 #include <array>
+#include "VulkanAPI.h"
+#include "spirv_reflect.h"
+#include "spdlog/spdlog.h"
 
 using namespace lvk;
-
-// comments are largely snippets from: https://vulkan-tutorial.com/. credit: Alexander Overvoorde
 
 static const bool QUIT_ON_ERROR = false;
 
@@ -21,15 +19,15 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     void* pUserData) {
 
     //std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
-    if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+    if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
     {
         spdlog::warn("VL: {0}", pCallbackData->pMessage);
     }
-    if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
+    if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
     {
         spdlog::info("VL: {0}", pCallbackData->pMessage);
     }
-    if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+    if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
     {
         spdlog::error("VL: {0}", pCallbackData->pMessage);
         if (!QUIT_ON_ERROR)
@@ -1463,6 +1461,11 @@ void lvk::VulkanAPI::Start(uint32_t width, uint32_t height)
 {
     CreateWindow(width, height);
     InitVulkan();
+
+    if (p_UseImGui)
+    {
+        InitImGui();
+    }
 }
 
 Vector<DescriptorSetLayoutData> lvk::VulkanAPI::ReflectDescriptorSetLayouts(StageBinary& stageBin)
@@ -1568,6 +1571,10 @@ void lvk::VulkanAPI::InitVulkan()
     CreateFences();
     CreateCommandBuffers();
     CreateVmaAllocator();
+}
+
+void lvk::VulkanAPI::InitImGui()
+{
 }
 
 VkCommandBuffer lvk::VulkanAPI::BeginSingleTimeCommands()
