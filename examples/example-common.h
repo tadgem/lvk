@@ -94,18 +94,6 @@ struct MvpData {
     glm::mat4 Proj;
 };
 
-static glm::vec3 AssimpToGLM(aiVector3D aiVec) {
-    return glm::vec3(aiVec.x, aiVec.y, aiVec.z);
-}
-
-static glm::vec2 AssimpToGLM(aiVector2D aiVec) {
-    return glm::vec2(aiVec.x, aiVec.y);
-}
-
-static lvk::String AssimpToSTD(aiString str) {
-    return lvk::String(str.C_Str());
-}
-
 struct Mesh
 {
     VkBuffer m_VertexBuffer;
@@ -120,6 +108,40 @@ struct Model
 {
     std::vector<Mesh> m_Meshes;
 };
+
+struct DirectionalLight
+{
+    glm::vec4 Direction;
+    glm::vec4 Ambient;
+    glm::vec4 Colour;
+}
+
+struct PointLight
+{
+    glm::vec4 PositionRadius;
+    glm::vec4 Ambient;
+    glm::vec4 Colour;
+}
+
+struct SpotLight
+{
+    glm::vec4 PositionRadius;
+    glm::vec4 DirectionAngle;
+    glm::vec4 Ambient;
+    glm::vec4 Colour;
+
+}
+glm::vec3 AssimpToGLM(aiVector3D aiVec) {
+    return glm::vec3(aiVec.x, aiVec.y, aiVec.z);
+}
+
+glm::vec2 AssimpToGLM(aiVector2D aiVec) {
+    return glm::vec2(aiVec.x, aiVec.y);
+}
+
+lvk::String AssimpToSTD(aiString str) {
+    return lvk::String(str.C_Str());
+}
 
 void FreeModel(lvk::VulkanAPI_SDL& vk, Model& model)
 {
@@ -205,3 +227,4 @@ void LoadModelAssimp(lvk::VulkanAPI_SDL& vk, Model& model, const lvk::String& pa
     }
     ProcessNode(vk, model, scene->mRootNode, scene);
 }
+
