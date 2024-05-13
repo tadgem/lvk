@@ -9,7 +9,7 @@ get_filename_component(EXAMPLES_DIR ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY)
 
 target_include_directories (${PROJECT_NAME} PUBLIC ${LVK_SDL_INCLUDES} ${EXAMPLES_DIR})
 
-target_link_libraries (${PROJECT_NAME} lvk lvk-sdl)
+target_link_libraries (${PROJECT_NAME} lvk lvk-sdl assimp)
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/shaders DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/assets DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

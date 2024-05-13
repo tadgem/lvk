@@ -160,6 +160,7 @@ public:
         void                                Quit();
         inline int                          GetFrameIndex() { return p_CurrentFrameIndex; }
 
+        // API Begin
         // helpers
         uint32_t                            FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
         VkFormat                            FindSupportedFormat(const Vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
@@ -167,16 +168,17 @@ public:
         bool                                HasStencilComponent(VkFormat& format);
         void                                CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& allocation);
         void                                CreateBufferVMA(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VmaAllocation& allocation);
-        void                                CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
-        void                                CreateImageView(VkImage& image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageView& imageView);
-        void                                CreateImageSampler(VkImageView& imageView, VkFilter filterMode, VkSamplerAddressMode addressMode, VkSampler& sampler);
-        void                                CreateTexture(const String& path, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory);
+        void                                CreateImage(uint32_t width, uint32_t height, uint32_t numMips, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+        void                                CreateImageView(VkImage& image, VkFormat format, uint32_t numMips, VkImageAspectFlags aspectFlags, VkImageView& imageView);
+        void                                CreateImageSampler(VkImageView& imageView, uint32_t numMips, VkFilter filterMode, VkSamplerAddressMode addressMode, VkSampler& sampler);
+        void                                CreateTexture(const String& path, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips = nullptr);
         void                                CopyBuffer(VkBuffer& src, VkBuffer& dst, VkDeviceSize size);
         void                                CopyBufferToImage(VkBuffer& src, VkImage& image,  uint32_t width, uint32_t height);
         VkCommandBuffer                     BeginSingleTimeCommands();
         void                                EndSingleTimeCommands(VkCommandBuffer& commandBuffer);
         void                                RecordGraphicsCommands(std::function<void(VkCommandBuffer&, uint32_t)> graphicsCommandsCallback);
-        void                                TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+        void                                TransitionImageLayout(VkImage image, VkFormat format, uint32_t numMips, VkImageLayout oldLayout, VkImageLayout newLayout);
+        void                                GenerateMips(VkImage image, VkFormat format, uint32_t imageWidth, uint32_t imageHeight, uint32_t numMips, VkFilter filterMethod);
         void                                CreateIndexBuffer(Vector<uint32_t> indices, VkBuffer& buffer, VmaAllocation& deviceMemory);
         template<typename _Ty>
         void                                CreateVertexBuffer(Vector<_Ty> verts, VkBuffer& buffer, VmaAllocation& deviceMemory)
@@ -263,6 +265,7 @@ public:
         virtual void                        InitImGuiBackend() = 0;
         virtual void                        CleanupImGuiBackend() = 0;
 
+        // API End
     protected:
         bool            p_ShouldRun = true;
         double          p_LastFrameTime;

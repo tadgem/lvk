@@ -529,7 +529,7 @@ int main()
     VkImage textureImage;
     VkDeviceMemory textureMemory;
     VkImageView imageView;
-    vk.CreateTexture("assets/crate.jpg", VK_FORMAT_R8G8B8A8_SRGB, textureImage, imageView, textureMemory);
+    vk.CreateTexture("assets/crate.jpg", VK_FORMAT_R8G8B8A8_UNORM, textureImage, imageView, textureMemory);
     
     VkSampler imageSampler;
     CreateTextureSampler(vk, imageView, imageSampler);

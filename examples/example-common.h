@@ -2,7 +2,13 @@
 
 #include <array>
 #include "VulkanAPI_SDL.h"
+#include "assimp/Importer.hpp"
+#include "assimp/postprocess.h"
+#include "assimp/cimport.h"
+#include "assimp/mesh.h"
+#include "assimp/scene.h"
 #include "spdlog/spdlog.h"
+
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include "glm/glm.hpp"
@@ -87,3 +93,115 @@ struct MvpData {
     glm::mat4 View;
     glm::mat4 Proj;
 };
+
+static glm::vec3 AssimpToGLM(aiVector3D aiVec) {
+    return glm::vec3(aiVec.x, aiVec.y, aiVec.z);
+}
+
+static glm::vec2 AssimpToGLM(aiVector2D aiVec) {
+    return glm::vec2(aiVec.x, aiVec.y);
+}
+
+static lvk::String AssimpToSTD(aiString str) {
+    return lvk::String(str.C_Str());
+}
+
+struct Mesh
+{
+    VkBuffer m_VertexBuffer;
+    VmaAllocation m_VertexBufferMemory;
+    VkBuffer m_IndexBuffer;
+    VmaAllocation m_IndexBufferMemory;
+
+    uint32_t m_IndexCount;
+};
+
+struct Model
+{
+    std::vector<Mesh> m_Meshes;
+};
+
+void FreeModel(lvk::VulkanAPI_SDL& vk, Model& model)
+{
+    for (Mesh& m : model.m_Meshes)
+    {
+        vkDestroyBuffer(vk.m_LogicalDevice, m.m_VertexBuffer, nullptr);
+        vmaFreeMemory(vk.m_Allocator, m.m_VertexBufferMemory);
+        vkDestroyBuffer(vk.m_LogicalDevice, m.m_IndexBuffer, nullptr);
+        vmaFreeMemory(vk.m_Allocator, m.m_IndexBufferMemory);
+    }
+}
+
+void ProcessMesh(lvk::VulkanAPI_SDL& vk, Model& model, aiMesh* mesh, aiNode* node, const aiScene* scene) {
+    using namespace lvk;
+    bool hasPositions = mesh->HasPositions();
+    bool hasUVs = mesh->HasTextureCoords(0);
+    bool hasIndices = mesh->HasFaces();
+
+    Vector<VertexData> verts;
+    if (hasPositions && hasUVs) {
+        for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
+            VertexData vert {};
+            vert.Position = AssimpToGLM(mesh->mVertices[i]);
+            vert.UV = glm::vec2(mesh->mTextureCoords[0][i].x, 1.0f - mesh->mTextureCoords[0][i].y);
+            verts.push_back(vert);
+        }
+
+    }
+    Vector<uint32_t> indices;
+    if (hasIndices) {
+        for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
+            aiFace currentFace = mesh->mFaces[i];
+            if (currentFace.mNumIndices != 3) {
+                spdlog::error("Attempting to import a mesh with non triangular face structure! cannot load this mesh.");
+                return;
+            }
+            for (unsigned int index = 0; index < mesh->mFaces[i].mNumIndices; index++) {
+                indices.push_back(static_cast<uint32_t>(mesh->mFaces[i].mIndices[index]));
+            }
+        }
+    }
+
+    Mesh m{};
+    vk.CreateVertexBuffer<VertexData>(verts, m.m_VertexBuffer, m.m_VertexBufferMemory);
+    vk.CreateIndexBuffer(indices, m.m_IndexBuffer, m.m_IndexBufferMemory);
+    m.m_IndexCount = static_cast<uint32_t>(indices.size());
+
+    model.m_Meshes.push_back(m);
+}
+
+void ProcessNode(lvk::VulkanAPI_SDL& vk, Model& model, aiNode* node, const aiScene* scene) {
+
+    if (node->mNumMeshes > 0) {
+        for (unsigned int i = 0; i < node->mNumMeshes; i++) {
+            unsigned int sceneIndex = node->mMeshes[i];
+            aiMesh* mesh = scene->mMeshes[sceneIndex];
+            ProcessMesh(vk, model, mesh, node, scene);
+        }
+    }
+
+    if (node->mNumChildren == 0) {
+        return;
+    }
+
+    for (unsigned int i = 0; i < node->mNumChildren; i++) {
+        ProcessNode(vk, model, node->mChildren[i], scene);
+    }
+}
+
+void LoadModelAssimp(lvk::VulkanAPI_SDL& vk, Model& model, const lvk::String& path)
+{
+    Assimp::Importer importer;
+    const aiScene* scene = importer.ReadFile(path.c_str(),
+        aiProcess_Triangulate |
+        aiProcess_CalcTangentSpace |
+        aiProcess_OptimizeMeshes |
+        aiProcess_OptimizeGraph |
+        aiProcess_FindInvalidData );
+    //
+    if (scene == nullptr) {
+        spdlog::error("AssimpModelAssetFactory : Failed to load asset at path : {}", path);
+        return;
+    }
+    ProcessNode(vk, model, scene->mRootNode, scene);
+}
