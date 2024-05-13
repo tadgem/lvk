@@ -41,6 +41,7 @@ namespace lvk
     protected:
         const bool                  p_UseValidation = true;
         const bool                  p_UseImGui      = true;
+
         
         const Vector<const char*>   p_ValidationLayers = {
             "VK_LAYER_KHRONOS_validation"
@@ -49,6 +50,7 @@ namespace lvk
             "VK_KHR_swapchain"
         };
     public:
+        bool    m_UseSwapchainMsaa = false;
 
         static constexpr int        MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -112,12 +114,18 @@ namespace lvk
 
         VkFormat                        m_SwapChainImageFormat;
         VkExtent2D                      m_SwapChainImageExtent;
+        
+        VkImage                         m_SwapChainColourImage;
+        VkDeviceMemory                  m_SwapChainColourImageMemory;
+        VkImageView                     m_SwapChainColourImageView;
+        
         VkImage                         m_SwapChainDepthImage;
         VkDeviceMemory                  m_SwapChainDepthImageMemory;
         VkImageView                     m_SwapChainDepthImageView;
 
         double                          m_DeltaTime;
-        VkSampleCountFlags              m_MaxMsaaSamples;
+        VkSampleCountFlagBits           m_MaxMsaaSamples;
+        bool                            m_EnableSwapchainMsaa = false ;
 
     protected:
         // Debug
@@ -128,7 +136,7 @@ namespace lvk
         void                                ListDeviceExtensions(VkPhysicalDevice physicalDevice);
         void                                PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 
-        void                                InitVulkan();
+        void                                InitVulkan(bool enableSwapchainMsaa = false);
         void                                InitImGui();
         VkApplicationInfo                   CreateAppInfo();
         void                                CreateInstance();
@@ -148,7 +156,8 @@ namespace lvk
         void                                CreateSwapChainImageViews();
         void                                CleanupSwapChain();
         void                                RecreateSwapChain();
-        void                                CreateSwapChainDepthTexture();
+        void                                CreateSwapChainColourTexture(bool enableMsaa = false);
+        void                                CreateSwapChainDepthTexture(bool enableMsaa = false);
         VkExtent2D                          ChooseSwapExtent(VkSurfaceCapabilitiesKHR& surfaceCapabilities);
         void                                CreateCommandPool();
         void                                CreateDescriptorPool();
@@ -160,7 +169,7 @@ namespace lvk
         void                                CreateVmaAllocator();
         void                                GetMaxUsableSampleCount();
 public:
-        void                                Start(uint32_t width, uint32_t height);
+        void                                Start(uint32_t width, uint32_t height, bool enableSwapchainMsaa = false);
         void                                Quit();
         inline int                          GetFrameIndex() { return p_CurrentFrameIndex; }
 
@@ -171,7 +180,7 @@ public:
         bool                                HasStencilComponent(VkFormat& format);
         void                                CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& allocation);
         void                                CreateBufferVMA(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VmaAllocation& allocation);
-        void                                CreateImage(uint32_t width, uint32_t height, uint32_t numMips, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+        void                                CreateImage(uint32_t width, uint32_t height, uint32_t numMips, VkSampleCountFlagBits sampleCount, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
         void                                CreateImageView(VkImage& image, VkFormat format, uint32_t numMips, VkImageAspectFlags aspectFlags, VkImageView& imageView);
         void                                CreateImageSampler(VkImageView& imageView, uint32_t numMips, VkFilter filterMode, VkSamplerAddressMode addressMode, VkSampler& sampler);
         void                                CreateTexture(const String& path, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips = nullptr);
@@ -211,7 +220,7 @@ public:
             vmaFreeMemory(m_Allocator, stagingBufferMemory);
         }
         void                                CreateDescriptorSetLayout(Vector<DescriptorSetLayoutData>& vertLayoutDatas, Vector<DescriptorSetLayoutData>& fragLayoutDatas, VkDescriptorSetLayout& descriptorSetLayout);
-        void                                CreateRenderPass(VkRenderPass& renderPass, VkAttachmentLoadOp attachmentLoadOp);
+        void                                CreateRenderPass(VkRenderPass& renderPass, VkAttachmentLoadOp attachmentLoadOp, bool enableMsaa = false);
         VkPipeline                          CreateRasterizationGraphicsPipeline(
                                             StageBinary& vert, 
                                             StageBinary& frag, 

@@ -65,7 +65,7 @@ void UpdateUniformBuffer(VulkanAPI_SDL& vk)
 
     auto currentTime = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
+    time = 0.0f;
     MvpData ubo{};
     ubo.Model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
@@ -129,7 +129,8 @@ void CreateDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSe
 int main()
 {
     VulkanAPI_SDL vk;
-    vk.Start(1280, 720);
+    bool enableMSAA = true;
+    vk.Start(1280, 720, enableMSAA);
 
     auto vertBin = vk.LoadSpirvBinary("shaders/texture.vert.spv");
     auto fragBin = vk.LoadSpirvBinary("shaders/texture.frag.spv");
@@ -156,7 +157,7 @@ int main()
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
         VK_POLYGON_MODE_FILL,
         VK_CULL_MODE_NONE,
-        false, // no msaa atm
+        enableMSAA, // msaa time babyyyyyy
         VK_COMPARE_OP_LESS,
         pipelineLayout);
 

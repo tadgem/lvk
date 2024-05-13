@@ -611,6 +611,10 @@ void lvk::VulkanAPI::CleanupSwapChain()
         vkDestroyImageView(m_LogicalDevice, m_SwapChainImageViews[i], nullptr);
     }
 
+    vkDestroyImageView(m_LogicalDevice, m_SwapChainColourImageView, nullptr);
+    vkDestroyImage(m_LogicalDevice, m_SwapChainColourImage, nullptr);
+    vkFreeMemory(m_LogicalDevice, m_SwapChainColourImageMemory, nullptr);
+
     vkDestroyImageView(m_LogicalDevice, m_SwapChainDepthImageView, nullptr);
     vkDestroyImage(m_LogicalDevice, m_SwapChainDepthImage, nullptr);
     vkFreeMemory(m_LogicalDevice, m_SwapChainDepthImageMemory, nullptr);
@@ -627,14 +631,45 @@ void lvk::VulkanAPI::RecreateSwapChain()
 
     CreateSwapChain();
     CreateSwapChainImageViews();
-    CreateSwapChainDepthTexture();
+    CreateSwapChainColourTexture(m_EnableSwapchainMsaa);
+    CreateSwapChainDepthTexture(m_EnableSwapchainMsaa);
     CreateSwapChainFramebuffers();
 }
 
-void lvk::VulkanAPI::CreateSwapChainDepthTexture()
+void lvk::VulkanAPI::CreateSwapChainColourTexture(bool enableMsaa)
+{
+    VkFormat format = m_SwapChainImageFormat;
+
+    VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT;
+    
+    if (enableMsaa)
+    {
+        sampleCount = m_MaxMsaaSamples;
+    }
+
+    CreateImage(m_SwapChainImageExtent.width, m_SwapChainImageExtent.height, 1, sampleCount,
+        format,
+        VK_IMAGE_TILING_OPTIMAL,
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        m_SwapChainColourImage,
+        m_SwapChainColourImageMemory);
+
+    CreateImageView(m_SwapChainColourImage, format, 1, VK_IMAGE_ASPECT_COLOR_BIT, m_SwapChainColourImageView);
+}
+
+void lvk::VulkanAPI::CreateSwapChainDepthTexture(bool enableMsaa )
 {
     VkFormat depthFormat = FindDepthFormat();
-    CreateImage(m_SwapChainImageExtent.width, m_SwapChainImageExtent.height, 1,
+
+    VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT;
+
+    if (enableMsaa)
+    {
+        sampleCount = m_MaxMsaaSamples;
+    }
+
+    CreateImage(m_SwapChainImageExtent.width, m_SwapChainImageExtent.height, 1, sampleCount,
         depthFormat,
         VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
@@ -762,7 +797,7 @@ void lvk::VulkanAPI::CreateBufferVMA(VkDeviceSize size, VkBufferUsageFlags usage
     VK_CHECK(vmaCreateBuffer(m_Allocator, &bufferInfo, &allocInfo, &buffer, &allocation, nullptr));
 }
 
-void lvk::VulkanAPI::CreateImage(uint32_t width, uint32_t height, uint32_t numMips, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory)
+void lvk::VulkanAPI::CreateImage(uint32_t width, uint32_t height, uint32_t numMips, VkSampleCountFlagBits sampleCount, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory)
 {
     VkImageCreateInfo imageInfo{};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -776,7 +811,7 @@ void lvk::VulkanAPI::CreateImage(uint32_t width, uint32_t height, uint32_t numMi
     imageInfo.tiling = tiling;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     imageInfo.usage = usage;
-    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.samples = sampleCount;
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     if (vkCreateImage(m_LogicalDevice, &imageInfo, nullptr, &image) != VK_SUCCESS) {
@@ -835,7 +870,7 @@ void lvk::VulkanAPI::CreateImageSampler(VkImageView& imageView, uint32_t numMips
 
     samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
     samplerInfo.mipLodBias = 0.0f;
-    samplerInfo.minLod = 0.0f;
+    samplerInfo.minLod = 0.0f; // static_cast<float>(numMips / 2); to test mips are working
     samplerInfo.maxLod = static_cast<float>(numMips);
 
     VK_CHECK(vkCreateSampler(m_LogicalDevice, &samplerInfo, nullptr, &sampler))
@@ -875,7 +910,7 @@ void lvk::VulkanAPI::CreateTexture(const String& path, VkFormat format, VkImage&
     vmaUnmapMemory(m_Allocator, stagingBufferMemory);
     stbi_image_free(pixels);
 
-    CreateImage(texWidth, texHeight, mips,
+    CreateImage(texWidth, texHeight, mips, VK_SAMPLE_COUNT_1_BIT,
         format, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
         image, imageMemory);
@@ -977,46 +1012,96 @@ void lvk::VulkanAPI::CreateDescriptorSetLayout(std::vector<DescriptorSetLayoutDa
     VK_CHECK(vkCreateDescriptorSetLayout(m_LogicalDevice, &layoutInfo, nullptr, &descriptorSetLayout))
 }
 
-void lvk::VulkanAPI::CreateRenderPass(VkRenderPass& renderPass, VkAttachmentLoadOp attachmentLoadOp)
+void lvk::VulkanAPI::CreateRenderPass(VkRenderPass& renderPass, VkAttachmentLoadOp attachmentLoadOp, bool enableMsaa)
 {
+    VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT;
+
+    Vector<VkAttachmentDescription> attachmentDescriptions;
+    if (enableMsaa)
+    {
+        attachmentDescriptions.resize(3);
+        sampleCount = m_MaxMsaaSamples;
+    }
+    else
+    {
+        attachmentDescriptions.resize(2);
+    }
+
     VkAttachmentDescription colorAttachment{};
-    colorAttachment.format          = m_SwapChainImageFormat;
-    colorAttachment.samples         = VK_SAMPLE_COUNT_1_BIT;
-    // clear image each frame and store contents after rendering.
-    colorAttachment.loadOp          = attachmentLoadOp;
-    colorAttachment.storeOp         = VK_ATTACHMENT_STORE_OP_STORE;
-    // ignore stencil for now
-    colorAttachment.stencilLoadOp   = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    colorAttachment.stencilStoreOp  = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    colorAttachment.format = m_SwapChainImageFormat;
+    colorAttachment.samples = sampleCount;
+    colorAttachment.loadOp = attachmentLoadOp;
+    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     // from vk-tutorial : images need to be transitioned to specific layouts
     // that are suitable for the operation that they're going to be involved in next.
-    colorAttachment.initialLayout   = VK_IMAGE_LAYOUT_UNDEFINED;
-    colorAttachment.finalLayout     = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    if (enableMsaa)
+    {
+        colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    }
+    else
+    {
+        colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    }
+    attachmentDescriptions[0] = colorAttachment;
 
     VkAttachmentDescription depthAttachment{};
     depthAttachment.format = FindDepthFormat();
-    depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    depthAttachment.samples = sampleCount;
     depthAttachment.loadOp = attachmentLoadOp;
     depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    attachmentDescriptions[1] = depthAttachment;
+
+    VkAttachmentDescription colorAttachmentResolve{};
+    if (enableMsaa)
+    {
+        colorAttachmentResolve.format = m_SwapChainImageFormat;
+        colorAttachmentResolve.samples = VK_SAMPLE_COUNT_1_BIT;
+        colorAttachmentResolve.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        colorAttachmentResolve.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        colorAttachmentResolve.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        colorAttachmentResolve.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        colorAttachmentResolve.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        colorAttachmentResolve.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        attachmentDescriptions[2] = colorAttachmentResolve;
+    }
+
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
     VkAttachmentReference colorAttachmentReference{};
-    colorAttachmentReference.attachment     = 0;
-    colorAttachmentReference.layout         = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    colorAttachmentReference.attachment = 0;
+    if (enableMsaa)
+    {
+        colorAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    }
+    else
+    {
+        colorAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    }
 
     VkAttachmentReference depthAttachmentReference{};
     depthAttachmentReference.attachment = 1;
     depthAttachmentReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-
-    VkSubpassDescription subpass{};
-    subpass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount    = 1;
-    subpass.pColorAttachments       = &colorAttachmentReference;
+    VkAttachmentReference colorAttachmentResolveReference{};
+    subpass.colorAttachmentCount = 1;
+    if (enableMsaa)
+    {
+        colorAttachmentResolveReference.attachment = 2;
+        colorAttachmentResolveReference.layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        subpass.pResolveAttachments = &colorAttachmentResolveReference;
+    }
+ 
+    subpass.pColorAttachments = &colorAttachmentReference;
     subpass.pDepthStencilAttachment = &depthAttachmentReference;
+
 
     VkSubpassDependency subpassDependency{};
     // implicit subpasses 
@@ -1029,12 +1114,12 @@ void lvk::VulkanAPI::CreateRenderPass(VkRenderPass& renderPass, VkAttachmentLoad
     // wait until we can write to the color attachment
     subpassDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
     subpassDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    
 
-    std::array<VkAttachmentDescription, 2> attachments = { colorAttachment, depthAttachment };
     VkRenderPassCreateInfo createInfo{};
     createInfo.sType            = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    createInfo.attachmentCount  = static_cast<uint32_t>(attachments.size());
-    createInfo.pAttachments     = attachments.data();
+    createInfo.attachmentCount  = static_cast<uint32_t>(attachmentDescriptions.size());
+    createInfo.pAttachments     = attachmentDescriptions.data();
     createInfo.subpassCount     = 1;
     createInfo.pSubpasses       = &subpass;
     createInfo.dependencyCount  = 1;
@@ -1133,11 +1218,19 @@ VkPipeline lvk::VulkanAPI::CreateRasterizationGraphicsPipeline(StageBinary& vert
     rasterizerInfo.depthBiasClamp = 0.0f;
     rasterizerInfo.depthBiasSlopeFactor = 0.0f;
 
+
+    VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT;
+
+    if (enableMultisampling)
+    {
+        sampleCount = m_MaxMsaaSamples;
+    }
+
     // ToDo : Do something with enableMultisampling here
     VkPipelineMultisampleStateCreateInfo multisampleInfo{};
     multisampleInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisampleInfo.sampleShadingEnable = VK_FALSE;
-    multisampleInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    multisampleInfo.rasterizationSamples = sampleCount;
     multisampleInfo.minSampleShading = 1.0f;
     multisampleInfo.pSampleMask = nullptr;
     multisampleInfo.alphaToCoverageEnable = VK_FALSE;
@@ -1235,10 +1328,23 @@ void lvk::VulkanAPI::CreateSwapChainFramebuffers()
 
     for (uint32_t i = 0; i < m_SwapChainImageViews.size(); i++)
     {
-        std::array<VkImageView, 2> attachments = {
-            m_SwapChainImageViews[i],
-            m_SwapChainDepthImageView
-        };
+        std::vector<VkImageView> attachments;
+
+        if (m_EnableSwapchainMsaa)
+        {
+            attachments.resize(3);
+            attachments[0] = m_SwapChainColourImageView;
+            attachments[1] = m_SwapChainDepthImageView;
+            attachments[2] = m_SwapChainImageViews[i];
+        }
+        else
+        {
+            attachments.resize(2);
+            attachments[0] = m_SwapChainImageViews[i];
+            attachments[1] = m_SwapChainDepthImageView;
+
+        }
+
         VkFramebufferCreateInfo framebufferCreateInfo{};
         framebufferCreateInfo.sType             = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebufferCreateInfo.attachmentCount   = static_cast<uint32_t>(attachments.size());
@@ -1499,10 +1605,10 @@ VkDescriptorSet lvk::VulkanAPI::CreateDescriptorSet(DescriptorSetLayoutData& lay
     return descriptorSet;
 }
 
-void lvk::VulkanAPI::Start(uint32_t width, uint32_t height)
+void lvk::VulkanAPI::Start(uint32_t width, uint32_t height, bool enableSwapchainMsaa)
 {
     CreateWindow(width, height);
-    InitVulkan();
+    InitVulkan(enableSwapchainMsaa);
 
     if (p_UseImGui)
     {
@@ -1604,17 +1710,18 @@ void lvk::VulkanAPI::GetMaxUsableSampleCount()
     VK_SAMPLE_COUNT_16_BIT;
 
     auto counts = physicalDeviceProperties.limits.framebufferColorSampleCounts & physicalDeviceProperties.limits.framebufferDepthSampleCounts;
-    if (counts & VK_SAMPLE_COUNT_64_BIT) {  m_MaxMsaaSamples = VK_SAMPLE_COUNT_64_BIT; }
-    if (counts & VK_SAMPLE_COUNT_32_BIT) {  m_MaxMsaaSamples = VK_SAMPLE_COUNT_32_BIT; }
-    if (counts & VK_SAMPLE_COUNT_16_BIT) {  m_MaxMsaaSamples = VK_SAMPLE_COUNT_16_BIT; }
-    if (counts & VK_SAMPLE_COUNT_8_BIT) {   m_MaxMsaaSamples = VK_SAMPLE_COUNT_8_BIT; }
-    if (counts & VK_SAMPLE_COUNT_4_BIT) {   m_MaxMsaaSamples = VK_SAMPLE_COUNT_4_BIT; }
-    if (counts & VK_SAMPLE_COUNT_2_BIT) {   m_MaxMsaaSamples = VK_SAMPLE_COUNT_2_BIT; }
+    if (counts & VK_SAMPLE_COUNT_64_BIT) {  m_MaxMsaaSamples = VK_SAMPLE_COUNT_64_BIT;  return ;}
+    if (counts & VK_SAMPLE_COUNT_32_BIT) {  m_MaxMsaaSamples = VK_SAMPLE_COUNT_32_BIT;  return ;}
+    if (counts & VK_SAMPLE_COUNT_16_BIT) {  m_MaxMsaaSamples = VK_SAMPLE_COUNT_16_BIT;  return ;}
+    if (counts & VK_SAMPLE_COUNT_8_BIT) {   m_MaxMsaaSamples = VK_SAMPLE_COUNT_8_BIT;   return ;}
+    if (counts & VK_SAMPLE_COUNT_4_BIT) {   m_MaxMsaaSamples = VK_SAMPLE_COUNT_4_BIT;   return ;}
+    if (counts & VK_SAMPLE_COUNT_2_BIT) {   m_MaxMsaaSamples = VK_SAMPLE_COUNT_2_BIT;   return ;}
 }
 
-void lvk::VulkanAPI::InitVulkan()
+void lvk::VulkanAPI::InitVulkan(bool enableSwapchainMsaa)
 {
     p_CurrentFrameIndex = 0;
+    m_EnableSwapchainMsaa = enableSwapchainMsaa;
     CreateInstance();
     SetupDebugOutput();
     CreateSurface();
@@ -1625,9 +1732,10 @@ void lvk::VulkanAPI::InitVulkan()
     CreateCommandPool();
     CreateSwapChain();
     CreateSwapChainImageViews();
-    CreateSwapChainDepthTexture();
-    CreateRenderPass(m_SwapchainImageRenderPass, VK_ATTACHMENT_LOAD_OP_CLEAR);
-    CreateRenderPass(m_ImGuiRenderPass, VK_ATTACHMENT_LOAD_OP_DONT_CARE);
+    CreateSwapChainDepthTexture(m_EnableSwapchainMsaa);
+    CreateSwapChainColourTexture(m_EnableSwapchainMsaa);
+    CreateRenderPass(m_SwapchainImageRenderPass, VK_ATTACHMENT_LOAD_OP_CLEAR, m_EnableSwapchainMsaa);
+    CreateRenderPass(m_ImGuiRenderPass, VK_ATTACHMENT_LOAD_OP_DONT_CARE, m_EnableSwapchainMsaa);
     CreateSwapChainFramebuffers();
     CreateDescriptorPool();
     CreateSemaphores();
@@ -1659,7 +1767,10 @@ void lvk::VulkanAPI::InitImGui()
     init_info.MinImageCount = 2;
     init_info.ImageCount = 2;
     init_info.RenderPass = m_ImGuiRenderPass;
-        
+    if (m_EnableSwapchainMsaa)
+    {
+        init_info.MSAASamples = m_MaxMsaaSamples;
+    }
     ImGui_ImplVulkan_Init(&init_info);
 
 }
@@ -1818,8 +1929,10 @@ void lvk::VulkanAPI::GenerateMips(VkImage image, VkFormat format, uint32_t image
 
     for (uint32_t i = 1; i < numMips; i++) {
         barrier.subresourceRange.baseMipLevel = i - 1;
-        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
         barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 
@@ -1830,7 +1943,7 @@ void lvk::VulkanAPI::GenerateMips(VkImage image, VkFormat format, uint32_t image
 
         VkImageBlit imageBlit{};
         imageBlit.srcOffsets[0] = { 0, 0, 0 };
-        imageBlit.srcOffsets[1] = { mipWidth, mipHeight, 0 };
+        imageBlit.srcOffsets[1] = { mipWidth, mipHeight, 1 };
         imageBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         imageBlit.srcSubresource.mipLevel = i - 1;
         imageBlit.srcSubresource.baseArrayLayer = 0;
@@ -1847,7 +1960,7 @@ void lvk::VulkanAPI::GenerateMips(VkImage image, VkFormat format, uint32_t image
             image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             1, &imageBlit, filterMethod);
 
-        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
         barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
@@ -1862,7 +1975,7 @@ void lvk::VulkanAPI::GenerateMips(VkImage image, VkFormat format, uint32_t image
         if (mipHeight > 1) mipHeight /= 2;
 
         barrier.subresourceRange.baseMipLevel = numMips - 1;
-        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
         barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
