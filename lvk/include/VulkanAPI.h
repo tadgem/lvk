@@ -13,16 +13,16 @@ spdlog::error("VK check failed at {} Line {} : {}",_filePath, _lineNumber, #X);}
 namespace lvk
 {
     using StageBinary = std::vector<char>;
-    class VulkanAPIWindowHandle
-    {
-    };
+
+    class VulkanAPIWindowHandle {};
 
     struct DescriptorSetLayoutBindingData
     {
         uint32_t                     m_ExpectedBlockSize;
     };
 
-    struct DescriptorSetLayoutData {
+    struct DescriptorSetLayoutData 
+    {
         uint32_t                                    m_SetNumber;
         VkDescriptorSetLayoutCreateInfo             m_CreateInfo;
         VkDescriptorSetLayout                       m_Layout;
@@ -32,8 +32,8 @@ namespace lvk
 
     struct ShaderModule
     {
-        Vector<DescriptorSetLayoutData>    m_DescriptorSetLayoutData;
-        StageBinary                       m_Binary;
+        Vector<DescriptorSetLayoutData>     m_DescriptorSetLayoutData;
+        StageBinary                         m_Binary;
     };
 
     class VulkanAPI
@@ -41,16 +41,16 @@ namespace lvk
     protected:
         const bool                  p_UseValidation = true;
         const bool                  p_UseImGui      = true;
-        const Vector<const char*> p_ValidationLayers = {
+        
+        const Vector<const char*>   p_ValidationLayers = {
             "VK_LAYER_KHRONOS_validation"
         };
-
-        const Vector<const char*> p_DeviceExtensions = {
+        const Vector<const char*>   p_DeviceExtensions = {
             "VK_KHR_swapchain"
         };
     public:
 
-        static constexpr int       MAX_FRAMES_IN_FLIGHT = 2;
+        static constexpr int        MAX_FRAMES_IN_FLIGHT = 2;
 
         enum class ShaderStage
         {
@@ -77,7 +77,7 @@ namespace lvk
 
         struct SwapChainSupportDetais
         {
-            VkSurfaceCapabilitiesKHR        m_Capabilities;
+            VkSurfaceCapabilitiesKHR   m_Capabilities;
             Vector<VkSurfaceFormatKHR> m_SupportedFormats;
             Vector<VkPresentModeKHR>   m_SupportedPresentModes;
         };
@@ -117,6 +117,8 @@ namespace lvk
         VkImageView                     m_SwapChainDepthImageView;
 
         double                          m_DeltaTime;
+        VkSampleCountFlags              m_MaxMsaaSamples;
+
     protected:
         // Debug
         bool                                CheckValidationLayerSupport();
@@ -156,12 +158,13 @@ namespace lvk
         void                                CreateCommandBuffers();
         void                                ClearCommandBuffers();
         void                                CreateVmaAllocator();
+        void                                GetMaxUsableSampleCount();
 public:
+        void                                Start(uint32_t width, uint32_t height);
         void                                Quit();
         inline int                          GetFrameIndex() { return p_CurrentFrameIndex; }
 
         // API Begin
-        // helpers
         uint32_t                            FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
         VkFormat                            FindSupportedFormat(const Vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
         VkFormat                            FindDepthFormat();
@@ -208,9 +211,6 @@ public:
             vmaFreeMemory(m_Allocator, stagingBufferMemory);
         }
         void                                CreateDescriptorSetLayout(Vector<DescriptorSetLayoutData>& vertLayoutDatas, Vector<DescriptorSetLayoutData>& fragLayoutDatas, VkDescriptorSetLayout& descriptorSetLayout);
-        
-
-        // todo: app specific
         void                                CreateRenderPass(VkRenderPass& renderPass, VkAttachmentLoadOp attachmentLoadOp);
         VkPipeline                          CreateRasterizationGraphicsPipeline(
                                             StageBinary& vert, 
@@ -230,6 +230,8 @@ public:
         StageBinary                         LoadSpirvBinary(const String& path);
         ShaderModule                        LoadShaderModule(const String& path);
         VkShaderModule                      CreateShaderModule(const StageBinary& data);
+        Vector<DescriptorSetLayoutData>     ReflectDescriptorSetLayouts(StageBinary& stageBin);
+        VkDescriptorSet                     CreateDescriptorSet(DescriptorSetLayoutData& layoutData);
         template<typename _Ty>
         void                                CreateUniformBuffers(Vector<VkBuffer>& uniformBuffersFrames, Vector<VmaAllocation>& uniformBuffersMemoryFrames, Vector<void*>& uniformBufferMappedMemoryFrames)
         {
@@ -247,12 +249,6 @@ public:
 
         }
 
-        Vector<DescriptorSetLayoutData>     ReflectDescriptorSetLayouts(StageBinary& stageBin);
-        VkDescriptorSet                     CreateDescriptorSet(DescriptorSetLayoutData& layoutData);
-
-
-        void                                Start(uint32_t width, uint32_t height);
-        // Implement for a windowing system (e.g. SDL)
         virtual Vector<const char*>         GetRequiredExtensions() = 0;
         virtual void                        CreateSurface() = 0;
         virtual void                        CreateWindow(uint32_t width, uint32_t height) = 0;

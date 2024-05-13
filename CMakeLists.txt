@@ -35,4 +35,5 @@ add_subdirectory(examples/texture-mapping)
 add_subdirectory(examples/depth)
 add_subdirectory(examples/model)
 add_subdirectory(examples/mipmaps)
+add_subdirectory(examples/msaa)
 

@@ -1593,6 +1593,25 @@ void lvk::VulkanAPI::CreateVmaAllocator()
     VK_CHECK(vmaCreateAllocator(&allocatorCreateInfo, &m_Allocator));
 }
 
+void lvk::VulkanAPI::GetMaxUsableSampleCount()
+{
+    VkPhysicalDeviceProperties physicalDeviceProperties;
+    vkGetPhysicalDeviceProperties(m_PhysicalDevice, &physicalDeviceProperties);
+
+    VK_SAMPLE_COUNT_2_BIT;
+    VK_SAMPLE_COUNT_4_BIT;
+    VK_SAMPLE_COUNT_8_BIT;
+    VK_SAMPLE_COUNT_16_BIT;
+
+    auto counts = physicalDeviceProperties.limits.framebufferColorSampleCounts & physicalDeviceProperties.limits.framebufferDepthSampleCounts;
+    if (counts & VK_SAMPLE_COUNT_64_BIT) {  m_MaxMsaaSamples = VK_SAMPLE_COUNT_64_BIT; }
+    if (counts & VK_SAMPLE_COUNT_32_BIT) {  m_MaxMsaaSamples = VK_SAMPLE_COUNT_32_BIT; }
+    if (counts & VK_SAMPLE_COUNT_16_BIT) {  m_MaxMsaaSamples = VK_SAMPLE_COUNT_16_BIT; }
+    if (counts & VK_SAMPLE_COUNT_8_BIT) {   m_MaxMsaaSamples = VK_SAMPLE_COUNT_8_BIT; }
+    if (counts & VK_SAMPLE_COUNT_4_BIT) {   m_MaxMsaaSamples = VK_SAMPLE_COUNT_4_BIT; }
+    if (counts & VK_SAMPLE_COUNT_2_BIT) {   m_MaxMsaaSamples = VK_SAMPLE_COUNT_2_BIT; }
+}
+
 void lvk::VulkanAPI::InitVulkan()
 {
     p_CurrentFrameIndex = 0;
@@ -1601,6 +1620,7 @@ void lvk::VulkanAPI::InitVulkan()
     CreateSurface();
     PickPhysicalDevice();
     CreateLogicalDevice();
+    GetMaxUsableSampleCount();
     GetQueueHandles();
     CreateCommandPool();
     CreateSwapChain();
