@@ -4,8 +4,9 @@ layout(location = 0) in vec3 vertexPosition;
 layout(location = 1) in vec3 vertexNormal;
 layout(location = 2) in vec2 vertexUV;
 
-layout(location = 0) out vec3 Normal;
-layout(location = 1) out vec2 UV;
+layout(location = 0) out vec3 Position;
+layout(location = 1) out vec3 Normal;
+layout(location = 2) out vec2 UV;
 
 layout(set = 0, binding = 0) uniform UniformBufferObject {
     mat4 model;
@@ -15,6 +16,7 @@ layout(set = 0, binding = 0) uniform UniformBufferObject {
 
 void main() {
     gl_Position = ubo.proj * ubo.view * ubo.model * vec4(vertexPosition, 1.0);
-    Normal = vertexNormal;
+    Position = (vec4(vertexPosition, 1.0) * ubo.model).xyz;
+    Normal = (vec4(vertexNormal, 1.0) * ubo.model).xyz;;
     UV = vertexUV;
 }

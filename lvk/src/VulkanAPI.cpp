@@ -968,6 +968,42 @@ void lvk::VulkanAPI::CopyBufferToImage(VkBuffer& src, VkImage& image, uint32_t w
     EndSingleTimeCommands(commandBuffer);
 }
 
+std::vector<VkDescriptorSetLayoutBinding> CleanDescriptorSetLayout(std::vector<VkDescriptorSetLayoutBinding>& arr)
+{
+    std::vector<VkDescriptorSetLayoutBinding> clean;
+
+    for (int k = 0; k < arr.size(); k++)
+    {
+        auto& layoutSetData = arr[k];
+        if (clean.empty())
+        {
+            clean.push_back(layoutSetData);
+            continue;
+        }
+
+        int start = clean.size() - 1;
+        for (int i = start; i >= 0; i--)
+        {
+            auto& newLayoutSet = clean[i];
+            if (newLayoutSet.binding == layoutSetData.binding)
+            {
+                if (newLayoutSet.descriptorCount == layoutSetData.descriptorCount &&
+                    newLayoutSet.descriptorType == layoutSetData.descriptorType)
+                {
+                    newLayoutSet.stageFlags = layoutSetData.stageFlags + newLayoutSet.stageFlags;
+                    continue;
+                }
+            }
+            
+            clean.push_back(layoutSetData);
+            break;
+            
+        }
+    }
+
+    return clean;
+}
+
 void lvk::VulkanAPI::CreateDescriptorSetLayout(std::vector<DescriptorSetLayoutData>& vertLayoutDatas, std::vector<DescriptorSetLayoutData>& fragLayoutDatas, VkDescriptorSetLayout& descriptorSetLayout)
 {
     std::vector<VkDescriptorSetLayoutBinding> bindings;
@@ -1005,10 +1041,12 @@ void lvk::VulkanAPI::CreateDescriptorSetLayout(std::vector<DescriptorSetLayoutDa
         }
     }
 
+    Vector<VkDescriptorSetLayoutBinding> cleanBindings = CleanDescriptorSetLayout(bindings);
+
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-    layoutInfo.pBindings = bindings.data();
+    layoutInfo.bindingCount = static_cast<uint32_t>(cleanBindings.size());
+    layoutInfo.pBindings = cleanBindings.data();
 
     VK_CHECK(vkCreateDescriptorSetLayout(m_LogicalDevice, &layoutInfo, nullptr, &descriptorSetLayout))
 }
