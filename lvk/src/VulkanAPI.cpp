@@ -447,6 +447,7 @@ void lvk::VulkanAPI::CreateLogicalDevice()
 
     VkPhysicalDeviceFeatures physicalDeviceFeatures{};
     physicalDeviceFeatures.samplerAnisotropy = VK_TRUE;
+    physicalDeviceFeatures.sampleRateShading = VK_TRUE;
 
     VkDeviceCreateInfo createInfo{};
     createInfo.sType                    = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -1229,9 +1230,9 @@ VkPipeline lvk::VulkanAPI::CreateRasterizationGraphicsPipeline(StageBinary& vert
     // ToDo : Do something with enableMultisampling here
     VkPipelineMultisampleStateCreateInfo multisampleInfo{};
     multisampleInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    multisampleInfo.sampleShadingEnable = VK_TRUE;
+    multisampleInfo.sampleShadingEnable = static_cast<VkBool32>(enableMultisampling);
     multisampleInfo.rasterizationSamples = sampleCount;
-    multisampleInfo.minSampleShading = 1.0f;
+    multisampleInfo.minSampleShading = .2f;
     multisampleInfo.pSampleMask = nullptr;
     multisampleInfo.alphaToCoverageEnable = VK_FALSE;
     multisampleInfo.alphaToOneEnable = VK_FALSE;

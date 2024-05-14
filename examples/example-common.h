@@ -88,6 +88,46 @@ struct VertexData
     }
 };
 
+struct VertexDataNormal
+{
+    glm::vec3 Position;
+    glm::vec3 Normal;
+    glm::vec2 UV;
+
+    static VkVertexInputBindingDescription GetBindingDescription() {
+        VkVertexInputBindingDescription bindingDescription{};
+
+        bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+        bindingDescription.stride = sizeof(VertexDataNormal);
+        bindingDescription.binding = 0;
+
+        return bindingDescription;
+    }
+
+    static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions() {
+        std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
+
+        attributeDescriptions.resize(3);
+
+        attributeDescriptions[0].binding = 0;
+        attributeDescriptions[0].location = 0;
+        attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+        attributeDescriptions[0].offset = offsetof(VertexDataNormal, Position);
+
+        attributeDescriptions[1].binding = 0;
+        attributeDescriptions[1].location = 1;
+        attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+        attributeDescriptions[1].offset = offsetof(VertexDataNormal, Normal);
+
+        attributeDescriptions[2].binding = 0;
+        attributeDescriptions[2].location = 2;
+        attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+        attributeDescriptions[2].offset = offsetof(VertexDataNormal, UV);
+
+        return attributeDescriptions;
+    }
+};
+
 struct MvpData {
     glm::mat4 Model;
     glm::mat4 View;
@@ -133,11 +173,11 @@ struct SpotLight
 };
 
 template<size_t _Size>
-struct FrameLightData
+struct FrameLightDataT
 {
-    DirectionalLight    m_DirectionalLight;
-    PointLight          m_PointLights[_Size];
-    SpotLight           m_SpotLights[_Size];
+    DirectionalLight                m_DirectionalLight;
+    std::array<PointLight, _Size>   m_PointLights;
+    std::array<SpotLight, _Size>    m_SpotLights;
 
     uint32_t            m_DirectionalLightActive;
     uint32_t            m_PointLightsActive;
@@ -206,13 +246,63 @@ void ProcessMesh(lvk::VulkanAPI_SDL& vk, Model& model, aiMesh* mesh, aiNode* nod
     model.m_Meshes.push_back(m);
 }
 
-void ProcessNode(lvk::VulkanAPI_SDL& vk, Model& model, aiNode* node, const aiScene* scene) {
+
+void ProcessMeshWithNormals(lvk::VulkanAPI_SDL& vk, Model& model, aiMesh* mesh, aiNode* node, const aiScene* scene) {
+    using namespace lvk;
+    bool hasPositions = mesh->HasPositions();
+    bool hasUVs = mesh->HasTextureCoords(0);
+    bool hasNormals = mesh->HasNormals();
+    bool hasIndices = mesh->HasFaces();
+
+
+    Vector<VertexDataNormal> verts;
+    if (hasPositions && hasUVs && hasNormals) {
+        for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
+            VertexDataNormal vert{};
+            vert.Position = AssimpToGLM(mesh->mVertices[i]);
+            vert.UV = glm::vec2(mesh->mTextureCoords[0][i].x, 1.0f - mesh->mTextureCoords[0][i].y);
+            vert.Normal = AssimpToGLM(mesh->mNormals[i]);
+            verts.push_back(vert);
+        }
+
+    }
+    Vector<uint32_t> indices;
+    if (hasIndices) {
+        for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
+            aiFace currentFace = mesh->mFaces[i];
+            if (currentFace.mNumIndices != 3) {
+                spdlog::error("Attempting to import a mesh with non triangular face structure! cannot load this mesh.");
+                return;
+            }
+            for (unsigned int index = 0; index < mesh->mFaces[i].mNumIndices; index++) {
+                indices.push_back(static_cast<uint32_t>(mesh->mFaces[i].mIndices[index]));
+            }
+        }
+    }
+
+    Mesh m{};
+    vk.CreateVertexBuffer<VertexDataNormal>(verts, m.m_VertexBuffer, m.m_VertexBufferMemory);
+    vk.CreateIndexBuffer(indices, m.m_IndexBuffer, m.m_IndexBufferMemory);
+    m.m_IndexCount = static_cast<uint32_t>(indices.size());
+
+    model.m_Meshes.push_back(m);
+}
+
+
+void ProcessNode(lvk::VulkanAPI_SDL& vk, Model& model, aiNode* node, const aiScene* scene, bool withNormals = false) {
 
     if (node->mNumMeshes > 0) {
         for (unsigned int i = 0; i < node->mNumMeshes; i++) {
             unsigned int sceneIndex = node->mMeshes[i];
             aiMesh* mesh = scene->mMeshes[sceneIndex];
-            ProcessMesh(vk, model, mesh, node, scene);
+            if (withNormals)
+            {
+                ProcessMeshWithNormals(vk, model, mesh, node, scene);
+            }
+            else
+            {
+                ProcessMesh(vk, model, mesh, node, scene);
+            }
         }
     }
 
@@ -225,7 +315,7 @@ void ProcessNode(lvk::VulkanAPI_SDL& vk, Model& model, aiNode* node, const aiSce
     }
 }
 
-void LoadModelAssimp(lvk::VulkanAPI_SDL& vk, Model& model, const lvk::String& path)
+void LoadModelAssimp(lvk::VulkanAPI_SDL& vk, Model& model, const lvk::String& path, bool withNormals = false)
 {
     Assimp::Importer importer;
     const aiScene* scene = importer.ReadFile(path.c_str(),
@@ -239,6 +329,5 @@ void LoadModelAssimp(lvk::VulkanAPI_SDL& vk, Model& model, const lvk::String& pa
         spdlog::error("AssimpModelAssetFactory : Failed to load asset at path : {}", path);
         return;
     }
-    ProcessNode(vk, model, scene->mRootNode, scene);
+    ProcessNode(vk, model, scene->mRootNode, scene, withNormals);
 }
-

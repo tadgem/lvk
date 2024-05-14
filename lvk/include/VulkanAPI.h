@@ -12,6 +12,10 @@ spdlog::error("VK check failed at {} Line {} : {}",_filePath, _lineNumber, #X);}
 
 namespace lvk
 {
+    class VulkanAPI;
+
+    static constexpr int        MAX_FRAMES_IN_FLIGHT = 2;
+    
     using StageBinary = std::vector<char>;
 
     class VulkanAPIWindowHandle {};
@@ -36,6 +40,28 @@ namespace lvk
         StageBinary                         m_Binary;
     };
 
+    template<typename T>
+    struct UniformBufferFrameData
+    {
+        Vector<VkBuffer>            m_UniformBuffers;
+        Vector<VmaAllocation>       m_UniformBuffersMemory;
+        Vector<void*>               m_UniformBuffersMapped;
+
+        void Set(uint32_t frameIndex, T& data)
+        {
+            memcpy(m_UniformBuffersMapped[frameIndex], &data, sizeof(T));
+        }
+
+        void Free(VulkanAPI& vk)
+        {
+            for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+                vmaUnmapMemory(vk.m_Allocator, m_UniformBuffersMemory[i]);
+                vkDestroyBuffer(vk.m_LogicalDevice, m_UniformBuffers[i], nullptr);
+                vmaFreeMemory(vk.m_Allocator, m_UniformBuffersMemory[i]);
+            }
+        }
+    };
+
     class VulkanAPI
     {
     protected:
@@ -52,7 +78,6 @@ namespace lvk
     public:
         bool    m_UseSwapchainMsaa = false;
 
-        static constexpr int        MAX_FRAMES_IN_FLIGHT = 2;
 
         enum class ShaderStage
         {
@@ -241,6 +266,7 @@ public:
         VkShaderModule                      CreateShaderModule(const StageBinary& data);
         Vector<DescriptorSetLayoutData>     ReflectDescriptorSetLayouts(StageBinary& stageBin);
         VkDescriptorSet                     CreateDescriptorSet(DescriptorSetLayoutData& layoutData);
+
         template<typename _Ty>
         void                                CreateUniformBuffers(Vector<VkBuffer>& uniformBuffersFrames, Vector<VmaAllocation>& uniformBuffersMemoryFrames, Vector<void*>& uniformBufferMappedMemoryFrames)
         {
@@ -254,6 +280,23 @@ public:
                 CreateBufferVMA(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffersFrames[i], uniformBuffersMemoryFrames[i]);
 
                 VK_CHECK(vmaMapMemory(m_Allocator, uniformBuffersMemoryFrames[i], &uniformBufferMappedMemoryFrames[i]))
+            }
+
+        }
+
+        template<typename _Ty>
+        void                                CreateUniformBuffers(UniformBufferFrameData<_Ty>& uniformData)
+        {
+            VkDeviceSize bufferSize = sizeof(_Ty);
+
+            uniformData.m_UniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+            uniformData.m_UniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
+            uniformData.m_UniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
+
+            for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+                CreateBufferVMA(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformData.m_UniformBuffers[i], uniformData.m_UniformBuffersMemory[i]);
+
+                VK_CHECK(vmaMapMemory(m_Allocator, uniformData.m_UniformBuffersMemory[i], &uniformData.m_UniformBuffersMapped[i]))
             }
 
         }
