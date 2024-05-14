@@ -227,10 +227,11 @@ void lvk::VulkanAPI::SetupDebugOutput()
     PFN_vkVoidFunction rawFunction = vkGetInstanceProcAddr(m_Instance, "vkCreateDebugUtilsMessengerEXT");
     PFN_vkCreateDebugUtilsMessengerEXT function = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(rawFunction);
 
-    if (function == nullptr)
+    if (!function)
     {
         spdlog::error("Could not find vkCreateDebugUtilsMessengerEXT function");
         std::cerr << "Could not find vkCreateDebugUtilsMessengerEXT function";
+        return;
     }
 
     if (function(m_Instance, &createInfo, nullptr, &m_DebugMessenger))
@@ -981,7 +982,7 @@ std::vector<VkDescriptorSetLayoutBinding> CleanDescriptorSetLayout(std::vector<V
             continue;
         }
 
-        int start = clean.size() - 1;
+        int start = static_cast<int>(clean.size() - 1);
         for (int i = start; i >= 0; i--)
         {
             auto& newLayoutSet = clean[i];
@@ -1011,12 +1012,12 @@ void lvk::VulkanAPI::CreateDescriptorSetLayout(std::vector<DescriptorSetLayoutDa
 
     for (auto& vertLayoutData : vertLayoutDatas)
     {
-        count += vertLayoutData.m_Bindings.size();
+        count += static_cast<uint8_t>(vertLayoutData.m_Bindings.size());
     }
 
     for (auto& fragLayoutData : fragLayoutDatas)
     {
-        count += fragLayoutData.m_Bindings.size();
+        count += static_cast<uint8_t>(fragLayoutData.m_Bindings.size());
     }
 
     bindings.resize(count);
@@ -1204,7 +1205,7 @@ VkPipeline lvk::VulkanAPI::CreateRasterizationGraphicsPipeline(StageBinary& vert
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount = vertexBindingDescriptions.size();
+    vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(vertexBindingDescriptions.size());
     vertexInputInfo.pVertexBindingDescriptions = vertexBindingDescriptions.data();
     vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexAttributeDescriptions.size());
     vertexInputInfo.pVertexAttributeDescriptions = vertexAttributeDescriptions.data();
@@ -1675,7 +1676,7 @@ Vector<DescriptorSetLayoutData> lvk::VulkanAPI::ReflectDescriptorSetLayouts(Stag
         DescriptorSetLayoutData& layoutData = layoutDatas[i];
 
         layoutData.m_Bindings.resize(reflectedSet.binding_count);
-        for (int bc = 0; bc < reflectedSet.binding_count; bc++)
+        for (uint32_t bc = 0; bc < reflectedSet.binding_count; bc++)
         {
             const SpvReflectDescriptorBinding& reflectedBinding = *reflectedSet.bindings[bc];
             VkDescriptorSetLayoutBinding& layoutBinding = layoutData.m_Bindings[bc];

@@ -5,7 +5,7 @@ set (CMAKE_CXX_STANDARD 17)
 
 find_package(Vulkan REQUIRED FATAL_ERROR) # error
 
-add_library(${PROJECT_NAME} src/VulkanAPI.cpp 
+add_library(${PROJECT_NAME} STATIC src/VulkanAPI.cpp 
                             src/spirv_reflect.c
                             src/ImGui/imgui_impl_vulkan.cpp
                             src/ImGui/imgui_draw.cpp
@@ -29,4 +29,4 @@ add_library(${PROJECT_NAME} src/VulkanAPI.cpp
 set(LVK_INCLUDES ${Vulkan_INCLUDE_DIRS} ${SPDLOG_INCLUDES} ${GLM_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories (${PROJECT_NAME} PUBLIC ${LVK_INCLUDES})
 
-target_link_libraries (${PROJECT_NAME} ${Vulkan_LIBRARIES} glm spdlog)
+target_link_libraries (${PROJECT_NAME} ${Vulkan_LIBRARIES} spdlog)
