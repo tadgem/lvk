@@ -1788,7 +1788,6 @@ void lvk::VulkanAPI::InitImGui()
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     
     ImGui::GetStyle().Alpha = 1.0f;
     InitImGuiBackend();

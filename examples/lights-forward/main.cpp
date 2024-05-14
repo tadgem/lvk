@@ -2,14 +2,12 @@
 using namespace lvk;
 
 #define NUM_LIGHTS 16
-
 using ForwardLightData = FrameLightDataT<NUM_LIGHTS>;
 
 static UniformBufferFrameData<MvpData> mvpUniformData;
 static UniformBufferFrameData<ForwardLightData> lightsUniformData;
 
 static ForwardLightData lightDataCpu {};
-
 static std::vector<VkDescriptorSet>     descriptorSets;
 
 void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout, Model& model)
@@ -164,7 +162,7 @@ void CreateDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSe
         VkDescriptorBufferInfo lightBufferInfo{};
         lightBufferInfo.buffer = lightsUniformData.m_UniformBuffers[i];
         lightBufferInfo.offset = 0;
-        lightBufferInfo.range = sizeof(MvpData);
+        lightBufferInfo.range = sizeof(ForwardLightData);
 
         std::array<VkWriteDescriptorSet, 3> descriptorWrites{};
 
@@ -204,6 +202,7 @@ int main()
     bool enableMSAA = true;
     vk.Start(1280, 720, enableMSAA);
 
+    // shader abstraction
     auto vertBin = vk.LoadSpirvBinary("shaders/lights.vert.spv");
     auto fragBin = vk.LoadSpirvBinary("shaders/lights.frag.spv");
 
@@ -212,6 +211,8 @@ int main()
     VkDescriptorSetLayout descriptorSetLayout;
     vk.CreateDescriptorSetLayout(vertexLayoutDatas, fragmentLayoutDatas, descriptorSetLayout);
 
+
+    // Texture abstraction
     uint32_t mipLevels;
     VkImage textureImage;
     VkImageView imageView;
@@ -220,8 +221,8 @@ int main()
     VkSampler imageSampler;
     vk.CreateImageSampler(imageView, mipLevels, VK_FILTER_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, imageSampler);
 
+    // Pipeline stage?
     VkPipelineLayout pipelineLayout;
-
     VkPipeline pipeline = vk.CreateRasterizationGraphicsPipeline(
         vertBin, fragBin,
         descriptorSetLayout, Vector<VkVertexInputBindingDescription>{VertexDataNormal::GetBindingDescription() }, VertexDataNormal::GetAttributeDescriptions(),
@@ -237,6 +238,7 @@ int main()
     Model model;
     LoadModelAssimp(vk, model, "assets/viking_room.obj", true);
 
+    // Shader too probably
     vk.CreateUniformBuffers<MvpData>(mvpUniformData);
     vk.CreateUniformBuffers<FrameLightDataT<NUM_LIGHTS>>(lightsUniformData);
 
@@ -248,11 +250,6 @@ int main()
         
         UpdateUniformBuffer(vk);
 
-        if (ImGui::Begin("Help"))
-        {
-
-        }
-        ImGui::End();
         RecordCommandBuffers(vk, pipeline, pipelineLayout, model);
 
         vk.PostFrame();
