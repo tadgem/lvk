@@ -1,9 +1,10 @@
 #include "example-common.h"
 using namespace lvk;
 
-static std::vector<VkBuffer>            uniformBuffers;
-static std::vector<VmaAllocation>       uniformBuffersMemory;
-static std::vector<void*>               uniformBuffersMapped;
+static std::vector<VkBuffer>            mvpUniformBuffers;
+static std::vector<VmaAllocation>       mvpUniformBuffersMemory;
+static std::vector<void*>               mvpUniformBuffersMapped;
+
 static std::vector<VkDescriptorSet>     descriptorSets;
 
 void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout, Model& model)
@@ -77,7 +78,7 @@ void UpdateUniformBuffer(VulkanAPI_SDL& vk)
         ubo.Proj[1][1] *= -1;
     }
 
-    memcpy(uniformBuffersMapped[vk.GetFrameIndex()], &ubo, sizeof(ubo));
+    memcpy(mvpUniformBuffersMapped[vk.GetFrameIndex()], &ubo, sizeof(ubo));
 }
 
 void CreateDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler)
@@ -94,7 +95,7 @@ void CreateDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSe
 
     for (size_t i = 0; i < vk.MAX_FRAMES_IN_FLIGHT; i++) {
         VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = uniformBuffers[i];
+        bufferInfo.buffer = mvpUniformBuffers[i];
         bufferInfo.offset = 0;
         bufferInfo.range = sizeof(MvpData);
 
@@ -157,7 +158,7 @@ int main()
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
         VK_POLYGON_MODE_FILL,
         VK_CULL_MODE_NONE,
-        enableMSAA, // msaa time babyyyyyy
+        enableMSAA,
         VK_COMPARE_OP_LESS,
         pipelineLayout);
 
@@ -165,7 +166,7 @@ int main()
     Model model;
     LoadModelAssimp(vk, model, "assets/viking_room.obj");
 
-    vk.CreateUniformBuffers<MvpData>(uniformBuffers, uniformBuffersMemory, uniformBuffersMapped);
+    vk.CreateUniformBuffers<MvpData>(mvpUniformBuffers, mvpUniformBuffersMemory, mvpUniformBuffersMapped);
 
     CreateDescriptorSets(vk, descriptorSetLayout, imageView, imageSampler);
 
@@ -186,9 +187,9 @@ int main()
     }
 
     for (size_t i = 0; i < vk.MAX_FRAMES_IN_FLIGHT; i++) {
-        vmaUnmapMemory(vk.m_Allocator, uniformBuffersMemory[i]);
-        vkDestroyBuffer(vk.m_LogicalDevice, uniformBuffers[i], nullptr);
-        vmaFreeMemory(vk.m_Allocator, uniformBuffersMemory[i]);
+        vmaUnmapMemory(vk.m_Allocator, mvpUniformBuffersMemory[i]);
+        vkDestroyBuffer(vk.m_LogicalDevice, mvpUniformBuffers[i], nullptr);
+        vmaFreeMemory(vk.m_Allocator, mvpUniformBuffersMemory[i]);
     }
     FreeModel(vk, model);
 

@@ -1229,7 +1229,7 @@ VkPipeline lvk::VulkanAPI::CreateRasterizationGraphicsPipeline(StageBinary& vert
     // ToDo : Do something with enableMultisampling here
     VkPipelineMultisampleStateCreateInfo multisampleInfo{};
     multisampleInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    multisampleInfo.sampleShadingEnable = VK_FALSE;
+    multisampleInfo.sampleShadingEnable = VK_TRUE;
     multisampleInfo.rasterizationSamples = sampleCount;
     multisampleInfo.minSampleShading = 1.0f;
     multisampleInfo.pSampleMask = nullptr;

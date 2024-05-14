@@ -114,14 +114,14 @@ struct DirectionalLight
     glm::vec4 Direction;
     glm::vec4 Ambient;
     glm::vec4 Colour;
-}
+};
 
 struct PointLight
 {
     glm::vec4 PositionRadius;
     glm::vec4 Ambient;
     glm::vec4 Colour;
-}
+};
 
 struct SpotLight
 {
@@ -130,16 +130,30 @@ struct SpotLight
     glm::vec4 Ambient;
     glm::vec4 Colour;
 
-}
-glm::vec3 AssimpToGLM(aiVector3D aiVec) {
+};
+
+template<size_t _Size>
+struct FrameLightData
+{
+    DirectionalLight    m_DirectionalLight;
+    PointLight          m_PointLights[_Size];
+    SpotLight           m_SpotLights[_Size];
+
+    uint32_t            m_DirectionalLightActive;
+    uint32_t            m_PointLightsActive;
+    uint32_t            m_SpotLightsActive;
+};
+
+
+static glm::vec3 AssimpToGLM(aiVector3D aiVec) {
     return glm::vec3(aiVec.x, aiVec.y, aiVec.z);
 }
 
-glm::vec2 AssimpToGLM(aiVector2D aiVec) {
+static glm::vec2 AssimpToGLM(aiVector2D aiVec) {
     return glm::vec2(aiVec.x, aiVec.y);
 }
 
-lvk::String AssimpToSTD(aiString str) {
+static lvk::String AssimpToSTD(aiString str) {
     return lvk::String(str.C_Str());
 }
 
