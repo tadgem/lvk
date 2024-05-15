@@ -246,7 +246,8 @@ public:
             vmaFreeMemory(m_Allocator, stagingBufferMemory);
         }
         void                                CreateDescriptorSetLayout(Vector<DescriptorSetLayoutData>& vertLayoutDatas, Vector<DescriptorSetLayoutData>& fragLayoutDatas, VkDescriptorSetLayout& descriptorSetLayout);
-        void                                CreateRenderPass(VkRenderPass& renderPass, VkAttachmentLoadOp attachmentLoadOp, bool enableMsaa = false);
+        void                                CreateRenderPass(VkRenderPass& renderPass, Vector<VkAttachmentDescription>& colourAttachments, Vector<VkAttachmentDescription>& resolveAttachments, bool hasDepthAttachment = true, VkAttachmentDescription depthAttachment = {}, VkAttachmentLoadOp attachmentLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR);
+        void                                CreateBuiltInRenderPasses();
         VkPipeline                          CreateRasterizationGraphicsPipeline(
                                             StageBinary& vert, 
                                             StageBinary& frag, 
