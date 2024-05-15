@@ -209,6 +209,7 @@ public:
         void                                CreateImage(uint32_t width, uint32_t height, uint32_t numMips, VkSampleCountFlagBits sampleCount, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
         void                                CreateImageView(VkImage& image, VkFormat format, uint32_t numMips, VkImageAspectFlags aspectFlags, VkImageView& imageView);
         void                                CreateImageSampler(VkImageView& imageView, uint32_t numMips, VkFilter filterMode, VkSamplerAddressMode addressMode, VkSampler& sampler);
+        void                                CreateFramebuffer(Vector<VkImageView>& attachments, VkRenderPass renderPass, VkExtent2D extent, VkFramebuffer& framebuffer);
         void                                CreateTexture(const String& path, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips = nullptr);
         void                                CopyBuffer(VkBuffer& src, VkBuffer& dst, VkDeviceSize size);
         void                                CopyBufferToImage(VkBuffer& src, VkImage& image,  uint32_t width, uint32_t height);

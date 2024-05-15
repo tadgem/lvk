@@ -1052,7 +1052,21 @@ void lvk::VulkanAPI::CreateDescriptorSetLayout(std::vector<DescriptorSetLayoutDa
     VK_CHECK(vkCreateDescriptorSetLayout(m_LogicalDevice, &layoutInfo, nullptr, &descriptorSetLayout))
 }
 
-VkPipeline lvk::VulkanAPI::CreateRasterizationGraphicsPipeline(StageBinary& vert, StageBinary& frag, 
+void lvk::VulkanAPI::CreateFramebuffer(Vector<VkImageView>& attachments, VkRenderPass renderPass, VkExtent2D extent, VkFramebuffer& framebuffer)
+{
+    VkFramebufferCreateInfo framebufferCreateInfo{};
+    framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebufferCreateInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+    framebufferCreateInfo.pAttachments = attachments.data();
+    framebufferCreateInfo.layers = 1;
+    framebufferCreateInfo.renderPass = renderPass;
+    framebufferCreateInfo.height = extent.height;
+    framebufferCreateInfo.width = extent.width;
+
+    VK_CHECK (vkCreateFramebuffer(m_LogicalDevice, &framebufferCreateInfo, nullptr, &framebuffer) != VK_SUCCESS)
+}
+
+VkPipeline lvk::VulkanAPI::CreateRasterizationGraphicsPipeline(StageBinary& vert, StageBinary& frag,
     VkDescriptorSetLayout& descriptorSetLayout, 
     Vector<VkVertexInputBindingDescription>& vertexBindingDescriptions, Vector<VkVertexInputAttributeDescription>& vertexAttributeDescriptions, 
     VkRenderPass& pipelineRenderPass, 
@@ -1265,20 +1279,7 @@ void lvk::VulkanAPI::CreateSwapChainFramebuffers()
 
         }
 
-        VkFramebufferCreateInfo framebufferCreateInfo{};
-        framebufferCreateInfo.sType             = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferCreateInfo.attachmentCount   = static_cast<uint32_t>(attachments.size());
-        framebufferCreateInfo.pAttachments      = attachments.data();
-        framebufferCreateInfo.layers = 1;
-        framebufferCreateInfo.renderPass        = m_SwapchainImageRenderPass;
-        framebufferCreateInfo.height            = m_SwapChainImageExtent.height;
-        framebufferCreateInfo.width             = m_SwapChainImageExtent.width;
-
-        if (vkCreateFramebuffer(m_LogicalDevice, &framebufferCreateInfo, nullptr, &m_SwapChainFramebuffers[i]) != VK_SUCCESS)
-        {
-            spdlog::error("Failed to create Framebuffer!");
-            std::cerr << "Failed to create Framebuffer!" << std::endl;
-        }
+        CreateFramebuffer(attachments, m_SwapchainImageRenderPass, m_SwapChainImageExtent, m_SwapChainFramebuffers[i]);
     }
 }
 
