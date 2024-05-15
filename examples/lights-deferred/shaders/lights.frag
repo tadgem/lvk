@@ -1,6 +1,6 @@
 #version 450
 
-#define MAX_NUM_EACH_LIGHTS 16
+#define MAX_NUM_EACH_LIGHTS 512
 
 #define ATTENUATION_CONSTANT 1.0
 #define ATTENUATION_LINEAR_CONSTANT 4.5
@@ -28,9 +28,7 @@ struct SpotLight
     vec4 Colour;
 };
 
-layout(location = 0) in vec3 Position;
-layout(location = 1) in vec3 Normal;
-layout(location = 2) in vec2 UV;
+layout(location = 0) in vec2 UV;
 
 layout(location = 0) out vec4 outColor;
 
@@ -40,9 +38,11 @@ layout(set = 0, binding = 0) uniform UniformBufferObject {
     mat4 proj;
 } ubo;
 
-layout(binding = 1) uniform sampler2D texSampler;
+layout(binding = 1) uniform sampler2D positionBufferSampler;
+layout(binding = 2) uniform sampler2D normalBufferSampler;
+layout(binding = 3) uniform sampler2D colourBufferSampler;
 
-layout(binding = 2) uniform UniformLightObject{
+layout(binding = 4) uniform UniformLightObject{
     DirectionalLight    u_DirectionalLight;
     PointLight          u_PointLights[MAX_NUM_EACH_LIGHTS];
     SpotLight           u_SpotLights[MAX_NUM_EACH_LIGHTS];
@@ -51,6 +51,7 @@ layout(binding = 2) uniform UniformLightObject{
     uint                u_PointLightsActive;
     uint                u_SpotLightsActive;
 } lightUbo;
+
 
 float BlinnPhong_Attenuation(float range, float dist)
 {
@@ -139,19 +140,22 @@ vec3 BlinnPhong_Spot(int lightIdx, vec3 position, vec3 normal, vec3 materialAmbi
 
 void main() {
 
-    vec4 textureColour = vec4(texture(texSampler, UV).rgb, 1.0f);
-    vec3 lightColour = BlinnPhong_Directional(Normal, vec3(0.0f), textureColour.xyz, vec3(0.0f), 0.0f);
+    vec4 textureColour = vec4(texture(colourBufferSampler, UV).rgb, 1.0f);
+    vec3 position = texture(positionBufferSampler, UV).xyz;
+    vec3 normal = texture(normalBufferSampler, UV).xyz;
+
+    vec3 lightColour = BlinnPhong_Directional(normal, vec3(0.0f), textureColour.xyz, vec3(0.0f), 0.0f);
 
     for(int i = 0; i < MAX_NUM_EACH_LIGHTS; i++)
     {
         //lightColour
-        lightColour += BlinnPhong_Point(i, Position, Normal, vec3(0.0f), textureColour.xyz, vec3(0.0f), 0.0f);
+        lightColour += BlinnPhong_Point(i, position, normal, vec3(0.0f), textureColour.xyz, vec3(0.0f), 0.0f);
     }
 
     for(int i = 0; i < MAX_NUM_EACH_LIGHTS; i++)
     {
         //lightColour
-        lightColour += BlinnPhong_Spot(i, Position, Normal, vec3(0.0f), textureColour.xyz, vec3(0.0f), 0.0f);
+        lightColour += BlinnPhong_Spot(i, position, normal, vec3(0.0f), textureColour.xyz, vec3(0.0f), 0.0f);
     }
 
     outColor = vec4(lightColour, 1.0);

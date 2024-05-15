@@ -1,13 +1,13 @@
 #include "example-common.h"
 using namespace lvk;
 
-#define NUM_LIGHTS 16
-using ForwardLightData = FrameLightDataT<NUM_LIGHTS>;
+#define NUM_LIGHTS 512
+using DeferredLightData = FrameLightDataT<NUM_LIGHTS>;
 
 static UniformBufferFrameData<MvpData> mvpUniformData;
-static UniformBufferFrameData<ForwardLightData> lightsUniformData;
+static UniformBufferFrameData<DeferredLightData> lightsUniformData;
 
-static ForwardLightData lightDataCpu {};
+static DeferredLightData lightDataCpu{};
 static std::vector<VkDescriptorSet>     descriptorSets;
 
 void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout, Model& model)
@@ -34,7 +34,7 @@ void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkPipelineLay
         for (int i = 0; i < model.m_Meshes.size(); i++)
         {
             Mesh& mesh = model.m_Meshes[i];
-            VkBuffer vertexBuffers[]{ mesh.m_VertexBuffer};
+            VkBuffer vertexBuffers[]{ mesh.m_VertexBuffer };
             VkDeviceSize sizes[] = { 0 };
 
             VkViewport viewport{};
@@ -47,8 +47,8 @@ void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkPipelineLay
 
             VkRect2D scissor{};
             scissor.offset = { 0,0 };
-            scissor.extent = VkExtent2D{ 
-                static_cast<uint32_t>(vk.m_SwapChainImageExtent.width) , 
+            scissor.extent = VkExtent2D{
+                static_cast<uint32_t>(vk.m_SwapChainImageExtent.width) ,
                 static_cast<uint32_t>(vk.m_SwapChainImageExtent.height)
             };
 
@@ -60,7 +60,7 @@ void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkPipelineLay
             vkCmdDrawIndexed(commandBuffer, mesh.m_IndexCount, 1, 0, 0, 0);
         }
         vkCmdEndRenderPass(commandBuffer);
-    });
+        });
 }
 
 void UpdateUniformBuffer(VulkanAPI_SDL& vk)
@@ -89,7 +89,7 @@ void UpdateUniformBuffer(VulkanAPI_SDL& vk)
         ImGui::DragFloat4("Directional Light Colour", &lightDataCpu.m_DirectionalLight.Colour[0]);
         ImGui::DragFloat4("Directional Light Ambient Colour", &lightDataCpu.m_DirectionalLight.Ambient[0]);
 
-        if(ImGui::TreeNode("Point Lights"))
+        if (ImGui::TreeNode("Point Lights"))
         {
             for (int i = 0; i < NUM_LIGHTS; i++)
             {
@@ -102,7 +102,7 @@ void UpdateUniformBuffer(VulkanAPI_SDL& vk)
                     ImGui::DragFloat4("Ambient Colour", &lightDataCpu.m_PointLights[i].Ambient[0]);
 
                     ImGui::TreePop();
-                }                
+                }
 
                 ImGui::PopID();
             }
@@ -136,7 +136,7 @@ void UpdateUniformBuffer(VulkanAPI_SDL& vk)
     lightsUniformData.Set(vk.GetFrameIndex(), lightDataCpu);
 }
 
-void CreateDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler)
+void CreateLightingPassDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler)
 {
     std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -162,7 +162,7 @@ void CreateDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSe
         VkDescriptorBufferInfo lightBufferInfo{};
         lightBufferInfo.buffer = lightsUniformData.m_UniformBuffers[i];
         lightBufferInfo.offset = 0;
-        lightBufferInfo.range = sizeof(ForwardLightData);
+        lightBufferInfo.range = sizeof(DeferredLightData);
 
         std::array<VkWriteDescriptorSet, 3> descriptorWrites{};
 
@@ -196,21 +196,136 @@ void CreateDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSe
 
 }
 
+void CreateGBufferRenderPass(VulkanAPI_SDL& vk, VkRenderPass& renderPass)
+{
+    Vector<VkAttachmentDescription> colourAttachmentDescriptions{};
+    Vector<VkAttachmentDescription> resolveAttachmentDescriptions{};
+    VkAttachmentDescription depthAttachmentDescription{};
+
+    VkAttachmentDescription positionNormalColourAttachment{};
+    positionNormalColourAttachment.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    positionNormalColourAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    positionNormalColourAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    positionNormalColourAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    positionNormalColourAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    positionNormalColourAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    positionNormalColourAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    positionNormalColourAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    
+    // 3 instances: position, normal and colour attachments
+    colourAttachmentDescriptions.push_back(positionNormalColourAttachment);
+    colourAttachmentDescriptions.push_back(positionNormalColourAttachment);
+    colourAttachmentDescriptions.push_back(positionNormalColourAttachment);
+
+    depthAttachmentDescription.format = vk.FindDepthFormat();
+    depthAttachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;;
+    depthAttachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depthAttachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    depthAttachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    depthAttachmentDescription.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    vk.CreateRenderPass(renderPass, colourAttachmentDescriptions, resolveAttachmentDescriptions, true, depthAttachmentDescription, VK_ATTACHMENT_LOAD_OP_CLEAR);
+}
+
 int main()
 {
     VulkanAPI_SDL vk;
     bool enableMSAA = true;
     vk.Start(1280, 720, enableMSAA);
 
-    // shader abstraction
-    auto vertBin = vk.LoadSpirvBinary("shaders/lights.vert.spv");
-    auto fragBin = vk.LoadSpirvBinary("shaders/lights.frag.spv");
+    auto gbufferVertBin = vk.LoadSpirvBinary("shaders/gbuffer.vert.spv");
+    auto gbufferFragBin = vk.LoadSpirvBinary("shaders/gbuffer.frag.spv");
+    auto gbufferVertexLayoutDatas = vk.ReflectDescriptorSetLayouts(gbufferVertBin);
+    auto gbufferFragmentLayoutDatas = vk.ReflectDescriptorSetLayouts(gbufferFragBin);
+    VkDescriptorSetLayout gbufferDescriptorSetLayout;
+    vk.CreateDescriptorSetLayout(gbufferVertexLayoutDatas, gbufferFragmentLayoutDatas, gbufferDescriptorSetLayout);
 
-    auto vertexLayoutDatas = vk.ReflectDescriptorSetLayouts(vertBin);
-    auto fragmentLayoutDatas = vk.ReflectDescriptorSetLayouts(fragBin);
-    VkDescriptorSetLayout descriptorSetLayout;
-    vk.CreateDescriptorSetLayout(vertexLayoutDatas, fragmentLayoutDatas, descriptorSetLayout);
+    auto lightPassVertBin = vk.LoadSpirvBinary("shaders/lights.vert.spv");
+    auto lightPassFragBin = vk.LoadSpirvBinary("shaders/lights.frag.spv");
+    auto lightPassVertexLayoutDatas = vk.ReflectDescriptorSetLayouts(lightPassVertBin);
+    auto lightPassFragmentLayoutDatas = vk.ReflectDescriptorSetLayouts(lightPassFragBin);
+    VkDescriptorSetLayout lightPassDescriptorSetLayout;
+    vk.CreateDescriptorSetLayout(lightPassVertexLayoutDatas, lightPassFragmentLayoutDatas, lightPassDescriptorSetLayout);
 
+    VkRenderPass gbufferRenderPass;
+    CreateGBufferRenderPass(vk, gbufferRenderPass);
+
+    // create gbuffer pipeline
+    VkPipelineLayout gbufferPipelineLayout;
+    VkPipeline gbufferPipeline = vk.CreateRasterizationGraphicsPipeline(
+        gbufferVertBin, gbufferFragBin,
+        gbufferDescriptorSetLayout, Vector<VkVertexInputBindingDescription>{VertexDataNormal::GetBindingDescription() }, VertexDataNormal::GetAttributeDescriptions(),
+        gbufferRenderPass, 
+        vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
+        VK_POLYGON_MODE_FILL,
+        VK_CULL_MODE_NONE,
+        false,
+        VK_COMPARE_OP_LESS,
+        gbufferPipelineLayout
+        );
+
+    // create present graphics pipeline
+    // Pipeline stage?
+    VkPipelineLayout lightPassPipelineLayout;
+    VkPipeline pipeline = vk.CreateRasterizationGraphicsPipeline(
+        lightPassVertBin, lightPassFragBin,
+        lightPassDescriptorSetLayout, Vector<VkVertexInputBindingDescription>{VertexData::GetBindingDescription() }, VertexData::GetAttributeDescriptions(),
+        vk.m_SwapchainImageRenderPass,
+        vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
+        VK_POLYGON_MODE_FILL,
+        VK_CULL_MODE_NONE,
+        enableMSAA,
+        VK_COMPARE_OP_LESS,
+        lightPassPipelineLayout);
+
+
+    // create gbuffer images
+    VkImage positionBuffer;
+    VkImageView positionBufferImageView;
+    VkDeviceMemory positionBufferMemory;
+    vk.CreateImage(vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height, 1, VK_SAMPLE_COUNT_1_BIT, 
+        VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, positionBuffer, positionBufferMemory);
+    vk.CreateImageView(positionBuffer, VK_FORMAT_R32G32B32A32_SFLOAT, 1, VK_IMAGE_ASPECT_COLOR_BIT, positionBufferImageView);
+
+    VkImage normalBuffer;
+    VkImageView normalBufferImageView;
+    VkDeviceMemory normalBufferMemory;
+    vk.CreateImage(vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height, 1, VK_SAMPLE_COUNT_1_BIT,
+        VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, normalBuffer, normalBufferMemory);
+    vk.CreateImageView(normalBuffer, VK_FORMAT_R32G32B32A32_SFLOAT, 1, VK_IMAGE_ASPECT_COLOR_BIT, normalBufferImageView);
+
+    VkImage colourBuffer;
+    VkImageView colourBufferImageView;
+    VkDeviceMemory colourBufferMemory;
+    vk.CreateImage(vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height, 1, VK_SAMPLE_COUNT_1_BIT,
+        VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, colourBuffer, colourBufferMemory);
+    vk.CreateImageView(colourBuffer, VK_FORMAT_R32G32B32A32_SFLOAT, 1, VK_IMAGE_ASPECT_COLOR_BIT, colourBufferImageView);
+
+    // depth texture
+    VkFormat depthFormat = vk.FindDepthFormat();
+    VkImage depthBuffer;
+    VkImageView depthBufferImageView;
+    VkDeviceMemory depthBufferMemory;
+    vk.CreateImage(vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height, 1, VK_SAMPLE_COUNT_1_BIT,
+        depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthBuffer, depthBufferMemory);
+    vk.CreateImageView(depthBuffer, depthFormat, 1, VK_IMAGE_ASPECT_DEPTH_BIT, depthBufferImageView);
+
+    Vector<VkImageView> gbufferAttachments{ positionBufferImageView, normalBufferImageView, colourBufferImageView, depthBufferImageView };
+    // push them to a freambuffer
+    VkFramebuffer gbuffer;
+    vk.CreateFramebuffer(gbufferAttachments, gbufferRenderPass, vk.m_SwapChainImageExtent, gbuffer);
+
+
+
+    // create vertex and index buffer
+    Model model;
+    LoadModelAssimp(vk, model, "assets/viking_room.obj", true);
 
     // Texture abstraction
     uint32_t mipLevels;
@@ -221,36 +336,19 @@ int main()
     VkSampler imageSampler;
     vk.CreateImageSampler(imageView, mipLevels, VK_FILTER_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, imageSampler);
 
-    // Pipeline stage?
-    VkPipelineLayout pipelineLayout;
-    VkPipeline pipeline = vk.CreateRasterizationGraphicsPipeline(
-        vertBin, fragBin,
-        descriptorSetLayout, Vector<VkVertexInputBindingDescription>{VertexDataNormal::GetBindingDescription() }, VertexDataNormal::GetAttributeDescriptions(),
-        vk.m_SwapchainImageRenderPass,
-        vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
-        VK_POLYGON_MODE_FILL,
-        VK_CULL_MODE_NONE,
-        enableMSAA,
-        VK_COMPARE_OP_LESS,
-        pipelineLayout);
-
-    // create vertex and index buffer
-    Model model;
-    LoadModelAssimp(vk, model, "assets/viking_room.obj", true);
-
     // Shader too probably
     vk.CreateUniformBuffers<MvpData>(mvpUniformData);
     vk.CreateUniformBuffers<FrameLightDataT<NUM_LIGHTS>>(lightsUniformData);
 
-    CreateDescriptorSets(vk, descriptorSetLayout, imageView, imageSampler);
+    CreateLightingPassDescriptorSets(vk, lightPassDescriptorSetLayout, imageView, imageSampler);
 
     while (vk.ShouldRun())
-    {    
+    {
         vk.PreFrame();
-        
+
         UpdateUniformBuffer(vk);
 
-        RecordCommandBuffers(vk, pipeline, pipelineLayout, model);
+        RecordCommandBuffers(vk, pipeline, lightPassPipelineLayout, model);
 
         vk.PostFrame();
     }
@@ -264,8 +362,9 @@ int main()
     vkDestroyImageView(vk.m_LogicalDevice, imageView, nullptr);
     vkDestroyImage(vk.m_LogicalDevice, textureImage, nullptr);
     vkFreeMemory(vk.m_LogicalDevice, textureMemory, nullptr);
-    vkDestroyDescriptorSetLayout(vk.m_LogicalDevice, descriptorSetLayout, nullptr);
-    vkDestroyPipelineLayout(vk.m_LogicalDevice, pipelineLayout, nullptr);
+    vkDestroyDescriptorSetLayout(vk.m_LogicalDevice, gbufferDescriptorSetLayout, nullptr);
+    vkDestroyDescriptorSetLayout(vk.m_LogicalDevice, lightPassDescriptorSetLayout, nullptr);
+    vkDestroyPipelineLayout(vk.m_LogicalDevice, lightPassPipelineLayout, nullptr);
     vkDestroyPipeline(vk.m_LogicalDevice, pipeline, nullptr);
 
     return 0;

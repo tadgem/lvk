@@ -1711,6 +1711,11 @@ Vector<DescriptorSetLayoutData> lvk::VulkanAPI::ReflectDescriptorSetLayouts(Stag
     uint32_t descriptorSetCount = 0;
     spvReflectEnumerateDescriptorSets(&shaderReflectModule, &descriptorSetCount, nullptr);
 
+    if (descriptorSetCount == 0)
+    {
+        return {};
+    }
+
     std::vector<SpvReflectDescriptorSet*> reflectedDescriptorSets;
     reflectedDescriptorSets.resize(descriptorSetCount);
     spvReflectEnumerateDescriptorSets(&shaderReflectModule, &descriptorSetCount, &reflectedDescriptorSets[0]);
