@@ -163,6 +163,7 @@ namespace lvk
 
         void                                InitVulkan(bool enableSwapchainMsaa = false);
         void                                InitImGui();
+        void                                RenderImGui();
         VkApplicationInfo                   CreateAppInfo();
         void                                CreateInstance();
         void                                Cleanup();

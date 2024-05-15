@@ -1307,7 +1307,7 @@ VkPipeline lvk::VulkanAPI::CreateRasterizationGraphicsPipeline(StageBinary& vert
 
     VkPipelineDynamicStateCreateInfo dynamicStateInfo{};
     dynamicStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dynamicStateInfo.dynamicStateCount = 2;
+    dynamicStateInfo.dynamicStateCount = sizeof(dynamicStates) / sizeof(VkDynamicState);
     dynamicStateInfo.pDynamicStates = dynamicStates;
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
@@ -1514,28 +1514,11 @@ void lvk::VulkanAPI::DrawFrame()
         std::cerr << "Failed to submit draw command buffer!" << std::endl;
     }
 
-    // ImGui Render
-    ImGui::Render();
-    VkCommandBuffer imguiCommandBuffer = BeginSingleTimeCommands();
-    
-    VkRenderPassBeginInfo renderPassInfo{};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = m_ImGuiRenderPass;
-    renderPassInfo.framebuffer = m_SwapChainFramebuffers[GetFrameIndex()];
-    renderPassInfo.renderArea.offset = { 0,0 };
-    renderPassInfo.renderArea.extent = m_SwapChainImageExtent;
+    if (p_UseImGui)
+    {
+        RenderImGui();
+    }
 
-    std::array<VkClearValue, 2> clearValues{};
-    clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
-    clearValues[1].depthStencil = { 1.0f, 0 };
-
-    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-    renderPassInfo.pClearValues = clearValues.data();
-
-    vkCmdBeginRenderPass(imguiCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), imguiCommandBuffer);
-    vkCmdEndRenderPass(imguiCommandBuffer);
-    EndSingleTimeCommands(imguiCommandBuffer);
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType               = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.waitSemaphoreCount  = 1;
@@ -1814,6 +1797,31 @@ void lvk::VulkanAPI::InitImGui()
 
 }
 
+void lvk::VulkanAPI::RenderImGui()
+{    
+    ImGui::Render();
+    VkCommandBuffer imguiCommandBuffer = BeginSingleTimeCommands();
+
+    VkRenderPassBeginInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = m_ImGuiRenderPass;
+    renderPassInfo.framebuffer = m_SwapChainFramebuffers[GetFrameIndex()];
+    renderPassInfo.renderArea.offset = { 0,0 };
+    renderPassInfo.renderArea.extent = m_SwapChainImageExtent;
+
+    std::array<VkClearValue, 2> clearValues{};
+    clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
+    clearValues[1].depthStencil = { 1.0f, 0 };
+
+    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+    renderPassInfo.pClearValues = clearValues.data();
+
+    vkCmdBeginRenderPass(imguiCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), imguiCommandBuffer);
+    vkCmdEndRenderPass(imguiCommandBuffer);
+    EndSingleTimeCommands(imguiCommandBuffer);
+}
+
 VkCommandBuffer lvk::VulkanAPI::BeginSingleTimeCommands()
 {
     VkCommandBufferAllocateInfo allocInfo{};
@@ -1944,8 +1952,10 @@ void lvk::VulkanAPI::GenerateMips(VkImage image, VkFormat format, uint32_t image
 {
     VkFormatProperties formatProperties;
     vkGetPhysicalDeviceFormatProperties(m_PhysicalDevice, format, &formatProperties);
+
+    auto supportsLinearSampling = formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
     
-    if (!formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)
+    if (supportsLinearSampling > 0)
     {
         spdlog::error("GenerateMips : No support for linear blitting!");
         return;
