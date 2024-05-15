@@ -1955,7 +1955,7 @@ void lvk::VulkanAPI::GenerateMips(VkImage image, VkFormat format, uint32_t image
 
     auto supportsLinearSampling = formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
     
-    if (supportsLinearSampling > 0)
+    if (supportsLinearSampling <= 0)
     {
         spdlog::error("GenerateMips : No support for linear blitting!");
         return;
