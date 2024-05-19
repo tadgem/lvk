@@ -72,13 +72,13 @@ public:
     Array<Framebuffer, MAX_FRAMES_IN_FLIGHT> m_Framebuffers;
 };
 
-const Vector<VertexData> g_ScreenSpaceQuadVertexData = {
+static Vector<VertexData> g_ScreenSpaceQuadVertexData = {
     { { -1.0f, -1.0f , 0.0f}, { 1.0f, 0.0f } },
     { {1.0f, -1.0f, 0.0f}, {0.0f, 0.0f} },
     { {1.0f, 1.0f, 0.0f}, {0.0f, 1.0f} },
     { {-1.0f, 1.0f, 0.0f}, {1.0f, 1.0f} }
 };
-const Vector<uint32_t> g_ScreenSpaceQuadIndexData = {
+static Vector<uint32_t> g_ScreenSpaceQuadIndexData = {
     0, 1, 2, 2, 3, 0
 };
 
@@ -145,16 +145,66 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
 {
     vk.RecordGraphicsCommands([&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
         // push to example
-        std::array<VkClearValue, 4> clearValues{};
+        {
+            std::array<VkClearValue, 4> clearValues{};
+            clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
+            clearValues[1].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
+            clearValues[2].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
+            clearValues[3].depthStencil = { 1.0f, 0 };
+
+            VkRenderPassBeginInfo renderPassInfo{};
+            renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+            renderPassInfo.renderPass = gbufferRenderPass;
+            renderPassInfo.framebuffer = gbufferFramebuffers[frameIndex];
+            renderPassInfo.renderArea.offset = { 0,0 };
+            renderPassInfo.renderArea.extent = vk.m_SwapChainImageExtent;
+
+            renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+            renderPassInfo.pClearValues = clearValues.data();
+
+            vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gbufferPipeline);
+            VkViewport viewport{};
+            viewport.x = 0.0f;
+            viewport.x = 0.0f;
+            viewport.width = static_cast<float>(vk.m_SwapChainImageExtent.width);
+            viewport.height = static_cast<float>(vk.m_SwapChainImageExtent.height);
+            viewport.minDepth = 0.0f;
+            viewport.maxDepth = 1.0f;
+
+            VkRect2D scissor{};
+            scissor.offset = { 0,0 };
+            scissor.extent = VkExtent2D{
+                static_cast<uint32_t>(vk.m_SwapChainImageExtent.width) ,
+                static_cast<uint32_t>(vk.m_SwapChainImageExtent.height)
+            };
+            vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+            vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+            for (int i = 0; i < model.m_Meshes.size(); i++)
+            {
+                Mesh& mesh = model.m_Meshes[i];
+                VkBuffer vertexBuffers[]{ mesh.m_VertexBuffer };
+                VkDeviceSize sizes[] = { 0 };
+
+
+                vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, sizes);
+                vkCmdBindIndexBuffer(commandBuffer, mesh.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+                vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gbufferPipelineLayout, 0, 1, &gbufferDescriptorSets[frameIndex], 0, nullptr);
+                vkCmdDrawIndexed(commandBuffer, mesh.m_IndexCount, 1, 0, 0, 0);
+            }
+            vkCmdEndRenderPass(commandBuffer);
+        }
+
+        // push to example
+        std::array<VkClearValue, 2> clearValues{};
         clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
-        clearValues[1].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
-        clearValues[2].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
-        clearValues[3].depthStencil = { 1.0f, 0 };
+        clearValues[1].depthStencil = { 1.0f, 0 };
 
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = gbufferRenderPass;
-        renderPassInfo.framebuffer = gbufferFramebuffers[frameIndex];
+        renderPassInfo.renderPass = vk.m_SwapchainImageRenderPass;
+        renderPassInfo.framebuffer = vk.m_SwapChainFramebuffers[frameIndex];
         renderPassInfo.renderArea.offset = { 0,0 };
         renderPassInfo.renderArea.extent = vk.m_SwapChainImageExtent;
 
@@ -162,7 +212,7 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
         renderPassInfo.pClearValues = clearValues.data();
 
         vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gbufferPipeline);
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, lightingPassPipeline);
         VkViewport viewport{};
         viewport.x = 0.0f;
         viewport.x = 0.0f;
@@ -179,19 +229,11 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
         };
         vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-
-        for (int i = 0; i < model.m_Meshes.size(); i++)
-        {
-            Mesh& mesh = model.m_Meshes[i];
-            VkBuffer vertexBuffers[]{ mesh.m_VertexBuffer };
-            VkDeviceSize sizes[] = { 0 };
-
-
-            vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, sizes);
-            vkCmdBindIndexBuffer(commandBuffer, mesh.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gbufferPipelineLayout, 0, 1, &gbufferDescriptorSets[frameIndex], 0, nullptr);
-            vkCmdDrawIndexed(commandBuffer, mesh.m_IndexCount, 1, 0, 0, 0);
-        }
+        VkDeviceSize sizes[] = { 0 };
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &screenQuad.m_VertexBuffer, sizes);
+        vkCmdBindIndexBuffer(commandBuffer, screenQuad.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, lightingPassPipelineLayout, 0, 1, &lightingPassDescriptorSets[frameIndex], 0, nullptr);
+        vkCmdDrawIndexed(commandBuffer, screenQuad.m_IndexCount, 1, 0, 0, 0);
         vkCmdEndRenderPass(commandBuffer);
         });
 }
@@ -528,7 +570,7 @@ int main()
     Model model;
     LoadModelAssimp(vk, model, "assets/viking_room.obj", true);
 
-    Mesh screenQuad = BuildScreenSpaceQuad(vk);
+    Mesh screenQuad = BuildScreenSpaceQuad(vk, g_ScreenSpaceQuadVertexData, g_ScreenSpaceQuadIndexData);
 
     Texture texture = Texture::CreateTexture(vk, "assets/viking_room.png", VK_FORMAT_R8G8B8A8_UNORM);
 

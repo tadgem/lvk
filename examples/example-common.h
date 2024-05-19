@@ -329,24 +329,14 @@ void LoadModelAssimp(lvk::VulkanAPI_SDL& vk, Model& model, const lvk::String& pa
     ProcessNode(vk, model, scene->mRootNode, scene, withNormals);
 }
 
-Mesh BuildScreenSpaceQuad(lvk::VulkanAPI& vk)
+Mesh BuildScreenSpaceQuad(lvk::VulkanAPI& vk, lvk::Vector<VertexData>& verts, lvk::Vector<uint32_t>& indices)
 {
-    const static Vector<VertexData> g_ScreenSpaceQuadVertexData = {
-    { { -1.0f, -1.0f , 0.0f}, { 1.0f, 0.0f } },
-    { {1.0f, -1.0f, 0.0f}, {0.0f, 0.0f} },
-    { {1.0f, 1.0f, 0.0f}, {0.0f, 1.0f} },
-    { {-1.0f, 1.0f, 0.0f}, {1.0f, 1.0f} }
-    };
-    const static Vector<uint32_t> g_ScreenSpaceQuadIndexData = {
-        0, 1, 2, 2, 3, 0
-    };
-
     VkBuffer vertexBuffer;
     VmaAllocation vertexBufferMemory;
     VkBuffer indexBuffer;
     VmaAllocation indexBufferMemory;
-    vk.CreateVertexBuffer<VertexData>(g_ScreenSpaceQuadVertexData, vertexBuffer, vertexBufferMemory);
-    vk.CreateIndexBuffer(g_ScreenSpaceQuadIndexData, indexBuffer, indexBufferMemory);
+    vk.CreateVertexBuffer<VertexData>(verts, vertexBuffer, vertexBufferMemory);
+    vk.CreateIndexBuffer(indices, indexBuffer, indexBufferMemory);
 
     return Mesh{ vertexBuffer, vertexBufferMemory, indexBuffer, indexBufferMemory, 6 };
 }
