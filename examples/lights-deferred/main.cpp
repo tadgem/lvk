@@ -72,6 +72,17 @@ public:
     Array<Framebuffer, MAX_FRAMES_IN_FLIGHT> m_Framebuffers;
 };
 
+const Vector<VertexData> g_ScreenSpaceQuadVertexData = {
+    { { -1.0f, -1.0f , 0.0f}, { 1.0f, 0.0f } },
+    { {1.0f, -1.0f, 0.0f}, {0.0f, 0.0f} },
+    { {1.0f, 1.0f, 0.0f}, {0.0f, 1.0f} },
+    { {-1.0f, 1.0f, 0.0f}, {1.0f, 1.0f} }
+};
+const Vector<uint32_t> g_ScreenSpaceQuadIndexData = {
+    0, 1, 2, 2, 3, 0
+};
+
+
 void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout, VkRenderPass renderPass, Model& model, Vector<VkDescriptorSet>& descriptorSets, Vector<VkFramebuffer>& framebuffers)
 {
     vk.RecordGraphicsCommands([&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
@@ -369,7 +380,7 @@ void CreateGBufferRenderPass(VulkanAPI_SDL& vk, VkRenderPass& renderPass)
 int main()
 {
     VulkanAPI_SDL vk;
-    bool enableMSAA = true;
+    bool enableMSAA = false;
     vk.Start(1280, 720, enableMSAA);
 
     UniformBufferFrameData<MvpData> mvpUniformData;

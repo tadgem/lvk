@@ -127,16 +127,6 @@ struct VertexDataNormal
     }
 };
 
-//const Vector<VertexData> g_ScreenSpaceQuadVertexData = {
-//    { { -1.0f, -1.0f , 0.0f}, { 1.0f, 0.0f } },
-//    { {1.0f, -1.0f, 0.0f}, {0.0f, 0.0f} },
-//    { {1.0f, 1.0f, 0.0f}, {0.0f, 1.0f} },
-//    { {-1.0f, 1.0f, 0.0f}, {1.0f, 1.0f} }
-//};
-//const Vector<uint32_t> g_ScreenSpaceQuadIndexData = {
-//    0, 1, 2, 2, 3, 0
-//};
-
 struct MvpData {
     glm::mat4 Model;
     glm::mat4 View;
