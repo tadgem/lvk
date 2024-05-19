@@ -1,7 +1,6 @@
 #pragma once
 #include "Alias.h"
 #include <vulkan/vulkan.h>
-#include "spdlog/spdlog.h"
 #include "spirv_reflect.h"
 #define VK_CHECK(X) {int _lineNumber = __LINE__; const char* _filePath = __FILE__;\
 if(X != VK_SUCCESS){\
@@ -261,7 +260,8 @@ public:
                                             VkCullModeFlags cullMode,
                                             bool enableMultisampling,
                                             VkCompareOp depthCompareOp,
-                                            VkPipelineLayout& pipelineLayout);
+                                            VkPipelineLayout& pipelineLayout,
+                                            uint32_t colorAttachmentCount = 1);
 
         Vector<VkExtensionProperties>       GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice);
         StageBinary                         LoadSpirvBinary(const String& path);

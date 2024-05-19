@@ -1,6 +1,5 @@
 #pragma once
 
-#include <array>
 #include "VulkanAPI_SDL.h"
 #include "assimp/Importer.hpp"
 #include "assimp/postprocess.h"
@@ -128,6 +127,16 @@ struct VertexDataNormal
     }
 };
 
+//const Vector<VertexData> g_ScreenSpaceQuadVertexData = {
+//    { { -1.0f, -1.0f , 0.0f}, { 1.0f, 0.0f } },
+//    { {1.0f, -1.0f, 0.0f}, {0.0f, 0.0f} },
+//    { {1.0f, 1.0f, 0.0f}, {0.0f, 1.0f} },
+//    { {-1.0f, 1.0f, 0.0f}, {1.0f, 1.0f} }
+//};
+//const Vector<uint32_t> g_ScreenSpaceQuadIndexData = {
+//    0, 1, 2, 2, 3, 0
+//};
+
 struct MvpData {
     glm::mat4 Model;
     glm::mat4 View;
@@ -246,7 +255,6 @@ void ProcessMesh(lvk::VulkanAPI_SDL& vk, Model& model, aiMesh* mesh, aiNode* nod
     model.m_Meshes.push_back(m);
 }
 
-
 void ProcessMeshWithNormals(lvk::VulkanAPI_SDL& vk, Model& model, aiMesh* mesh, aiNode* node, const aiScene* scene) {
     using namespace lvk;
     bool hasPositions = mesh->HasPositions();
@@ -287,7 +295,6 @@ void ProcessMeshWithNormals(lvk::VulkanAPI_SDL& vk, Model& model, aiMesh* mesh, 
 
     model.m_Meshes.push_back(m);
 }
-
 
 void ProcessNode(lvk::VulkanAPI_SDL& vk, Model& model, aiNode* node, const aiScene* scene, bool withNormals = false) {
 

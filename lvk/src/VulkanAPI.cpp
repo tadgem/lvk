@@ -22,15 +22,15 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     //std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
     if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
     {
-        spdlog::warn("VL: {0}", pCallbackData->pMessage);
+        spdlog::warn("VL: {}", pCallbackData->pMessage);
     }
     if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
     {
-        spdlog::info("VL: {0}", pCallbackData->pMessage);
+        spdlog::info("VL: {}", pCallbackData->pMessage);
     }
     if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
     {
-        spdlog::error("VL: {0}", pCallbackData->pMessage);
+        spdlog::error("VL: {}", pCallbackData->pMessage);
         if (!QUIT_ON_ERROR)
         {
             return VK_FALSE;
@@ -148,7 +148,7 @@ void lvk::VulkanAPI::CreateInstance()
 
     for (const auto& extension : extensionNames)
     {
-        spdlog::info("SDL Extension : {0}", extension);
+        spdlog::info("SDL Extension : {}", extension);
     }
 
     uint32_t extensionCount;
@@ -159,7 +159,7 @@ void lvk::VulkanAPI::CreateInstance()
     spdlog::info("Supported m_Instance extensions: ");
     for (const auto& extension : extensions)
     {
-        spdlog::info("{0}", extension.extensionName);
+        spdlog::info("{}", &extension.extensionName[0]);
         bool shouldAdd = true;
         for (int i = 0; i < extensionNames.size(); i++)
         {
@@ -425,7 +425,7 @@ void lvk::VulkanAPI::PickPhysicalDevice()
     VkPhysicalDeviceProperties deviceProperties{};
     vkGetPhysicalDeviceProperties(m_PhysicalDevice, &deviceProperties);
 
-    spdlog::info("Chose GPU : {0}", deviceProperties.deviceName);
+    spdlog::info("Chose GPU : {}", &deviceProperties.deviceName[0]);
     ListDeviceExtensions(m_PhysicalDevice);
 
 }
@@ -1075,7 +1075,8 @@ VkPipeline lvk::VulkanAPI::CreateRasterizationGraphicsPipeline(StageBinary& vert
     VkCullModeFlags cullMode, 
     bool enableMultisampling, 
     VkCompareOp depthCompareOp, 
-    VkPipelineLayout& pipelineLayout)
+    VkPipelineLayout& pipelineLayout,
+    uint32_t colourAttachmentCount)
 {
     VkShaderModule vertShaderModule = CreateShaderModule(vert);
     VkShaderModule fragShaderModule = CreateShaderModule(frag);
@@ -1170,27 +1171,34 @@ VkPipeline lvk::VulkanAPI::CreateRasterizationGraphicsPipeline(StageBinary& vert
     multisampleInfo.alphaToCoverageEnable = VK_FALSE;
     multisampleInfo.alphaToOneEnable = VK_FALSE;
 
-    VkPipelineColorBlendAttachmentState colorBlendAttachment{};
-    colorBlendAttachment.colorWriteMask = 
-        VK_COLOR_COMPONENT_R_BIT |
-        VK_COLOR_COMPONENT_G_BIT |
-        VK_COLOR_COMPONENT_B_BIT |
-        VK_COLOR_COMPONENT_A_BIT;
+    Vector<VkPipelineColorBlendAttachmentState> colorAttachmentBlendStates;
 
-    colorBlendAttachment.blendEnable = VK_FALSE;
-    colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
-    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
-    colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
-    colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-    colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-    colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+    for (int i = 0; i < colourAttachmentCount; i++)
+    {
+        VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+        colorBlendAttachment.colorWriteMask = 
+            VK_COLOR_COMPONENT_R_BIT |
+            VK_COLOR_COMPONENT_G_BIT |
+            VK_COLOR_COMPONENT_B_BIT |
+            VK_COLOR_COMPONENT_A_BIT;
+        colorBlendAttachment.blendEnable = VK_FALSE;
+        colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+        colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+        colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+        colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+        colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+        colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+
+        colorAttachmentBlendStates.push_back(colorBlendAttachment);
+
+    }
 
     VkPipelineColorBlendStateCreateInfo colorBlendStateInfo{};
     colorBlendStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colorBlendStateInfo.logicOpEnable = VK_FALSE;
     colorBlendStateInfo.logicOp = VK_LOGIC_OP_COPY;
-    colorBlendStateInfo.attachmentCount = 1;
-    colorBlendStateInfo.pAttachments = &colorBlendAttachment;
+    colorBlendStateInfo.attachmentCount = colorAttachmentBlendStates.size();
+    colorBlendStateInfo.pAttachments = colorAttachmentBlendStates.data();
 
     VkDynamicState dynamicStates[] =
     {
@@ -1431,7 +1439,7 @@ void lvk::VulkanAPI::ListDeviceExtensions(VkPhysicalDevice physicalDevice)
     vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
     for (int i = 0; i < extensions.size(); i++)
     {
-        spdlog::info("Physical Device : {0} : {1}", deviceProperties.deviceName, extensions[i].extensionName);
+        spdlog::info("Physical Device : {} : {}", &deviceProperties.deviceName[0], &extensions[i].extensionName[0]);
     }
 }
 
@@ -1454,7 +1462,7 @@ StageBinary lvk::VulkanAPI::LoadSpirvBinary(const String& path)
 
     if (!file.is_open())
     {
-        spdlog::error("Failed to open file at path {0} as binary!", path);
+        spdlog::error("Failed to open file at path {} as binary!", path);
         std::cerr << "Failed to open file!" << std::endl;
         return StageBinary();
     }

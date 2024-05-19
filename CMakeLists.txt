@@ -12,8 +12,8 @@ set(SDL2_DISABLE_UNINSTALL      ON      CACHE BOOL "Disable SDL Uninstall")
 set(BUILD_SHARED_LIBS           OFF     CACHE BOOL "Disable ASSIMP dynamic linking")
 
 add_subdirectory(submodules/glm)
-add_subdirectory(submodules/spdlog)
 add_subdirectory(submodules/assimp)
+add_subdirectory(third-party/spdlog)
 add_subdirectory(third-party/sdl)
 
 set(ASSIMP_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/submodules/assimp/include CACHE INTERNAL "")

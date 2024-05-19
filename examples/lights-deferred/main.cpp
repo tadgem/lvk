@@ -4,24 +4,88 @@ using namespace lvk;
 #define NUM_LIGHTS 512
 using DeferredLightData = FrameLightDataT<NUM_LIGHTS>;
 
-static UniformBufferFrameData<MvpData> mvpUniformData;
-static UniformBufferFrameData<DeferredLightData> lightsUniformData;
+class Texture
+{
+public:
+    VkImage             m_Image;
+    VkImageView         m_ImageView;
+    VkDeviceMemory      m_Memory;
+    VkSampler           m_Sampler;
 
-static DeferredLightData lightDataCpu{};
-static std::vector<VkDescriptorSet>     descriptorSets;
+    Texture(VkImage image, VkImageView imageView, VkDeviceMemory memory, VkSampler sampler) :
+        m_Image(image),
+        m_ImageView(imageView),
+        m_Memory(memory),
+        m_Sampler(sampler)
+    {
 
-void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout, Model& model)
+    }
+
+    static Texture CreateAttachment(VulkanAPI& vk, uint32_t width, uint32_t height,
+        uint32_t numMips, VkSampleCountFlagBits sampleCount,
+        VkFormat format, VkImageTiling tiling, VkImageUsageFlags usageFlags,
+        VkMemoryPropertyFlagBits memoryFlags, VkImageAspectFlagBits imageAspect, 
+        VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
+    {
+        VkImage image;
+        VkImageView imageView;
+        VkDeviceMemory memory;
+        VkSampler sampler;
+        vk.CreateImage(width, height, numMips, sampleCount, format, tiling, usageFlags, memoryFlags, image, memory);
+        vk.CreateImageView(image, format, numMips, imageAspect, imageView);
+        vk.CreateImageSampler(imageView, numMips, samplerFilter, samplerAddressMode, sampler);
+
+        return Texture(image, imageView, memory, sampler);
+    }
+
+    static Texture CreateTexture(VulkanAPI& vk, const String& path, VkFormat format, VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
+    {
+        VkImage image;
+        VkImageView imageView;
+        VkDeviceMemory memory;
+        // Texture abstraction
+        uint32_t mipLevels;
+        vk.CreateTexture(path, format, image, imageView, memory, &mipLevels);
+        VkSampler sampler;
+        vk.CreateImageSampler(imageView, mipLevels, samplerFilter, samplerAddressMode, sampler);
+
+        return Texture(image, imageView, memory, sampler);
+    }
+
+    void Free(VulkanAPI& vk)
+    {
+        vkDestroySampler(vk.m_LogicalDevice, m_Sampler, nullptr);
+        vkDestroyImageView(vk.m_LogicalDevice, m_ImageView, nullptr);
+        vkDestroyImage(vk.m_LogicalDevice, m_Image, nullptr);
+        vkFreeMemory(vk.m_LogicalDevice, m_Memory, nullptr);
+    }
+};
+
+class Framebuffer {
+public:
+    Vector<Texture> m_Attachments;
+    VkFramebuffer   m_FB;
+} ;
+
+class FramebufferSet {
+public:
+    Array<Framebuffer, MAX_FRAMES_IN_FLIGHT> m_Framebuffers;
+};
+
+void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout, VkRenderPass renderPass, Model& model, Vector<VkDescriptorSet>& descriptorSets, Vector<VkFramebuffer>& framebuffers)
 {
     vk.RecordGraphicsCommands([&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
         // push to example
-        std::array<VkClearValue, 2> clearValues{};
+        std::array<VkClearValue, 4> clearValues{};
         clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
-        clearValues[1].depthStencil = { 1.0f, 0 };
+        clearValues[1].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
+        clearValues[2].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
+        clearValues[3].depthStencil = { 1.0f, 0 };
 
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = vk.m_SwapchainImageRenderPass;
-        renderPassInfo.framebuffer = vk.m_SwapChainFramebuffers[frameIndex];
+        renderPassInfo.renderPass = renderPass;
+        renderPassInfo.framebuffer = framebuffers[frameIndex];
         renderPassInfo.renderArea.offset = { 0,0 };
         renderPassInfo.renderArea.extent = vk.m_SwapChainImageExtent;
 
@@ -30,6 +94,22 @@ void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkPipelineLay
 
         vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+        VkViewport viewport{};
+        viewport.x = 0.0f;
+        viewport.x = 0.0f;
+        viewport.width = static_cast<float>(vk.m_SwapChainImageExtent.width);
+        viewport.height = static_cast<float>(vk.m_SwapChainImageExtent.height);
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+
+        VkRect2D scissor{};
+        scissor.offset = { 0,0 };
+        scissor.extent = VkExtent2D{
+            static_cast<uint32_t>(vk.m_SwapChainImageExtent.width) ,
+            static_cast<uint32_t>(vk.m_SwapChainImageExtent.height)
+        };
+        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
         for (int i = 0; i < model.m_Meshes.size(); i++)
         {
@@ -37,23 +117,7 @@ void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkPipelineLay
             VkBuffer vertexBuffers[]{ mesh.m_VertexBuffer };
             VkDeviceSize sizes[] = { 0 };
 
-            VkViewport viewport{};
-            viewport.x = 0.0f;
-            viewport.x = 0.0f;
-            viewport.width = static_cast<float>(vk.m_SwapChainImageExtent.width);
-            viewport.height = static_cast<float>(vk.m_SwapChainImageExtent.height);
-            viewport.minDepth = 0.0f;
-            viewport.maxDepth = 1.0f;
 
-            VkRect2D scissor{};
-            scissor.offset = { 0,0 };
-            scissor.extent = VkExtent2D{
-                static_cast<uint32_t>(vk.m_SwapChainImageExtent.width) ,
-                static_cast<uint32_t>(vk.m_SwapChainImageExtent.height)
-            };
-
-            vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-            vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
             vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, sizes);
             vkCmdBindIndexBuffer(commandBuffer, mesh.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
             vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[frameIndex], 0, nullptr);
@@ -63,7 +127,7 @@ void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkPipelineLay
         });
 }
 
-void UpdateUniformBuffer(VulkanAPI_SDL& vk)
+void UpdateUniformBuffer(VulkanAPI_SDL& vk, UniformBufferFrameData<MvpData>& mvpUniformData, UniformBufferFrameData<DeferredLightData>& lightsUniformData, DeferredLightData& lightDataCpu)
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -136,7 +200,7 @@ void UpdateUniformBuffer(VulkanAPI_SDL& vk)
     lightsUniformData.Set(vk.GetFrameIndex(), lightDataCpu);
 }
 
-void CreateLightingPassDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler)
+void CreateGBufferDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler, Vector<VkDescriptorSet>& descriptorSets, UniformBufferFrameData<MvpData>& mvpUniformData)
 {
     std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -159,12 +223,7 @@ void CreateLightingPassDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& 
         imageInfo.imageView = textureImageView;
         imageInfo.sampler = textureSampler;
 
-        VkDescriptorBufferInfo lightBufferInfo{};
-        lightBufferInfo.buffer = lightsUniformData.m_UniformBuffers[i];
-        lightBufferInfo.offset = 0;
-        lightBufferInfo.range = sizeof(DeferredLightData);
-
-        std::array<VkWriteDescriptorSet, 3> descriptorWrites{};
+        std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
 
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[0].dstSet = descriptorSets[i];
@@ -182,13 +241,91 @@ void CreateLightingPassDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& 
         descriptorWrites[1].descriptorCount = 1;
         descriptorWrites[1].pImageInfo = &imageInfo;
 
+
+        vkUpdateDescriptorSets(vk.m_LogicalDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+    }
+
+}
+
+void CreateLightingPassDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSetLayout, FramebufferSet gbuffers, Vector<VkDescriptorSet>& descriptorSets, UniformBufferFrameData<MvpData>& mvpUniformData, UniformBufferFrameData<DeferredLightData>& lightsUniformData)
+{
+    std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = vk.m_DescriptorPool;
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+    allocInfo.pSetLayouts = layouts.data();
+
+    descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
+    VK_CHECK(vkAllocateDescriptorSets(vk.m_LogicalDevice, &allocInfo, descriptorSets.data()));
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        VkDescriptorBufferInfo mvpBufferInfo{};
+        mvpBufferInfo.buffer = mvpUniformData.m_UniformBuffers[i];
+        mvpBufferInfo.offset = 0;
+        mvpBufferInfo.range = sizeof(MvpData);
+
+        VkDescriptorImageInfo positionBufferInfo{};
+        positionBufferInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        positionBufferInfo.imageView = gbuffers.m_Framebuffers[i].m_Attachments[0].m_ImageView;
+        positionBufferInfo.sampler = gbuffers.m_Framebuffers[i].m_Attachments[0].m_Sampler;
+
+        VkDescriptorImageInfo normalBufferInfo{};
+        normalBufferInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        normalBufferInfo.imageView = gbuffers.m_Framebuffers[i].m_Attachments[1].m_ImageView;
+        normalBufferInfo.sampler = gbuffers.m_Framebuffers[i].m_Attachments[1].m_Sampler;
+
+        VkDescriptorImageInfo colourBufferInfo{};
+        colourBufferInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        colourBufferInfo.imageView = gbuffers.m_Framebuffers[i].m_Attachments[2].m_ImageView;
+        colourBufferInfo.sampler = gbuffers.m_Framebuffers[i].m_Attachments[2].m_Sampler;
+
+        VkDescriptorBufferInfo lightBufferInfo{};
+        lightBufferInfo.buffer = lightsUniformData.m_UniformBuffers[i];
+        lightBufferInfo.offset = 0;
+        lightBufferInfo.range = sizeof(DeferredLightData);
+
+        std::array<VkWriteDescriptorSet, 5> descriptorWrites{};
+
+        descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[0].dstSet = descriptorSets[i];
+        descriptorWrites[0].dstBinding = 0;
+        descriptorWrites[0].dstArrayElement = 0;
+        descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrites[0].descriptorCount = 1;
+        descriptorWrites[0].pBufferInfo = &mvpBufferInfo;
+
+        descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[1].dstSet = descriptorSets[i];
+        descriptorWrites[1].dstBinding = 1;
+        descriptorWrites[1].dstArrayElement = 0;
+        descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[1].descriptorCount = 1;
+        descriptorWrites[1].pImageInfo = &positionBufferInfo;
+
         descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[2].dstSet = descriptorSets[i];
         descriptorWrites[2].dstBinding = 2;
         descriptorWrites[2].dstArrayElement = 0;
-        descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         descriptorWrites[2].descriptorCount = 1;
-        descriptorWrites[2].pBufferInfo = &lightBufferInfo;
+        descriptorWrites[2].pImageInfo = &normalBufferInfo;
+
+        descriptorWrites[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[3].dstSet = descriptorSets[i];
+        descriptorWrites[3].dstBinding = 3;
+        descriptorWrites[3].dstArrayElement = 0;
+        descriptorWrites[3].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[3].descriptorCount = 1;
+        descriptorWrites[3].pImageInfo = &colourBufferInfo;
+
+        descriptorWrites[4].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[4].dstSet = descriptorSets[i];
+        descriptorWrites[4].dstBinding = 4;
+        descriptorWrites[4].dstArrayElement = 0;
+        descriptorWrites[4].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrites[4].descriptorCount = 1;
+        descriptorWrites[4].pBufferInfo = &lightBufferInfo;
 
 
         vkUpdateDescriptorSets(vk.m_LogicalDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
@@ -235,6 +372,13 @@ int main()
     bool enableMSAA = true;
     vk.Start(1280, 720, enableMSAA);
 
+    UniformBufferFrameData<MvpData> mvpUniformData;
+    UniformBufferFrameData<DeferredLightData> lightsUniformData;
+
+    DeferredLightData lightDataCpu{};
+    Vector<VkDescriptorSet>     lightPassDescriptorSets;
+    Vector<VkDescriptorSet>     gbufferDescriptorSets;
+
     auto gbufferVertBin = vk.LoadSpirvBinary("shaders/gbuffer.vert.spv");
     auto gbufferFragBin = vk.LoadSpirvBinary("shaders/gbuffer.frag.spv");
     auto gbufferVertexLayoutDatas = vk.ReflectDescriptorSetLayouts(gbufferVertBin);
@@ -257,14 +401,14 @@ int main()
     VkPipeline gbufferPipeline = vk.CreateRasterizationGraphicsPipeline(
         gbufferVertBin, gbufferFragBin,
         gbufferDescriptorSetLayout, Vector<VkVertexInputBindingDescription>{VertexDataNormal::GetBindingDescription() }, VertexDataNormal::GetAttributeDescriptions(),
-        gbufferRenderPass, 
+        gbufferRenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
         VK_POLYGON_MODE_FILL,
         VK_CULL_MODE_NONE,
         false,
         VK_COMPARE_OP_LESS,
-        gbufferPipelineLayout
-        );
+        gbufferPipelineLayout, 3
+    );
 
     // create present graphics pipeline
     // Pipeline stage?
@@ -280,75 +424,59 @@ int main()
         VK_COMPARE_OP_LESS,
         lightPassPipelineLayout);
 
+    FramebufferSet gbufferSet{};
 
-    // create gbuffer images
-    VkImage positionBuffer;
-    VkImageView positionBufferImageView;
-    VkDeviceMemory positionBufferMemory;
-    vk.CreateImage(vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height, 1, VK_SAMPLE_COUNT_1_BIT, 
-        VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, positionBuffer, positionBufferMemory);
-    vk.CreateImageView(positionBuffer, VK_FORMAT_R32G32B32A32_SFLOAT, 1, VK_IMAGE_ASPECT_COLOR_BIT, positionBufferImageView);
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        // create gbuffer images
+        Texture positionAttachment = Texture::CreateAttachment(vk, vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height, 1,
+            VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
 
-    VkImage normalBuffer;
-    VkImageView normalBufferImageView;
-    VkDeviceMemory normalBufferMemory;
-    vk.CreateImage(vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height, 1, VK_SAMPLE_COUNT_1_BIT,
-        VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, normalBuffer, normalBufferMemory);
-    vk.CreateImageView(normalBuffer, VK_FORMAT_R32G32B32A32_SFLOAT, 1, VK_IMAGE_ASPECT_COLOR_BIT, normalBufferImageView);
+        Texture normalAttachment = Texture::CreateAttachment(vk, vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height, 1,
+            VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
 
-    VkImage colourBuffer;
-    VkImageView colourBufferImageView;
-    VkDeviceMemory colourBufferMemory;
-    vk.CreateImage(vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height, 1, VK_SAMPLE_COUNT_1_BIT,
-        VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, colourBuffer, colourBufferMemory);
-    vk.CreateImageView(colourBuffer, VK_FORMAT_R32G32B32A32_SFLOAT, 1, VK_IMAGE_ASPECT_COLOR_BIT, colourBufferImageView);
+        Texture colourAttachment = Texture::CreateAttachment(vk, vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height, 1,
+            VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
 
-    // depth texture
-    VkFormat depthFormat = vk.FindDepthFormat();
-    VkImage depthBuffer;
-    VkImageView depthBufferImageView;
-    VkDeviceMemory depthBufferMemory;
-    vk.CreateImage(vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height, 1, VK_SAMPLE_COUNT_1_BIT,
-        depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthBuffer, depthBufferMemory);
-    vk.CreateImageView(depthBuffer, depthFormat, 1, VK_IMAGE_ASPECT_DEPTH_BIT, depthBufferImageView);
+        VkFormat depthFormat = vk.FindDepthFormat();
+        Texture depthAttachment = Texture::CreateAttachment(vk, vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height, 1,
+            VK_SAMPLE_COUNT_1_BIT, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
 
-    Vector<VkImageView> gbufferAttachments{ positionBufferImageView, normalBufferImageView, colourBufferImageView, depthBufferImageView };
-    // push them to a freambuffer
-    VkFramebuffer gbuffer;
-    vk.CreateFramebuffer(gbufferAttachments, gbufferRenderPass, vk.m_SwapChainImageExtent, gbuffer);
+        VkFramebuffer gbuffer;
+        Vector<VkImageView> gbufferAttachments{ positionAttachment.m_ImageView, normalAttachment.m_ImageView, colourAttachment.m_ImageView, depthAttachment.m_ImageView };
+        vk.CreateFramebuffer(gbufferAttachments, gbufferRenderPass, vk.m_SwapChainImageExtent, gbuffer);
 
-
+        Vector<Texture> textures{ positionAttachment, normalAttachment, colourAttachment, depthAttachment };
+        Framebuffer fb{ textures, gbuffer };
+        gbufferSet.m_Framebuffers[i] = fb;
+    }    
 
     // create vertex and index buffer
     Model model;
     LoadModelAssimp(vk, model, "assets/viking_room.obj", true);
 
-    // Texture abstraction
-    uint32_t mipLevels;
-    VkImage textureImage;
-    VkImageView imageView;
-    VkDeviceMemory textureMemory;
-    vk.CreateTexture("assets/viking_room.png", VK_FORMAT_R8G8B8A8_UNORM, textureImage, imageView, textureMemory, &mipLevels);
-    VkSampler imageSampler;
-    vk.CreateImageSampler(imageView, mipLevels, VK_FILTER_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, imageSampler);
+    Texture texture = Texture::CreateTexture(vk, "assets/viking_room.png", VK_FORMAT_R8G8B8A8_UNORM);
 
     // Shader too probably
     vk.CreateUniformBuffers<MvpData>(mvpUniformData);
     vk.CreateUniformBuffers<FrameLightDataT<NUM_LIGHTS>>(lightsUniformData);
 
-    CreateLightingPassDescriptorSets(vk, lightPassDescriptorSetLayout, imageView, imageSampler);
+    CreateGBufferDescriptorSets(vk, gbufferDescriptorSetLayout, texture.m_ImageView, texture.m_Sampler, gbufferDescriptorSets, mvpUniformData);
+    CreateLightingPassDescriptorSets(vk, lightPassDescriptorSetLayout, gbufferSet, lightPassDescriptorSets, mvpUniformData, lightsUniformData);
+
+    Vector<VkFramebuffer> gbufferFramebuffers{ gbufferSet.m_Framebuffers[0].m_FB, gbufferSet.m_Framebuffers[1].m_FB };
 
     while (vk.ShouldRun())
     {
         vk.PreFrame();
 
-        UpdateUniformBuffer(vk);
+        UpdateUniformBuffer(vk, mvpUniformData, lightsUniformData, lightDataCpu);
 
-        RecordCommandBuffers(vk, pipeline, lightPassPipelineLayout, model);
+        RecordCommandBuffers(vk, gbufferPipeline, gbufferPipelineLayout, gbufferRenderPass, model, gbufferDescriptorSets, gbufferFramebuffers);
 
         vk.PostFrame();
     }
@@ -358,10 +486,8 @@ int main()
 
     FreeModel(vk, model);
 
-    vkDestroySampler(vk.m_LogicalDevice, imageSampler, nullptr);
-    vkDestroyImageView(vk.m_LogicalDevice, imageView, nullptr);
-    vkDestroyImage(vk.m_LogicalDevice, textureImage, nullptr);
-    vkFreeMemory(vk.m_LogicalDevice, textureMemory, nullptr);
+    texture.Free(vk);
+
     vkDestroyDescriptorSetLayout(vk.m_LogicalDevice, gbufferDescriptorSetLayout, nullptr);
     vkDestroyDescriptorSetLayout(vk.m_LogicalDevice, lightPassDescriptorSetLayout, nullptr);
     vkDestroyPipelineLayout(vk.m_LogicalDevice, lightPassPipelineLayout, nullptr);
