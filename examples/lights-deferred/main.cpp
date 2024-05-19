@@ -378,18 +378,18 @@ void CreateLightingPassDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& 
 
         VkDescriptorImageInfo positionBufferInfo{};
         positionBufferInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        positionBufferInfo.imageView = gbuffers.m_Framebuffers[i].m_Attachments[0].m_ImageView;
-        positionBufferInfo.sampler = gbuffers.m_Framebuffers[i].m_Attachments[0].m_Sampler;
+        positionBufferInfo.imageView = gbuffers.m_Framebuffers[i].m_Attachments[1].m_ImageView;
+        positionBufferInfo.sampler = gbuffers.m_Framebuffers[i].m_Attachments[1].m_Sampler;
 
         VkDescriptorImageInfo normalBufferInfo{};
         normalBufferInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        normalBufferInfo.imageView = gbuffers.m_Framebuffers[i].m_Attachments[1].m_ImageView;
-        normalBufferInfo.sampler = gbuffers.m_Framebuffers[i].m_Attachments[1].m_Sampler;
+        normalBufferInfo.imageView = gbuffers.m_Framebuffers[i].m_Attachments[2].m_ImageView;
+        normalBufferInfo.sampler = gbuffers.m_Framebuffers[i].m_Attachments[2].m_Sampler;
 
         VkDescriptorImageInfo colourBufferInfo{};
         colourBufferInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        colourBufferInfo.imageView = gbuffers.m_Framebuffers[i].m_Attachments[2].m_ImageView;
-        colourBufferInfo.sampler = gbuffers.m_Framebuffers[i].m_Attachments[2].m_Sampler;
+        colourBufferInfo.imageView = gbuffers.m_Framebuffers[i].m_Attachments[0].m_ImageView;
+        colourBufferInfo.sampler = gbuffers.m_Framebuffers[i].m_Attachments[0].m_Sampler;
 
         VkDescriptorBufferInfo lightBufferInfo{};
         lightBufferInfo.buffer = lightsUniformData.m_UniformBuffers[i];
@@ -558,10 +558,10 @@ int main()
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
 
         VkFramebuffer gbuffer;
-        Vector<VkImageView> gbufferAttachments{ positionAttachment.m_ImageView, normalAttachment.m_ImageView, colourAttachment.m_ImageView, depthAttachment.m_ImageView };
+        Vector<VkImageView> gbufferAttachments{ colourAttachment.m_ImageView, positionAttachment.m_ImageView, normalAttachment.m_ImageView, depthAttachment.m_ImageView };
         vk.CreateFramebuffer(gbufferAttachments, gbufferRenderPass, vk.m_SwapChainImageExtent, gbuffer);
 
-        Vector<Texture> textures{ positionAttachment, normalAttachment, colourAttachment, depthAttachment };
+        Vector<Texture> textures{ colourAttachment, positionAttachment, normalAttachment, depthAttachment };
         Framebuffer fb{ textures, gbuffer };
         gbufferSet.m_Framebuffers[i] = fb;
     }    
