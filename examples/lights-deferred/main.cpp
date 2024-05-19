@@ -138,6 +138,64 @@ void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkPipelineLay
         });
 }
 
+void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
+    VkPipeline& gbufferPipeline , VkPipelineLayout& gbufferPipelineLayout, VkRenderPass gbufferRenderPass, Vector<VkDescriptorSet>& gbufferDescriptorSets, Vector<VkFramebuffer>& gbufferFramebuffers,
+    VkPipeline& lightingPassPipeline, VkPipelineLayout& lightingPassPipelineLayout, VkRenderPass lightingPassRenderPass, Vector<VkDescriptorSet>& lightingPassDescriptorSets, Vector<VkFramebuffer>& lightingPassFramebuffers,
+    Model& model, Mesh& screenQuad)
+{
+    vk.RecordGraphicsCommands([&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
+        // push to example
+        std::array<VkClearValue, 4> clearValues{};
+        clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
+        clearValues[1].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
+        clearValues[2].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
+        clearValues[3].depthStencil = { 1.0f, 0 };
+
+        VkRenderPassBeginInfo renderPassInfo{};
+        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        renderPassInfo.renderPass = gbufferRenderPass;
+        renderPassInfo.framebuffer = gbufferFramebuffers[frameIndex];
+        renderPassInfo.renderArea.offset = { 0,0 };
+        renderPassInfo.renderArea.extent = vk.m_SwapChainImageExtent;
+
+        renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+        renderPassInfo.pClearValues = clearValues.data();
+
+        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gbufferPipeline);
+        VkViewport viewport{};
+        viewport.x = 0.0f;
+        viewport.x = 0.0f;
+        viewport.width = static_cast<float>(vk.m_SwapChainImageExtent.width);
+        viewport.height = static_cast<float>(vk.m_SwapChainImageExtent.height);
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+
+        VkRect2D scissor{};
+        scissor.offset = { 0,0 };
+        scissor.extent = VkExtent2D{
+            static_cast<uint32_t>(vk.m_SwapChainImageExtent.width) ,
+            static_cast<uint32_t>(vk.m_SwapChainImageExtent.height)
+        };
+        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+        for (int i = 0; i < model.m_Meshes.size(); i++)
+        {
+            Mesh& mesh = model.m_Meshes[i];
+            VkBuffer vertexBuffers[]{ mesh.m_VertexBuffer };
+            VkDeviceSize sizes[] = { 0 };
+
+
+            vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, sizes);
+            vkCmdBindIndexBuffer(commandBuffer, mesh.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gbufferPipelineLayout, 0, 1, &gbufferDescriptorSets[frameIndex], 0, nullptr);
+            vkCmdDrawIndexed(commandBuffer, mesh.m_IndexCount, 1, 0, 0, 0);
+        }
+        vkCmdEndRenderPass(commandBuffer);
+        });
+}
+
 void UpdateUniformBuffer(VulkanAPI_SDL& vk, UniformBufferFrameData<MvpData>& mvpUniformData, UniformBufferFrameData<DeferredLightData>& lightsUniformData, DeferredLightData& lightDataCpu)
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
@@ -470,6 +528,8 @@ int main()
     Model model;
     LoadModelAssimp(vk, model, "assets/viking_room.obj", true);
 
+    Mesh screenQuad = BuildScreenSpaceQuad(vk);
+
     Texture texture = Texture::CreateTexture(vk, "assets/viking_room.png", VK_FORMAT_R8G8B8A8_UNORM);
 
     // Shader too probably
@@ -487,7 +547,10 @@ int main()
 
         UpdateUniformBuffer(vk, mvpUniformData, lightsUniformData, lightDataCpu);
 
-        RecordCommandBuffers(vk, gbufferPipeline, gbufferPipelineLayout, gbufferRenderPass, model, gbufferDescriptorSets, gbufferFramebuffers);
+        RecordCommandBuffersV2(vk, 
+            gbufferPipeline, gbufferPipelineLayout, gbufferRenderPass,  gbufferDescriptorSets, gbufferFramebuffers, 
+            pipeline, lightPassPipelineLayout, vk.m_SwapchainImageRenderPass, lightPassDescriptorSets, vk.m_SwapChainFramebuffers,
+            model, screenQuad);
 
         vk.PostFrame();
     }
