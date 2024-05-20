@@ -101,61 +101,6 @@ static Vector<uint32_t> g_ScreenSpaceQuadIndexData = {
 };
 
 
-void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout, VkRenderPass renderPass, Model& model, Vector<VkDescriptorSet>& descriptorSets, Vector<VkFramebuffer>& framebuffers)
-{
-    vk.RecordGraphicsCommands([&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
-        // push to example
-        std::array<VkClearValue, 4> clearValues{};
-        clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
-        clearValues[1].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
-        clearValues[2].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
-        clearValues[3].depthStencil = { 1.0f, 0 };
-
-        VkRenderPassBeginInfo renderPassInfo{};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = renderPass;
-        renderPassInfo.framebuffer = framebuffers[frameIndex];
-        renderPassInfo.renderArea.offset = { 0,0 };
-        renderPassInfo.renderArea.extent = vk.m_SwapChainImageExtent;
-
-        renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-        renderPassInfo.pClearValues = clearValues.data();
-
-        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-        VkViewport viewport{};
-        viewport.x = 0.0f;
-        viewport.x = 0.0f;
-        viewport.width = static_cast<float>(vk.m_SwapChainImageExtent.width);
-        viewport.height = static_cast<float>(vk.m_SwapChainImageExtent.height);
-        viewport.minDepth = 0.0f;
-        viewport.maxDepth = 1.0f;
-
-        VkRect2D scissor{};
-        scissor.offset = { 0,0 };
-        scissor.extent = VkExtent2D{
-            static_cast<uint32_t>(vk.m_SwapChainImageExtent.width) ,
-            static_cast<uint32_t>(vk.m_SwapChainImageExtent.height)
-        };
-        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-
-        for (int i = 0; i < model.m_Meshes.size(); i++)
-        {
-            Mesh& mesh = model.m_Meshes[i];
-            VkBuffer vertexBuffers[]{ mesh.m_VertexBuffer };
-            VkDeviceSize sizes[] = { 0 };
-
-
-            vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, sizes);
-            vkCmdBindIndexBuffer(commandBuffer, mesh.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[frameIndex], 0, nullptr);
-            vkCmdDrawIndexed(commandBuffer, mesh.m_IndexCount, 1, 0, 0, 0);
-        }
-        vkCmdEndRenderPass(commandBuffer);
-        });
-}
-
 void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
     VkPipeline& gbufferPipeline , VkPipelineLayout& gbufferPipelineLayout, VkRenderPass gbufferRenderPass, Vector<VkDescriptorSet>& gbufferDescriptorSets, Vector<VkFramebuffer>& gbufferFramebuffers,
     VkPipeline& lightingPassPipeline, VkPipelineLayout& lightingPassPipelineLayout, VkRenderPass lightingPassRenderPass, Vector<VkDescriptorSet>& lightingPassDescriptorSets, Vector<VkFramebuffer>& lightingPassFramebuffers,
@@ -588,7 +533,7 @@ int main()
 
     // create vertex and index buffer
     Model model;
-    LoadModelAssimp(vk, model, "assets/viking_room.obj", true);
+    LoadModelAssimp(vk, model, "assets/sponza/sponza.obj", true);
 
     Mesh screenQuad = BuildScreenSpaceQuad(vk, g_ScreenSpaceQuadVertexData, g_ScreenSpaceQuadIndexData);
 
