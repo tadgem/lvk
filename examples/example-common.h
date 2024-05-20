@@ -183,6 +183,34 @@ struct FrameLightDataT
     uint32_t            m_SpotLightsActive;
 };
 
+float Random(float max = 1.0f)
+{
+    return static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / max));
+}
+
+template<size_t _Size>
+void FillExampleLightData(FrameLightDataT<_Size>& lightData)
+{
+    lightData.m_DirectionalLight.Colour = { 0.33f, 0.33f, 0.33f, 0.0f };
+    lightData.m_DirectionalLight.Direction = { -13.0f, -2.33f, -10.0f, 0.0f };
+
+    glm::vec4 centerPos = { -0.2f, -0.2f, 0.1f, 0.0f };
+    float areaSpread = 1.0f;
+    float directionSpread = 12.0f;
+    float colourSpread = 100.0f;
+    float radiusSpread = 0.02f;
+
+    for (size_t i = 0; i < _Size; i++)
+    {
+        lightData.m_PointLights[i].PositionRadius = { centerPos.x + Random(areaSpread), centerPos.y + Random(areaSpread), centerPos.z + Random(areaSpread), Random(radiusSpread) };
+        lightData.m_PointLights[i].Colour = { Random(colourSpread), Random(colourSpread), Random(colourSpread), 0.0f };
+
+        lightData.m_SpotLights[i].PositionRadius = { centerPos.x + Random(areaSpread), centerPos.y + Random(areaSpread), centerPos.z + Random(areaSpread), Random(radiusSpread) };
+        lightData.m_SpotLights[i].DirectionAngle = { Random(directionSpread), Random(directionSpread), -Random(directionSpread), Random(areaSpread) };
+        lightData.m_SpotLights[i].Colour = { Random(colourSpread), Random(colourSpread), Random(colourSpread), 0.0f };
+    }
+}
+
 
 static glm::vec3 AssimpToGLM(aiVector3D aiVec) {
     return glm::vec3(aiVec.x, aiVec.y, aiVec.z);
@@ -257,7 +285,14 @@ void ProcessMeshWithNormals(lvk::VulkanAPI_SDL& vk, Model& model, aiMesh* mesh, 
     bool hasNormals = mesh->HasNormals();
     bool hasIndices = mesh->HasFaces();
 
+    Vector<aiMaterialProperty*> properties;
+    aiMaterial* meshMaterial = scene->mMaterials[mesh->mMaterialIndex];
 
+    for (int i = 0; i < meshMaterial->mNumProperties; i++)
+    {
+        aiMaterialProperty* prop = meshMaterial->mProperties[i];
+        properties.push_back(prop);
+    }
     Vector<VertexDataNormal> verts;
     if (hasPositions && hasUVs && hasNormals) {
         for (unsigned int i = 0; i < mesh->mNumVertices; i++) {

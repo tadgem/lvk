@@ -505,6 +505,8 @@ int main()
     UniformBufferFrameData<DeferredLightData> lightsUniformData;
 
     DeferredLightData lightDataCpu{};
+
+    FillExampleLightData(lightDataCpu);
     Vector<VkDescriptorSet>     lightPassDescriptorSets;
     Vector<VkDescriptorSet>     gbufferDescriptorSets;
 
