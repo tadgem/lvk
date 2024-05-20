@@ -259,7 +259,6 @@ int main()
     lightsUniformData.Free(vk);
 
     FreeModel(vk, model);
-
     vkDestroySampler(vk.m_LogicalDevice, imageSampler, nullptr);
     vkDestroyImageView(vk.m_LogicalDevice, imageView, nullptr);
     vkDestroyImage(vk.m_LogicalDevice, textureImage, nullptr);

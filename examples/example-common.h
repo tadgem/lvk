@@ -196,14 +196,19 @@ static lvk::String AssimpToSTD(aiString str) {
     return lvk::String(str.C_Str());
 }
 
+void FreeMesh(lvk::VulkanAPI& vk, Mesh& m)
+{
+    vkDestroyBuffer(vk.m_LogicalDevice, m.m_VertexBuffer, nullptr);
+    vmaFreeMemory(vk.m_Allocator, m.m_VertexBufferMemory);
+    vkDestroyBuffer(vk.m_LogicalDevice, m.m_IndexBuffer, nullptr);
+    vmaFreeMemory(vk.m_Allocator, m.m_IndexBufferMemory);
+}
+
 void FreeModel(lvk::VulkanAPI_SDL& vk, Model& model)
 {
     for (Mesh& m : model.m_Meshes)
     {
-        vkDestroyBuffer(vk.m_LogicalDevice, m.m_VertexBuffer, nullptr);
-        vmaFreeMemory(vk.m_Allocator, m.m_VertexBufferMemory);
-        vkDestroyBuffer(vk.m_LogicalDevice, m.m_IndexBuffer, nullptr);
-        vmaFreeMemory(vk.m_Allocator, m.m_IndexBufferMemory);
+        FreeMesh(vk, m);
     }
 }
 

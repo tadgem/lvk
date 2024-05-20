@@ -65,11 +65,29 @@ class Framebuffer {
 public:
     Vector<Texture> m_Attachments;
     VkFramebuffer   m_FB;
+
+    void Free(VulkanAPI& vk)
+    {
+        for (auto& t : m_Attachments)
+        {
+            t.Free(vk);
+        }
+        vkDestroyFramebuffer(vk.m_LogicalDevice, m_FB, nullptr);
+    }
 } ;
 
 class FramebufferSet {
 public:
     Array<Framebuffer, MAX_FRAMES_IN_FLIGHT> m_Framebuffers;
+
+    void Free(VulkanAPI& vk)
+    {
+        for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+        {
+            m_Framebuffers[i].Free(vk);
+        }
+    }
+
 };
 
 static Vector<VertexData> g_ScreenSpaceQuadVertexData = {
@@ -377,17 +395,17 @@ void CreateLightingPassDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& 
         mvpBufferInfo.range = sizeof(MvpData);
 
         VkDescriptorImageInfo positionBufferInfo{};
-        positionBufferInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        positionBufferInfo.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
         positionBufferInfo.imageView = gbuffers.m_Framebuffers[i].m_Attachments[1].m_ImageView;
         positionBufferInfo.sampler = gbuffers.m_Framebuffers[i].m_Attachments[1].m_Sampler;
 
         VkDescriptorImageInfo normalBufferInfo{};
-        normalBufferInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        normalBufferInfo.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
         normalBufferInfo.imageView = gbuffers.m_Framebuffers[i].m_Attachments[2].m_ImageView;
         normalBufferInfo.sampler = gbuffers.m_Framebuffers[i].m_Attachments[2].m_Sampler;
 
         VkDescriptorImageInfo colourBufferInfo{};
-        colourBufferInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        colourBufferInfo.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
         colourBufferInfo.imageView = gbuffers.m_Framebuffers[i].m_Attachments[0].m_ImageView;
         colourBufferInfo.sampler = gbuffers.m_Framebuffers[i].m_Attachments[0].m_Sampler;
 
@@ -601,11 +619,23 @@ int main()
     lightsUniformData.Free(vk);
 
     FreeModel(vk, model);
+    FreeMesh(vk, screenQuad);
 
     texture.Free(vk);
+    gbufferSet.Free(vk);
 
+    vkDestroyRenderPass(vk.m_LogicalDevice, gbufferRenderPass, nullptr);
+
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        vkFreeDescriptorSets(vk.m_LogicalDevice, vk.m_DescriptorPool, 1, &gbufferDescriptorSets[i]);
+        vkFreeDescriptorSets(vk.m_LogicalDevice, vk.m_DescriptorPool, 1,  &lightPassDescriptorSets[i]);
+    }
     vkDestroyDescriptorSetLayout(vk.m_LogicalDevice, gbufferDescriptorSetLayout, nullptr);
     vkDestroyDescriptorSetLayout(vk.m_LogicalDevice, lightPassDescriptorSetLayout, nullptr);
+    
+    vkDestroyPipelineLayout(vk.m_LogicalDevice, gbufferPipelineLayout, nullptr);
+    vkDestroyPipeline(vk.m_LogicalDevice, gbufferPipeline, nullptr);
     vkDestroyPipelineLayout(vk.m_LogicalDevice, lightPassPipelineLayout, nullptr);
     vkDestroyPipeline(vk.m_LogicalDevice, pipeline, nullptr);
 
