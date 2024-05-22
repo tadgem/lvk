@@ -11,7 +11,8 @@
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include "glm/glm.hpp"
-#include <glm/gtc/matrix_transform.hpp>
+#include "glm/gtc/quaternion.hpp"
+#include "glm/gtc/matrix_transform.hpp"
 
 struct VertexDataCol
 {
@@ -255,7 +256,7 @@ float Random(float max = 1.0f)
 template<size_t _Size>
 void FillExampleLightData(FrameLightDataT<_Size>& lightData)
 {
-    lightData.m_DirectionalLight.Colour = { 0.33f, 0.33f, 0.33f, 0.0f };
+    lightData.m_DirectionalLight.Colour = { 0.66f, 0.66f, 0.66f, 0.0f };
     lightData.m_DirectionalLight.Direction = { -13.0f, -2.33f, -10.0f, 0.0f };
 
     glm::vec4 centerPos = { -0.2f, -0.2f, 0.1f, 0.0f };
@@ -423,7 +424,9 @@ void LoadModelAssimp(lvk::VulkanAPI& vk, Model& model, const lvk::String& path, 
         aiProcess_Triangulate |
         aiProcess_CalcTangentSpace |
         aiProcess_OptimizeMeshes |
+        aiProcess_GenSmoothNormals |
         aiProcess_OptimizeGraph |
+        aiProcess_FixInfacingNormals |
         aiProcess_FindInvalidData);
     //
     if (scene == nullptr) {
@@ -462,4 +465,22 @@ Mesh BuildScreenSpaceQuad(lvk::VulkanAPI& vk, lvk::Vector<VertexData>& verts, lv
     vk.CreateIndexBuffer(indices, indexBuffer, indexBufferMemory);
 
     return Mesh{ vertexBuffer, vertexBufferMemory, indexBuffer, indexBufferMemory, 6 };
+}
+
+
+glm::vec3 CalculateVec3Radians(glm::vec3 eulerDegrees) {
+    return glm::vec3(glm::radians(eulerDegrees.x), glm::radians(eulerDegrees.y), glm::radians(eulerDegrees.z));
+}
+
+glm::vec3 CalculateVec3Degrees(glm::vec3 eulerRadians) {
+    return glm::vec3(glm::degrees(eulerRadians.x), glm::degrees(eulerRadians.y), glm::degrees(eulerRadians.z));
+}
+
+glm::quat CalculateRotationQuat(glm::vec3 eulerDegrees) {
+    glm::vec3 eulerRadians = CalculateVec3Radians(eulerDegrees);
+    glm::quat xRotation = glm::angleAxis(eulerRadians.x, glm::vec3(1, 0, 0));
+    glm::quat yRotation = glm::angleAxis(eulerRadians.y, glm::vec3(0, 1, 0));
+    glm::quat zRotation = glm::angleAxis(eulerRadians.z, glm::vec3(0, 0, 1));
+
+    return zRotation * yRotation * xRotation;
 }

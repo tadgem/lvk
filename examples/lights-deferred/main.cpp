@@ -57,6 +57,10 @@ static Vector<uint32_t> g_ScreenSpaceQuadIndexData = {
     0, 1, 2, 2, 3, 0
 };
 
+static glm::vec3 g_Position = { 0.0f, 0.0f, 0.0f };
+static glm::vec3 g_Euler = { 0.0f, 0.0f, 0.0f };
+static glm::vec3 g_Scale = { 1.0f, 1.0f, 1.0f };
+
 void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
     VkPipeline& gbufferPipeline , VkPipelineLayout& gbufferPipelineLayout, VkRenderPass gbufferRenderPass, Vector<VkDescriptorSet>& gbufferDescriptorSets, Vector<VkFramebuffer>& gbufferFramebuffers,
     VkPipeline& lightingPassPipeline, VkPipelineLayout& lightingPassPipelineLayout, VkRenderPass lightingPassRenderPass, Vector<VkDescriptorSet>& lightingPassDescriptorSets, Vector<VkFramebuffer>& lightingPassFramebuffers,
@@ -264,13 +268,19 @@ void UpdateUniformBuffer(VulkanAPI_SDL& vk, UniformBufferFrameData<MvpData>& mvp
     auto currentTime = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
+    glm::quat rotation = CalculateRotationQuat(g_Euler);
+
+    glm::mat4 positionMatrix = glm::translate(glm::mat4(1.0), g_Position);
+    glm::mat4 rotationMatrix = glm::mat4_cast(rotation);
+    glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0), g_Scale);
+
     MvpData ubo{};
-    ubo.Model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.Model = glm::scale(ubo.Model, glm::vec3(0.1));
+    ubo.Model = positionMatrix * rotationMatrix * scaleMatrix;
+
     ubo.View = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     if (vk.m_SwapChainImageExtent.width > 0 || vk.m_SwapChainImageExtent.height)
     {
-        ubo.Proj = glm::perspective(glm::radians(45.0f), vk.m_SwapChainImageExtent.width / (float)vk.m_SwapChainImageExtent.height, 0.1f, 300.0f);
+        ubo.Proj = glm::perspective(glm::radians(45.0f), vk.m_SwapChainImageExtent.width / (float)vk.m_SwapChainImageExtent.height, 0.1f, 1000.0f);
         ubo.Proj[1][1] *= -1;
     }
     mvpUniformData.Set(vk.GetFrameIndex(), ubo);
@@ -516,6 +526,70 @@ RenderModel CreateRenderModelGbuffer(VulkanAPI& vk, const String& modelPath, VkD
 
     return renderModel;
 }
+
+void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu)
+{
+    if (ImGui::Begin("Debug"))
+    {
+        ImGui::Text("Frametime: %f", (1.0 / vk.m_DeltaTime));
+        ImGui::Separator();
+        ImGui::DragFloat3("Position", &g_Position[0]);
+        ImGui::DragFloat3("Euler Rotation", &g_Euler[0]);
+        ImGui::DragFloat3("Scale", &g_Scale[0]);
+    }
+    ImGui::End();
+
+    if (ImGui::Begin("Menu"))
+    {
+        ImGui::Text("Frametime: %f", (1.0 / vk.m_DeltaTime));
+        ImGui::DragFloat3("Directional Light Dir", &lightDataCpu.m_DirectionalLight.Direction[0]);
+        ImGui::DragFloat4("Directional Light Colour", &lightDataCpu.m_DirectionalLight.Colour[0]);
+        ImGui::DragFloat4("Directional Light Ambient Colour", &lightDataCpu.m_DirectionalLight.Ambient[0]);
+
+        if (ImGui::TreeNode("Point Lights"))
+        {
+            for (int i = 0; i < NUM_LIGHTS; i++)
+            {
+                ImGui::PushID(i);
+                if (ImGui::TreeNode("Point Light"))
+                {
+                    ImGui::DragFloat3("Position", &lightDataCpu.m_PointLights[i].PositionRadius[0]);
+                    ImGui::DragFloat("Radius", &lightDataCpu.m_PointLights[i].PositionRadius[3]);
+                    ImGui::DragFloat4("Colour", &lightDataCpu.m_PointLights[i].Colour[0]);
+                    ImGui::DragFloat4("Ambient Colour", &lightDataCpu.m_PointLights[i].Ambient[0]);
+
+                    ImGui::TreePop();
+                }
+
+                ImGui::PopID();
+            }
+            ImGui::TreePop();
+        }
+
+        if (ImGui::TreeNode("Spot Lights"))
+        {
+            for (int i = 0; i < NUM_LIGHTS; i++)
+            {
+                ImGui::PushID(NUM_LIGHTS + i);
+                if (ImGui::TreeNode("Spot Light"))
+                {
+                    ImGui::DragFloat3("Position", &lightDataCpu.m_SpotLights[i].PositionRadius[0]);
+                    ImGui::DragFloat("Radius", &lightDataCpu.m_SpotLights[i].PositionRadius[3]);
+                    ImGui::DragFloat3("Direction", &lightDataCpu.m_SpotLights[i].DirectionAngle[0]);
+                    ImGui::DragFloat("Angle", &lightDataCpu.m_SpotLights[i].DirectionAngle[3]);
+                    ImGui::DragFloat4("Colour", &lightDataCpu.m_SpotLights[i].Colour[0]);
+                    ImGui::DragFloat4("Ambient Colour", &lightDataCpu.m_SpotLights[i].Ambient[0]);
+
+                    ImGui::TreePop();
+                }
+
+                ImGui::PopID();
+            }
+            ImGui::TreePop();
+        }
+    }
+    ImGui::End();
+}
 int main()
 {
     VulkanAPI_SDL vk;
@@ -642,6 +716,8 @@ int main()
             gbufferPipeline, gbufferPipelineLayout, gbufferRenderPass,  gbufferDescriptorSets, gbufferFramebuffers, 
             pipeline, lightPassPipelineLayout, vk.m_SwapchainImageRenderPass, lightPassDescriptorSets, vk.m_SwapChainFramebuffers,
             m, screenQuad);
+
+        OnImGui(vk, lightDataCpu);
 
         vk.PostFrame();
     }

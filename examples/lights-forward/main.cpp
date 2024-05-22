@@ -85,6 +85,7 @@ void UpdateUniformBuffer(VulkanAPI_SDL& vk)
 
     if (ImGui::Begin("Lights"))
     {
+        ImGui::Text("FPSS : %f", 1.0 / vk.m_DeltaTime);
         ImGui::DragFloat3("Directional Light Dir", &lightDataCpu.m_DirectionalLight.Direction[0]);
         ImGui::DragFloat4("Directional Light Colour", &lightDataCpu.m_DirectionalLight.Colour[0]);
         ImGui::DragFloat4("Directional Light Ambient Colour", &lightDataCpu.m_DirectionalLight.Ambient[0]);
@@ -211,6 +212,7 @@ int main()
     VkDescriptorSetLayout descriptorSetLayout;
     vk.CreateDescriptorSetLayout(vertexLayoutDatas, fragmentLayoutDatas, descriptorSetLayout);
 
+    FillExampleLightData(lightDataCpu);
 
     // Texture abstraction
     uint32_t mipLevels;
