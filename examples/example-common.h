@@ -439,18 +439,16 @@ void LoadModelAssimp(lvk::VulkanAPI& vk, Model& model, const lvk::String& path, 
     for (int i = 0; i < scene->mNumMaterials; i++)
     {
         aiMaterial* meshMaterial = scene->mMaterials[i];
-        for (int p = 0; p < meshMaterial->mNumProperties; p++)
+
+        uint32_t diffuseCount = aiGetMaterialTextureCount(meshMaterial, aiTextureType_DIFFUSE);
+
+        if (diffuseCount > 0)
         {
-            aiMaterialProperty* prop = meshMaterial->mProperties[p];
-            if (prop->mSemantic == aiTextureType_DIFFUSE && prop->mType == aiPTI_String)
-            {
-                aiString result;
-                aiGetMaterialString(meshMaterial, prop->mKey.C_Str(), prop->mType, prop->mIndex, &result);
-                lvk::String finalPath = directory + lvk::String(result.C_Str());
-                Texture texture = Texture::CreateTexture(vk, finalPath, VK_FORMAT_R8G8B8A8_UNORM);
-                model.m_Materials.push_back({ texture });
-            }
-            int j = 1;
+            aiString resultPath;
+            aiGetMaterialTexture(meshMaterial, aiTextureType_DIFFUSE, 0, &resultPath);
+            lvk::String finalPath = directory + lvk::String(resultPath.C_Str());
+            Texture texture = Texture::CreateTexture(vk, finalPath, VK_FORMAT_R8G8B8A8_UNORM);
+            model.m_Materials.push_back({ texture });
         }
     }
 }

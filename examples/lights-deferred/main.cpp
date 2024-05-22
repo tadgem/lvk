@@ -57,9 +57,20 @@ static Vector<uint32_t> g_ScreenSpaceQuadIndexData = {
     0, 1, 2, 2, 3, 0
 };
 
-static glm::vec3 g_Position = { 0.0f, 0.0f, 0.0f };
-static glm::vec3 g_Euler = { 0.0f, 0.0f, 0.0f };
-static glm::vec3 g_Scale = { 1.0f, 1.0f, 1.0f };
+struct Transform {
+    glm::vec3 position = glm::vec3(0);
+    glm::vec3 rotation = glm::vec3(0);
+    glm::vec3 scale = glm::vec3(1);
+    glm::mat4 to_mat4() {
+        glm::mat4 m = glm::translate(glm::mat4(1), position);
+        glm::vec3 radians = CalculateVec3Radians(rotation);
+        m *= glm::mat4_cast(glm::quat(radians));
+        m = glm::scale(m, scale);
+        return m;
+    };
+};
+
+static Transform g_Transform; 
 
 void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
     VkPipeline& gbufferPipeline , VkPipelineLayout& gbufferPipelineLayout, VkRenderPass gbufferRenderPass, Vector<VkDescriptorSet>& gbufferDescriptorSets, Vector<VkFramebuffer>& gbufferFramebuffers,
@@ -268,16 +279,10 @@ void UpdateUniformBuffer(VulkanAPI_SDL& vk, UniformBufferFrameData<MvpData>& mvp
     auto currentTime = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-    glm::quat rotation = CalculateRotationQuat(g_Euler);
-
-    glm::mat4 positionMatrix = glm::translate(glm::mat4(1.0), g_Position);
-    glm::mat4 rotationMatrix = glm::mat4_cast(rotation);
-    glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0), g_Scale);
-
     MvpData ubo{};
-    ubo.Model = positionMatrix * rotationMatrix * scaleMatrix;
+    ubo.Model = g_Transform.to_mat4();
 
-    ubo.View = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.View = glm::lookAt(glm::vec3(20.0f, 20.0f, 20.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     if (vk.m_SwapChainImageExtent.width > 0 || vk.m_SwapChainImageExtent.height)
     {
         ubo.Proj = glm::perspective(glm::radians(45.0f), vk.m_SwapChainImageExtent.width / (float)vk.m_SwapChainImageExtent.height, 0.1f, 1000.0f);
@@ -533,9 +538,9 @@ void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu)
     {
         ImGui::Text("Frametime: %f", (1.0 / vk.m_DeltaTime));
         ImGui::Separator();
-        ImGui::DragFloat3("Position", &g_Position[0]);
-        ImGui::DragFloat3("Euler Rotation", &g_Euler[0]);
-        ImGui::DragFloat3("Scale", &g_Scale[0]);
+        ImGui::DragFloat3("Position", &g_Transform.position[0]);
+        ImGui::DragFloat3("Euler Rotation", & g_Transform.rotation[0]);
+        ImGui::DragFloat3("Scale", & g_Transform.scale[0]);
     }
     ImGui::End();
 
@@ -685,7 +690,7 @@ int main()
     // create vertex and index buffer
     Model model;
     LoadModelAssimp(vk, model, "assets/viking_room.obj", true);
-    RenderModel m = CreateRenderModelGbuffer(vk, "assets/sponza/sponza.obj", gbufferDescriptorSetLayout);
+    RenderModel m = CreateRenderModelGbuffer(vk, "assets/sponza/sponza.gltf", gbufferDescriptorSetLayout);
 
     Mesh screenQuad = BuildScreenSpaceQuad(vk, g_ScreenSpaceQuadVertexData, g_ScreenSpaceQuadIndexData);
 

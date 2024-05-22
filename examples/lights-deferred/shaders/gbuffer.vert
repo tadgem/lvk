@@ -16,8 +16,12 @@ layout(set = 0, binding = 0) uniform UniformBufferObject {
 } ubo;
 
 void main() {
-    gl_Position = ubo.proj * ubo.view * ubo.model * vec4(vertexPosition, 1.0);
-    Position = (vec4(vertexPosition, 1.0) * ubo.model).xyz;
-    Normal = (vec4(vertexNormal, 1.0) * ubo.model).xyz;;
+
     UV = vertexUV;
+
+    mat4 normalMatrix = transpose(inverse(ubo.model));    
+    Normal = normalize((normalMatrix * vec4(vertexNormal, 0)).xyz);
+
+    Position = (ubo.model * vec4(vertexPosition, 1.0)).xyz;
+    gl_Position = ubo.proj * ubo.view * vec4(Position, 1.0);
 }
