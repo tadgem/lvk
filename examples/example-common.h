@@ -133,6 +133,63 @@ struct MvpData {
     glm::mat4 Proj;
 };
 
+class Texture
+{
+public:
+    VkImage             m_Image;
+    VkImageView         m_ImageView;
+    VkDeviceMemory      m_Memory;
+    VkSampler           m_Sampler;
+
+    Texture(VkImage image, VkImageView imageView, VkDeviceMemory memory, VkSampler sampler) :
+        m_Image(image),
+        m_ImageView(imageView),
+        m_Memory(memory),
+        m_Sampler(sampler)
+    {
+
+    }
+
+    static Texture CreateAttachment(lvk::VulkanAPI& vk, uint32_t width, uint32_t height,
+        uint32_t numMips, VkSampleCountFlagBits sampleCount,
+        VkFormat format, VkImageTiling tiling, VkImageUsageFlags usageFlags,
+        VkMemoryPropertyFlagBits memoryFlags, VkImageAspectFlagBits imageAspect,
+        VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
+    {
+        VkImage image;
+        VkImageView imageView;
+        VkDeviceMemory memory;
+        VkSampler sampler;
+        vk.CreateImage(width, height, numMips, sampleCount, format, tiling, usageFlags, memoryFlags, image, memory);
+        vk.CreateImageView(image, format, numMips, imageAspect, imageView);
+        vk.CreateImageSampler(imageView, numMips, samplerFilter, samplerAddressMode, sampler);
+
+        return Texture(image, imageView, memory, sampler);
+    }
+
+    static Texture CreateTexture(lvk::VulkanAPI& vk, const lvk::String& path, VkFormat format, VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
+    {
+        VkImage image;
+        VkImageView imageView;
+        VkDeviceMemory memory;
+        // Texture abstraction
+        uint32_t mipLevels;
+        vk.CreateTexture(path, format, image, imageView, memory, &mipLevels);
+        VkSampler sampler;
+        vk.CreateImageSampler(imageView, mipLevels, samplerFilter, samplerAddressMode, sampler);
+
+        return Texture(image, imageView, memory, sampler);
+    }
+
+    void Free(lvk::VulkanAPI& vk)
+    {
+        vkDestroySampler(vk.m_LogicalDevice, m_Sampler, nullptr);
+        vkDestroyImageView(vk.m_LogicalDevice, m_ImageView, nullptr);
+        vkDestroyImage(vk.m_LogicalDevice, m_Image, nullptr);
+        vkFreeMemory(vk.m_LogicalDevice, m_Memory, nullptr);
+    }
+};
+
 struct Mesh
 {
     VkBuffer m_VertexBuffer;
@@ -141,11 +198,18 @@ struct Mesh
     VmaAllocation m_IndexBufferMemory;
 
     uint32_t m_IndexCount;
+    uint32_t m_MaterialIndex;
+};
+
+struct Material
+{
+    Texture m_Diffuse;
 };
 
 struct Model
 {
-    std::vector<Mesh> m_Meshes;
+    lvk::Vector<Mesh>        m_Meshes;
+    lvk::Vector<Material>    m_Materials;
 };
 
 struct DirectionalLight
@@ -232,7 +296,7 @@ void FreeMesh(lvk::VulkanAPI& vk, Mesh& m)
     vmaFreeMemory(vk.m_Allocator, m.m_IndexBufferMemory);
 }
 
-void FreeModel(lvk::VulkanAPI_SDL& vk, Model& model)
+void FreeModel(lvk::VulkanAPI& vk, Model& model)
 {
     for (Mesh& m : model.m_Meshes)
     {
@@ -240,7 +304,7 @@ void FreeModel(lvk::VulkanAPI_SDL& vk, Model& model)
     }
 }
 
-void ProcessMesh(lvk::VulkanAPI_SDL& vk, Model& model, aiMesh* mesh, aiNode* node, const aiScene* scene) {
+void ProcessMesh(lvk::VulkanAPI& vk, Model& model, aiMesh* mesh, aiNode* node, const aiScene* scene) {
     using namespace lvk;
     bool hasPositions = mesh->HasPositions();
     bool hasUVs = mesh->HasTextureCoords(0);
@@ -278,7 +342,7 @@ void ProcessMesh(lvk::VulkanAPI_SDL& vk, Model& model, aiMesh* mesh, aiNode* nod
     model.m_Meshes.push_back(m);
 }
 
-void ProcessMeshWithNormals(lvk::VulkanAPI_SDL& vk, Model& model, aiMesh* mesh, aiNode* node, const aiScene* scene) {
+void ProcessMeshWithNormals(lvk::VulkanAPI& vk, Model& model, aiMesh* mesh, aiNode* node, const aiScene* scene) {
     using namespace lvk;
     bool hasPositions = mesh->HasPositions();
     bool hasUVs = mesh->HasTextureCoords(0);
@@ -322,11 +386,11 @@ void ProcessMeshWithNormals(lvk::VulkanAPI_SDL& vk, Model& model, aiMesh* mesh, 
     vk.CreateVertexBuffer<VertexDataNormal>(verts, m.m_VertexBuffer, m.m_VertexBufferMemory);
     vk.CreateIndexBuffer(indices, m.m_IndexBuffer, m.m_IndexBufferMemory);
     m.m_IndexCount = static_cast<uint32_t>(indices.size());
-
+    m.m_MaterialIndex = mesh->mMaterialIndex;
     model.m_Meshes.push_back(m);
 }
 
-void ProcessNode(lvk::VulkanAPI_SDL& vk, Model& model, aiNode* node, const aiScene* scene, bool withNormals = false) {
+void ProcessNode(lvk::VulkanAPI& vk, Model& model, aiNode* node, const aiScene* scene, bool withNormals = false) {
 
     if (node->mNumMeshes > 0) {
         for (unsigned int i = 0; i < node->mNumMeshes; i++) {
@@ -352,7 +416,7 @@ void ProcessNode(lvk::VulkanAPI_SDL& vk, Model& model, aiNode* node, const aiSce
     }
 }
 
-void LoadModelAssimp(lvk::VulkanAPI_SDL& vk, Model& model, const lvk::String& path, bool withNormals = false)
+void LoadModelAssimp(lvk::VulkanAPI& vk, Model& model, const lvk::String& path, bool withNormals = false)
 {
     Assimp::Importer importer;
     const aiScene* scene = importer.ReadFile(path.c_str(),
@@ -360,13 +424,32 @@ void LoadModelAssimp(lvk::VulkanAPI_SDL& vk, Model& model, const lvk::String& pa
         aiProcess_CalcTangentSpace |
         aiProcess_OptimizeMeshes |
         aiProcess_OptimizeGraph |
-        aiProcess_FindInvalidData );
+        aiProcess_FindInvalidData);
     //
     if (scene == nullptr) {
         spdlog::error("AssimpModelAssetFactory : Failed to load asset at path : {}", path);
         return;
     }
     ProcessNode(vk, model, scene->mRootNode, scene, withNormals);
+
+    lvk::String directory = path.substr(0, path.find_last_of('/') + 1);
+    for (int i = 0; i < scene->mNumMaterials; i++)
+    {
+        aiMaterial* meshMaterial = scene->mMaterials[i];
+        for (int p = 0; p < meshMaterial->mNumProperties; p++)
+        {
+            aiMaterialProperty* prop = meshMaterial->mProperties[p];
+            if (prop->mSemantic == aiTextureType_DIFFUSE && prop->mType == aiPTI_String)
+            {
+                aiString result;
+                aiGetMaterialString(meshMaterial, prop->mKey.C_Str(), prop->mType, prop->mIndex, &result);
+                lvk::String finalPath = directory + lvk::String(result.C_Str());
+                Texture texture = Texture::CreateTexture(vk, finalPath, VK_FORMAT_R8G8B8A8_UNORM);
+                model.m_Materials.push_back({ texture });
+            }
+            int j = 1;
+        }
+    }
 }
 
 Mesh BuildScreenSpaceQuad(lvk::VulkanAPI& vk, lvk::Vector<VertexData>& verts, lvk::Vector<uint32_t>& indices)

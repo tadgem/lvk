@@ -319,7 +319,7 @@ public:
         // API End
     protected:
         bool            p_ShouldRun = true;
-        double          p_LastFrameTime;
+        uint64_t        p_LastFrameTime;
         int             p_CurrentFrameIndex;
     };
 }

@@ -146,13 +146,13 @@ void main() {
 
     vec3 lightColour = BlinnPhong_Directional(normal, vec3(0.0f), textureColour.xyz, vec3(0.0f), 0.0f);
 
-    for(int i = 0; i < MAX_NUM_EACH_LIGHTS; i++)
+    for(int i = 0; i < 16; i++)
     {
         //lightColour
         lightColour += BlinnPhong_Point(i, position, normal, vec3(0.0f), textureColour.xyz, vec3(0.0f), 0.0f);
     }
 
-    for(int i = 0; i < MAX_NUM_EACH_LIGHTS; i++)
+    for(int i = 0; i < 16; i++)
     {
         //lightColour
         lightColour += BlinnPhong_Spot(i, position, normal, vec3(0.0f), textureColour.xyz, vec3(0.0f), 0.0f);

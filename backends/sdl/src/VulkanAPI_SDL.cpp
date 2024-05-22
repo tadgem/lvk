@@ -72,6 +72,7 @@ void lvk::VulkanAPI_SDL::PreFrame()
 {
     uint64_t currentFrame = SDL_GetPerformanceCounter();
     m_DeltaTime = (currentFrame - p_LastFrameTime) / (double)SDL_GetPerformanceFrequency();
+    p_LastFrameTime = currentFrame;
     SDL_Event sdl_event;
     while (SDL_PollEvent(&sdl_event) > 0)
     {
