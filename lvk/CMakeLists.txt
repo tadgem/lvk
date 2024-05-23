@@ -5,14 +5,16 @@ set (CMAKE_CXX_STANDARD 17)
 
 find_package(Vulkan REQUIRED FATAL_ERROR) # error
 
-add_library(${PROJECT_NAME} STATIC src/VulkanAPI.cpp 
+add_library(${PROJECT_NAME} STATIC src/lvk/VulkanAPI.cpp 
                             src/spirv_reflect.c
                             src/ImGui/imgui_impl_vulkan.cpp
                             src/ImGui/imgui_draw.cpp
                             src/ImGui/imgui_tables.cpp
                             src/ImGui/imgui_widgets.cpp
                             src/ImGui/imgui.cpp
-                            include/VulkanAPI.h
+                            include/lvk/VulkanAPI.h
+                            include/lvk/Texture.h
+                            include/lvk/Framebuffer.h
                             include/Alias.h
                             include/spirv_reflect.h
                             include/VulkanMemoryAllocator.h

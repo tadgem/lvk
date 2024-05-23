@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VulkanAPI_SDL.h"
+#include "lvk/Framebuffer.h"
 #include "assimp/Importer.hpp"
 #include "assimp/postprocess.h"
 #include "assimp/cimport.h"
@@ -13,6 +14,23 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/quaternion.hpp"
 #include "glm/gtc/matrix_transform.hpp"
+
+glm::vec3 CalculateVec3Radians(glm::vec3 eulerDegrees) {
+    return glm::vec3(glm::radians(eulerDegrees.x), glm::radians(eulerDegrees.y), glm::radians(eulerDegrees.z));
+}
+
+glm::vec3 CalculateVec3Degrees(glm::vec3 eulerRadians) {
+    return glm::vec3(glm::degrees(eulerRadians.x), glm::degrees(eulerRadians.y), glm::degrees(eulerRadians.z));
+}
+
+glm::quat CalculateRotationQuat(glm::vec3 eulerDegrees) {
+    glm::vec3 eulerRadians = CalculateVec3Radians(eulerDegrees);
+    glm::quat xRotation = glm::angleAxis(eulerRadians.x, glm::vec3(1, 0, 0));
+    glm::quat yRotation = glm::angleAxis(eulerRadians.y, glm::vec3(0, 1, 0));
+    glm::quat zRotation = glm::angleAxis(eulerRadians.z, glm::vec3(0, 0, 1));
+
+    return zRotation * yRotation * xRotation;
+}
 
 struct VertexDataCol
 {
@@ -134,63 +152,6 @@ struct MvpData {
     glm::mat4 Proj;
 };
 
-class Texture
-{
-public:
-    VkImage             m_Image;
-    VkImageView         m_ImageView;
-    VkDeviceMemory      m_Memory;
-    VkSampler           m_Sampler;
-
-    Texture(VkImage image, VkImageView imageView, VkDeviceMemory memory, VkSampler sampler) :
-        m_Image(image),
-        m_ImageView(imageView),
-        m_Memory(memory),
-        m_Sampler(sampler)
-    {
-
-    }
-
-    static Texture CreateAttachment(lvk::VulkanAPI& vk, uint32_t width, uint32_t height,
-        uint32_t numMips, VkSampleCountFlagBits sampleCount,
-        VkFormat format, VkImageTiling tiling, VkImageUsageFlags usageFlags,
-        VkMemoryPropertyFlagBits memoryFlags, VkImageAspectFlagBits imageAspect,
-        VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
-    {
-        VkImage image;
-        VkImageView imageView;
-        VkDeviceMemory memory;
-        VkSampler sampler;
-        vk.CreateImage(width, height, numMips, sampleCount, format, tiling, usageFlags, memoryFlags, image, memory);
-        vk.CreateImageView(image, format, numMips, imageAspect, imageView);
-        vk.CreateImageSampler(imageView, numMips, samplerFilter, samplerAddressMode, sampler);
-
-        return Texture(image, imageView, memory, sampler);
-    }
-
-    static Texture CreateTexture(lvk::VulkanAPI& vk, const lvk::String& path, VkFormat format, VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
-    {
-        VkImage image;
-        VkImageView imageView;
-        VkDeviceMemory memory;
-        // Texture abstraction
-        uint32_t mipLevels;
-        vk.CreateTexture(path, format, image, imageView, memory, &mipLevels);
-        VkSampler sampler;
-        vk.CreateImageSampler(imageView, mipLevels, samplerFilter, samplerAddressMode, sampler);
-
-        return Texture(image, imageView, memory, sampler);
-    }
-
-    void Free(lvk::VulkanAPI& vk)
-    {
-        vkDestroySampler(vk.m_LogicalDevice, m_Sampler, nullptr);
-        vkDestroyImageView(vk.m_LogicalDevice, m_ImageView, nullptr);
-        vkDestroyImage(vk.m_LogicalDevice, m_Image, nullptr);
-        vkFreeMemory(vk.m_LogicalDevice, m_Memory, nullptr);
-    }
-};
-
 struct Mesh
 {
     VkBuffer m_VertexBuffer;
@@ -204,7 +165,7 @@ struct Mesh
 
 struct Material
 {
-    Texture m_Diffuse;
+    lvk::Texture m_Diffuse;
 };
 
 struct Model
@@ -212,6 +173,20 @@ struct Model
     lvk::Vector<Mesh>        m_Meshes;
     lvk::Vector<Material>    m_Materials;
 };
+
+struct Transform {
+    glm::vec3 m_Position = glm::vec3(0);
+    glm::vec3 m_Rotation = glm::vec3(0);
+    glm::vec3 m_Scale = glm::vec3(1);
+    glm::mat4 to_mat4() {
+        glm::mat4 m = glm::translate(glm::mat4(1), m_Position);
+        glm::vec3 radians = CalculateVec3Radians(m_Rotation);
+        m *= glm::mat4_cast(glm::quat(radians));
+        m = glm::scale(m, m_Scale);
+        return m;
+    };
+};
+
 
 struct DirectionalLight
 {
@@ -447,7 +422,7 @@ void LoadModelAssimp(lvk::VulkanAPI& vk, Model& model, const lvk::String& path, 
             aiString resultPath;
             aiGetMaterialTexture(meshMaterial, aiTextureType_DIFFUSE, 0, &resultPath);
             lvk::String finalPath = directory + lvk::String(resultPath.C_Str());
-            Texture texture = Texture::CreateTexture(vk, finalPath, VK_FORMAT_R8G8B8A8_UNORM);
+            lvk::Texture texture = lvk::Texture::CreateTexture(vk, finalPath, VK_FORMAT_R8G8B8A8_UNORM);
             model.m_Materials.push_back({ texture });
         }
     }
@@ -466,19 +441,3 @@ Mesh BuildScreenSpaceQuad(lvk::VulkanAPI& vk, lvk::Vector<VertexData>& verts, lv
 }
 
 
-glm::vec3 CalculateVec3Radians(glm::vec3 eulerDegrees) {
-    return glm::vec3(glm::radians(eulerDegrees.x), glm::radians(eulerDegrees.y), glm::radians(eulerDegrees.z));
-}
-
-glm::vec3 CalculateVec3Degrees(glm::vec3 eulerRadians) {
-    return glm::vec3(glm::degrees(eulerRadians.x), glm::degrees(eulerRadians.y), glm::degrees(eulerRadians.z));
-}
-
-glm::quat CalculateRotationQuat(glm::vec3 eulerDegrees) {
-    glm::vec3 eulerRadians = CalculateVec3Radians(eulerDegrees);
-    glm::quat xRotation = glm::angleAxis(eulerRadians.x, glm::vec3(1, 0, 0));
-    glm::quat yRotation = glm::angleAxis(eulerRadians.y, glm::vec3(0, 1, 0));
-    glm::quat zRotation = glm::angleAxis(eulerRadians.z, glm::vec3(0, 0, 1));
-
-    return zRotation * yRotation * xRotation;
-}
