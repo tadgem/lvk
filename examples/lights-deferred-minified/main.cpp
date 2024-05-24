@@ -21,11 +21,43 @@ struct ShaderStage
 {
     StageBinary m_StageBinary;
     Vector<DescriptorSetLayoutData> m_LayoutDatas;
+
+    static ShaderStage Create(VulkanAPI& vk, const String& stagePath)
+    {
+        auto stageBin = vk.LoadSpirvBinary(stagePath);
+        auto stageLayoutDatas = vk.ReflectDescriptorSetLayouts(stageBin);
+
+        return { stageBin, stageLayoutDatas };
+    }
 };
 
-struct ShaderProgram
+struct ShaderProgramVF
 {
-    Vector<ShaderStage> m_Stages;
+    ShaderStage m_VertexStage;
+    ShaderStage m_FragmentStage;
+
+    VkDescriptorSetLayout m_DescriptorSetLayout;
+
+    static ShaderProgramVF Create(VulkanAPI& vk, const String& vertPath, const String& fragPath)
+    {
+        ShaderStage vert = ShaderStage::Create(vk, vertPath);
+        ShaderStage frag = ShaderStage::Create(vk, fragPath);
+        VkDescriptorSetLayout layout;
+        vk.CreateDescriptorSetLayout(vert.m_LayoutDatas, frag.m_LayoutDatas, layout);
+
+        return { vert, frag, layout };
+
+    }
+};
+
+class MaterialComplex
+{
+public:
+    // create a material from a shader
+    // material is the interface to an instance of a shader
+    // contains descriptor set and associated buffers.
+    // set mat4, mat3, vec4, vec3, sampler etc.
+    // reflect the size of each bound thing in each set (one set for now) 
 };
 
 static Vector<VertexData> g_ScreenSpaceQuadVertexData = {
@@ -49,7 +81,7 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
     vk.RecordGraphicsCommands([&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
         // push to example
         {
-            std::array<VkClearValue, 4> clearValues{};
+            Array<VkClearValue, 4> clearValues{};
             clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
             clearValues[1].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
             clearValues[2].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
@@ -100,7 +132,7 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
         }
 
         // push to example
-        std::array<VkClearValue, 2> clearValues{};
+        Array<VkClearValue, 2> clearValues{};
         clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
         clearValues[1].depthStencil = { 1.0f, 0 };
 
@@ -164,7 +196,7 @@ void UpdateUniformBuffer(VulkanAPI_SDL& vk, UniformBufferFrameData<MvpData>& mvp
 
 void CreateGBufferDescriptorSets(VulkanAPI& vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler, Vector<VkDescriptorSet>& descriptorSets, UniformBufferFrameData<MvpData>& mvpUniformData)
 {
-    std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
+    Vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     allocInfo.descriptorPool = vk.m_DescriptorPool;
@@ -185,7 +217,7 @@ void CreateGBufferDescriptorSets(VulkanAPI& vk, VkDescriptorSetLayout& descripto
         imageInfo.imageView = textureImageView;
         imageInfo.sampler = textureSampler;
 
-        std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
+        Array<VkWriteDescriptorSet, 2> descriptorWrites{};
 
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[0].dstSet = descriptorSets[i];
@@ -211,7 +243,7 @@ void CreateGBufferDescriptorSets(VulkanAPI& vk, VkDescriptorSetLayout& descripto
 
 void CreateLightingPassDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSetLayout, FramebufferSet gbuffers, Vector<VkDescriptorSet>& descriptorSets, UniformBufferFrameData<MvpData>& mvpUniformData, UniformBufferFrameData<DeferredLightData>& lightsUniformData)
 {
-    std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
+    Vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     allocInfo.descriptorPool = vk.m_DescriptorPool;
@@ -247,7 +279,7 @@ void CreateLightingPassDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& 
         lightBufferInfo.offset = 0;
         lightBufferInfo.range = sizeof(DeferredLightData);
 
-        std::array<VkWriteDescriptorSet, 5> descriptorWrites{};
+        Array<VkWriteDescriptorSet, 5> descriptorWrites{};
 
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrites[0].dstSet = descriptorSets[i];
@@ -386,28 +418,12 @@ int main()
     vk.Start(1280, 720, enableMSAA);
 
 
-    UniformBufferFrameData<MvpData> mvpUniformData;
-    UniformBufferFrameData<DeferredLightData> lightsUniformData;
-
     DeferredLightData lightDataCpu{};
-
     FillExampleLightData(lightDataCpu);
-    Vector<VkDescriptorSet>     lightPassDescriptorSets;
-    Vector<VkDescriptorSet>     gbufferDescriptorSets;
 
-    auto gbufferVertBin = vk.LoadSpirvBinary("shaders/gbuffer.vert.spv");
-    auto gbufferFragBin = vk.LoadSpirvBinary("shaders/gbuffer.frag.spv");
-    auto gbufferVertexLayoutDatas = vk.ReflectDescriptorSetLayouts(gbufferVertBin);
-    auto gbufferFragmentLayoutDatas = vk.ReflectDescriptorSetLayouts(gbufferFragBin);
-    VkDescriptorSetLayout gbufferDescriptorSetLayout;
-    vk.CreateDescriptorSetLayout(gbufferVertexLayoutDatas, gbufferFragmentLayoutDatas, gbufferDescriptorSetLayout);
 
-    auto lightPassVertBin = vk.LoadSpirvBinary("shaders/lights.vert.spv");
-    auto lightPassFragBin = vk.LoadSpirvBinary("shaders/lights.frag.spv");
-    auto lightPassVertexLayoutDatas = vk.ReflectDescriptorSetLayouts(lightPassVertBin);
-    auto lightPassFragmentLayoutDatas = vk.ReflectDescriptorSetLayouts(lightPassFragBin);
-    VkDescriptorSetLayout lightPassDescriptorSetLayout;
-    vk.CreateDescriptorSetLayout(lightPassVertexLayoutDatas, lightPassFragmentLayoutDatas, lightPassDescriptorSetLayout);
+    ShaderProgramVF gbufferProg     = ShaderProgramVF::Create(vk, "shaders/gbuffer.vert.spv", "shaders/gbuffer.frag.spv");
+    ShaderProgramVF lightPassProg   = ShaderProgramVF::Create(vk, "shaders/lights.vert.spv", "shaders/lights.frag.spv");
 
 
     FramebufferSet gbufferSet{};
@@ -426,8 +442,8 @@ int main()
     // create gbuffer pipeline
     VkPipelineLayout gbufferPipelineLayout;
     VkPipeline gbufferPipeline = vk.CreateRasterizationGraphicsPipeline(
-        gbufferVertBin, gbufferFragBin,
-        gbufferDescriptorSetLayout, Vector<VkVertexInputBindingDescription>{VertexDataNormal::GetBindingDescription() }, VertexDataNormal::GetAttributeDescriptions(),
+        gbufferProg.m_VertexStage.m_StageBinary, gbufferProg.m_FragmentStage.m_StageBinary,
+        gbufferProg.m_DescriptorSetLayout, Vector<VkVertexInputBindingDescription>{VertexDataNormal::GetBindingDescription() }, VertexDataNormal::GetAttributeDescriptions(),
         gbufferSet.m_RenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
         VK_POLYGON_MODE_FILL,
@@ -441,8 +457,8 @@ int main()
     // Pipeline stage?
     VkPipelineLayout lightPassPipelineLayout;
     VkPipeline pipeline = vk.CreateRasterizationGraphicsPipeline(
-        lightPassVertBin, lightPassFragBin,
-        lightPassDescriptorSetLayout, Vector<VkVertexInputBindingDescription>{VertexData::GetBindingDescription() }, VertexData::GetAttributeDescriptions(),
+        lightPassProg.m_VertexStage.m_StageBinary, lightPassProg.m_FragmentStage.m_StageBinary,
+        lightPassProg.m_DescriptorSetLayout, Vector<VkVertexInputBindingDescription>{VertexData::GetBindingDescription() }, VertexData::GetAttributeDescriptions(),
         vk.m_SwapchainImageRenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
         VK_POLYGON_MODE_FILL,
@@ -456,18 +472,20 @@ int main()
     // create vertex and index buffer
     Model model;
     LoadModelAssimp(vk, model, "assets/viking_room.obj", true);
-    RenderModel m = CreateRenderModelGbuffer(vk, "assets/sponza/sponza.gltf", gbufferDescriptorSetLayout);
-
+    RenderModel m   = CreateRenderModelGbuffer(vk, "assets/sponza/sponza.gltf", gbufferProg.m_DescriptorSetLayout);
     Mesh screenQuad = BuildScreenSpaceQuad(vk, g_ScreenSpaceQuadVertexData, g_ScreenSpaceQuadIndexData);
-
     Texture texture = Texture::CreateTexture(vk, "assets/viking_room.png", VK_FORMAT_R8G8B8A8_UNORM);
 
-    // Shader too probably
+
+    UniformBufferFrameData<MvpData> mvpUniformData;
+    UniformBufferFrameData<DeferredLightData> lightsUniformData;
     vk.CreateUniformBuffers<FrameLightDataT<NUM_LIGHTS>>(lightsUniformData);
     vk.CreateUniformBuffers<MvpData>(mvpUniformData);
 
-    CreateGBufferDescriptorSets(vk, gbufferDescriptorSetLayout, texture.m_ImageView, texture.m_Sampler, gbufferDescriptorSets, mvpUniformData);
-    CreateLightingPassDescriptorSets(vk, lightPassDescriptorSetLayout, gbufferSet, lightPassDescriptorSets, mvpUniformData, lightsUniformData);
+    Vector<VkDescriptorSet>     lightPassDescriptorSets;
+    Vector<VkDescriptorSet>     gbufferDescriptorSets;
+    CreateGBufferDescriptorSets(vk, gbufferProg.m_DescriptorSetLayout, texture.m_ImageView, texture.m_Sampler, gbufferDescriptorSets, mvpUniformData);
+    CreateLightingPassDescriptorSets(vk, lightPassProg.m_DescriptorSetLayout, gbufferSet, lightPassDescriptorSets, mvpUniformData, lightsUniformData);
 
     Vector<VkFramebuffer> gbufferFramebuffers{ gbufferSet.m_Framebuffers[0].m_FB, gbufferSet.m_Framebuffers[1].m_FB };
 
@@ -508,8 +526,8 @@ int main()
         vkFreeDescriptorSets(vk.m_LogicalDevice, vk.m_DescriptorPool, 1, &gbufferDescriptorSets[i]);
         vkFreeDescriptorSets(vk.m_LogicalDevice, vk.m_DescriptorPool, 1,  &lightPassDescriptorSets[i]);
     }
-    vkDestroyDescriptorSetLayout(vk.m_LogicalDevice, gbufferDescriptorSetLayout, nullptr);
-    vkDestroyDescriptorSetLayout(vk.m_LogicalDevice, lightPassDescriptorSetLayout, nullptr);
+    vkDestroyDescriptorSetLayout(vk.m_LogicalDevice, gbufferProg.m_DescriptorSetLayout, nullptr);
+    vkDestroyDescriptorSetLayout(vk.m_LogicalDevice, lightPassProg.m_DescriptorSetLayout, nullptr);
     
     vkDestroyPipelineLayout(vk.m_LogicalDevice, gbufferPipelineLayout, nullptr);
     vkDestroyPipeline(vk.m_LogicalDevice, gbufferPipeline, nullptr);
