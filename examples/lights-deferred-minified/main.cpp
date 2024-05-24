@@ -17,6 +17,17 @@ struct RenderModel
     Vector<RenderItem> m_RenderItems;
 };
 
+struct ShaderStage
+{
+    StageBinary m_StageBinary;
+    Vector<DescriptorSetLayoutData> m_LayoutDatas;
+};
+
+struct ShaderProgram
+{
+    Vector<ShaderStage> m_Stages;
+};
+
 static Vector<VertexData> g_ScreenSpaceQuadVertexData = {
     { { -1.0f, -1.0f , 0.0f}, { 1.0f, 0.0f } },
     { {1.0f, -1.0f, 0.0f}, {0.0f, 0.0f} },
@@ -284,39 +295,6 @@ void CreateLightingPassDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& 
 
 }
 
-void CreateGBufferRenderPass(VulkanAPI_SDL& vk, VkRenderPass& renderPass)
-{
-    Vector<VkAttachmentDescription> colourAttachmentDescriptions{};
-    Vector<VkAttachmentDescription> resolveAttachmentDescriptions{};
-    VkAttachmentDescription depthAttachmentDescription{};
-
-    VkAttachmentDescription positionNormalColourAttachment{};
-    positionNormalColourAttachment.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-    positionNormalColourAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    positionNormalColourAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    positionNormalColourAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    positionNormalColourAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    positionNormalColourAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    positionNormalColourAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    positionNormalColourAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    
-    // 3 instances: position, normal and colour attachments
-    colourAttachmentDescriptions.push_back(positionNormalColourAttachment);
-    colourAttachmentDescriptions.push_back(positionNormalColourAttachment);
-    colourAttachmentDescriptions.push_back(positionNormalColourAttachment);
-
-    depthAttachmentDescription.format = vk.FindDepthFormat();
-    depthAttachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;;
-    depthAttachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    depthAttachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depthAttachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    depthAttachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depthAttachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    depthAttachmentDescription.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-    vk.CreateRenderPass(renderPass, colourAttachmentDescriptions, resolveAttachmentDescriptions, true, depthAttachmentDescription, VK_ATTACHMENT_LOAD_OP_CLEAR);
-}
-
 RenderModel CreateRenderModelGbuffer(VulkanAPI& vk, const String& modelPath, VkDescriptorSetLayout descriptorSetLayout)
 {
     Model model;
@@ -486,7 +464,6 @@ int main()
 
     // Shader too probably
     vk.CreateUniformBuffers<FrameLightDataT<NUM_LIGHTS>>(lightsUniformData);
-    
     vk.CreateUniformBuffers<MvpData>(mvpUniformData);
 
     CreateGBufferDescriptorSets(vk, gbufferDescriptorSetLayout, texture.m_ImageView, texture.m_Sampler, gbufferDescriptorSets, mvpUniformData);
