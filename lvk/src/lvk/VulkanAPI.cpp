@@ -1615,6 +1615,46 @@ void lvk::VulkanAPI::CreateBuiltInRenderPasses()
     }
 }
 
+Vector<VkDescriptorSetLayoutBinding> lvk::VulkanAPI::GetDescriptorSetLayoutBindings(Vector<DescriptorSetLayoutData>& vertLayoutDatas, Vector<DescriptorSetLayoutData>& fragLayoutDatas)
+{
+    Vector<VkDescriptorSetLayoutBinding> bindings;
+    uint8_t count = 0;
+
+    for (auto& vertLayoutData : vertLayoutDatas)
+    {
+        count += static_cast<uint8_t>(vertLayoutData.m_Bindings.size());
+    }
+
+    for (auto& fragLayoutData : fragLayoutDatas)
+    {
+        count += static_cast<uint8_t>(fragLayoutData.m_Bindings.size());
+    }
+
+    bindings.resize(count);
+
+    count = 0;
+    // .. do the things
+    for (auto& vertLayoutData : vertLayoutDatas)
+    {
+        for (auto& binding : vertLayoutData.m_Bindings)
+        {
+            bindings[count] = binding;
+            count++;
+        }
+    }
+
+    for (auto& fragLayoutData : fragLayoutDatas)
+    {
+        for (auto& binding : fragLayoutData.m_Bindings)
+        {
+            bindings[count] = binding;
+            count++;
+        }
+    }
+
+    return CleanDescriptorSetLayout(bindings);
+}
+
 void lvk::VulkanAPI::CreateRenderPass(VkRenderPass& renderPass, Vector<VkAttachmentDescription>& colourAttachments, Vector<VkAttachmentDescription>& resolveAttachments, bool hasDepthAttachment, VkAttachmentDescription depthAttachment, VkAttachmentLoadOp attachmentLoadOp)
 {
     // Layout: Colour attachments -> Depth attachments -> Resolve attachments

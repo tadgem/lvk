@@ -57,7 +57,32 @@ public:
     // material is the interface to an instance of a shader
     // contains descriptor set and associated buffers.
     // set mat4, mat3, vec4, vec3, sampler etc.
-    // reflect the size of each bound thing in each set (one set for now) 
+    // reflect the size of each bound thing in each set (one set for now)
+     
+    Vector<VkDescriptorSet> m_DescriptorSets;
+
+    static MaterialComplex Create(VulkanAPI& vk, ShaderProgramVF& shader)
+    {
+        MaterialComplex mat{};
+        Vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, shader.m_DescriptorSetLayout);
+        VkDescriptorSetAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        allocInfo.descriptorPool = vk.m_DescriptorPool;
+        allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+        allocInfo.pSetLayouts = layouts.data();
+
+        mat.m_DescriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
+        VK_CHECK(vkAllocateDescriptorSets(vk.m_LogicalDevice, &allocInfo, mat.m_DescriptorSets.data()));
+
+        Vector<VkDescriptorSetLayoutBinding> bindings = vk.GetDescriptorSetLayoutBindings(shader.m_VertexStage.m_LayoutDatas, shader.m_FragmentStage.m_LayoutDatas);
+
+        for (auto& binding : bindings)
+        {
+            spdlog::warn("hello");
+        }
+
+        return mat;
+    }
 };
 
 static Vector<VertexData> g_ScreenSpaceQuadVertexData = {
@@ -194,9 +219,9 @@ void UpdateUniformBuffer(VulkanAPI_SDL& vk, UniformBufferFrameData<MvpData>& mvp
     lightsUniformData.Set(vk.GetFrameIndex(), lightDataCpu);
 }
 
-void CreateGBufferDescriptorSets(VulkanAPI& vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler, Vector<VkDescriptorSet>& descriptorSets, UniformBufferFrameData<MvpData>& mvpUniformData)
+void CreateGBufferDescriptorSets(VulkanAPI& vk, ShaderProgramVF& shader, VkImageView& textureImageView, VkSampler& textureSampler, Vector<VkDescriptorSet>& descriptorSets, UniformBufferFrameData<MvpData>& mvpUniformData)
 {
-    Vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
+    Vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, shader.m_DescriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     allocInfo.descriptorPool = vk.m_DescriptorPool;
@@ -327,7 +352,7 @@ void CreateLightingPassDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& 
 
 }
 
-RenderModel CreateRenderModelGbuffer(VulkanAPI& vk, const String& modelPath, VkDescriptorSetLayout descriptorSetLayout)
+RenderModel CreateRenderModelGbuffer(VulkanAPI& vk, const String& modelPath, ShaderProgramVF& shader)
 {
     Model model;
     LoadModelAssimp(vk, model, modelPath, true);
@@ -340,7 +365,7 @@ RenderModel CreateRenderModelGbuffer(VulkanAPI& vk, const String& modelPath, VkD
         item.m_Mesh = mesh;
         item.m_DescriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
         vk.CreateUniformBuffers<MvpData>(item.m_MvpBuffer);
-        CreateGBufferDescriptorSets(vk, descriptorSetLayout, model.m_Materials[materialIndex].m_Diffuse.m_ImageView, model.m_Materials[materialIndex].m_Diffuse.m_Sampler, item.m_DescriptorSets, item.m_MvpBuffer);
+        CreateGBufferDescriptorSets(vk, shader, model.m_Materials[materialIndex].m_Diffuse.m_ImageView, model.m_Materials[materialIndex].m_Diffuse.m_Sampler, item.m_DescriptorSets, item.m_MvpBuffer);
         renderModel.m_RenderItems.push_back(item);
     }
 
@@ -423,6 +448,7 @@ int main()
 
 
     ShaderProgramVF gbufferProg     = ShaderProgramVF::Create(vk, "shaders/gbuffer.vert.spv", "shaders/gbuffer.frag.spv");
+    MaterialComplex mat = MaterialComplex::Create(vk, gbufferProg);
     ShaderProgramVF lightPassProg   = ShaderProgramVF::Create(vk, "shaders/lights.vert.spv", "shaders/lights.frag.spv");
 
 
@@ -472,7 +498,7 @@ int main()
     // create vertex and index buffer
     Model model;
     LoadModelAssimp(vk, model, "assets/viking_room.obj", true);
-    RenderModel m   = CreateRenderModelGbuffer(vk, "assets/sponza/sponza.gltf", gbufferProg.m_DescriptorSetLayout);
+    RenderModel m   = CreateRenderModelGbuffer(vk, "assets/sponza/sponza.gltf", gbufferProg);
     Mesh screenQuad = BuildScreenSpaceQuad(vk, g_ScreenSpaceQuadVertexData, g_ScreenSpaceQuadIndexData);
     Texture texture = Texture::CreateTexture(vk, "assets/viking_room.png", VK_FORMAT_R8G8B8A8_UNORM);
 
@@ -484,7 +510,7 @@ int main()
 
     Vector<VkDescriptorSet>     lightPassDescriptorSets;
     Vector<VkDescriptorSet>     gbufferDescriptorSets;
-    CreateGBufferDescriptorSets(vk, gbufferProg.m_DescriptorSetLayout, texture.m_ImageView, texture.m_Sampler, gbufferDescriptorSets, mvpUniformData);
+    CreateGBufferDescriptorSets(vk, gbufferProg, texture.m_ImageView, texture.m_Sampler, gbufferDescriptorSets, mvpUniformData);
     CreateLightingPassDescriptorSets(vk, lightPassProg.m_DescriptorSetLayout, gbufferSet, lightPassDescriptorSets, mvpUniformData, lightsUniformData);
 
     Vector<VkFramebuffer> gbufferFramebuffers{ gbufferSet.m_Framebuffers[0].m_FB, gbufferSet.m_Framebuffers[1].m_FB };

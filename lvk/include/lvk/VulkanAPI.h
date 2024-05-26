@@ -245,6 +245,7 @@ public:
             vkDestroyBuffer(m_LogicalDevice, stagingBuffer, nullptr);
             vmaFreeMemory(m_Allocator, stagingBufferMemory);
         }
+        Vector<VkDescriptorSetLayoutBinding>GetDescriptorSetLayoutBindings(Vector<DescriptorSetLayoutData>& vertLayoutDatas, Vector<DescriptorSetLayoutData>& fragLayoutDatas);
         void                                CreateDescriptorSetLayout(Vector<DescriptorSetLayoutData>& vertLayoutDatas, Vector<DescriptorSetLayoutData>& fragLayoutDatas, VkDescriptorSetLayout& descriptorSetLayout);
         void                                CreateRenderPass(VkRenderPass& renderPass, Vector<VkAttachmentDescription>& colourAttachments, Vector<VkAttachmentDescription>& resolveAttachments, bool hasDepthAttachment = true, VkAttachmentDescription depthAttachment = {}, VkAttachmentLoadOp attachmentLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR);
         void                                CreateBuiltInRenderPasses();
