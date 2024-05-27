@@ -1778,6 +1778,12 @@ Vector<DescriptorSetLayoutData> lvk::VulkanAPI::ReflectDescriptorSetLayouts(Stag
         for (uint32_t bc = 0; bc < reflectedSet.binding_count; bc++)
         {
             const SpvReflectDescriptorBinding& reflectedBinding = *reflectedSet.bindings[bc];
+            for (int i = 0; i < reflectedBinding.block.member_count; i++)
+            {
+                auto member = reflectedBinding.block.members[i];
+                spdlog::info("Reflected descriptor set member : {}.{}", reflectedBinding.name, member.name);
+
+            }
             VkDescriptorSetLayoutBinding& layoutBinding = layoutData.m_Bindings[bc];
             layoutBinding.binding = reflectedBinding.binding;
             layoutBinding.descriptorType = static_cast<VkDescriptorType>(reflectedBinding.descriptor_type);
@@ -1798,7 +1804,6 @@ Vector<DescriptorSetLayoutData> lvk::VulkanAPI::ReflectDescriptorSetLayouts(Stag
     return layoutDatas;
 }
 
-// this is probably agnostic of each app, can move to api
 void lvk::VulkanAPI::CreateCommandBuffers()
 {
     m_CommandBuffers.resize(m_SwapChainFramebuffers.size());
