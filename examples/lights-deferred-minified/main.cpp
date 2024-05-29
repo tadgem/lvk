@@ -63,12 +63,16 @@ public:
     {
         uint32_t m_SetNumber;
         uint32_t m_BindingNumber;
+        uint32_t m_BufferSize;
         UniformBufferFrameData m_UBO;
     };
 
     struct SamplerBindingData
     {
-
+        uint32_t        m_SetNumber;
+        uint32_t        m_BindingNumber;
+        VkImageView&    m_ImageView;
+        VkSampler&      m_Sampler;
     };
 
     struct UniformAccessorData
@@ -79,14 +83,10 @@ public:
         uint16_t    m_ArraySize;
         uint16_t    m_BufferIndex;
     };
-
-    struct SamplerAccessorData
-    {
-
-    };
      
     Vector<VkDescriptorSet>                 m_DescriptorSets;
     Vector<UniformBufferBindingData>        m_UniformBuffers;
+    HashMap<String, SamplerBindingData>     m_Samplers;
     HashMap<String, UniformAccessorData>    m_UniformBufferAccessors;
 
     static MaterialVF Create(VulkanAPI& vk, ShaderProgramVF& shader)
@@ -113,6 +113,13 @@ public:
                     // if a sampler ignore for now
                     if (bindingInfo.m_ExpectedBlockSize == 0)
                     {
+                        SamplerBindingData sbd{
+                            descriptorSetInfo.m_SetNumber,
+                            bindingInfo.m_BindingIndex,
+                            Texture::g_DefaultTexture->m_ImageView,
+                            Texture::g_DefaultTexture->m_Sampler
+                        };
+                        mat.m_Samplers.emplace(bindingInfo.m_BindingName, sbd);
                         continue;
                     }
                     // if a uniform buffer
@@ -126,7 +133,7 @@ public:
                         UniformAccessorData data{ member.m_Size , member.m_Offset, member.m_Stride, arraySize, static_cast<uint32_t>(mat.m_UniformBuffers.size()) };
                         mat.m_UniformBufferAccessors.emplace(accessorName, data);
                     }
-                    mat.m_UniformBuffers.push_back({descriptorSetInfo.m_SetNumber, bindingInfo.m_BindingIndex,  uniform });
+                    mat.m_UniformBuffers.push_back({descriptorSetInfo.m_SetNumber, bindingInfo.m_BindingIndex, bindingInfo.m_ExpectedBlockSize,  uniform });
                 }
             }
         };
@@ -134,8 +141,56 @@ public:
         collect_uniform_data(shader.m_VertexStage);
         collect_uniform_data(shader.m_FragmentStage);
 
-        // write buffers to descriptor set + default texture for any samplers
+        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+            // write buffers to descriptor set + default texture for any samplers
+            Vector<VkDescriptorBufferInfo>  bufferWriteInfos;
+            for (auto& bufferInfo : mat.m_UniformBuffers)
+            {
+                VkDescriptorBufferInfo bufferWriteInfo{};
+                bufferWriteInfo.buffer = bufferInfo.m_UBO.m_UniformBuffers[0];
+                bufferWriteInfo.offset = 0;
+                bufferWriteInfo.range = bufferInfo.m_BufferSize;
+                bufferWriteInfos.push_back(bufferWriteInfo);
+            }
+            Vector<VkDescriptorImageInfo>   imageWriteInfos;
+            Vector<uint32_t> bindings;
+            for (auto& [name, sampler] : mat.m_Samplers)
+            {
+                VkDescriptorImageInfo imageInfo{};
+                imageInfo.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+                imageInfo.imageView = sampler.m_ImageView;
+                imageInfo.sampler = sampler.m_Sampler;
+                imageWriteInfos.push_back(imageInfo);
+                bindings.push_back(sampler.m_BindingNumber);
+            }
 
+            Vector<VkWriteDescriptorSet> descriptorWrites{};
+            for (int j = 0; j < mat.m_UniformBuffers.size(); j++)
+            {
+                VkWriteDescriptorSet write{};
+                write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                write.dstSet = mat.m_DescriptorSets[i];
+                write.dstBinding = mat.m_UniformBuffers[j].m_BindingNumber;
+                write.dstArrayElement = 0; // todo
+                write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                write.descriptorCount = 1;
+                write.pBufferInfo = &bufferWriteInfos[j];
+            }
+            for (int j = 0; j < imageWriteInfos.size(); j++)
+            {
+                VkWriteDescriptorSet write{};
+                write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                write.dstSet = mat.m_DescriptorSets[i];
+                write.dstBinding = 1;
+                write.dstArrayElement = 0;
+                write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                write.descriptorCount = 1;
+                write.pImageInfo = &imageWriteInfos[j];
+            }
+
+            vkUpdateDescriptorSets(vk.m_LogicalDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+
+        }
         return mat;
     }
 
@@ -158,10 +213,10 @@ public:
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
             // update uniform buffer
+            m_UniformBuffers[data.m_BufferIndex].m_UBO.Set(i, value, data.m_Offset);
         }
         
         return true;
-        // set the uniform buffers with said offsets...
     }
 };
 
@@ -533,6 +588,7 @@ int main()
     MaterialVF lightPassMat = MaterialVF::Create(vk, lightPassProg);
 
     bool succeeded = gbufferMat.SetMember("ubo.model", glm::mat4(1.0));
+    succeeded = gbufferMat.SetMember("ubo.proj", glm::mat4(1.0));
 
     FramebufferSet gbufferSet{};
     gbufferSet.m_Width = vk.m_SwapChainImageExtent.width;
@@ -598,8 +654,6 @@ int main()
         {
             UpdateUniformBuffer(vk, item.m_MvpBuffer, lightsUniformData, lightDataCpu);
         }
-
-        UpdateUniformBuffer(vk, mvpUniformData, lightsUniformData, lightDataCpu);
 
         RecordCommandBuffersV2(vk, 
             gbufferPipeline, gbufferPipelineLayout, gbufferSet.m_RenderPass, gbufferFramebuffers,
