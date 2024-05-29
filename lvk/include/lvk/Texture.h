@@ -37,6 +37,7 @@ namespace lvk
     {
     public:
 
+        static Texture* g_DefaultTexture;
 
         VkImage                 m_Image;
         VkImageView             m_ImageView;
@@ -86,6 +87,23 @@ namespace lvk
 
             return Texture(image, imageView, memory, sampler, format, VK_SAMPLE_COUNT_1_BIT);
         }
+
+        static Texture CreateTextureFromMemory(lvk::VulkanAPI& vk, unsigned char* tex_data, uint32_t length, VkFormat format, VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
+        {
+            VkImage image;
+            VkImageView imageView;
+            VkDeviceMemory memory;
+            // Texture abstraction
+            uint32_t mipLevels;
+            vk.CreateTextureFromMemory(tex_data, length, format, image, imageView, memory, &mipLevels);
+            VkSampler sampler;
+            vk.CreateImageSampler(imageView, mipLevels, samplerFilter, samplerAddressMode, sampler);
+
+            return Texture(image, imageView, memory, sampler, format, VK_SAMPLE_COUNT_1_BIT);
+        }
+
+        static void InitDefaultTexture(lvk::VulkanAPI& vk);
+        static void FreeDefaultTexture(lvk::VulkanAPI& vk);
 
         void Free(lvk::VulkanAPI& vk)
         {

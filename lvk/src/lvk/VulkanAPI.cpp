@@ -8,6 +8,7 @@
 #include "spirv_reflect.h"
 #include "spdlog/spdlog.h"
 #include "ImGui/imgui_impl_vulkan.h"
+#include "lvk/Texture.h"
 
 using namespace lvk;
 
@@ -39,6 +40,15 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
         api->Quit();
     }
     return VK_FALSE;
+}
+
+void lvk::UniformBufferFrameData::Free(lvk::VulkanAPI& vk)
+{
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        vmaUnmapMemory(vk.m_Allocator, m_UniformBuffersMemory[i]);
+        vkDestroyBuffer(vk.m_LogicalDevice, m_UniformBuffers[i], nullptr);
+        vmaFreeMemory(vk.m_Allocator, m_UniformBuffersMemory[i]);
+    }
 }
 
 bool lvk::VulkanAPI::QueueFamilyIndices::IsComplete()
@@ -207,6 +217,7 @@ void lvk::VulkanAPI::CreateInstance()
 
 void lvk::VulkanAPI::Cleanup()
 {
+    Texture::FreeDefaultTexture(*this);
     if (p_UseImGui)
     {
         vkDestroyRenderPass(m_LogicalDevice, m_ImGuiRenderPass, nullptr);
@@ -921,6 +932,57 @@ void lvk::VulkanAPI::CreateTexture(const String& path, VkFormat format, VkImage&
     
     GenerateMips(image, format, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texWidth), mips, VK_FILTER_LINEAR);
     
+    TransitionImageLayout(image, format, mips, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    vkDestroyBuffer(m_LogicalDevice, stagingBuffer, nullptr);
+    vmaFreeMemory(m_Allocator, stagingBufferMemory);
+}
+
+void lvk::VulkanAPI::CreateTextureFromMemory(unsigned char* tex_data, uint32_t dataSize, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips)
+{
+    bool generateMips = numMips != nullptr;
+
+    int texWidth, texHeight, texChannels;
+    stbi_uc* pixels = stbi_load_from_memory(tex_data, dataSize, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    VkDeviceSize imageSize = texWidth * texHeight * 4;
+
+    if (!pixels)
+    {
+        spdlog::error("Failed to load texture image from memory");
+        return;
+    }
+
+    uint32_t mips = 1;
+    if (generateMips)
+    {
+        mips = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
+        *numMips = mips;
+    }
+
+    // create staging buffer to copy texture to gpu
+    VkBuffer stagingBuffer;
+    VmaAllocation stagingBufferMemory;
+    constexpr VkBufferUsageFlags bufferUsageFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    constexpr VkMemoryPropertyFlags memoryPropertiesFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    CreateBufferVMA(imageSize, bufferUsageFlags, memoryPropertiesFlags, stagingBuffer, stagingBufferMemory);
+
+    void* data;
+    vmaMapMemory(m_Allocator, stagingBufferMemory, &data);
+    memcpy(data, pixels, static_cast<size_t>(imageSize));
+    vmaUnmapMemory(m_Allocator, stagingBufferMemory);
+    stbi_image_free(pixels);
+
+    CreateImage(texWidth, texHeight, mips, VK_SAMPLE_COUNT_1_BIT,
+        format, VK_IMAGE_TILING_OPTIMAL,
+        VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        image, imageMemory);
+    CreateImageView(image, format, mips, VK_IMAGE_ASPECT_COLOR_BIT, imageView);
+
+    TransitionImageLayout(image, format, mips, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    CopyBufferToImage(stagingBuffer, image, texWidth, texHeight);
+
+    GenerateMips(image, format, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texWidth), mips, VK_FILTER_LINEAR);
+
     TransitionImageLayout(image, format, mips, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     vkDestroyBuffer(m_LogicalDevice, stagingBuffer, nullptr);
@@ -1778,12 +1840,6 @@ Vector<DescriptorSetLayoutData> lvk::VulkanAPI::ReflectDescriptorSetLayouts(Stag
         for (uint32_t bc = 0; bc < reflectedSet.binding_count; bc++)
         {
             const SpvReflectDescriptorBinding& reflectedBinding = *reflectedSet.bindings[bc];
-            for (int i = 0; i < reflectedBinding.block.member_count; i++)
-            {
-                auto member = reflectedBinding.block.members[i];
-                spdlog::info("Reflected descriptor set member : {}.{}", reflectedBinding.name, member.name);
-
-            }
             VkDescriptorSetLayoutBinding& layoutBinding = layoutData.m_Bindings[bc];
             layoutBinding.binding = reflectedBinding.binding;
             layoutBinding.descriptorType = static_cast<VkDescriptorType>(reflectedBinding.descriptor_type);
@@ -1792,7 +1848,36 @@ Vector<DescriptorSetLayoutData> lvk::VulkanAPI::ReflectDescriptorSetLayouts(Stag
                 layoutBinding.descriptorCount *= reflectedBinding.array.dims[i_dim];
             }
             layoutBinding.stageFlags = static_cast<VkShaderStageFlagBits>(shaderReflectModule.shader_stage);
-            layoutData.m_BindingDatas.push_back(DescriptorSetLayoutBindingData{ reflectedBinding.block.size });
+
+            DescriptorSetLayoutBindingData binding{ String(reflectedBinding.name), reflectedBinding.binding, reflectedBinding.block.size };
+            for (int i = 0; i < reflectedBinding.block.member_count; i++)
+            {
+                auto member = reflectedBinding.block.members[i];
+                UniformBufferMember reflectedMember{};
+                reflectedMember.m_Name = String(member.name);
+                reflectedMember.m_Offset = member.absolute_offset; // this might be an issue with padded types?
+                reflectedMember.m_Size = member.padded_size;
+                reflectedMember.m_Type = GetTypeFromSpvReflect(member.type_description);
+                
+                if (member.array.dims_count > 0)
+                {
+                    reflectedMember.m_Stride = member.array.stride;
+                }
+                else
+                {
+                    reflectedMember.m_Stride = 0;
+                }
+
+                binding.m_Members.push_back(reflectedMember);
+            }
+            if (reflectedBinding.resource_type & SPV_REFLECT_RESOURCE_FLAG_SAMPLER)
+            {
+                UniformBufferMember reflectedMember{};
+                reflectedMember.m_Name = String(reflectedBinding.name);
+                reflectedMember.m_Type = UniformBufferMemberType::_sampler;
+                binding.m_Members.push_back(reflectedMember);
+            }
+            layoutData.m_BindingDatas.push_back(binding);
         }
 
         layoutData.m_SetNumber = reflectedSet.set;
@@ -1885,6 +1970,7 @@ void lvk::VulkanAPI::InitVulkan(bool enableSwapchainMsaa)
     CreateFences();
     CreateCommandBuffers();
     CreateVmaAllocator();
+    Texture::InitDefaultTexture(*this);
 }
 
 void lvk::VulkanAPI::InitImGui()
@@ -2179,4 +2265,68 @@ void lvk::VulkanAPI::CreateIndexBuffer(std::vector<uint32_t> indices, VkBuffer& 
 
     vkDestroyBuffer(m_LogicalDevice, stagingBuffer, nullptr);
     vmaFreeMemory(m_Allocator, stagingBufferMemory);
+}
+
+UniformBufferMemberType lvk::GetTypeFromSpvReflect(SpvReflectTypeDescription* typeDescription)
+{
+
+    if (typeDescription->type_flags & SPV_REFLECT_TYPE_FLAG_MATRIX)
+    {
+        if (typeDescription->traits.numeric.matrix.column_count == 4 && typeDescription->traits.numeric.matrix.row_count == 4)
+        {
+            return UniformBufferMemberType::_mat4;
+        }
+
+        if (typeDescription->traits.numeric.matrix.column_count == 3 && typeDescription->traits.numeric.matrix.row_count == 3)
+        {
+            return UniformBufferMemberType::_mat3;
+        }
+
+        return UniformBufferMemberType::UNKNOWN;
+    }
+
+    if (typeDescription->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)
+    {
+        if (typeDescription->traits.numeric.vector.component_count == 2)
+        {
+            return UniformBufferMemberType::_vec2;
+        }
+
+        if (typeDescription->traits.numeric.vector.component_count == 3)
+        {
+            return UniformBufferMemberType::_vec3;
+        }
+
+        if (typeDescription->traits.numeric.vector.component_count == 4)
+        {
+            return UniformBufferMemberType::_vec4;
+        }
+        return UniformBufferMemberType::UNKNOWN;
+    }
+
+    if (typeDescription->type_flags & SPV_REFLECT_TYPE_FLAG_ARRAY)
+    {
+        return UniformBufferMemberType::_array;
+    }
+
+    if (typeDescription->type_flags & SPV_REFLECT_TYPE_FLAG_FLOAT)
+    {
+        return UniformBufferMemberType::_float;
+    }
+
+    if (typeDescription->type_flags & SPV_REFLECT_TYPE_FLAG_INT)
+    {
+        // signedness: unsigned = 0, signed = 1(?) 
+        // might need to come back to this if we need 64 bit ints.
+        if (typeDescription->traits.numeric.scalar.signedness == 0)
+        {
+            return UniformBufferMemberType::_uint;
+        }
+        else
+        {
+            return UniformBufferMemberType::_int;
+        }
+    }
+    
+    return UniformBufferMemberType::UNKNOWN;
 }

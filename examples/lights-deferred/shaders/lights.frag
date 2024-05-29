@@ -66,6 +66,7 @@ vec3 BlinnPhong_Directional(vec3 normal, vec3 materialAmbient, vec3 materialDiff
     vec3 lightDir = normalize(-lightUbo.u_DirectionalLight.Direction.xyz);
     float diff = max(dot(normal, lightDir), 0.0);
     float s = pow(max(dot(normal, lightDir), 0.0), shininess);
+    double s2 = pow(max(dot(normal, lightDir), 0.0), shininess);
 
     vec3    ambient     = lightUbo.u_DirectionalLight.Ambient.xyz * materialAmbient;
     vec3    diffuse     = lightUbo.u_DirectionalLight.Colour.xyz * diff * materialDiffuse;

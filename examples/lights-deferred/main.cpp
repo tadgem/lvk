@@ -5,7 +5,7 @@ using namespace lvk;
 #define NUM_LIGHTS 512
 using DeferredLightData = FrameLightDataT<NUM_LIGHTS>;
 
-class Framebuffer {
+class FramebufferEx {
 public:
     Vector<Texture> m_Attachments;
     VkFramebuffer   m_FB;
@@ -20,9 +20,9 @@ public:
     }
 } ;
 
-class FramebufferSet {
+class FramebufferSetEx {
 public:
-    Array<Framebuffer, MAX_FRAMES_IN_FLIGHT> m_Framebuffers;
+    Array<FramebufferEx, MAX_FRAMES_IN_FLIGHT> m_Framebuffers;
 
     void Free(VulkanAPI& vk)
     {
@@ -37,7 +37,7 @@ public:
 struct RenderItem 
 {
     Mesh m_Mesh;
-    UniformBufferFrameData<MvpData> m_MvpBuffer;
+    UniformBufferFrameData m_MvpBuffer;
     Vector<VkDescriptorSet> m_DescriptorSets;
 };
 
@@ -57,7 +57,7 @@ static Vector<uint32_t> g_ScreenSpaceQuadIndexData = {
     0, 1, 2, 2, 3, 0
 };
 
-struct Transform {
+struct TransformEx {
     glm::vec3 position = glm::vec3(0);
     glm::vec3 rotation = glm::vec3(0);
     glm::vec3 scale = glm::vec3(1);
@@ -70,7 +70,7 @@ struct Transform {
     };
 };
 
-static Transform g_Transform; 
+static TransformEx g_Transform; 
 
 void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
     VkPipeline& gbufferPipeline , VkPipelineLayout& gbufferPipelineLayout, VkRenderPass gbufferRenderPass, Vector<VkDescriptorSet>& gbufferDescriptorSets, Vector<VkFramebuffer>& gbufferFramebuffers,
@@ -272,7 +272,7 @@ void RecordCommandBuffers(VulkanAPI_SDL& vk,
         });
 }
 
-void UpdateUniformBuffer(VulkanAPI_SDL& vk, UniformBufferFrameData<MvpData>& mvpUniformData, UniformBufferFrameData<DeferredLightData>& lightsUniformData, DeferredLightData& lightDataCpu)
+void UpdateUniformBuffer(VulkanAPI_SDL& vk, UniformBufferFrameData& mvpUniformData, UniformBufferFrameData& lightsUniformData, DeferredLightData& lightDataCpu)
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -346,7 +346,7 @@ void UpdateUniformBuffer(VulkanAPI_SDL& vk, UniformBufferFrameData<MvpData>& mvp
     lightsUniformData.Set(vk.GetFrameIndex(), lightDataCpu);
 }
 
-void CreateGBufferDescriptorSets(VulkanAPI& vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler, Vector<VkDescriptorSet>& descriptorSets, UniformBufferFrameData<MvpData>& mvpUniformData)
+void CreateGBufferDescriptorSets(VulkanAPI& vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler, Vector<VkDescriptorSet>& descriptorSets, UniformBufferFrameData& mvpUniformData)
 {
     std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -393,7 +393,7 @@ void CreateGBufferDescriptorSets(VulkanAPI& vk, VkDescriptorSetLayout& descripto
 
 }
 
-void CreateLightingPassDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSetLayout, FramebufferSet gbuffers, Vector<VkDescriptorSet>& descriptorSets, UniformBufferFrameData<MvpData>& mvpUniformData, UniformBufferFrameData<DeferredLightData>& lightsUniformData)
+void CreateLightingPassDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSetLayout, FramebufferSetEx gbuffers, Vector<VkDescriptorSet>& descriptorSets, UniformBufferFrameData& mvpUniformData, UniformBufferFrameData& lightsUniformData)
 {
     std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -602,8 +602,8 @@ int main()
     vk.Start(1280, 720, enableMSAA);
 
 
-    UniformBufferFrameData<MvpData> mvpUniformData;
-    UniformBufferFrameData<DeferredLightData> lightsUniformData;
+    UniformBufferFrameData mvpUniformData;
+    UniformBufferFrameData lightsUniformData;
 
     DeferredLightData lightDataCpu{};
 
@@ -656,7 +656,7 @@ int main()
         VK_COMPARE_OP_LESS,
         lightPassPipelineLayout);
 
-    FramebufferSet gbufferSet{};
+    FramebufferSetEx gbufferSet{};
 
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
@@ -683,7 +683,7 @@ int main()
         vk.CreateFramebuffer(gbufferAttachments, gbufferRenderPass, vk.m_SwapChainImageExtent, gbuffer);
 
         Vector<Texture> textures{ colourAttachment, positionAttachment, normalAttachment, depthAttachment };
-        Framebuffer fb{ textures, gbuffer };
+        FramebufferEx fb{ textures, gbuffer };
         gbufferSet.m_Framebuffers[i] = fb;
     }    
 

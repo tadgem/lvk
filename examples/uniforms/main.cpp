@@ -426,7 +426,7 @@ std::vector<DescriptorSetLayoutData> CreateDescriptorSetLayoutDatasSVR(VulkanAPI
                 layoutBinding.descriptorCount *= reflectedBinding.array.dims[i_dim];
             }
             layoutBinding.stageFlags = static_cast<VkShaderStageFlagBits>(shaderReflectModule.shader_stage);
-            layoutData.m_BindingDatas.push_back(DescriptorSetLayoutBindingData{ reflectedBinding.block.size });
+            layoutData.m_BindingDatas.push_back(DescriptorSetLayoutBindingData{ String(reflectedBinding.name),  reflectedBinding.binding, reflectedBinding.block.size });
         }
 
         layoutData.m_SetNumber = reflectedSet.set;

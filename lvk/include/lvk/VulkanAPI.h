@@ -8,6 +8,7 @@ spdlog::error("VK check failed at {} Line {} : {}",_filePath, _lineNumber, #X);}
 #include "VulkanMemoryAllocator.h"
 #include "stb_image.h"
 #include "ImGui/imgui.h"
+#include "spdlog/spdlog.h"
 
 namespace lvk
 {
@@ -19,9 +20,40 @@ namespace lvk
 
     class VulkanAPIWindowHandle {};
 
+    enum class UniformBufferMemberType
+    {
+        UNKNOWN,
+        _vec2,
+        _vec3,
+        _vec4,
+        _mat2,
+        _mat3,
+        _mat4,
+        _float,
+        _double,
+        _int,
+        _uint,
+        _array,
+        _sampler
+    };
+
+    static UniformBufferMemberType GetTypeFromSpvReflect(SpvReflectTypeDescription* typeDescription);
+
+    struct UniformBufferMember
+    {
+        uint32_t                m_Size;
+        uint32_t                m_Offset;
+        uint32_t                m_Stride;
+        String                  m_Name;
+        UniformBufferMemberType m_Type;
+    };
+
     struct DescriptorSetLayoutBindingData
     {
-        uint32_t                     m_ExpectedBlockSize;
+        String      m_BindingName;
+        uint32_t    m_BindingIndex;
+        uint32_t    m_ExpectedBlockSize;
+        Vector<UniformBufferMember> m_Members;
     };
 
     struct DescriptorSetLayoutData 
@@ -39,26 +71,21 @@ namespace lvk
         StageBinary                         m_Binary;
     };
 
-    template<typename T>
     struct UniformBufferFrameData
     {
         Vector<VkBuffer>            m_UniformBuffers;
         Vector<VmaAllocation>       m_UniformBuffersMemory;
         Vector<void*>               m_UniformBuffersMapped;
 
-        void Set(uint32_t frameIndex, T& data)
+        template<typename T>
+        void Set(uint32_t frameIndex, T& data, uint32_t offset = 0)
         {
-            memcpy(m_UniformBuffersMapped[frameIndex], &data, sizeof(T));
+            uint64_t base_addr = (uint64_t)m_UniformBuffersMapped[frameIndex];
+            void* addr = (void*)(base_addr + static_cast<uint64_t>(offset));
+            memcpy(addr, &data, sizeof(T));
         }
 
-        void Free(VulkanAPI& vk)
-        {
-            for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-                vmaUnmapMemory(vk.m_Allocator, m_UniformBuffersMemory[i]);
-                vkDestroyBuffer(vk.m_LogicalDevice, m_UniformBuffers[i], nullptr);
-                vmaFreeMemory(vk.m_Allocator, m_UniformBuffersMemory[i]);
-            }
-        }
+        void Free(VulkanAPI& vk);
     };
 
     class VulkanAPI
@@ -210,6 +237,7 @@ public:
         void                                CreateImageSampler(VkImageView& imageView, uint32_t numMips, VkFilter filterMode, VkSamplerAddressMode addressMode, VkSampler& sampler);
         void                                CreateFramebuffer(Vector<VkImageView>& attachments, VkRenderPass renderPass, VkExtent2D extent, VkFramebuffer& framebuffer);
         void                                CreateTexture(const String& path, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips = nullptr);
+        void                                CreateTextureFromMemory(unsigned char* tex_data, uint32_t dataSize, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips = nullptr);
         void                                CopyBuffer(VkBuffer& src, VkBuffer& dst, VkDeviceSize size);
         void                                CopyBufferToImage(VkBuffer& src, VkImage& image,  uint32_t width, uint32_t height);
         VkCommandBuffer                     BeginSingleTimeCommands();
@@ -289,9 +317,23 @@ public:
         }
 
         template<typename _Ty>
-        void                                CreateUniformBuffers(UniformBufferFrameData<_Ty>& uniformData)
+        void                                CreateUniformBuffers(UniformBufferFrameData& uniformData)
         {
             VkDeviceSize bufferSize = sizeof(_Ty);
+
+            uniformData.m_UniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+            uniformData.m_UniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
+            uniformData.m_UniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
+
+            for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+                CreateBufferVMA(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformData.m_UniformBuffers[i], uniformData.m_UniformBuffersMemory[i]);
+
+                VK_CHECK(vmaMapMemory(m_Allocator, uniformData.m_UniformBuffersMemory[i], &uniformData.m_UniformBuffersMapped[i]))
+            }
+
+        }
+        void                                CreateUniformBuffers(UniformBufferFrameData& uniformData, VkDeviceSize bufferSize)
+        {
 
             uniformData.m_UniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
             uniformData.m_UniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);

@@ -8,7 +8,7 @@ using DeferredLightData = FrameLightDataT<NUM_LIGHTS>;
 struct RenderItem 
 {
     Mesh m_Mesh;
-    UniformBufferFrameData<MvpData> m_MvpBuffer;
+    UniformBufferFrameData m_MvpBuffer;
     Vector<VkDescriptorSet> m_DescriptorSets;
 };
 
@@ -50,7 +50,7 @@ struct ShaderProgramVF
     }
 };
 
-class MaterialComplex
+class MaterialVF
 {
 public:
     // create a material from a shader
@@ -58,12 +58,28 @@ public:
     // contains descriptor set and associated buffers.
     // set mat4, mat3, vec4, vec3, sampler etc.
     // reflect the size of each bound thing in each set (one set for now)
-     
-    Vector<VkDescriptorSet> m_DescriptorSets;
 
-    static MaterialComplex Create(VulkanAPI& vk, ShaderProgramVF& shader)
+    struct UniformAccessorData
     {
-        MaterialComplex mat{};
+        uint32_t    m_ExpectedSize;
+        uint32_t    m_Offset;
+        uint32_t    m_Stride;
+        uint16_t    m_ArraySize;
+        uint16_t    m_BufferIndex;
+    };
+
+    struct SamplerAccessorData
+    {
+
+    };
+     
+    Vector<VkDescriptorSet>                 m_DescriptorSets;
+    Vector<UniformBufferFrameData>          m_UniformBuffers;
+    HashMap<String, UniformAccessorData>    m_UniformBufferAccessors;
+
+    static MaterialVF Create(VulkanAPI& vk, ShaderProgramVF& shader)
+    {
+        MaterialVF mat{};
         Vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, shader.m_DescriptorSetLayout);
         VkDescriptorSetAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -74,14 +90,66 @@ public:
         mat.m_DescriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
         VK_CHECK(vkAllocateDescriptorSets(vk.m_LogicalDevice, &allocInfo, mat.m_DescriptorSets.data()));
 
-        Vector<VkDescriptorSetLayoutBinding> bindings = vk.GetDescriptorSetLayoutBindings(shader.m_VertexStage.m_LayoutDatas, shader.m_FragmentStage.m_LayoutDatas);
 
-        for (auto& binding : bindings)
+        static auto get_accessors_func = [&mat, &vk](ShaderStage& stage)
         {
-            spdlog::warn("hello");
-        }
+            for (auto& descriptorSetInfo : stage.m_LayoutDatas)
+            {
+                // ..and each binding
+                for (auto& bindingInfo : descriptorSetInfo.m_BindingDatas)
+                {
+                    // if a sampler ignore for now
+                    if (bindingInfo.m_ExpectedBlockSize == 0)
+                    {
+                        continue;
+                    }
+                    // if a uniform buffer
+                    UniformBufferFrameData uniform;
+                    vk.CreateUniformBuffers(uniform, VkDeviceSize{ bindingInfo.m_ExpectedBlockSize });
+                    // build accessors
+                    for (auto& member : bindingInfo.m_Members)
+                    {
+                        String accessorName = bindingInfo.m_BindingName + "." + member.m_Name;
+                        uint16_t arraySize = member.m_Stride > 0 ? (member.m_Size / member.m_Stride) : 0;
+                        UniformAccessorData data{ member.m_Size , member.m_Offset, member.m_Stride, arraySize, static_cast<uint32_t>(mat.m_UniformBuffers.size()) };
+                        mat.m_UniformBufferAccessors.emplace(accessorName, data);
+                    }
+                    mat.m_UniformBuffers.push_back(uniform);
+                }
+            }
+        };
+        
+        get_accessors_func(shader.m_VertexStage);
+        get_accessors_func(shader.m_FragmentStage);
+
+        // write buffers to descriptor set + default texture for any samplers
 
         return mat;
+    }
+
+    template<typename _Ty>
+    bool SetMember(const String& name, const _Ty& value)
+    {
+        static constexpr size_t _type_size = sizeof(_Ty);
+        if (m_UniformBufferAccessors.find(name) == m_UniformBufferAccessors.end())
+        {
+            return false;
+        }
+
+        UniformAccessorData& data = m_UniformBufferAccessors.at(name);
+
+        if (_type_size != data.m_ExpectedSize)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+        {
+            // update uniform buffer
+        }
+        
+        return true;
+        // set the uniform buffers with said offsets...
     }
 };
 
@@ -198,7 +266,7 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
         });
 }
 
-void UpdateUniformBuffer(VulkanAPI_SDL& vk, UniformBufferFrameData<MvpData>& mvpUniformData, UniformBufferFrameData<DeferredLightData>& lightsUniformData, DeferredLightData& lightDataCpu)
+void UpdateUniformBuffer(VulkanAPI_SDL& vk, UniformBufferFrameData& mvpUniformData, UniformBufferFrameData& lightsUniformData, DeferredLightData& lightDataCpu)
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -219,7 +287,7 @@ void UpdateUniformBuffer(VulkanAPI_SDL& vk, UniformBufferFrameData<MvpData>& mvp
     lightsUniformData.Set(vk.GetFrameIndex(), lightDataCpu);
 }
 
-void CreateGBufferDescriptorSets(VulkanAPI& vk, ShaderProgramVF& shader, VkImageView& textureImageView, VkSampler& textureSampler, Vector<VkDescriptorSet>& descriptorSets, UniformBufferFrameData<MvpData>& mvpUniformData)
+void CreateGBufferDescriptorSets(VulkanAPI& vk, ShaderProgramVF& shader, VkImageView& textureImageView, VkSampler& textureSampler, Vector<VkDescriptorSet>& descriptorSets, UniformBufferFrameData& mvpUniformData)
 {
     Vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, shader.m_DescriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -266,7 +334,7 @@ void CreateGBufferDescriptorSets(VulkanAPI& vk, ShaderProgramVF& shader, VkImage
 
 }
 
-void CreateLightingPassDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSetLayout, FramebufferSet gbuffers, Vector<VkDescriptorSet>& descriptorSets, UniformBufferFrameData<MvpData>& mvpUniformData, UniformBufferFrameData<DeferredLightData>& lightsUniformData)
+void CreateLightingPassDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSetLayout, FramebufferSet gbuffers, Vector<VkDescriptorSet>& descriptorSets, UniformBufferFrameData& mvpUniformData, UniformBufferFrameData& lightsUniformData)
 {
     Vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -448,9 +516,11 @@ int main()
 
 
     ShaderProgramVF gbufferProg     = ShaderProgramVF::Create(vk, "shaders/gbuffer.vert.spv", "shaders/gbuffer.frag.spv");
-    MaterialComplex mat = MaterialComplex::Create(vk, gbufferProg);
+    MaterialVF gbufferMat = MaterialVF::Create(vk, gbufferProg);
     ShaderProgramVF lightPassProg   = ShaderProgramVF::Create(vk, "shaders/lights.vert.spv", "shaders/lights.frag.spv");
+    MaterialVF lightPassMat = MaterialVF::Create(vk, lightPassProg);
 
+    bool succeeded = gbufferMat.SetMember("ubo.model", glm::mat4(1.0));
 
     FramebufferSet gbufferSet{};
     gbufferSet.m_Width = vk.m_SwapChainImageExtent.width;
@@ -503,8 +573,8 @@ int main()
     Texture texture = Texture::CreateTexture(vk, "assets/viking_room.png", VK_FORMAT_R8G8B8A8_UNORM);
 
 
-    UniformBufferFrameData<MvpData> mvpUniformData;
-    UniformBufferFrameData<DeferredLightData> lightsUniformData;
+    UniformBufferFrameData mvpUniformData;
+    UniformBufferFrameData lightsUniformData;
     vk.CreateUniformBuffers<FrameLightDataT<NUM_LIGHTS>>(lightsUniformData);
     vk.CreateUniformBuffers<MvpData>(mvpUniformData);
 
