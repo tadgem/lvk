@@ -290,58 +290,6 @@ void UpdateUniformBuffer(VulkanAPI_SDL& vk, UniformBufferFrameData& mvpUniformDa
     }
     mvpUniformData.Set(vk.GetFrameIndex(), ubo);
 
-    // light imgui
-
-    /*if (ImGui::Begin("Menu"))
-    {
-        ImGui::Text("Frametime: %f", (1.0 / vk.m_DeltaTime));
-        ImGui::DragFloat3("Directional Light Dir", &lightDataCpu.m_DirectionalLight.Direction[0]);
-        ImGui::DragFloat4("Directional Light Colour", &lightDataCpu.m_DirectionalLight.Colour[0]);
-        ImGui::DragFloat4("Directional Light Ambient Colour", &lightDataCpu.m_DirectionalLight.Ambient[0]);
-
-        if (ImGui::TreeNode("Point Lights"))
-        {
-            for (int i = 0; i < NUM_LIGHTS; i++)
-            {
-                ImGui::PushID(i);
-                if (ImGui::TreeNode("Point Light"))
-                {
-                    ImGui::DragFloat3("Position", &lightDataCpu.m_PointLights[i].PositionRadius[0]);
-                    ImGui::DragFloat("Radius", &lightDataCpu.m_PointLights[i].PositionRadius[3]);
-                    ImGui::DragFloat4("Colour", &lightDataCpu.m_PointLights[i].Colour[0]);
-                    ImGui::DragFloat4("Ambient Colour", &lightDataCpu.m_PointLights[i].Ambient[0]);
-
-                    ImGui::TreePop();
-                }
-
-                ImGui::PopID();
-            }
-            ImGui::TreePop();
-        }
-
-        if (ImGui::TreeNode("Spot Lights"))
-        {
-            for (int i = 0; i < NUM_LIGHTS; i++)
-            {
-                ImGui::PushID(NUM_LIGHTS + i);
-                if (ImGui::TreeNode("Spot Light"))
-                {
-                    ImGui::DragFloat3("Position", &lightDataCpu.m_SpotLights[i].PositionRadius[0]);
-                    ImGui::DragFloat("Radius", &lightDataCpu.m_SpotLights[i].PositionRadius[3]);
-                    ImGui::DragFloat3("Direction", &lightDataCpu.m_SpotLights[i].DirectionAngle[0]);
-                    ImGui::DragFloat("Angle", &lightDataCpu.m_SpotLights[i].DirectionAngle[3]);
-                    ImGui::DragFloat4("Colour", &lightDataCpu.m_SpotLights[i].Colour[0]);
-                    ImGui::DragFloat4("Ambient Colour", &lightDataCpu.m_SpotLights[i].Ambient[0]);
-
-                    ImGui::TreePop();
-                }
-
-                ImGui::PopID();
-            }
-            ImGui::TreePop();
-        }
-    }
-    ImGui::End();*/
 
     lightsUniformData.Set(vk.GetFrameIndex(), lightDataCpu);
 }

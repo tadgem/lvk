@@ -167,7 +167,7 @@ static Vector<uint32_t> g_ScreenSpaceQuadIndexData = {
 static Transform g_Transform; 
 
 void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
-    VkPipeline& gbufferPipeline , VkPipelineLayout& gbufferPipelineLayout, VkRenderPass gbufferRenderPass, Vector<VkDescriptorSet>& gbufferDescriptorSets, Vector<VkFramebuffer>& gbufferFramebuffers,
+    VkPipeline& gbufferPipeline , VkPipelineLayout& gbufferPipelineLayout, VkRenderPass gbufferRenderPass, Vector<VkFramebuffer>& gbufferFramebuffers,
     VkPipeline& lightingPassPipeline, VkPipelineLayout& lightingPassPipelineLayout, VkRenderPass lightingPassRenderPass, Vector<VkDescriptorSet>& lightingPassDescriptorSets, Vector<VkFramebuffer>& lightingPassFramebuffers,
     RenderModel& model, Mesh& screenQuad)
 {
@@ -566,11 +566,8 @@ int main()
 
  
     // create vertex and index buffer
-    Model model;
-    LoadModelAssimp(vk, model, "assets/viking_room.obj", true);
     RenderModel m   = CreateRenderModelGbuffer(vk, "assets/sponza/sponza.gltf", gbufferProg);
     Mesh screenQuad = BuildScreenSpaceQuad(vk, g_ScreenSpaceQuadVertexData, g_ScreenSpaceQuadIndexData);
-    Texture texture = Texture::CreateTexture(vk, "assets/viking_room.png", VK_FORMAT_R8G8B8A8_UNORM);
 
 
     UniformBufferFrameData mvpUniformData;
@@ -579,8 +576,6 @@ int main()
     vk.CreateUniformBuffers<MvpData>(mvpUniformData);
 
     Vector<VkDescriptorSet>     lightPassDescriptorSets;
-    Vector<VkDescriptorSet>     gbufferDescriptorSets;
-    CreateGBufferDescriptorSets(vk, gbufferProg, texture.m_ImageView, texture.m_Sampler, gbufferDescriptorSets, mvpUniformData);
     CreateLightingPassDescriptorSets(vk, lightPassProg.m_DescriptorSetLayout, gbufferSet, lightPassDescriptorSets, mvpUniformData, lightsUniformData);
 
     Vector<VkFramebuffer> gbufferFramebuffers{ gbufferSet.m_Framebuffers[0].m_FB, gbufferSet.m_Framebuffers[1].m_FB };
@@ -597,7 +592,7 @@ int main()
         UpdateUniformBuffer(vk, mvpUniformData, lightsUniformData, lightDataCpu);
 
         RecordCommandBuffersV2(vk, 
-            gbufferPipeline, gbufferPipelineLayout, gbufferSet.m_RenderPass,  gbufferDescriptorSets, gbufferFramebuffers,
+            gbufferPipeline, gbufferPipelineLayout, gbufferSet.m_RenderPass, gbufferFramebuffers,
             pipeline, lightPassPipelineLayout, vk.m_SwapchainImageRenderPass, lightPassDescriptorSets, vk.m_SwapChainFramebuffers,
             m, screenQuad);
 
@@ -609,17 +604,14 @@ int main()
     mvpUniformData.Free(vk);
     lightsUniformData.Free(vk);
 
-    FreeModel(vk, model);
     FreeMesh(vk, screenQuad);
 
-    texture.Free(vk);
     gbufferSet.Free(vk);
 
     vkDestroyRenderPass(vk.m_LogicalDevice, gbufferSet.m_RenderPass, nullptr);
 
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
-        vkFreeDescriptorSets(vk.m_LogicalDevice, vk.m_DescriptorPool, 1, &gbufferDescriptorSets[i]);
         vkFreeDescriptorSets(vk.m_LogicalDevice, vk.m_DescriptorPool, 1,  &lightPassDescriptorSets[i]);
     }
     vkDestroyDescriptorSetLayout(vk.m_LogicalDevice, gbufferProg.m_DescriptorSetLayout, nullptr);
