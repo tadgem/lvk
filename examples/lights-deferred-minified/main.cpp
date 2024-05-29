@@ -59,6 +59,18 @@ public:
     // set mat4, mat3, vec4, vec3, sampler etc.
     // reflect the size of each bound thing in each set (one set for now)
 
+    struct UniformBufferBindingData
+    {
+        uint32_t m_SetNumber;
+        uint32_t m_BindingNumber;
+        UniformBufferFrameData m_UBO;
+    };
+
+    struct SamplerBindingData
+    {
+
+    };
+
     struct UniformAccessorData
     {
         uint32_t    m_ExpectedSize;
@@ -74,7 +86,7 @@ public:
     };
      
     Vector<VkDescriptorSet>                 m_DescriptorSets;
-    Vector<UniformBufferFrameData>          m_UniformBuffers;
+    Vector<UniformBufferBindingData>        m_UniformBuffers;
     HashMap<String, UniformAccessorData>    m_UniformBufferAccessors;
 
     static MaterialVF Create(VulkanAPI& vk, ShaderProgramVF& shader)
@@ -91,7 +103,7 @@ public:
         VK_CHECK(vkAllocateDescriptorSets(vk.m_LogicalDevice, &allocInfo, mat.m_DescriptorSets.data()));
 
 
-        static auto get_accessors_func = [&mat, &vk](ShaderStage& stage)
+        static auto collect_uniform_data = [&mat, &vk](ShaderStage& stage)
         {
             for (auto& descriptorSetInfo : stage.m_LayoutDatas)
             {
@@ -114,13 +126,13 @@ public:
                         UniformAccessorData data{ member.m_Size , member.m_Offset, member.m_Stride, arraySize, static_cast<uint32_t>(mat.m_UniformBuffers.size()) };
                         mat.m_UniformBufferAccessors.emplace(accessorName, data);
                     }
-                    mat.m_UniformBuffers.push_back(uniform);
+                    mat.m_UniformBuffers.push_back({descriptorSetInfo.m_SetNumber, bindingInfo.m_BindingIndex,  uniform });
                 }
             }
         };
         
-        get_accessors_func(shader.m_VertexStage);
-        get_accessors_func(shader.m_FragmentStage);
+        collect_uniform_data(shader.m_VertexStage);
+        collect_uniform_data(shader.m_FragmentStage);
 
         // write buffers to descriptor set + default texture for any samplers
 
@@ -563,8 +575,6 @@ int main()
         VK_COMPARE_OP_LESS,
         lightPassPipelineLayout);
 
-
- 
     // create vertex and index buffer
     RenderModel m   = CreateRenderModelGbuffer(vk, "assets/sponza/sponza.gltf", gbufferProg);
     Mesh screenQuad = BuildScreenSpaceQuad(vk, g_ScreenSpaceQuadVertexData, g_ScreenSpaceQuadIndexData);
