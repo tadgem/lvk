@@ -29,7 +29,7 @@ void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkPipelineLay
 
         for (int i = 0; i < model.m_Meshes.size(); i++)
         {
-            Mesh& mesh = model.m_Meshes[i];
+            MeshEx& mesh = model.m_Meshes[i];
             VkBuffer vertexBuffers[]{ mesh.m_VertexBuffer};
             VkDeviceSize sizes[] = { 0 };
 

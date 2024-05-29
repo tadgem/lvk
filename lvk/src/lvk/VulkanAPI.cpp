@@ -9,6 +9,7 @@
 #include "spdlog/spdlog.h"
 #include "ImGui/imgui_impl_vulkan.h"
 #include "lvk/Texture.h"
+#include "lvk/Mesh.h"
 
 using namespace lvk;
 
@@ -218,6 +219,7 @@ void lvk::VulkanAPI::CreateInstance()
 void lvk::VulkanAPI::Cleanup()
 {
     Texture::FreeDefaultTexture(*this);
+    Mesh::FreeScreenQuad(*this);
     if (p_UseImGui)
     {
         vkDestroyRenderPass(m_LogicalDevice, m_ImGuiRenderPass, nullptr);
@@ -1971,6 +1973,7 @@ void lvk::VulkanAPI::InitVulkan(bool enableSwapchainMsaa)
     CreateCommandBuffers();
     CreateVmaAllocator();
     Texture::InitDefaultTexture(*this);
+    Mesh::InitScreenQuad(*this);
 }
 
 void lvk::VulkanAPI::InitImGui()

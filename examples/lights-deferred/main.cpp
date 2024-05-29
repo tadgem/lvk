@@ -36,7 +36,7 @@ public:
 
 struct RenderItem 
 {
-    Mesh m_Mesh;
+    MeshEx m_Mesh;
     UniformBufferFrameData m_MvpBuffer;
     Vector<VkDescriptorSet> m_DescriptorSets;
 };
@@ -75,7 +75,7 @@ static TransformEx g_Transform;
 void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
     VkPipeline& gbufferPipeline , VkPipelineLayout& gbufferPipelineLayout, VkRenderPass gbufferRenderPass, Vector<VkDescriptorSet>& gbufferDescriptorSets, Vector<VkFramebuffer>& gbufferFramebuffers,
     VkPipeline& lightingPassPipeline, VkPipelineLayout& lightingPassPipelineLayout, VkRenderPass lightingPassRenderPass, Vector<VkDescriptorSet>& lightingPassDescriptorSets, Vector<VkFramebuffer>& lightingPassFramebuffers,
-    RenderModel& model, Mesh& screenQuad)
+    RenderModel& model, MeshEx& screenQuad)
 {
     vk.RecordGraphicsCommands([&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
         // push to example
@@ -117,7 +117,7 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
 
             for (int i = 0; i < model.m_RenderItems.size(); i++)
             {
-                Mesh& mesh = model.m_RenderItems[i].m_Mesh;
+                MeshEx& mesh = model.m_RenderItems[i].m_Mesh;
                 VkBuffer vertexBuffers[]{ mesh.m_VertexBuffer };
                 VkDeviceSize sizes[] = { 0 };
 
@@ -540,7 +540,7 @@ int main()
     LoadModelAssimp(vk, model, "assets/viking_room.obj", true);
     RenderModel m = CreateRenderModelGbuffer(vk, "assets/sponza/sponza.gltf", gbufferDescriptorSetLayout);
 
-    Mesh screenQuad = BuildScreenSpaceQuad(vk, g_ScreenSpaceQuadVertexData, g_ScreenSpaceQuadIndexData);
+    MeshEx screenQuad = BuildScreenSpaceQuad(vk, g_ScreenSpaceQuadVertexData, g_ScreenSpaceQuadIndexData);
 
     Texture texture = Texture::CreateTexture(vk, "assets/viking_room.png", VK_FORMAT_R8G8B8A8_UNORM);
 

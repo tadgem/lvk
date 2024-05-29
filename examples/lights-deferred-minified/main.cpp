@@ -1,4 +1,6 @@
 #include "example-common.h"
+#include "lvk/Shader.h"
+#include "lvk/Material.h"
 #include <algorithm>
 using namespace lvk;
 
@@ -7,7 +9,7 @@ using DeferredLightData = FrameLightDataT<NUM_LIGHTS>;
 
 struct RenderItem 
 {
-    Mesh m_Mesh;
+    MeshEx m_Mesh;
     UniformBufferFrameData m_MvpBuffer;
     Vector<VkDescriptorSet> m_DescriptorSets;
 };
@@ -15,220 +17,6 @@ struct RenderItem
 struct RenderModel
 {
     Vector<RenderItem> m_RenderItems;
-};
-
-struct ShaderStage
-{
-    StageBinary m_StageBinary;
-    Vector<DescriptorSetLayoutData> m_LayoutDatas;
-
-    static ShaderStage Create(VulkanAPI& vk, const String& stagePath)
-    {
-        auto stageBin = vk.LoadSpirvBinary(stagePath);
-        auto stageLayoutDatas = vk.ReflectDescriptorSetLayouts(stageBin);
-
-        return { stageBin, stageLayoutDatas };
-    }
-};
-
-struct ShaderProgramVF
-{
-    ShaderStage m_VertexStage;
-    ShaderStage m_FragmentStage;
-
-    VkDescriptorSetLayout m_DescriptorSetLayout;
-
-    static ShaderProgramVF Create(VulkanAPI& vk, const String& vertPath, const String& fragPath)
-    {
-        ShaderStage vert = ShaderStage::Create(vk, vertPath);
-        ShaderStage frag = ShaderStage::Create(vk, fragPath);
-        VkDescriptorSetLayout layout;
-        vk.CreateDescriptorSetLayout(vert.m_LayoutDatas, frag.m_LayoutDatas, layout);
-
-        return { vert, frag, layout };
-
-    }
-};
-
-class MaterialVF
-{
-public:
-    // create a material from a shader
-    // material is the interface to an instance of a shader
-    // contains descriptor set and associated buffers.
-    // set mat4, mat3, vec4, vec3, sampler etc.
-    // reflect the size of each bound thing in each set (one set for now)
-
-    struct UniformBufferBindingData
-    {
-        uint32_t m_SetNumber;
-        uint32_t m_BindingNumber;
-        uint32_t m_BufferSize;
-        UniformBufferFrameData m_UBO;
-    };
-
-    struct SamplerBindingData
-    {
-        uint32_t        m_SetNumber;
-        uint32_t        m_BindingNumber;
-        VkImageView&    m_ImageView;
-        VkSampler&      m_Sampler;
-    };
-
-    struct UniformAccessorData
-    {
-        uint32_t    m_ExpectedSize;
-        uint32_t    m_Offset;
-        uint32_t    m_Stride;
-        uint16_t    m_ArraySize;
-        uint16_t    m_BufferIndex;
-    };
-     
-    Vector<VkDescriptorSet>                 m_DescriptorSets;
-    Vector<UniformBufferBindingData>        m_UniformBuffers;
-    HashMap<String, SamplerBindingData>     m_Samplers;
-    HashMap<String, UniformAccessorData>    m_UniformBufferAccessors;
-
-    static MaterialVF Create(VulkanAPI& vk, ShaderProgramVF& shader)
-    {
-        MaterialVF mat{};
-        Vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, shader.m_DescriptorSetLayout);
-        VkDescriptorSetAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool = vk.m_DescriptorPool;
-        allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-        allocInfo.pSetLayouts = layouts.data();
-
-        mat.m_DescriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-        VK_CHECK(vkAllocateDescriptorSets(vk.m_LogicalDevice, &allocInfo, mat.m_DescriptorSets.data()));
-
-
-        static auto collect_uniform_data = [&mat, &vk](ShaderStage& stage)
-        {
-            for (auto& descriptorSetInfo : stage.m_LayoutDatas)
-            {
-                // ..and each binding
-                for (auto& bindingInfo : descriptorSetInfo.m_BindingDatas)
-                {
-                    // if a sampler ignore for now
-                    if (bindingInfo.m_ExpectedBlockSize == 0)
-                    {
-                        SamplerBindingData sbd{
-                            descriptorSetInfo.m_SetNumber,
-                            bindingInfo.m_BindingIndex,
-                            Texture::g_DefaultTexture->m_ImageView,
-                            Texture::g_DefaultTexture->m_Sampler
-                        };
-                        mat.m_Samplers.emplace(bindingInfo.m_BindingName, sbd);
-                        continue;
-                    }
-                    // if a uniform buffer
-                    UniformBufferFrameData uniform;
-                    vk.CreateUniformBuffers(uniform, VkDeviceSize{ bindingInfo.m_ExpectedBlockSize });
-                    // build accessors
-                    for (auto& member : bindingInfo.m_Members)
-                    {
-                        String accessorName = bindingInfo.m_BindingName + "." + member.m_Name;
-                        uint16_t arraySize = member.m_Stride > 0 ? (member.m_Size / member.m_Stride) : 0;
-                        UniformAccessorData data{ member.m_Size , member.m_Offset, member.m_Stride, arraySize, static_cast<uint32_t>(mat.m_UniformBuffers.size()) };
-                        mat.m_UniformBufferAccessors.emplace(accessorName, data);
-                    }
-                    mat.m_UniformBuffers.push_back({descriptorSetInfo.m_SetNumber, bindingInfo.m_BindingIndex, bindingInfo.m_ExpectedBlockSize,  uniform });
-                }
-            }
-        };
-        
-        collect_uniform_data(shader.m_VertexStage);
-        collect_uniform_data(shader.m_FragmentStage);
-
-        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            // write buffers to descriptor set + default texture for any samplers
-            Vector<VkDescriptorBufferInfo>  bufferWriteInfos;
-            for (auto& bufferInfo : mat.m_UniformBuffers)
-            {
-                VkDescriptorBufferInfo bufferWriteInfo{};
-                bufferWriteInfo.buffer = bufferInfo.m_UBO.m_UniformBuffers[0];
-                bufferWriteInfo.offset = 0;
-                bufferWriteInfo.range = bufferInfo.m_BufferSize;
-                bufferWriteInfos.push_back(bufferWriteInfo);
-            }
-            Vector<VkDescriptorImageInfo>   imageWriteInfos;
-            Vector<uint32_t> bindings;
-            for (auto& [name, sampler] : mat.m_Samplers)
-            {
-                VkDescriptorImageInfo imageInfo{};
-                imageInfo.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
-                imageInfo.imageView = sampler.m_ImageView;
-                imageInfo.sampler = sampler.m_Sampler;
-                imageWriteInfos.push_back(imageInfo);
-                bindings.push_back(sampler.m_BindingNumber);
-            }
-
-            Vector<VkWriteDescriptorSet> descriptorWrites{};
-            for (int j = 0; j < mat.m_UniformBuffers.size(); j++)
-            {
-                VkWriteDescriptorSet write{};
-                write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                write.dstSet = mat.m_DescriptorSets[i];
-                write.dstBinding = mat.m_UniformBuffers[j].m_BindingNumber;
-                write.dstArrayElement = 0; // todo
-                write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                write.descriptorCount = 1;
-                write.pBufferInfo = &bufferWriteInfos[j];
-            }
-            for (int j = 0; j < imageWriteInfos.size(); j++)
-            {
-                VkWriteDescriptorSet write{};
-                write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                write.dstSet = mat.m_DescriptorSets[i];
-                write.dstBinding = 1;
-                write.dstArrayElement = 0;
-                write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                write.descriptorCount = 1;
-                write.pImageInfo = &imageWriteInfos[j];
-            }
-
-            vkUpdateDescriptorSets(vk.m_LogicalDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-
-        }
-        return mat;
-    }
-
-    template<typename _Ty>
-    bool SetMember(const String& name, const _Ty& value)
-    {
-        static constexpr size_t _type_size = sizeof(_Ty);
-        if (m_UniformBufferAccessors.find(name) == m_UniformBufferAccessors.end())
-        {
-            return false;
-        }
-
-        UniformAccessorData& data = m_UniformBufferAccessors.at(name);
-
-        if (_type_size != data.m_ExpectedSize)
-        {
-            return false;
-        }
-
-        for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-        {
-            // update uniform buffer
-            m_UniformBuffers[data.m_BufferIndex].m_UBO.Set(i, value, data.m_Offset);
-        }
-        
-        return true;
-    }
-};
-
-static Vector<VertexData> g_ScreenSpaceQuadVertexData = {
-    { { -1.0f, -1.0f , 0.0f}, { 1.0f, 0.0f } },
-    { {1.0f, -1.0f, 0.0f}, {0.0f, 0.0f} },
-    { {1.0f, 1.0f, 0.0f}, {0.0f, 1.0f} },
-    { {-1.0f, 1.0f, 0.0f}, {1.0f, 1.0f} }
-};
-
-static Vector<uint32_t> g_ScreenSpaceQuadIndexData = {
-    0, 1, 2, 2, 3, 0
 };
 
 static Transform g_Transform; 
@@ -278,7 +66,7 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
 
             for (int i = 0; i < model.m_RenderItems.size(); i++)
             {
-                Mesh& mesh = model.m_RenderItems[i].m_Mesh;
+                MeshEx& mesh = model.m_RenderItems[i].m_Mesh;
                 VkBuffer vertexBuffers[]{ mesh.m_VertexBuffer };
                 VkDeviceSize sizes[] = { 0 };
 
@@ -354,7 +142,7 @@ void UpdateUniformBuffer(VulkanAPI_SDL& vk, UniformBufferFrameData& mvpUniformDa
     lightsUniformData.Set(vk.GetFrameIndex(), lightDataCpu);
 }
 
-void CreateGBufferDescriptorSets(VulkanAPI& vk, ShaderProgramVF& shader, VkImageView& textureImageView, VkSampler& textureSampler, Vector<VkDescriptorSet>& descriptorSets, UniformBufferFrameData& mvpUniformData)
+void CreateGBufferDescriptorSets(VulkanAPI& vk, ShaderProgram& shader, VkImageView& textureImageView, VkSampler& textureSampler, Vector<VkDescriptorSet>& descriptorSets, UniformBufferFrameData& mvpUniformData)
 {
     Vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, shader.m_DescriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -487,7 +275,7 @@ void CreateLightingPassDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& 
 
 }
 
-RenderModel CreateRenderModelGbuffer(VulkanAPI& vk, const String& modelPath, ShaderProgramVF& shader)
+RenderModel CreateRenderModelGbuffer(VulkanAPI& vk, const String& modelPath, ShaderProgram& shader)
 {
     Model model;
     LoadModelAssimp(vk, model, modelPath, true);
@@ -582,10 +370,10 @@ int main()
     FillExampleLightData(lightDataCpu);
 
 
-    ShaderProgramVF gbufferProg     = ShaderProgramVF::Create(vk, "shaders/gbuffer.vert.spv", "shaders/gbuffer.frag.spv");
-    MaterialVF gbufferMat = MaterialVF::Create(vk, gbufferProg);
-    ShaderProgramVF lightPassProg   = ShaderProgramVF::Create(vk, "shaders/lights.vert.spv", "shaders/lights.frag.spv");
-    MaterialVF lightPassMat = MaterialVF::Create(vk, lightPassProg);
+    ShaderProgram gbufferProg     = ShaderProgram::Create(vk, "shaders/gbuffer.vert.spv", "shaders/gbuffer.frag.spv");
+    Material gbufferMat = Material::Create(vk, gbufferProg);
+    ShaderProgram lightPassProg   = ShaderProgram::Create(vk, "shaders/lights.vert.spv", "shaders/lights.frag.spv");
+    Material lightPassMat = Material::Create(vk, lightPassProg);
 
     bool succeeded = gbufferMat.SetMember("ubo.model", glm::mat4(1.0));
     succeeded = gbufferMat.SetMember("ubo.proj", glm::mat4(1.0));
@@ -606,7 +394,7 @@ int main()
     // create gbuffer pipeline
     VkPipelineLayout gbufferPipelineLayout;
     VkPipeline gbufferPipeline = vk.CreateRasterizationGraphicsPipeline(
-        gbufferProg.m_VertexStage.m_StageBinary, gbufferProg.m_FragmentStage.m_StageBinary,
+        gbufferProg.m_Stages[0].m_StageBinary, gbufferProg.m_Stages[1].m_StageBinary,
         gbufferProg.m_DescriptorSetLayout, Vector<VkVertexInputBindingDescription>{VertexDataNormal::GetBindingDescription() }, VertexDataNormal::GetAttributeDescriptions(),
         gbufferSet.m_RenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
@@ -621,7 +409,7 @@ int main()
     // Pipeline stage?
     VkPipelineLayout lightPassPipelineLayout;
     VkPipeline pipeline = vk.CreateRasterizationGraphicsPipeline(
-        lightPassProg.m_VertexStage.m_StageBinary, lightPassProg.m_FragmentStage.m_StageBinary,
+        lightPassProg.m_Stages[0].m_StageBinary, lightPassProg.m_Stages[1].m_StageBinary,
         lightPassProg.m_DescriptorSetLayout, Vector<VkVertexInputBindingDescription>{VertexData::GetBindingDescription() }, VertexData::GetAttributeDescriptions(),
         vk.m_SwapchainImageRenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
@@ -633,7 +421,6 @@ int main()
 
     // create vertex and index buffer
     RenderModel m   = CreateRenderModelGbuffer(vk, "assets/sponza/sponza.gltf", gbufferProg);
-    Mesh screenQuad = BuildScreenSpaceQuad(vk, g_ScreenSpaceQuadVertexData, g_ScreenSpaceQuadIndexData);
 
 
     UniformBufferFrameData mvpUniformData;
@@ -658,7 +445,7 @@ int main()
         RecordCommandBuffersV2(vk, 
             gbufferPipeline, gbufferPipelineLayout, gbufferSet.m_RenderPass, gbufferFramebuffers,
             pipeline, lightPassPipelineLayout, vk.m_SwapchainImageRenderPass, lightPassDescriptorSets, vk.m_SwapChainFramebuffers,
-            m, screenQuad);
+            m, *Mesh::g_ScreenSpaceQuad);
 
         OnImGui(vk, lightDataCpu);
 
@@ -667,8 +454,6 @@ int main()
 
     mvpUniformData.Free(vk);
     lightsUniformData.Free(vk);
-
-    FreeMesh(vk, screenQuad);
 
     gbufferSet.Free(vk);
 

@@ -7,6 +7,10 @@ find_package(Vulkan REQUIRED FATAL_ERROR) # error
 
 add_library(${PROJECT_NAME} STATIC src/lvk/VulkanAPI.cpp 
                             src/lvk/Texture.cpp
+                            src/lvk/Framebuffer.cpp
+                            src/lvk/Mesh.cpp
+                            src/lvk/Material.cpp
+                            src/lvk/Shader.cpp
                             src/spirv_reflect.c
                             src/ImGui/imgui_impl_vulkan.cpp
                             src/ImGui/imgui_draw.cpp
@@ -16,6 +20,9 @@ add_library(${PROJECT_NAME} STATIC src/lvk/VulkanAPI.cpp
                             include/lvk/VulkanAPI.h
                             include/lvk/Texture.h
                             include/lvk/Framebuffer.h
+                            include/lvk/Mesh.h
+                            include/lvk/Material.h
+                            include/lvk/Shader.h
                             include/Alias.h
                             include/spirv_reflect.h
                             include/VulkanMemoryAllocator.h

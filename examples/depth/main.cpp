@@ -1,7 +1,8 @@
 #include "example-common.h"
+#include "lvk/Mesh.h"
 using namespace lvk;
 
-const std::vector<VertexDataCol> vertices = {
+const std::vector<lvk::VertexDataCol> vertices = {
     {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
     {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
     {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
