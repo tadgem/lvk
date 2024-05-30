@@ -43,7 +43,7 @@ namespace lvk
             Array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> m_Sets;
         };
 
-        Vector<FrameDescriptorSets>                 m_DescriptorSets;
+        Vector<FrameDescriptorSets>             m_DescriptorSets;
         Vector<UniformBufferBindingData>        m_UniformBuffers;
         HashMap<String, SamplerBindingData>     m_Samplers;
         HashMap<String, UniformAccessorData>    m_UniformBufferAccessors;
@@ -92,7 +92,9 @@ namespace lvk
             return true;
         }
 
-        bool SetSampler(VulkanAPI& vk, const String& name, const VkImageView& imageView, const VkSampler& sampler);
+        bool SetSampler(VulkanAPI& vk, const String& name, const VkImageView& imageView, const VkSampler& sampler, bool isAttachment = false);
+        
+        void Free(VulkanAPI& vk);
     };
 
 }

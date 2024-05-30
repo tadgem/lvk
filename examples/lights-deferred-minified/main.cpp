@@ -9,21 +9,35 @@ using DeferredLightData = FrameLightDataT<NUM_LIGHTS>;
 
 struct RenderItem 
 {
-    MeshEx m_Mesh;
-    UniformBufferFrameData m_MvpBuffer;
-    Vector<VkDescriptorSet> m_DescriptorSets;
+    MeshEx      m_Mesh;
+    Material    m_Material;
 };
 
 struct RenderModel
 {
+    Model m_Original;
     Vector<RenderItem> m_RenderItems;
+    void Free(VulkanAPI& vk)
+    {
+        for (auto& item : m_RenderItems)
+        {
+            item.m_Material.Free(vk);
+            FreeMesh(vk, item.m_Mesh);
+        }
+
+        for (auto& mat : m_Original.m_Materials)
+        {
+            mat.m_Diffuse.Free(vk);
+        }
+        m_RenderItems.clear();
+    }
 };
 
 static Transform g_Transform; 
 
 void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
     VkPipeline& gbufferPipeline , VkPipelineLayout& gbufferPipelineLayout, VkRenderPass gbufferRenderPass, Vector<VkFramebuffer>& gbufferFramebuffers,
-    VkPipeline& lightingPassPipeline, VkPipelineLayout& lightingPassPipelineLayout, VkRenderPass lightingPassRenderPass, Vector<VkDescriptorSet>& lightingPassDescriptorSets, Vector<VkFramebuffer>& lightingPassFramebuffers,
+    VkPipeline& lightingPassPipeline, VkPipelineLayout& lightingPassPipelineLayout, VkRenderPass lightingPassRenderPass, Material& lightPassMaterial, Vector<VkFramebuffer>& lightingPassFramebuffers,
     RenderModel& model, Mesh& screenQuad)
 {
     vk.RecordGraphicsCommands([&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
@@ -73,7 +87,7 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
 
                 vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, sizes);
                 vkCmdBindIndexBuffer(commandBuffer, mesh.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-                vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gbufferPipelineLayout, 0, 1, &model.m_RenderItems[i].m_DescriptorSets[frameIndex], 0, nullptr);
+                vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gbufferPipelineLayout, 0, 1, &model.m_RenderItems[i].m_Material.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
                 vkCmdDrawIndexed(commandBuffer, mesh.m_IndexCount, 1, 0, 0, 0);
             }
             vkCmdEndRenderPass(commandBuffer);
@@ -115,13 +129,13 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
         VkDeviceSize sizes[] = { 0 };
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, &screenQuad.m_VertexBuffer, sizes);
         vkCmdBindIndexBuffer(commandBuffer, screenQuad.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, lightingPassPipelineLayout, 0, 1, &lightingPassDescriptorSets[frameIndex], 0, nullptr);
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, lightingPassPipelineLayout, 0, 1, &lightPassMaterial.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
         vkCmdDrawIndexed(commandBuffer, screenQuad.m_IndexCount, 1, 0, 0, 0);
         vkCmdEndRenderPass(commandBuffer);
         });
 }
 
-void UpdateUniformBuffer(VulkanAPI_SDL& vk, UniformBufferFrameData& mvpUniformData, UniformBufferFrameData& lightsUniformData, DeferredLightData& lightDataCpu)
+void UpdateUniformBuffer(VulkanAPI_SDL& vk, Material& renderItemMaterial, Material& lightPassMaterial, DeferredLightData& lightDataCpu)
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -137,142 +151,10 @@ void UpdateUniformBuffer(VulkanAPI_SDL& vk, UniformBufferFrameData& mvpUniformDa
         ubo.Proj = glm::perspective(glm::radians(45.0f), vk.m_SwapChainImageExtent.width / (float)vk.m_SwapChainImageExtent.height, 0.1f, 1000.0f);
         ubo.Proj[1][1] *= -1;
     }
-    mvpUniformData.Set(vk.GetFrameIndex(), ubo);
+    renderItemMaterial.SetBuffer(0, 0, ubo);
 
-    lightsUniformData.Set(vk.GetFrameIndex(), lightDataCpu);
-}
-
-void CreateGBufferDescriptorSets(VulkanAPI& vk, ShaderProgram& shader, VkImageView& textureImageView, VkSampler& textureSampler, Vector<VkDescriptorSet>& descriptorSets, UniformBufferFrameData& mvpUniformData)
-{
-    Vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, shader.m_DescriptorSetLayout);
-    VkDescriptorSetAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = vk.m_DescriptorPool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-    allocInfo.pSetLayouts = layouts.data();
-
-    descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-    VK_CHECK(vkAllocateDescriptorSets(vk.m_LogicalDevice, &allocInfo, descriptorSets.data()));
-
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        VkDescriptorBufferInfo mvpBufferInfo{};
-        mvpBufferInfo.buffer = mvpUniformData.m_UniformBuffers[i];
-        mvpBufferInfo.offset = 0;
-        mvpBufferInfo.range = sizeof(MvpData);
-
-        VkDescriptorImageInfo imageInfo{};
-        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.imageView = textureImageView;
-        imageInfo.sampler = textureSampler;
-
-        Array<VkWriteDescriptorSet, 2> descriptorWrites{};
-
-        descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[0].dstSet = descriptorSets[i];
-        descriptorWrites[0].dstBinding = 0;
-        descriptorWrites[0].dstArrayElement = 0;
-        descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrites[0].descriptorCount = 1;
-        descriptorWrites[0].pBufferInfo = &mvpBufferInfo;
-
-        descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[1].dstSet = descriptorSets[i];
-        descriptorWrites[1].dstBinding = 1;
-        descriptorWrites[1].dstArrayElement = 0;
-        descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites[1].descriptorCount = 1;
-        descriptorWrites[1].pImageInfo = &imageInfo;
-
-
-        vkUpdateDescriptorSets(vk.m_LogicalDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-    }
-
-}
-
-void CreateLightingPassDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSetLayout, FramebufferSet gbuffers, Vector<VkDescriptorSet>& descriptorSets, UniformBufferFrameData& mvpUniformData, UniformBufferFrameData& lightsUniformData)
-{
-    Vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
-    VkDescriptorSetAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = vk.m_DescriptorPool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-    allocInfo.pSetLayouts = layouts.data();
-
-    descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-    VK_CHECK(vkAllocateDescriptorSets(vk.m_LogicalDevice, &allocInfo, descriptorSets.data()));
-
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        VkDescriptorBufferInfo mvpBufferInfo{};
-        mvpBufferInfo.buffer = mvpUniformData.m_UniformBuffers[i];
-        mvpBufferInfo.offset = 0;
-        mvpBufferInfo.range = sizeof(MvpData);
-
-        VkDescriptorImageInfo positionBufferInfo{};
-        positionBufferInfo.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
-        positionBufferInfo.imageView = gbuffers.m_Framebuffers[i].m_ColourAttachments[1].m_ImageView;
-        positionBufferInfo.sampler = gbuffers.m_Framebuffers[i].m_ColourAttachments[1].m_Sampler;
-
-        VkDescriptorImageInfo normalBufferInfo{};
-        normalBufferInfo.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
-        normalBufferInfo.imageView = gbuffers.m_Framebuffers[i].m_ColourAttachments[2].m_ImageView;
-        normalBufferInfo.sampler = gbuffers.m_Framebuffers[i].m_ColourAttachments[2].m_Sampler;
-
-        VkDescriptorImageInfo colourBufferInfo{};
-        colourBufferInfo.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
-        colourBufferInfo.imageView = gbuffers.m_Framebuffers[i].m_ColourAttachments[0].m_ImageView;
-        colourBufferInfo.sampler = gbuffers.m_Framebuffers[i].m_ColourAttachments[0].m_Sampler;
-
-        VkDescriptorBufferInfo lightBufferInfo{};
-        lightBufferInfo.buffer = lightsUniformData.m_UniformBuffers[i];
-        lightBufferInfo.offset = 0;
-        lightBufferInfo.range = sizeof(DeferredLightData);
-
-        Array<VkWriteDescriptorSet, 5> descriptorWrites{};
-
-        descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[0].dstSet = descriptorSets[i];
-        descriptorWrites[0].dstBinding = 0;
-        descriptorWrites[0].dstArrayElement = 0;
-        descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrites[0].descriptorCount = 1;
-        descriptorWrites[0].pBufferInfo = &mvpBufferInfo;
-
-        descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[1].dstSet = descriptorSets[i];
-        descriptorWrites[1].dstBinding = 1;
-        descriptorWrites[1].dstArrayElement = 0;
-        descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites[1].descriptorCount = 1;
-        descriptorWrites[1].pImageInfo = &positionBufferInfo;
-
-        descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[2].dstSet = descriptorSets[i];
-        descriptorWrites[2].dstBinding = 2;
-        descriptorWrites[2].dstArrayElement = 0;
-        descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites[2].descriptorCount = 1;
-        descriptorWrites[2].pImageInfo = &normalBufferInfo;
-
-        descriptorWrites[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[3].dstSet = descriptorSets[i];
-        descriptorWrites[3].dstBinding = 3;
-        descriptorWrites[3].dstArrayElement = 0;
-        descriptorWrites[3].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites[3].descriptorCount = 1;
-        descriptorWrites[3].pImageInfo = &colourBufferInfo;
-
-        descriptorWrites[4].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[4].dstSet = descriptorSets[i];
-        descriptorWrites[4].dstBinding = 4;
-        descriptorWrites[4].dstArrayElement = 0;
-        descriptorWrites[4].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrites[4].descriptorCount = 1;
-        descriptorWrites[4].pBufferInfo = &lightBufferInfo;
-
-
-        vkUpdateDescriptorSets(vk.m_LogicalDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-    }
-
+    lightPassMaterial.SetBuffer(0, 0, ubo);
+    lightPassMaterial.SetBuffer(0, 4, lightDataCpu);
 }
 
 RenderModel CreateRenderModelGbuffer(VulkanAPI& vk, const String& modelPath, ShaderProgram& shader)
@@ -281,14 +163,16 @@ RenderModel CreateRenderModelGbuffer(VulkanAPI& vk, const String& modelPath, Sha
     LoadModelAssimp(vk, model, modelPath, true);
 
     RenderModel renderModel{};
+    renderModel.m_Original = model;
     for (auto& mesh : model.m_Meshes)
     {
         RenderItem item{};
         int materialIndex = std::min(mesh.m_MaterialIndex, (uint32_t)model.m_Materials.size() - 1);
         item.m_Mesh = mesh;
-        item.m_DescriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-        vk.CreateUniformBuffers<MvpData>(item.m_MvpBuffer);
-        CreateGBufferDescriptorSets(vk, shader, model.m_Materials[materialIndex].m_Diffuse.m_ImageView, model.m_Materials[materialIndex].m_Diffuse.m_Sampler, item.m_DescriptorSets, item.m_MvpBuffer);
+        item.m_Material = Material::Create(vk, shader);
+
+        MaterialEx& material = model.m_Materials[mesh.m_MaterialIndex];
+        item.m_Material.SetSampler(vk, "texSampler", material.m_Diffuse.m_ImageView, material.m_Diffuse.m_Sampler);
         renderModel.m_RenderItems.push_back(item);
     }
 
@@ -359,24 +243,17 @@ void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu)
     ImGui::End();
 }
 
-int main()
-{
+int main() {
     VulkanAPI_SDL vk;
     bool enableMSAA = false;
     vk.Start(1280, 720, enableMSAA);
 
-
     DeferredLightData lightDataCpu{};
     FillExampleLightData(lightDataCpu);
 
-
     ShaderProgram gbufferProg     = ShaderProgram::Create(vk, "shaders/gbuffer.vert.spv", "shaders/gbuffer.frag.spv");
-    Material gbufferMat = Material::Create(vk, gbufferProg);
     ShaderProgram lightPassProg   = ShaderProgram::Create(vk, "shaders/lights.vert.spv", "shaders/lights.frag.spv");
     Material lightPassMat = Material::Create(vk, lightPassProg);
-
-    bool succeeded = gbufferMat.SetMember("ubo.model", glm::mat4(1.0));
-    succeeded = gbufferMat.SetMember("ubo.proj", glm::mat4(1.0));
 
     FramebufferSet gbufferSet{};
     gbufferSet.m_Width = vk.m_SwapChainImageExtent.width;
@@ -391,45 +268,38 @@ int main()
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
     gbufferSet.Build(vk);
 
+    lightPassMat.SetSampler(vk, "positionBufferSampler", gbufferSet.m_Framebuffers[0].m_ColourAttachments[1].m_ImageView, gbufferSet.m_Framebuffers[0].m_ColourAttachments[1].m_Sampler, true);
+    lightPassMat.SetSampler(vk, "normalBufferSampler", gbufferSet.m_Framebuffers[0].m_ColourAttachments[2].m_ImageView, gbufferSet.m_Framebuffers[0].m_ColourAttachments[2].m_Sampler, true);
+    lightPassMat.SetSampler(vk, "colourBufferSampler", gbufferSet.m_Framebuffers[0].m_ColourAttachments[0].m_ImageView, gbufferSet.m_Framebuffers[0].m_ColourAttachments[0].m_Sampler, true);
+
     // create gbuffer pipeline
     VkPipelineLayout gbufferPipelineLayout;
     VkPipeline gbufferPipeline = vk.CreateRasterizationGraphicsPipeline(
         gbufferProg.m_Stages[0].m_StageBinary, gbufferProg.m_Stages[1].m_StageBinary,
-        gbufferProg.m_DescriptorSetLayout, Vector<VkVertexInputBindingDescription>{VertexDataNormal::GetBindingDescription() }, VertexDataNormal::GetAttributeDescriptions(),
+        gbufferProg.m_DescriptorSetLayout, 
+        Vector<VkVertexInputBindingDescription>{VertexDataNormal::GetBindingDescription() }, 
+        VertexDataNormal::GetAttributeDescriptions(),
         gbufferSet.m_RenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
-        VK_POLYGON_MODE_FILL,
-        VK_CULL_MODE_NONE,
-        false,
-        VK_COMPARE_OP_LESS,
-        gbufferPipelineLayout, 3
-    );
+        VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, false,
+        VK_COMPARE_OP_LESS, gbufferPipelineLayout, 3);
 
     // create present graphics pipeline
     // Pipeline stage?
     VkPipelineLayout lightPassPipelineLayout;
     VkPipeline pipeline = vk.CreateRasterizationGraphicsPipeline(
         lightPassProg.m_Stages[0].m_StageBinary, lightPassProg.m_Stages[1].m_StageBinary,
-        lightPassProg.m_DescriptorSetLayout, Vector<VkVertexInputBindingDescription>{VertexData::GetBindingDescription() }, VertexData::GetAttributeDescriptions(),
+        lightPassProg.m_DescriptorSetLayout, 
+        Vector<VkVertexInputBindingDescription>{VertexData::GetBindingDescription() }, 
+        VertexData::GetAttributeDescriptions(),
         vk.m_SwapchainImageRenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
-        VK_POLYGON_MODE_FILL,
-        VK_CULL_MODE_NONE,
-        enableMSAA,
-        VK_COMPARE_OP_LESS,
-        lightPassPipelineLayout);
+        VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, enableMSAA,
+        VK_COMPARE_OP_LESS, lightPassPipelineLayout);
 
     // create vertex and index buffer
+    // allocate materials instead of raw buffers etc.
     RenderModel m   = CreateRenderModelGbuffer(vk, "assets/sponza/sponza.gltf", gbufferProg);
-
-
-    UniformBufferFrameData mvpUniformData;
-    UniformBufferFrameData lightsUniformData;
-    vk.CreateUniformBuffers<FrameLightDataT<NUM_LIGHTS>>(lightsUniformData);
-    vk.CreateUniformBuffers<MvpData>(mvpUniformData);
-
-    Vector<VkDescriptorSet>     lightPassDescriptorSets;
-    CreateLightingPassDescriptorSets(vk, lightPassProg.m_DescriptorSetLayout, gbufferSet, lightPassDescriptorSets, mvpUniformData, lightsUniformData);
 
     Vector<VkFramebuffer> gbufferFramebuffers{ gbufferSet.m_Framebuffers[0].m_FB, gbufferSet.m_Framebuffers[1].m_FB };
 
@@ -439,12 +309,12 @@ int main()
 
         for (auto& item : m.m_RenderItems)
         {
-            UpdateUniformBuffer(vk, item.m_MvpBuffer, lightsUniformData, lightDataCpu);
+            UpdateUniformBuffer(vk, item.m_Material, lightPassMat, lightDataCpu);
         }
 
         RecordCommandBuffersV2(vk, 
             gbufferPipeline, gbufferPipelineLayout, gbufferSet.m_RenderPass, gbufferFramebuffers,
-            pipeline, lightPassPipelineLayout, vk.m_SwapchainImageRenderPass, lightPassDescriptorSets, vk.m_SwapChainFramebuffers,
+            pipeline, lightPassPipelineLayout, vk.m_SwapchainImageRenderPass, lightPassMat, vk.m_SwapChainFramebuffers,
             m, *Mesh::g_ScreenSpaceQuad);
 
         OnImGui(vk, lightDataCpu);
@@ -452,17 +322,12 @@ int main()
         vk.PostFrame();
     }
 
-    mvpUniformData.Free(vk);
-    lightsUniformData.Free(vk);
-
+    lightPassMat.Free(vk);
     gbufferSet.Free(vk);
+    m.Free(vk);
 
     vkDestroyRenderPass(vk.m_LogicalDevice, gbufferSet.m_RenderPass, nullptr);
 
-    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-    {
-        vkFreeDescriptorSets(vk.m_LogicalDevice, vk.m_DescriptorPool, 1,  &lightPassDescriptorSets[i]);
-    }
     vkDestroyDescriptorSetLayout(vk.m_LogicalDevice, gbufferProg.m_DescriptorSetLayout, nullptr);
     vkDestroyDescriptorSetLayout(vk.m_LogicalDevice, lightPassProg.m_DescriptorSetLayout, nullptr);
     

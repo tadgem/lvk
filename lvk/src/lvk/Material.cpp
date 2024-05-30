@@ -69,7 +69,7 @@ lvk::Material lvk::Material::Create(VulkanAPI& vk, ShaderProgram& shader)
         for (auto& [name, sampler] : mat.m_Samplers)
         {
             VkDescriptorImageInfo imageInfo{};
-            imageInfo.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             imageInfo.imageView = sampler.m_ImageView;
             imageInfo.sampler = sampler.m_Sampler;
             imageWriteInfos.push_back(imageInfo);
@@ -87,6 +87,7 @@ lvk::Material lvk::Material::Create(VulkanAPI& vk, ShaderProgram& shader)
             write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
             write.descriptorCount = 1;
             write.pBufferInfo = &bufferWriteInfos[j];
+            descriptorWrites.push_back(write);
         }
         for (int j = 0; j < imageWriteInfos.size(); j++)
         {
@@ -98,6 +99,7 @@ lvk::Material lvk::Material::Create(VulkanAPI& vk, ShaderProgram& shader)
             write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
             write.descriptorCount = 1;
             write.pImageInfo = &imageWriteInfos[j];
+            descriptorWrites.push_back(write);
         }
 
         vkUpdateDescriptorSets(vk.m_LogicalDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
@@ -106,18 +108,20 @@ lvk::Material lvk::Material::Create(VulkanAPI& vk, ShaderProgram& shader)
     return mat;
 }
 
-bool lvk::Material::SetSampler(VulkanAPI& vk, const String& name, const VkImageView& imageView, const VkSampler& sampler)
+bool lvk::Material::SetSampler(VulkanAPI& vk, const String& name, const VkImageView& imageView, const VkSampler& sampler, bool isAttachment)
 {
     if (m_Samplers.find(name) == m_Samplers.end())
     {
         return false;
     }
 
+    VkImageLayout imageLayout = isAttachment ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
     SamplerBindingData& samplerBinding = m_Samplers.at(name);
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
         VkDescriptorImageInfo imageInfo{};
-        imageInfo.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+        imageInfo.imageLayout = imageLayout;
         imageInfo.imageView = imageView;
         imageInfo.sampler = sampler;
 
@@ -131,6 +135,29 @@ bool lvk::Material::SetSampler(VulkanAPI& vk, const String& name, const VkImageV
         write.pImageInfo = &imageInfo;
 
         vkUpdateDescriptorSets(vk.m_LogicalDevice, 1, &write, 0, nullptr);
+    }
+
+
+}
+
+void lvk::Material::Free(VulkanAPI& vk)
+{
+    m_UniformBufferAccessors.clear();
+
+    for (auto& buffer : m_UniformBuffers)
+    {
+        buffer.m_UBO.Free(vk);
+    }
+
+    m_UniformBuffers.clear();
+    m_Samplers.clear();
+
+    for (auto& frameDescriptorSets : m_DescriptorSets)
+    {
+        for (auto& set : frameDescriptorSets.m_Sets)
+        {
+            VK_CHECK(vkFreeDescriptorSets(vk.m_LogicalDevice, vk.m_DescriptorPool, 1, &set));
+        }
     }
 
 
