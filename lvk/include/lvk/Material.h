@@ -51,6 +51,23 @@ namespace lvk
         static Material Create(VulkanAPI& vk, ShaderProgram& shader);
 
         template<typename _Ty>
+        bool SetBuffer(uint32_t set, uint32_t binding, const _Ty& value)
+        {
+            for (auto& buffer : m_UniformBuffers)
+            {
+                if (buffer.m_SetNumber == set && buffer.m_BindingNumber == binding)
+                {
+                    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+                    {
+                        buffer.m_UBO.Set(i, value);
+                    }
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        template<typename _Ty>
         bool SetMember(const String& name, const _Ty& value)
         {
             static constexpr size_t _type_size = sizeof(_Ty);
