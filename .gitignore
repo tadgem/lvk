@@ -42,5 +42,7 @@ vs22/
 vs33/
 /cmake-build-debug
 /cmake-build-release
+/cmake-build-debug-visual-studio
+/cmake-build-release-visualstudio
 /.idea
 doodle.log

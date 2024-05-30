@@ -39,4 +39,11 @@ add_library(${PROJECT_NAME} STATIC src/lvk/VulkanAPI.cpp
 set(LVK_INCLUDES ${Vulkan_INCLUDE_DIRS} ${SPDLOG_INCLUDES} ${GLM_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories (${PROJECT_NAME} PUBLIC ${LVK_INCLUDES})
 
+
+if (MSVC)
+    target_compile_options(${PROJECT_NAME} PRIVATE "/bigobj" "/MP" "/Zi")
+    set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<$<CONFIG:Debug,Release>:ProgramDatabase>")
+endif ()
+
+
 target_link_libraries (${PROJECT_NAME} ${Vulkan_LIBRARIES} spdlog)
