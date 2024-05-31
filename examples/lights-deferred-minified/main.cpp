@@ -41,7 +41,6 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
     RenderModel& model, Mesh& screenQuad)
 {
     vk.RecordGraphicsCommands([&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
-        // push to example
         {
             Array<VkClearValue, 4> clearValues{};
             clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
@@ -93,7 +92,6 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
             vkCmdEndRenderPass(commandBuffer);
         }
 
-        // push to example
         Array<VkClearValue, 2> clearValues{};
         clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
         clearValues[1].depthStencil = { 1.0f, 0 };
@@ -152,7 +150,9 @@ void UpdateUniformBuffer(VulkanAPI_SDL& vk, Material& renderItemMaterial, Materi
         ubo.Proj[1][1] *= -1;
     }
     renderItemMaterial.SetBuffer(0, 0, ubo);
-
+    // renderItemMaterial.SetMember("ubo.model", ubo.Model);
+    // renderItemMaterial.SetMember("ubo.view", ubo.View);
+    // renderItemMaterial.SetMember("ubo.proj", ubo.Proj);
     lightPassMaterial.SetBuffer(0, 0, ubo);
     lightPassMaterial.SetBuffer(0, 4, lightDataCpu);
 }
@@ -268,6 +268,7 @@ int main() {
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
     gbufferSet.Build(vk);
 
+    // todo: idk why this works, we need to respect each image in the swap chain, not just the 0th element
     lightPassMat.SetSampler(vk, "positionBufferSampler", gbufferSet.m_Framebuffers[0].m_ColourAttachments[1].m_ImageView, gbufferSet.m_Framebuffers[0].m_ColourAttachments[1].m_Sampler, true);
     lightPassMat.SetSampler(vk, "normalBufferSampler", gbufferSet.m_Framebuffers[0].m_ColourAttachments[2].m_ImageView, gbufferSet.m_Framebuffers[0].m_ColourAttachments[2].m_Sampler, true);
     lightPassMat.SetSampler(vk, "colourBufferSampler", gbufferSet.m_Framebuffers[0].m_ColourAttachments[0].m_ImageView, gbufferSet.m_Framebuffers[0].m_ColourAttachments[0].m_Sampler, true);
