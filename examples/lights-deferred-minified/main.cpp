@@ -282,7 +282,7 @@ int main() {
         VertexDataNormal::GetAttributeDescriptions(),
         gbufferSet.m_RenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
-        VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, false,
+        VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, false,
         VK_COMPARE_OP_LESS, gbufferPipelineLayout, 3);
 
     // create present graphics pipeline

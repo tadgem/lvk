@@ -93,6 +93,9 @@ namespace lvk
         }
 
         bool SetSampler(VulkanAPI& vk, const String& name, const VkImageView& imageView, const VkSampler& sampler, bool isAttachment = false);
+        bool SetSampler(VulkanAPI& vk, const String& name, Texture& texture);
+        bool SetSampler(VulkanAPI& vk, const String& name, FramebufferSet& framebuffer);
+
         
         void Free(VulkanAPI& vk);
     };
