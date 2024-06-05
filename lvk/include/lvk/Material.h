@@ -1,6 +1,7 @@
 #pragma once
 #include "lvk/VulkanAPI.h"
-
+#include "lvk/Texture.h"
+#include "lvk/Framebuffer.h"
 namespace lvk
 {
     class ShaderProgram;

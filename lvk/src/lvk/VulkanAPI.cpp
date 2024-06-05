@@ -1805,7 +1805,7 @@ void lvk::VulkanAPI::CreateRenderPass(VkRenderPass& renderPass, Vector<VkAttachm
 
 void lvk::VulkanAPI::Start(uint32_t width, uint32_t height, bool enableSwapchainMsaa)
 {
-    CreateWindow(width, height);
+    CreateWindowLVK(width, height);
     InitVulkan(enableSwapchainMsaa);
 
     if (p_UseImGui)

@@ -349,7 +349,7 @@ public:
 
         virtual Vector<const char*>         GetRequiredExtensions() = 0;
         virtual void                        CreateSurface() = 0;
-        virtual void                        CreateWindow(uint32_t width, uint32_t height) = 0;
+        virtual void                        CreateWindowLVK(uint32_t width, uint32_t height) = 0;
         virtual void                        CleanupWindow() = 0;
         virtual VkExtent2D                  GetSurfaceExtent(VkSurfaceCapabilitiesKHR surface) = 0;
         virtual bool                        ShouldRun() = 0;

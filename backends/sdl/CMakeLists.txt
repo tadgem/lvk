@@ -11,9 +11,6 @@ add_library(${PROJECT_NAME} STATIC  src/VulkanAPI_SDL.cpp
                                     include/ImGui/imgui_impl_sdl2.h
                                     )
 
-message("SDL Includes")
-message(${SDL_INCLUDES})
-
 set(LVK_SDL_INCLUDES ${LVK_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR}/include ${SDL_INCLUDES} CACHE INTERNAL "")
 
 target_include_directories (${PROJECT_NAME} PUBLIC ${LVK_SDL_INCLUDES})
