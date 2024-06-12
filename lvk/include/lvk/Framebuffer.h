@@ -3,107 +3,70 @@
 
 namespace lvk
 {
-    class Framebuffer {
+    class Attachment
+    {
     public:
-        Vector<Texture> m_ColourAttachments;
-        Vector<Texture> m_DepthAttachments;
-        Vector<Texture> m_ResolveAttachments;
 
-        VkFramebuffer   m_FB;
+        Vector<Texture>         m_AttachmentSwapchainImages;
+        VkFormat                m_Format;
+        VkSampleCountFlagBits   m_SampleCount;
 
-        Texture& AddColourAttachment(lvk::VulkanAPI& vk, VkExtent2D resolution,
+        void Free(VulkanAPI& vk)
+        {
+            for (auto& t : m_AttachmentSwapchainImages)
+            {
+                t.Free(vk);
+            }
+        }
+
+        static Attachment CreateColourAttachment(lvk::VulkanAPI& vk, VkExtent2D resolution,
             uint32_t numMips, VkSampleCountFlagBits sampleCount,
             VkFormat format, VkImageUsageFlags usageFlags,
             VkMemoryPropertyFlagBits memoryFlags, VkImageAspectFlagBits imageAspect,
             VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
         {
+            Attachment a{ {}, format, sampleCount };
             VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL;
-            m_ColourAttachments.push_back(Texture::CreateAttachment(vk, resolution.width, resolution.height, numMips, sampleCount, format, tiling, usageFlags, memoryFlags, imageAspect, samplerFilter, samplerAddressMode));
-            return m_ColourAttachments.back();
+            for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+            {
+                a.m_AttachmentSwapchainImages.push_back(Texture::CreateAttachment(vk, resolution.width, resolution.height, numMips, sampleCount, format, tiling, usageFlags, memoryFlags, imageAspect, samplerFilter, samplerAddressMode));
+            }
+            return a;
         }
 
-        Texture& AddDepthAttachment(lvk::VulkanAPI& vk, VkExtent2D resolution,
+        static Attachment CreateDepthAttachment(lvk::VulkanAPI& vk, VkExtent2D resolution,
             uint32_t numMips, VkSampleCountFlagBits sampleCount,
             VkImageUsageFlags usageFlags,
             VkMemoryPropertyFlagBits memoryFlags, VkImageAspectFlagBits imageAspect,
             VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
         {
+            Attachment a{ {}, vk.FindDepthFormat(), sampleCount };
             VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL;
-            m_DepthAttachments.push_back(Texture::CreateAttachment(vk, resolution.width, resolution.height, numMips, sampleCount, vk.FindDepthFormat(), tiling, usageFlags, memoryFlags, imageAspect, samplerFilter, samplerAddressMode));
-            return m_DepthAttachments.back();
-        }
-
-        Texture& AddResolveAttachment(lvk::VulkanAPI& vk, VkExtent2D resolution,
-            uint32_t numMips, VkSampleCountFlagBits sampleCount,
-            VkFormat format, VkImageUsageFlags usageFlags,
-            VkMemoryPropertyFlagBits memoryFlags, VkImageAspectFlagBits imageAspect,
-            VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
-        {
-            VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL;
-            m_ResolveAttachments.push_back(Texture::CreateAttachment(vk, resolution.width, resolution.height, numMips, sampleCount, format, tiling, usageFlags, memoryFlags, imageAspect, samplerFilter, samplerAddressMode));
-            return m_ResolveAttachments.back();
-        }
-
-        bool Build(lvk::VulkanAPI& vk, VkRenderPass& renderPass, VkExtent2D extent)
-        {
-            bool hasDepth = m_DepthAttachments.size() > 0;
-            Vector<VkImageView> framebufferAttachments;
-            for (auto& colour : m_ColourAttachments)
-            {
-                framebufferAttachments.push_back(colour.m_ImageView);
-            }
-            if (hasDepth)
-            {
-                framebufferAttachments.push_back(m_DepthAttachments[0].m_ImageView);
-            }
-            for (auto& resolve : m_ResolveAttachments)
-            {
-                framebufferAttachments.push_back(resolve.m_ImageView);
-            }
-            vk.CreateFramebuffer(framebufferAttachments, renderPass, extent, m_FB);
-            return false;
-        }
-
-
-        void Free(VulkanAPI& vk)
-        {
-            for (auto& t : m_ColourAttachments)
-            {
-                t.Free(vk);
-            }
-            for (auto& t : m_DepthAttachments)
-            {
-                t.Free(vk);
-            }
-            for (auto& t : m_ResolveAttachments)
-            {
-                t.Free(vk);
-            }
-            vkDestroyFramebuffer(vk.m_LogicalDevice, m_FB, nullptr);
-        }
-    };
-
-    class FramebufferSet {
-    public:
-        Array<Framebuffer, MAX_FRAMES_IN_FLIGHT> m_Framebuffers;
-
-        // render pass must be shared between all images in the swap chain
-        VkRenderPass    m_RenderPass;
-        // clear colours
-        Vector <VkClearColorValue> m_ClearValues;
-
-        uint32_t m_Width = 0;
-        uint32_t m_Height = 0;
-
-        VkAttachmentLoadOp m_AttachmentLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-
-        void Free(VulkanAPI& vk)
-        {
             for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
             {
-                m_Framebuffers[i].Free(vk);
+                a.m_AttachmentSwapchainImages.push_back(Texture::CreateAttachment(vk, resolution.width, resolution.height, numMips, sampleCount, a.m_Format, tiling, usageFlags, memoryFlags, imageAspect, samplerFilter, samplerAddressMode));
             }
+            return a;
         }
+
+    };
+
+    class Framebuffer
+    {
+    public:
+        Vector<Attachment> m_ColourAttachments;
+        Vector<Attachment> m_DepthAttachments;
+        Vector<Attachment> m_ResolveAttachments;
+
+        Vector<VkFramebuffer>   m_SwapchainFramebuffers;
+        VkRenderPass            m_RenderPass;
+
+
+        Vector <VkClearColorValue>  m_ClearValues;
+        VkAttachmentLoadOp          m_AttachmentLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        
+        uint32_t m_Width = 0;
+        uint32_t m_Height = 0;
 
         void AddColourAttachment(lvk::VulkanAPI& vk, ResolutionScale scale,
             uint32_t numMips, VkSampleCountFlagBits sampleCount,
@@ -113,10 +76,8 @@ namespace lvk
         {
             VkExtent2D resolution{};
             ResolveResolutionScale(scale, m_Width, m_Height, resolution.width, resolution.height);
-            for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-            {
-                m_Framebuffers[i].AddColourAttachment(vk, resolution, numMips, sampleCount, format, usageFlags, memoryFlags, imageAspect, samplerFilter, samplerAddressMode);
-            }
+            m_ColourAttachments.push_back(Attachment::CreateColourAttachment(vk,
+                resolution, numMips, sampleCount, format, usageFlags, memoryFlags, imageAspect, samplerFilter, samplerAddressMode));
         }
 
         void AddDepthAttachment(lvk::VulkanAPI& vk, ResolutionScale scale,
@@ -127,10 +88,8 @@ namespace lvk
         {
             VkExtent2D resolution{};
             ResolveResolutionScale(scale, m_Width, m_Height, resolution.width, resolution.height);
-            for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-            {
-                m_Framebuffers[i].AddDepthAttachment(vk, resolution, numMips, sampleCount, usageFlags, memoryFlags, imageAspect, samplerFilter, samplerAddressMode);
-            }
+            m_DepthAttachments.push_back(Attachment::CreateDepthAttachment(vk,
+                resolution, numMips, sampleCount, usageFlags, memoryFlags, imageAspect, samplerFilter, samplerAddressMode));
         }
 
         void AddResolveAttachment(lvk::VulkanAPI& vk, ResolutionScale scale,
@@ -141,17 +100,16 @@ namespace lvk
         {
             VkExtent2D resolution{};
             ResolveResolutionScale(scale, m_Width, m_Height, resolution.width, resolution.height);
-            for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-            {
-                m_Framebuffers[i].AddResolveAttachment(vk, resolution, numMips, sampleCount, format, usageFlags, memoryFlags, imageAspect, samplerFilter, samplerAddressMode);
-            }
+            m_ResolveAttachments.push_back(Attachment::CreateColourAttachment(vk,
+                resolution, numMips, sampleCount, format, usageFlags, memoryFlags, imageAspect, samplerFilter, samplerAddressMode));
         }
+
 
         void Build(lvk::VulkanAPI& vk)
         {
             // build renderpass
             Vector<VkAttachmentDescription> colourAttachmentDescriptions{};
-            for (auto& col : m_Framebuffers[0].m_ColourAttachments)
+            for (auto& col : m_ColourAttachments)
             {
                 VkAttachmentDescription colourAttachment{};
                 colourAttachment.format = col.m_Format;
@@ -167,7 +125,7 @@ namespace lvk
 
             Vector<VkAttachmentDescription> resolveAttachmentDescriptions{};
 
-            for (auto& col : m_Framebuffers[0].m_ResolveAttachments)
+            for (auto& col : m_ResolveAttachments)
             {
                 VkAttachmentDescription resolveAttachment{};
                 resolveAttachment.format = col.m_Format;
@@ -182,10 +140,10 @@ namespace lvk
             }
 
             VkAttachmentDescription depthAttachmentDescription{};
-            bool hasDepth = m_Framebuffers[0].m_DepthAttachments.size() > 0;
+            bool hasDepth = m_DepthAttachments.size() > 0;
             if (hasDepth)
             {
-                Texture& depth = m_Framebuffers[0].m_DepthAttachments[0];
+                Attachment& depth = m_DepthAttachments[0];
                 depthAttachmentDescription.format = depth.m_Format;
                 depthAttachmentDescription.samples = depth.m_SampleCount;
                 depthAttachmentDescription.loadOp = m_AttachmentLoadOp;
@@ -200,11 +158,47 @@ namespace lvk
                 colourAttachmentDescriptions, resolveAttachmentDescriptions, hasDepth,
                 depthAttachmentDescription, m_AttachmentLoadOp);
 
-            for (auto& fb : m_Framebuffers)
+            for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
             {
-                fb.Build(vk, m_RenderPass, { m_Width, m_Height });
+                bool hasDepth = m_DepthAttachments.size() > 0;
+                Vector<VkImageView> framebufferAttachments;
+                for (auto& colour : m_ColourAttachments)
+                {
+                    framebufferAttachments.push_back(colour.m_AttachmentSwapchainImages[i].m_ImageView);
+                }
+                if (hasDepth)
+                {
+                    framebufferAttachments.push_back(m_DepthAttachments[0].m_AttachmentSwapchainImages[i].m_ImageView);
+                }
+                for (auto& resolve : m_ResolveAttachments)
+                {
+                    framebufferAttachments.push_back(resolve.m_AttachmentSwapchainImages[i].m_ImageView);
+                }
+                VkFramebuffer fb;
+                vk.CreateFramebuffer(framebufferAttachments, m_RenderPass, VkExtent2D {m_Width, m_Height}, fb);
+                m_SwapchainFramebuffers.push_back(fb);
             }
         }
 
+        void Free(VulkanAPI& vk)
+        {
+            for (auto& t : m_ColourAttachments)
+            {
+                t.Free(vk);
+            }
+            for (auto& t : m_DepthAttachments)
+            {
+                t.Free(vk);
+            }
+            for (auto& t : m_ResolveAttachments)
+            {
+                t.Free(vk);
+            }
+
+            for (auto& fb : m_SwapchainFramebuffers)
+            {
+                vkDestroyFramebuffer(vk.m_LogicalDevice, fb, nullptr);
+            }
+        }
     };
 }

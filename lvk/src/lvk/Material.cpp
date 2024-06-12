@@ -140,6 +140,67 @@ bool lvk::Material::SetSampler(VulkanAPI& vk, const String& name, const VkImageV
 
 }
 
+bool lvk::Material::SetColourAttachment(VulkanAPI& vk, const String& name, Framebuffer& framebuffer, uint32_t colourAttachmentIndex)
+{
+    if (m_Samplers.find(name) == m_Samplers.end())
+    {
+        return false;
+    }
+
+    VkImageLayout imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+
+    SamplerBindingData& samplerBinding = m_Samplers.at(name);
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        VkDescriptorImageInfo imageInfo{};
+        imageInfo.imageLayout = imageLayout;
+        imageInfo.imageView = framebuffer.m_ColourAttachments[colourAttachmentIndex].m_AttachmentSwapchainImages[i].m_ImageView;
+        imageInfo.sampler = framebuffer.m_ColourAttachments[colourAttachmentIndex].m_AttachmentSwapchainImages[i].m_Sampler;
+
+        VkWriteDescriptorSet write{};
+        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        write.dstSet = m_DescriptorSets[samplerBinding.m_SetNumber].m_Sets[i];
+        write.dstBinding = samplerBinding.m_BindingNumber;
+        write.dstArrayElement = 0;
+        write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        write.descriptorCount = 1;
+        write.pImageInfo = &imageInfo;
+
+        vkUpdateDescriptorSets(vk.m_LogicalDevice, 1, &write, 0, nullptr);
+    }
+
+}
+
+bool lvk::Material::SetDepthAttachment(VulkanAPI& vk, const String& name, Framebuffer& framebuffer)
+{
+    if (m_Samplers.find(name) == m_Samplers.end())
+    {
+        return false;
+    }
+
+    VkImageLayout imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    SamplerBindingData& samplerBinding = m_Samplers.at(name);
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        VkDescriptorImageInfo imageInfo{};
+        imageInfo.imageLayout = imageLayout;
+        imageInfo.imageView = framebuffer.m_DepthAttachments[0].m_AttachmentSwapchainImages[i].m_ImageView;
+        imageInfo.sampler = framebuffer.m_DepthAttachments[0].m_AttachmentSwapchainImages[i].m_Sampler;
+
+        VkWriteDescriptorSet write{};
+        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        write.dstSet = m_DescriptorSets[samplerBinding.m_SetNumber].m_Sets[i];
+        write.dstBinding = samplerBinding.m_BindingNumber;
+        write.dstArrayElement = 0;
+        write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        write.descriptorCount = 1;
+        write.pImageInfo = &imageInfo;
+
+        vkUpdateDescriptorSets(vk.m_LogicalDevice, 1, &write, 0, nullptr);
+    }
+}
+
 void lvk::Material::Free(VulkanAPI& vk)
 {
     m_UniformBufferAccessors.clear();
