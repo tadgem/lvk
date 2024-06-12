@@ -178,18 +178,15 @@ RenderModel CreateRenderModelGbuffer(VulkanAPI& vk, const String& modelPath, Sha
 
 void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu)
 {
-    if (ImGui::Begin("Debug"))
+
+    if (ImGui::Begin("Menu"))
     {
         ImGui::Text("Frametime: %f", (1.0 / vk.m_DeltaTime));
         ImGui::Separator();
         ImGui::DragFloat3("Position", &g_Transform.m_Position[0]);
-        ImGui::DragFloat3("Euler Rotation", & g_Transform.m_Rotation[0]);
-        ImGui::DragFloat3("Scale", & g_Transform.m_Scale[0]);
-    }
-    ImGui::End();
-
-    if (ImGui::Begin("Menu"))
-    {
+        ImGui::DragFloat3("Euler Rotation", &g_Transform.m_Rotation[0]);
+        ImGui::DragFloat3("Scale", &g_Transform.m_Scale[0]);
+        ImGui::Separator();
         ImGui::Text("Frametime: %f", (1.0 / vk.m_DeltaTime));
         ImGui::DragFloat3("Directional Light Dir", &lightDataCpu.m_DirectionalLight.Direction[0]);
         ImGui::DragFloat4("Directional Light Colour", &lightDataCpu.m_DirectionalLight.Colour[0]);
