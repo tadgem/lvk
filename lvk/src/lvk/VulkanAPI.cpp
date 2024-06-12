@@ -54,7 +54,7 @@ void lvk::UniformBufferFrameData::Free(lvk::VulkanAPI& vk)
 
 bool lvk::VulkanAPI::QueueFamilyIndices::IsComplete()
 {
-    bool foundGraphicsQueue = m_QueueFamilies.find(QueueFamilyType::Graphics) != m_QueueFamilies.end();
+    bool foundGraphicsQueue = m_QueueFamilies.find(QueueFamilyType::GraphicsAndCompute) != m_QueueFamilies.end();
     bool foundPresentQueue  = m_QueueFamilies.find(QueueFamilyType::Present) != m_QueueFamilies.end();
     return foundGraphicsQueue && foundPresentQueue;
 }
@@ -314,9 +314,9 @@ lvk::VulkanAPI::QueueFamilyIndices lvk::VulkanAPI::FindQueueFamilies(VkPhysicalD
 
     for (int i = 0; i < queueFamilyProperties.size(); i++)
     {
-        if (queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+        if (queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT && queueFamilyProperties[i].queueFlags & VK_QUEUE_COMPUTE_BIT)
         {
-            indices.m_QueueFamilies.emplace(QueueFamilyType::Graphics, i);
+            indices.m_QueueFamilies.emplace(QueueFamilyType::GraphicsAndCompute, i);
         }
 
         VkBool32 presentSupport = VK_FALSE;
@@ -491,8 +491,9 @@ void lvk::VulkanAPI::CreateLogicalDevice()
 
 void lvk::VulkanAPI::GetQueueHandles()
 {
-    vkGetDeviceQueue(m_LogicalDevice, m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Graphics],      0, &m_GraphicsQueue);
-    vkGetDeviceQueue(m_LogicalDevice, m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Present],       0, &m_PresentQueue);
+    vkGetDeviceQueue(m_LogicalDevice, m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::GraphicsAndCompute],    0, &m_GraphicsQueue);
+    vkGetDeviceQueue(m_LogicalDevice, m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::GraphicsAndCompute],    0, &m_ComputeQueue);
+    vkGetDeviceQueue(m_LogicalDevice, m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Present],               0, &m_PresentQueue);
 }
 
 VkSurfaceFormatKHR lvk::VulkanAPI::ChooseSwapChainSurfaceFormat(std::vector<VkSurfaceFormatKHR> availableFormats)
@@ -570,9 +571,9 @@ void lvk::VulkanAPI::CreateSwapChain()
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    uint32_t queueFamilyIndices[] = { m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Graphics], m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Present] };
+    uint32_t queueFamilyIndices[] = { m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::GraphicsAndCompute], m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Present] };
 
-    if (m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Graphics] != m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Present])
+    if (m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::GraphicsAndCompute] != m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Present])
     {
         createInfo.imageSharingMode         = VK_SHARING_MODE_CONCURRENT;
         createInfo.queueFamilyIndexCount    = 2;
@@ -1357,7 +1358,7 @@ void lvk::VulkanAPI::CreateCommandPool()
 {
     VkCommandPoolCreateInfo createInfo{};
     createInfo.sType                = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    createInfo.queueFamilyIndex     = m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Graphics];
+    createInfo.queueFamilyIndex     = m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::GraphicsAndCompute];
     createInfo.flags                = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
     if(vkCreateCommandPool(m_LogicalDevice, &createInfo, nullptr, &m_GraphicsQueueCommandPool) != VK_SUCCESS)
@@ -1679,6 +1680,32 @@ void lvk::VulkanAPI::CreateBuiltInRenderPasses()
     }
 }
 
+VkPipeline lvk::VulkanAPI::CreateComputePipeline(StageBinary& comp, VkDescriptorSetLayout& descriptorSetLayout, uint32_t width, uint32_t height, VkPipelineLayout& pipelineLayout)
+{
+
+    auto compStage = CreateShaderModule(comp);
+
+    VkPipelineShaderStageCreateInfo compShaderStageInfo{};
+    compShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    compShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    compShaderStageInfo.module = compStage;
+    compShaderStageInfo.pName = "main";
+
+    VkComputePipelineCreateInfo pipelineInfo{};
+    pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+    pipelineInfo.layout = pipelineLayout;
+    pipelineInfo.stage = compShaderStageInfo;
+
+    VkPipeline pipeline;
+
+    if (vkCreateComputePipelines(m_LogicalDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
+        spdlog::error("failed to create compute pipeline!");
+        return pipeline;
+    }
+
+
+}
+
 Vector<VkDescriptorSetLayoutBinding> lvk::VulkanAPI::GetDescriptorSetLayoutBindings(Vector<DescriptorSetLayoutData>& vertLayoutDatas, Vector<DescriptorSetLayoutData>& fragLayoutDatas)
 {
     Vector<VkDescriptorSetLayoutBinding> bindings;
@@ -1990,7 +2017,7 @@ void lvk::VulkanAPI::InitImGui()
     init_info.Instance = m_Instance;
     init_info.PhysicalDevice = m_PhysicalDevice;
     init_info.Device = m_LogicalDevice;
-    init_info.QueueFamily = m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Graphics];
+    init_info.QueueFamily = m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::GraphicsAndCompute];
     init_info.Queue = m_GraphicsQueue;
     init_info.PipelineCache = VK_NULL_HANDLE;
     init_info.DescriptorPool = m_DescriptorPool;

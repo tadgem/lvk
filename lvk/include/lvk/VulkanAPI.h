@@ -111,12 +111,11 @@ namespace lvk
             Fragment
         };
 
-        enum class QueueFamilyType
+        enum QueueFamilyType
         {
-            Graphics = VK_QUEUE_GRAPHICS_BIT,
-            Compute = VK_QUEUE_COMPUTE_BIT,
+            GraphicsAndCompute = VK_QUEUE_GRAPHICS_BIT,
             Transfer = VK_QUEUE_TRANSFER_BIT,
-            Present
+            Present = 8
 
         };
 
@@ -154,6 +153,7 @@ namespace lvk
         QueueFamilyIndices              m_QueueFamilyIndices;
 
         VkQueue                         m_GraphicsQueue = VK_NULL_HANDLE;
+        VkQueue                         m_ComputeQueue = VK_NULL_HANDLE;
         VkQueue                         m_PresentQueue = VK_NULL_HANDLE;
 
         VulkanAPIWindowHandle*          m_WindowHandle;
@@ -277,6 +277,13 @@ public:
         void                                CreateDescriptorSetLayout(Vector<DescriptorSetLayoutData>& vertLayoutDatas, Vector<DescriptorSetLayoutData>& fragLayoutDatas, VkDescriptorSetLayout& descriptorSetLayout);
         void                                CreateRenderPass(VkRenderPass& renderPass, Vector<VkAttachmentDescription>& colourAttachments, Vector<VkAttachmentDescription>& resolveAttachments, bool hasDepthAttachment = true, VkAttachmentDescription depthAttachment = {}, VkAttachmentLoadOp attachmentLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR);
         void                                CreateBuiltInRenderPasses();
+        
+        VkPipeline                          CreateComputePipeline(
+                                            StageBinary& comp,
+                                            VkDescriptorSetLayout& descriptorSetLayout,
+                                            uint32_t width, uint32_t height,
+                                            VkPipelineLayout& pipelineLayout);
+
         VkPipeline                          CreateRasterizationGraphicsPipeline(
                                             StageBinary& vert, 
                                             StageBinary& frag, 
