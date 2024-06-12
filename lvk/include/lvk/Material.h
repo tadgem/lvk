@@ -57,27 +57,22 @@ namespace lvk
         // todo: rework this to be a hashmap
         // uint64 - buffer data
 
-        Vector<UniformBufferBindingData>        m_UniformBuffers;
-        HashMap<String, SamplerBindingData>     m_Samplers;
-        HashMap<String, UniformAccessorData>    m_UniformBufferAccessors;
+        HashMap<uint64_t, UniformBufferBindingData>   m_UniformBuffers;
+        HashMap<String, SamplerBindingData>             m_Samplers;
+        HashMap<String, UniformAccessorData>            m_UniformBufferAccessors;
 
         static Material Create(VulkanAPI& vk, ShaderProgram& shader);
 
         template<typename _Ty>
-        bool SetBuffer(uint32_t set, uint32_t binding, const _Ty& value)
+        bool SetBuffer(uint32_t frameIndex, uint32_t set, uint32_t binding, const _Ty& value)
         {
-            for (auto& buffer : m_UniformBuffers)
-            {
-                if (buffer.m_SetNumber == set && buffer.m_BindingNumber == binding)
-                {
-                    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-                    {
-                        buffer.m_UBO.Set(i, value);
-                    }
-                    return true; 
-                }
-            }
-            return false;
+            Material::SetBinding sb = {};
+            sb.m_Set = set;
+            sb.m_Binding = binding;
+
+            m_UniformBuffers[sb.m_Data].m_UBO.Set(frameIndex, value);
+
+            return true;
         }
 
         template<typename _Ty>

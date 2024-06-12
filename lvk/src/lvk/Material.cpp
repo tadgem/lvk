@@ -31,7 +31,13 @@ static auto collect_uniform_data = [](lvk::ShaderStage& stage, lvk::Material &ma
                     Material::UniformAccessorData data{ member.m_Size , member.m_Offset, member.m_Stride, arraySize, static_cast<uint32_t>(mat.m_UniformBuffers.size()) };
                     mat.m_UniformBufferAccessors.emplace(accessorName, data);
                 }
-                mat.m_UniformBuffers.push_back({ descriptorSetInfo.m_SetNumber, bindingInfo.m_BindingIndex, bindingInfo.m_ExpectedBlockSize,  uniform });
+
+                Material::SetBinding binding = {};
+                binding.m_Set = descriptorSetInfo.m_SetNumber;
+                binding.m_Binding = bindingInfo.m_BindingIndex;
+
+                mat.m_UniformBuffers.emplace(binding.m_Data, 
+                    Material::UniformBufferBindingData{ descriptorSetInfo.m_SetNumber, bindingInfo.m_BindingIndex, bindingInfo.m_ExpectedBlockSize,  uniform });
             }
         }
     };
@@ -56,7 +62,7 @@ lvk::Material lvk::Material::Create(VulkanAPI& vk, ShaderProgram& shader)
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         // write buffers to descriptor set + default texture for any samplers
         Vector<VkDescriptorBufferInfo>  bufferWriteInfos;
-        for (auto& bufferInfo : mat.m_UniformBuffers)
+        for (auto& [setBinding, bufferInfo] : mat.m_UniformBuffers)
         {
             VkDescriptorBufferInfo bufferWriteInfo{};
             bufferWriteInfo.buffer = bufferInfo.m_UBO.m_UniformBuffers[0];
@@ -77,17 +83,20 @@ lvk::Material lvk::Material::Create(VulkanAPI& vk, ShaderProgram& shader)
         }
 
         Vector<VkWriteDescriptorSet> descriptorWrites{};
-        for (int j = 0; j < mat.m_UniformBuffers.size(); j++)
+
+        int k = 0;
+        for (auto& [setBinding, ubo] : mat.m_UniformBuffers)
         {
             VkWriteDescriptorSet write{};
             write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             write.dstSet = mat.m_DescriptorSets.front().m_Sets[i];
-            write.dstBinding = mat.m_UniformBuffers[j].m_BindingNumber;
+            write.dstBinding = ubo.m_BindingNumber;
             write.dstArrayElement = 0; // todo
             write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
             write.descriptorCount = 1;
-            write.pBufferInfo = &bufferWriteInfos[j];
+            write.pBufferInfo = &bufferWriteInfos[k];
             descriptorWrites.push_back(write);
+            k++;
         }
         for (int j = 0; j < imageWriteInfos.size(); j++)
         {
@@ -205,7 +214,7 @@ void lvk::Material::Free(VulkanAPI& vk)
 {
     m_UniformBufferAccessors.clear();
 
-    for (auto& buffer : m_UniformBuffers)
+    for (auto& [setBinding, buffer] : m_UniformBuffers)
     {
         buffer.m_UBO.Free(vk);
     }
