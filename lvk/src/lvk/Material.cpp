@@ -178,7 +178,7 @@ bool lvk::Material::SetDepthAttachment(VulkanAPI& vk, const String& name, Frameb
         return false;
     }
 
-    VkImageLayout imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    VkImageLayout imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
 
     SamplerBindingData& samplerBinding = m_Samplers.at(name);
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)

@@ -7,7 +7,7 @@ using namespace lvk;
 #define NUM_LIGHTS 512
 using DeferredLightData = FrameLightDataT<NUM_LIGHTS>;
 
-struct RenderItem 
+struct RenderItem
 {
     MeshEx      m_Mesh;
     Material    m_Material;
@@ -33,10 +33,10 @@ struct RenderModel
     }
 };
 
-static Transform g_Transform; 
+static Transform g_Transform;
 
 void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
-    VkPipeline& gbufferPipeline , VkPipelineLayout& gbufferPipelineLayout, VkRenderPass gbufferRenderPass, Vector<VkFramebuffer>& gbufferFramebuffers,
+    VkPipeline& gbufferPipeline, VkPipelineLayout& gbufferPipelineLayout, VkRenderPass gbufferRenderPass, Vector<VkFramebuffer>& gbufferFramebuffers,
     VkPipeline& lightingPassPipeline, VkPipelineLayout& lightingPassPipelineLayout, VkRenderPass lightingPassRenderPass, Material& lightPassMaterial, Vector<VkFramebuffer>& lightingPassFramebuffers,
     RenderModel& model, Mesh& screenQuad)
 {
@@ -186,8 +186,8 @@ void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu)
         ImGui::Text("Frametime: %f", (1.0 / vk.m_DeltaTime));
         ImGui::Separator();
         ImGui::DragFloat3("Position", &g_Transform.m_Position[0]);
-        ImGui::DragFloat3("Euler Rotation", & g_Transform.m_Rotation[0]);
-        ImGui::DragFloat3("Scale", & g_Transform.m_Scale[0]);
+        ImGui::DragFloat3("Euler Rotation", &g_Transform.m_Rotation[0]);
+        ImGui::DragFloat3("Scale", &g_Transform.m_Scale[0]);
     }
     ImGui::End();
 
@@ -251,36 +251,36 @@ int main() {
     DeferredLightData lightDataCpu{};
     FillExampleLightData(lightDataCpu);
 
-    ShaderProgram gbufferProg     = ShaderProgram::Create(vk, "shaders/gbuffer.vert.spv", "shaders/gbuffer.frag.spv");
-    ShaderProgram lightPassProg   = ShaderProgram::Create(vk, "shaders/lights.vert.spv", "shaders/lights.frag.spv");
+    ShaderProgram gbufferProg = ShaderProgram::Create(vk, "shaders/gbuffer.vert.spv", "shaders/gbuffer.frag.spv");
+    ShaderProgram lightPassProg = ShaderProgram::Create(vk, "shaders/lights.vert.spv", "shaders/lights.frag.spv");
     Material lightPassMat = Material::Create(vk, lightPassProg);
 
-    FramebufferSet gbufferSet{};
-    gbufferSet.m_Width = vk.m_SwapChainImageExtent.width;
-    gbufferSet.m_Height = vk.m_SwapChainImageExtent.height;
-    gbufferSet.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+    Framebuffer gbuffer{};
+    gbuffer.m_Width = vk.m_SwapChainImageExtent.width;
+    gbuffer.m_Height = vk.m_SwapChainImageExtent.height;
+    gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
-    gbufferSet.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+    gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
-    gbufferSet.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+    gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
-    gbufferSet.AddDepthAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+    gbuffer.AddDepthAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
-    gbufferSet.Build(vk);
+    gbuffer.Build(vk);
 
     // todo: idk why this works, we need to respect each image in the swap chain, not just the 0th element
-    lightPassMat.SetSampler(vk, "positionBufferSampler", gbufferSet.m_Framebuffers[0].m_ColourAttachments[1].m_ImageView, gbufferSet.m_Framebuffers[0].m_ColourAttachments[1].m_Sampler, true);
-    lightPassMat.SetSampler(vk, "normalBufferSampler", gbufferSet.m_Framebuffers[0].m_ColourAttachments[2].m_ImageView, gbufferSet.m_Framebuffers[0].m_ColourAttachments[2].m_Sampler, true);
-    lightPassMat.SetSampler(vk, "colourBufferSampler", gbufferSet.m_Framebuffers[0].m_ColourAttachments[0].m_ImageView, gbufferSet.m_Framebuffers[0].m_ColourAttachments[0].m_Sampler, true);
+    lightPassMat.SetColourAttachment(vk, "positionBufferSampler", gbuffer, 1);
+    lightPassMat.SetColourAttachment(vk, "normalBufferSampler", gbuffer, 2);
+    lightPassMat.SetColourAttachment(vk, "colourBufferSampler", gbuffer, 0);
 
     // create gbuffer pipeline
     VkPipelineLayout gbufferPipelineLayout;
     VkPipeline gbufferPipeline = vk.CreateRasterizationGraphicsPipeline(
         gbufferProg.m_Stages[0].m_StageBinary, gbufferProg.m_Stages[1].m_StageBinary,
-        gbufferProg.m_DescriptorSetLayout, 
-        Vector<VkVertexInputBindingDescription>{VertexDataNormal::GetBindingDescription() }, 
+        gbufferProg.m_DescriptorSetLayout,
+        Vector<VkVertexInputBindingDescription>{VertexDataNormal::GetBindingDescription() },
         VertexDataNormal::GetAttributeDescriptions(),
-        gbufferSet.m_RenderPass,
+        gbuffer.m_RenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
         VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, false,
         VK_COMPARE_OP_LESS, gbufferPipelineLayout, 3);
@@ -290,8 +290,8 @@ int main() {
     VkPipelineLayout lightPassPipelineLayout;
     VkPipeline pipeline = vk.CreateRasterizationGraphicsPipeline(
         lightPassProg.m_Stages[0].m_StageBinary, lightPassProg.m_Stages[1].m_StageBinary,
-        lightPassProg.m_DescriptorSetLayout, 
-        Vector<VkVertexInputBindingDescription>{VertexData::GetBindingDescription() }, 
+        lightPassProg.m_DescriptorSetLayout,
+        Vector<VkVertexInputBindingDescription>{VertexData::GetBindingDescription() },
         VertexData::GetAttributeDescriptions(),
         vk.m_SwapchainImageRenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
@@ -300,9 +300,7 @@ int main() {
 
     // create vertex and index buffer
     // allocate materials instead of raw buffers etc.
-    RenderModel m   = CreateRenderModelGbuffer(vk, "assets/sponza/sponza.gltf", gbufferProg);
-
-    Vector<VkFramebuffer> gbufferFramebuffers{ gbufferSet.m_Framebuffers[0].m_FB, gbufferSet.m_Framebuffers[1].m_FB };
+    RenderModel m = CreateRenderModelGbuffer(vk, "assets/sponza/sponza.gltf", gbufferProg);
 
     while (vk.ShouldRun())
     {
@@ -313,8 +311,8 @@ int main() {
             UpdateUniformBuffer(vk, item.m_Material, lightPassMat, lightDataCpu);
         }
 
-        RecordCommandBuffersV2(vk, 
-            gbufferPipeline, gbufferPipelineLayout, gbufferSet.m_RenderPass, gbufferFramebuffers,
+        RecordCommandBuffersV2(vk,
+            gbufferPipeline, gbufferPipelineLayout, gbuffer.m_RenderPass, gbuffer.m_SwapchainFramebuffers,
             pipeline, lightPassPipelineLayout, vk.m_SwapchainImageRenderPass, lightPassMat, vk.m_SwapChainFramebuffers,
             m, *Mesh::g_ScreenSpaceQuad);
 
@@ -324,14 +322,14 @@ int main() {
     }
 
     lightPassMat.Free(vk);
-    gbufferSet.Free(vk);
+    gbuffer.Free(vk);
     m.Free(vk);
 
-    vkDestroyRenderPass(vk.m_LogicalDevice, gbufferSet.m_RenderPass, nullptr);
+    vkDestroyRenderPass(vk.m_LogicalDevice, gbuffer.m_RenderPass, nullptr);
 
     vkDestroyDescriptorSetLayout(vk.m_LogicalDevice, gbufferProg.m_DescriptorSetLayout, nullptr);
     vkDestroyDescriptorSetLayout(vk.m_LogicalDevice, lightPassProg.m_DescriptorSetLayout, nullptr);
-    
+
     vkDestroyPipelineLayout(vk.m_LogicalDevice, gbufferPipelineLayout, nullptr);
     vkDestroyPipeline(vk.m_LogicalDevice, gbufferPipeline, nullptr);
     vkDestroyPipelineLayout(vk.m_LogicalDevice, lightPassPipelineLayout, nullptr);

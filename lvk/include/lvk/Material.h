@@ -45,6 +45,18 @@ namespace lvk
         };
 
         Vector<FrameDescriptorSets>             m_DescriptorSets;
+        
+        union SetBinding {
+            uint64_t m_Data;
+            struct {
+                uint32_t m_Set;
+                uint32_t m_Binding;
+            };
+        };
+
+        // todo: rework this to be a hashmap
+        // uint64 - buffer data
+
         Vector<UniformBufferBindingData>        m_UniformBuffers;
         HashMap<String, SamplerBindingData>     m_Samplers;
         HashMap<String, UniformAccessorData>    m_UniformBufferAccessors;
@@ -62,7 +74,7 @@ namespace lvk
                     {
                         buffer.m_UBO.Set(i, value);
                     }
-                    return true;
+                    return true; 
                 }
             }
             return false;
