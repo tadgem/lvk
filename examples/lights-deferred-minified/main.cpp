@@ -149,12 +149,9 @@ void UpdateUniformBuffer(VulkanAPI_SDL& vk, Material& renderItemMaterial, Materi
         ubo.Proj = glm::perspective(glm::radians(45.0f), vk.m_SwapChainImageExtent.width / (float)vk.m_SwapChainImageExtent.height, 0.1f, 1000.0f);
         ubo.Proj[1][1] *= -1;
     }
-    renderItemMaterial.SetBuffer(0, 0, ubo);
-    // renderItemMaterial.SetMember("ubo.model", ubo.Model);
-    // renderItemMaterial.SetMember("ubo.view", ubo.View);
-    // renderItemMaterial.SetMember("ubo.proj", ubo.Proj);
-    lightPassMaterial.SetBuffer(0, 0, ubo);
-    lightPassMaterial.SetBuffer(0, 4, lightDataCpu);
+    renderItemMaterial.SetBuffer(vk.GetFrameIndex(), 0, 0, ubo);
+    lightPassMaterial.SetBuffer(vk.GetFrameIndex(), 0, 0, ubo);
+    lightPassMaterial.SetBuffer(vk.GetFrameIndex(), 0, 4, lightDataCpu);
 }
 
 RenderModel CreateRenderModelGbuffer(VulkanAPI& vk, const String& modelPath, ShaderProgram& shader)

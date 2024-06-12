@@ -150,9 +150,6 @@ void UpdateUniformBuffer(VulkanAPI_SDL& vk, Material& renderItemMaterial, Materi
         ubo.Proj[1][1] *= -1;
     }
     renderItemMaterial.SetBuffer(vk.GetFrameIndex(), 0, 0, ubo);
-    // renderItemMaterial.SetMember("ubo.model", ubo.Model);
-    // renderItemMaterial.SetMember("ubo.view", ubo.View);
-    // renderItemMaterial.SetMember("ubo.proj", ubo.Proj);
     lightPassMaterial.SetBuffer(vk.GetFrameIndex(), 0, 0, ubo);
     lightPassMaterial.SetBuffer(vk.GetFrameIndex(), 0, 4, lightDataCpu);
 }
