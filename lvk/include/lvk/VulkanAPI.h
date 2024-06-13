@@ -20,7 +20,13 @@ namespace lvk
 
     class VulkanAPIWindowHandle {};
 
-    enum class UniformBufferMemberType
+    enum class ShaderBufferType
+    {
+        Uniform,
+        Storage
+    };
+
+    enum class ShaderBufferMemberType
     {
         UNKNOWN,
         _vec2,
@@ -37,15 +43,15 @@ namespace lvk
         _sampler
     };
 
-    static UniformBufferMemberType GetTypeFromSpvReflect(SpvReflectTypeDescription* typeDescription);
+    static ShaderBufferMemberType GetTypeFromSpvReflect(SpvReflectTypeDescription* typeDescription);
 
-    struct UniformBufferMember
+    struct ShaderBufferMember
     {
         uint32_t                m_Size;
         uint32_t                m_Offset;
         uint32_t                m_Stride;
         String                  m_Name;
-        UniformBufferMemberType m_Type;
+        ShaderBufferMemberType m_Type;
     };
 
     struct DescriptorSetLayoutBindingData
@@ -53,7 +59,7 @@ namespace lvk
         String      m_BindingName;
         uint32_t    m_BindingIndex;
         uint32_t    m_ExpectedBlockSize;
-        Vector<UniformBufferMember> m_Members;
+        Vector<ShaderBufferMember> m_Members;
     };
 
     struct DescriptorSetLayoutData 

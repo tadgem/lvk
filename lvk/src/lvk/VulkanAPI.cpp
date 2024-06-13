@@ -1882,7 +1882,7 @@ Vector<DescriptorSetLayoutData> lvk::VulkanAPI::ReflectDescriptorSetLayouts(Stag
             for (int i = 0; i < reflectedBinding.block.member_count; i++)
             {
                 auto member = reflectedBinding.block.members[i];
-                UniformBufferMember reflectedMember{};
+                ShaderBufferMember reflectedMember{};
                 reflectedMember.m_Name = String(member.name);
                 reflectedMember.m_Offset = member.absolute_offset; // this might be an issue with padded types?
                 reflectedMember.m_Size = member.padded_size;
@@ -1901,9 +1901,9 @@ Vector<DescriptorSetLayoutData> lvk::VulkanAPI::ReflectDescriptorSetLayouts(Stag
             }
             if (reflectedBinding.resource_type & SPV_REFLECT_RESOURCE_FLAG_SAMPLER)
             {
-                UniformBufferMember reflectedMember{};
+                ShaderBufferMember reflectedMember{};
                 reflectedMember.m_Name = String(reflectedBinding.name);
-                reflectedMember.m_Type = UniformBufferMemberType::_sampler;
+                reflectedMember.m_Type = ShaderBufferMemberType::_sampler;
                 binding.m_Members.push_back(reflectedMember);
             }
             layoutData.m_BindingDatas.push_back(binding);
@@ -2297,51 +2297,51 @@ void lvk::VulkanAPI::CreateIndexBuffer(std::vector<uint32_t> indices, VkBuffer& 
     vmaFreeMemory(m_Allocator, stagingBufferMemory);
 }
 
-UniformBufferMemberType lvk::GetTypeFromSpvReflect(SpvReflectTypeDescription* typeDescription)
+ShaderBufferMemberType lvk::GetTypeFromSpvReflect(SpvReflectTypeDescription* typeDescription)
 {
 
     if (typeDescription->type_flags & SPV_REFLECT_TYPE_FLAG_MATRIX)
     {
         if (typeDescription->traits.numeric.matrix.column_count == 4 && typeDescription->traits.numeric.matrix.row_count == 4)
         {
-            return UniformBufferMemberType::_mat4;
+            return ShaderBufferMemberType::_mat4;
         }
 
         if (typeDescription->traits.numeric.matrix.column_count == 3 && typeDescription->traits.numeric.matrix.row_count == 3)
         {
-            return UniformBufferMemberType::_mat3;
+            return ShaderBufferMemberType::_mat3;
         }
 
-        return UniformBufferMemberType::UNKNOWN;
+        return ShaderBufferMemberType::UNKNOWN;
     }
 
     if (typeDescription->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)
     {
         if (typeDescription->traits.numeric.vector.component_count == 2)
         {
-            return UniformBufferMemberType::_vec2;
+            return ShaderBufferMemberType::_vec2;
         }
 
         if (typeDescription->traits.numeric.vector.component_count == 3)
         {
-            return UniformBufferMemberType::_vec3;
+            return ShaderBufferMemberType::_vec3;
         }
 
         if (typeDescription->traits.numeric.vector.component_count == 4)
         {
-            return UniformBufferMemberType::_vec4;
+            return ShaderBufferMemberType::_vec4;
         }
-        return UniformBufferMemberType::UNKNOWN;
+        return ShaderBufferMemberType::UNKNOWN;
     }
 
     if (typeDescription->type_flags & SPV_REFLECT_TYPE_FLAG_ARRAY)
     {
-        return UniformBufferMemberType::_array;
+        return ShaderBufferMemberType::_array;
     }
 
     if (typeDescription->type_flags & SPV_REFLECT_TYPE_FLAG_FLOAT)
     {
-        return UniformBufferMemberType::_float;
+        return ShaderBufferMemberType::_float;
     }
 
     if (typeDescription->type_flags & SPV_REFLECT_TYPE_FLAG_INT)
@@ -2350,13 +2350,13 @@ UniformBufferMemberType lvk::GetTypeFromSpvReflect(SpvReflectTypeDescription* ty
         // might need to come back to this if we need 64 bit ints.
         if (typeDescription->traits.numeric.scalar.signedness == 0)
         {
-            return UniformBufferMemberType::_uint;
+            return ShaderBufferMemberType::_uint;
         }
         else
         {
-            return UniformBufferMemberType::_int;
+            return ShaderBufferMemberType::_int;
         }
     }
     
-    return UniformBufferMemberType::UNKNOWN;
+    return ShaderBufferMemberType::UNKNOWN;
 }
