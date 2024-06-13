@@ -20,10 +20,11 @@ namespace lvk
 
     class VulkanAPIWindowHandle {};
 
-    enum class ShaderBufferType
+    enum class ShaderBindingType
     {
-        Uniform,
-        Storage
+        UniformBuffer,
+        ShaderStorageBuffer,
+        Sampler
     };
 
     enum class ShaderBufferMemberType
@@ -56,10 +57,11 @@ namespace lvk
 
     struct DescriptorSetLayoutBindingData
     {
-        String      m_BindingName;
-        uint32_t    m_BindingIndex;
-        uint32_t    m_ExpectedBlockSize;
-        Vector<ShaderBufferMember> m_Members;
+        String                      m_BindingName;
+        uint32_t                    m_BindingIndex;
+        uint32_t                    m_ExpectedBlockSize;
+        ShaderBindingType            m_BufferType;
+        Vector<ShaderBufferMember>  m_Members;
     };
 
     struct DescriptorSetLayoutData 

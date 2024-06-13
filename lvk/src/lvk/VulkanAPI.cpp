@@ -1841,6 +1841,25 @@ void lvk::VulkanAPI::Start(uint32_t width, uint32_t height, bool enableSwapchain
     }
 }
 
+lvk::ShaderBindingType GetBindingType(const SpvReflectDescriptorBinding& binding)
+{
+    if (binding.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+    {
+        return lvk::ShaderBindingType::UniformBuffer;
+    }
+    if (binding.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER)
+    {
+        return lvk::ShaderBindingType::ShaderStorageBuffer;
+    }
+    if (binding.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLER || 
+        binding.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+    {
+        return lvk::ShaderBindingType::Sampler;
+    }
+
+    return ShaderBindingType::UniformBuffer;
+}
+
 Vector<DescriptorSetLayoutData> lvk::VulkanAPI::ReflectDescriptorSetLayouts(StageBinary& stageBin)
 {
     SpvReflectShaderModule shaderReflectModule;
@@ -1878,7 +1897,9 @@ Vector<DescriptorSetLayoutData> lvk::VulkanAPI::ReflectDescriptorSetLayouts(Stag
             }
             layoutBinding.stageFlags = static_cast<VkShaderStageFlagBits>(shaderReflectModule.shader_stage);
 
-            DescriptorSetLayoutBindingData binding{ String(reflectedBinding.name), reflectedBinding.binding, reflectedBinding.block.size };
+            ShaderBindingType bufferType = GetBindingType(reflectedBinding);
+
+            DescriptorSetLayoutBindingData binding{ String(reflectedBinding.name), reflectedBinding.binding, reflectedBinding.block.size , bufferType};
             for (int i = 0; i < reflectedBinding.block.member_count; i++)
             {
                 auto member = reflectedBinding.block.members[i];

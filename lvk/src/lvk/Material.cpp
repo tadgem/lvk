@@ -9,7 +9,7 @@ static auto collect_uniform_data = [](lvk::ShaderStage& stage, lvk::Material &ma
         {
             for (auto& bindingInfo : descriptorSetInfo.m_BindingDatas)
             {
-                if (bindingInfo.m_ExpectedBlockSize == 0)
+                if (bindingInfo.m_ExpectedBlockSize == 0 && bindingInfo.m_BufferType == ShaderBindingType::Sampler)
                 {
                     Material::SamplerBindingData sbd{
                         descriptorSetInfo.m_SetNumber,
@@ -20,24 +20,28 @@ static auto collect_uniform_data = [](lvk::ShaderStage& stage, lvk::Material &ma
                     mat.m_Samplers.emplace(bindingInfo.m_BindingName, sbd);
                     continue;
                 }
-                // if a uniform buffer
-                UniformBufferFrameData uniform;
-                vk.CreateUniformBuffers(uniform, VkDeviceSize{ bindingInfo.m_ExpectedBlockSize });
-                // build accessors
-                for (auto& member : bindingInfo.m_Members)
+
+                if (bindingInfo.m_BufferType == ShaderBindingType::UniformBuffer)
                 {
-                    String accessorName = bindingInfo.m_BindingName + "." + member.m_Name;
-                    uint16_t arraySize = member.m_Stride > 0 ? (member.m_Size / member.m_Stride) : 0;
-                    Material::UniformAccessorData data{ member.m_Size , member.m_Offset, member.m_Stride, arraySize, static_cast<uint32_t>(mat.m_UniformBuffers.size()) };
-                    mat.m_UniformBufferAccessors.emplace(accessorName, data);
+                    // if a uniform buffer
+                    UniformBufferFrameData uniform;
+                    vk.CreateUniformBuffers(uniform, VkDeviceSize{ bindingInfo.m_ExpectedBlockSize });
+                    // build accessors
+                    for (auto& member : bindingInfo.m_Members)
+                    {
+                        String accessorName = bindingInfo.m_BindingName + "." + member.m_Name;
+                        uint16_t arraySize = member.m_Stride > 0 ? (member.m_Size / member.m_Stride) : 0;
+                        Material::UniformAccessorData data{ member.m_Size , member.m_Offset, member.m_Stride, arraySize, static_cast<uint32_t>(mat.m_UniformBuffers.size()) };
+                        mat.m_UniformBufferAccessors.emplace(accessorName, data);
+                    }
+
+                    Material::SetBinding binding = {};
+                    binding.m_Set = descriptorSetInfo.m_SetNumber;
+                    binding.m_Binding = bindingInfo.m_BindingIndex;
+
+                    mat.m_UniformBuffers.emplace(binding.m_Data,
+                        Material::UniformBufferBindingData{ descriptorSetInfo.m_SetNumber, bindingInfo.m_BindingIndex, bindingInfo.m_ExpectedBlockSize,  uniform });
                 }
-
-                Material::SetBinding binding = {};
-                binding.m_Set = descriptorSetInfo.m_SetNumber;
-                binding.m_Binding = bindingInfo.m_BindingIndex;
-
-                mat.m_UniformBuffers.emplace(binding.m_Data, 
-                    Material::UniformBufferBindingData{ descriptorSetInfo.m_SetNumber, bindingInfo.m_BindingIndex, bindingInfo.m_ExpectedBlockSize,  uniform });
             }
         }
     };
@@ -55,10 +59,11 @@ lvk::Material lvk::Material::Create(VulkanAPI& vk, ShaderProgram& shader)
     mat.m_DescriptorSets.push_back(FrameDescriptorSets{});
     VK_CHECK(vkAllocateDescriptorSets(vk.m_LogicalDevice, &allocInfo, mat.m_DescriptorSets.front().m_Sets.data()));
     
-    // vert = 0, frag = 1
-    collect_uniform_data(shader.m_Stages[0], mat, vk);
-    collect_uniform_data(shader.m_Stages[1], mat, vk);
-
+    for (auto& stage : shader.m_Stages)
+    {
+        collect_uniform_data(stage, mat, vk);
+    }
+    
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         // write buffers to descriptor set + default texture for any samplers
         Vector<VkDescriptorBufferInfo>  bufferWriteInfos;
