@@ -2360,3 +2360,18 @@ ShaderBufferMemberType lvk::GetTypeFromSpvReflect(SpvReflectTypeDescription* typ
     
     return ShaderBufferMemberType::UNKNOWN;
 }
+
+void lvk::VulkanAPI::CreateUniformBuffers(UniformBufferFrameData& uniformData, VkDeviceSize bufferSize)
+{
+
+    uniformData.m_UniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+    uniformData.m_UniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
+    uniformData.m_UniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        CreateBufferVMA(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformData.m_UniformBuffers[i], uniformData.m_UniformBuffersMemory[i]);
+
+        VK_CHECK(vmaMapMemory(m_Allocator, uniformData.m_UniformBuffersMemory[i], &uniformData.m_UniformBuffersMapped[i]))
+    }
+
+}
