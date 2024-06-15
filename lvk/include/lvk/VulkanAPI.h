@@ -59,7 +59,7 @@ namespace lvk
     {
         String                      m_BindingName;
         uint32_t                    m_BindingIndex;
-        uint32_t                    m_ExpectedBlockSize;
+        uint32_t                    m_ExpectedBufferSize;
         ShaderBindingType            m_BufferType;
         Vector<ShaderBufferMember>  m_Members;
     };
@@ -79,18 +79,18 @@ namespace lvk
         StageBinary                         m_Binary;
     };
 
-    struct UniformBufferFrameData
+    struct ShaderBufferFrameData
     {
         Vector<VkBuffer>            m_UniformBuffers;
         Vector<VmaAllocation>       m_UniformBuffersMemory;
         Vector<void*>               m_UniformBuffersMapped;
 
-        template<typename T>
-        void Set(uint32_t frameIndex, T& data, uint32_t offset = 0)
+        template<typename _Ty>
+        void Set(uint32_t frameIndex, const _Ty& data, uint32_t offset = 0)
         {
             uint64_t base_addr = (uint64_t)m_UniformBuffersMapped[frameIndex];
             void* addr = (void*)(base_addr + static_cast<uint64_t>(offset));
-            memcpy(addr, &data, sizeof(T));
+            memcpy(addr, &data, sizeof(_Ty));
         }
 
         void Free(VulkanAPI& vk);
@@ -331,9 +331,9 @@ public:
 
         }
 
-        void                                CreateUniformBuffers(UniformBufferFrameData& uniformData, VkDeviceSize bufferSize);
+        void                                CreateUniformBuffers(ShaderBufferFrameData& uniformData, VkDeviceSize bufferSize);
         template<typename _Ty>
-        void                                CreateUniformBuffers(UniformBufferFrameData& uniformData)
+        void                                CreateUniformBuffers(ShaderBufferFrameData& uniformData)
         {
             constexpr VkDeviceSize bufferSize = sizeof(_Ty);
             CreateUniformBuffers(uniformData, bufferSize);

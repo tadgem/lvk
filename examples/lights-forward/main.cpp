@@ -4,8 +4,8 @@ using namespace lvk;
 #define NUM_LIGHTS 16
 using ForwardLightData = FrameLightDataT<NUM_LIGHTS>;
 
-static UniformBufferFrameData mvpUniformData;
-static UniformBufferFrameData lightsUniformData;
+static ShaderBufferFrameData mvpUniformData;
+static ShaderBufferFrameData lightsUniformData;
 
 static ForwardLightData lightDataCpu {};
 static std::vector<VkDescriptorSet>     descriptorSets;

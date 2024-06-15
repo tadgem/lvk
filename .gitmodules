@@ -4,3 +4,6 @@
 [submodule "submodules/assimp"]
 	path = submodules/assimp
 	url = https://github.com/assimp/assimp.git
+[submodule "submodules/im3d"]
+	path = submodules/im3d
+	url = https://github.com/john-chapman/im3d.git

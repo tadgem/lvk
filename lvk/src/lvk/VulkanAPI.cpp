@@ -43,7 +43,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     return VK_FALSE;
 }
 
-void lvk::UniformBufferFrameData::Free(lvk::VulkanAPI& vk)
+void lvk::ShaderBufferFrameData::Free(lvk::VulkanAPI& vk)
 {
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vmaUnmapMemory(vk.m_Allocator, m_UniformBuffersMemory[i]);
@@ -1898,8 +1898,29 @@ Vector<DescriptorSetLayoutData> lvk::VulkanAPI::ReflectDescriptorSetLayouts(Stag
             layoutBinding.stageFlags = static_cast<VkShaderStageFlagBits>(shaderReflectModule.shader_stage);
 
             ShaderBindingType bufferType = GetBindingType(reflectedBinding);
-
             DescriptorSetLayoutBindingData binding{ String(reflectedBinding.name), reflectedBinding.binding, reflectedBinding.block.size , bufferType};
+
+            if (bufferType == ShaderBindingType::ShaderStorageBuffer)
+            {
+                uint32_t requiredBufferSize = 0;
+                for (int i = 0; i < reflectedBinding.type_description->member_count; i++)
+                {
+                    auto* member = &reflectedBinding.type_description->members[i];
+                    if (member->type_flags & SPV_REFLECT_TYPE_FLAG_ARRAY)
+                    {
+                        requiredBufferSize += member->traits.array.dims[0] * member->traits.array.stride; // todo: support more than 1D arrays
+                    }
+
+                    for (int j = 0; j < member->member_count; j++)
+                    {
+                        auto* childMember = &member->members[i];
+                        int jkj = 420;
+                    }
+                }
+                binding.m_ExpectedBufferSize = requiredBufferSize;
+                continue;
+            }
+
             for (int i = 0; i < reflectedBinding.block.member_count; i++)
             {
                 auto member = reflectedBinding.block.members[i];
@@ -2382,7 +2403,7 @@ ShaderBufferMemberType lvk::GetTypeFromSpvReflect(SpvReflectTypeDescription* typ
     return ShaderBufferMemberType::UNKNOWN;
 }
 
-void lvk::VulkanAPI::CreateUniformBuffers(UniformBufferFrameData& uniformData, VkDeviceSize bufferSize)
+void lvk::VulkanAPI::CreateUniformBuffers(ShaderBufferFrameData& uniformData, VkDeviceSize bufferSize)
 {
 
     uniformData.m_UniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);

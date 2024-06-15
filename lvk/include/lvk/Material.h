@@ -14,12 +14,12 @@ namespace lvk
         // set mat4, mat3, vec4, vec3, sampler etc.
         // reflect the size of each bound thing in each set (one set for now)
 
-        struct UniformBufferBindingData
+        struct ShaderBufferBindingData
         {
             uint32_t m_SetNumber;
             uint32_t m_BindingNumber;
             uint32_t m_BufferSize;
-            UniformBufferFrameData m_UBO;
+            ShaderBufferFrameData m_Buffer;
         };
 
         struct SamplerBindingData
@@ -30,7 +30,7 @@ namespace lvk
             VkSampler& m_Sampler;
         };
 
-        struct UniformAccessorData
+        struct ShaderAccessorData
         {
             uint32_t    m_ExpectedSize;
             uint32_t    m_Offset;
@@ -57,9 +57,9 @@ namespace lvk
         // todo: rework this to be a hashmap
         // uint64 - buffer data
 
-        HashMap<uint64_t, UniformBufferBindingData>   m_UniformBuffers;
+        HashMap<uint64_t, ShaderBufferBindingData>   m_UniformBuffers;
         HashMap<String, SamplerBindingData>             m_Samplers;
-        HashMap<String, UniformAccessorData>            m_UniformBufferAccessors;
+        HashMap<String, ShaderAccessorData>            m_UniformBufferAccessors;
 
         static Material Create(VulkanAPI& vk, ShaderProgram& shader);
 
@@ -70,9 +70,36 @@ namespace lvk
             sb.m_Set = set;
             sb.m_Binding = binding;
 
-            m_UniformBuffers[sb.m_Data].m_UBO.Set(frameIndex, value);
+            m_UniformBuffers[sb.m_Data].m_Buffer.Set(frameIndex, value);
 
             return true;
+        }
+
+        // this will work for:
+        // struct Particle {
+        /*  vec4 position;
+            vec4 velocity;
+            vec4 color;
+        };*/
+        //layout(std140, binding = 1) readonly buffer ParticleSSBOIn {
+        //    Particle particlesIn[8192];
+        //} in_particles;
+
+        //layout(std140, binding = 2) buffer ParticleSSBOOut {
+        //    Particle particlesOut[8192];
+        //} out_particles;
+
+        // e.g.
+        // m.SetBufferArrayElement<glm::vec4>(frame, 0, 0, 43, glm::vec4(), sizeof(glm::vec4)); /* 0 for position, sizeof(glm::vec4) for velocity etc.*/ 
+
+        template<typename _Ty>
+        bool SetBufferArrayElement(uint32_t frameIndex, uint32_t set, uint32_t binding, uint32_t index, const _Ty& value, uint32_t innerElementOffset = 0)
+        {
+            // size of each element
+            static constexpr size_t _type_size = sizeof(_Ty);
+            Material::SetBinding sb = {};
+            uint64_t offset = (_type_size * index) + innerElementOffset;
+            m_UniformBuffers[sb.m_Data].m_Buffer.Set(frameIndex, value, offset);
         }
 
         template<typename _Ty>
@@ -84,7 +111,7 @@ namespace lvk
                 return false;
             }
 
-            UniformAccessorData& data = m_UniformBufferAccessors.at(name);
+            ShaderAccessorData& data = m_UniformBufferAccessors.at(name);
 
             if (_type_size != data.m_ExpectedSize)
             {
@@ -94,7 +121,7 @@ namespace lvk
             for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
             {
                 // update uniform buffer
-                m_UniformBuffers[data.m_BufferIndex].m_UBO.Set(i, value, data.m_Offset);
+                m_UniformBuffers[data.m_BufferIndex].m_Buffer.Set(i, value, data.m_Offset);
             }
 
             return true;

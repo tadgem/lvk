@@ -37,7 +37,7 @@ public:
 struct RenderItem 
 {
     MeshEx m_Mesh;
-    UniformBufferFrameData m_MvpBuffer;
+    ShaderBufferFrameData m_MvpBuffer;
     Vector<VkDescriptorSet> m_DescriptorSets;
 };
 
@@ -172,7 +172,7 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
         });
 }
 
-void UpdateUniformBuffer(VulkanAPI_SDL& vk, UniformBufferFrameData& mvpUniformData, UniformBufferFrameData& lightsUniformData, DeferredLightData& lightDataCpu)
+void UpdateUniformBuffer(VulkanAPI_SDL& vk, ShaderBufferFrameData& mvpUniformData, ShaderBufferFrameData& lightsUniformData, DeferredLightData& lightDataCpu)
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -194,7 +194,7 @@ void UpdateUniformBuffer(VulkanAPI_SDL& vk, UniformBufferFrameData& mvpUniformDa
     lightsUniformData.Set(vk.GetFrameIndex(), lightDataCpu);
 }
 
-void CreateGBufferDescriptorSets(VulkanAPI& vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler, Vector<VkDescriptorSet>& descriptorSets, UniformBufferFrameData& mvpUniformData)
+void CreateGBufferDescriptorSets(VulkanAPI& vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler, Vector<VkDescriptorSet>& descriptorSets, ShaderBufferFrameData& mvpUniformData)
 {
     std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -241,7 +241,7 @@ void CreateGBufferDescriptorSets(VulkanAPI& vk, VkDescriptorSetLayout& descripto
 
 }
 
-void CreateLightingPassDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSetLayout, FramebufferSetEx gbuffers, Vector<VkDescriptorSet>& descriptorSets, UniformBufferFrameData& mvpUniformData, UniformBufferFrameData& lightsUniformData)
+void CreateLightingPassDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSetLayout, FramebufferSetEx gbuffers, Vector<VkDescriptorSet>& descriptorSets, ShaderBufferFrameData& mvpUniformData, ShaderBufferFrameData& lightsUniformData)
 {
     std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -450,8 +450,8 @@ int main()
     vk.Start(1280, 720, enableMSAA);
 
 
-    UniformBufferFrameData mvpUniformData;
-    UniformBufferFrameData lightsUniformData;
+    ShaderBufferFrameData mvpUniformData;
+    ShaderBufferFrameData lightsUniformData;
 
     DeferredLightData lightDataCpu{};
 
