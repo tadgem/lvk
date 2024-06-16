@@ -2,7 +2,7 @@
 #include "lvk/Mesh.h"
 using namespace lvk;
 
-const std::vector<lvk::VertexDataCol> vertices = {
+const std::vector<lvk::VertexDataPosColUv> vertices = {
     {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
     {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
     {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
@@ -146,7 +146,7 @@ int main()
 
     VkPipeline pipeline = vk.CreateRasterizationGraphicsPipeline(
         vertBin, fragBin,
-        descriptorSetLayout, Vector<VkVertexInputBindingDescription>{VertexDataCol::GetBindingDescription() }, VertexDataCol::GetAttributeDescriptions(),
+        descriptorSetLayout, Vector<VkVertexInputBindingDescription>{VertexDataPosColUv::GetBindingDescription() }, VertexDataPosColUv::GetAttributeDescriptions(),
         vk.m_SwapchainImageRenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
         VK_POLYGON_MODE_FILL,
@@ -161,7 +161,7 @@ int main()
     VkBuffer indexBuffer;
     VmaAllocation indexBufferMemory;
 
-    vk.CreateVertexBuffer<VertexDataCol>(vertices, vertexBuffer, vertexBufferMemory);
+    vk.CreateVertexBuffer<VertexDataPosColUv>(vertices, vertexBuffer, vertexBufferMemory);
     vk.CreateIndexBuffer(indices, indexBuffer, indexBufferMemory);
     vk.CreateUniformBuffers<MvpData>(uniformBuffers, uniformBuffersMemory, uniformBuffersMapped);
 

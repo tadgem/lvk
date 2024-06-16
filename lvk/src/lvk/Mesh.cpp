@@ -2,7 +2,7 @@
 
 lvk::Mesh* lvk::Mesh::g_ScreenSpaceQuad = nullptr;
 
-static lvk::Vector<lvk::VertexData> g_ScreenSpaceQuadVertexData = {
+static lvk::Vector<lvk::VertexDataPosUv> g_ScreenSpaceQuadVertexData = {
     { { -1.0f, -1.0f , 0.0f}, { 1.0f, 0.0f } },
     { {1.0f, -1.0f, 0.0f}, {0.0f, 0.0f} },
     { {1.0f, 1.0f, 0.0f}, {0.0f, 1.0f} },
@@ -19,7 +19,7 @@ void lvk::Mesh::InitScreenQuad(lvk::VulkanAPI& vk)
     VmaAllocation vertexBufferMemory;
     VkBuffer indexBuffer;
     VmaAllocation indexBufferMemory;
-    vk.CreateVertexBuffer<VertexData>(g_ScreenSpaceQuadVertexData, vertexBuffer, vertexBufferMemory);
+    vk.CreateVertexBuffer<VertexDataPosUv>(g_ScreenSpaceQuadVertexData, vertexBuffer, vertexBufferMemory);
     vk.CreateIndexBuffer(g_ScreenSpaceQuadIndexData, indexBuffer, indexBufferMemory);
 
     g_ScreenSpaceQuad = new Mesh { vertexBuffer, vertexBufferMemory, indexBuffer, indexBufferMemory, 6 };

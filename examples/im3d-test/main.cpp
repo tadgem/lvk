@@ -44,10 +44,117 @@ struct RenderModel
 
 static Transform g_Transform;
 
+
+struct LvkIm3dState
+{
+    ShaderProgram m_TriProg;
+    ShaderProgram m_PointsProg;
+    ShaderProgram m_LinesProg;
+    // also ss quad mesh
+};
+
+struct LvkIm3dViewState
+{
+    Material m_TrisMaterial;
+    Material m_PointsMaterial;
+    Material m_LinesMaterial;
+
+    VkPipeline m_TrisPipeline;
+    VkPipeline m_PointsPipeline;
+    VkPipeline m_LinesPipeline;
+
+    VkPipelineLayout m_TrisPipelineLayout;
+    VkPipelineLayout m_PointsPipelineLayout;
+    VkPipelineLayout m_LinesPipelineLayout;
+};
+
+Vector<char> ToVector(const char* src, uint32_t count)
+{
+    Vector<char> chars{};
+    for (int i = 0; i < count; i++)
+    {
+        chars.push_back(src[i]);
+    }
+    return chars;
+}
+
+LvkIm3dState LoadIm3D(VulkanAPI& vk)
+{
+    Vector<char> tris_vert_bin = ToVector(&im3d_tris_vert_spv_bin[0], im3d_tris_vert_spv_bin_SIZE);
+    ShaderStage tris_vert = ShaderStage::Create(vk, tris_vert_bin, ShaderStage::Type::Vertex);
+    Vector<char> tris_frag_bin = ToVector(&im3d_tris_frag_spv_bin[0], im3d_tris_frag_spv_bin_SIZE);
+    ShaderStage tris_frag = ShaderStage::Create(vk, tris_frag_bin, ShaderStage::Type::Fragment);
+    ShaderProgram tris_prog = ShaderProgram::Create(vk, tris_vert, tris_frag);
+
+    Vector<char> lines_vert_bin = ToVector(&im3d_lines_vert_spv_bin[0], im3d_lines_vert_spv_bin_SIZE);
+    ShaderStage lines_vert = ShaderStage::Create(vk, lines_vert_bin, ShaderStage::Type::Vertex);
+    Vector<char> lines_frag_bin = ToVector(&im3d_lines_frag_spv_bin[0], im3d_lines_frag_spv_bin_SIZE);
+    ShaderStage lines_frag = ShaderStage::Create(vk, lines_frag_bin, ShaderStage::Type::Fragment);
+    ShaderProgram lines_prog = ShaderProgram::Create(vk, lines_vert, lines_frag);
+
+    Vector<char> points_vert_bin = ToVector(&im3d_points_vert_spv_bin[0], im3d_points_vert_spv_bin_SIZE);
+    ShaderStage points_vert = ShaderStage::Create(vk, points_vert_bin, ShaderStage::Type::Vertex);
+    Vector<char> points_frag_bin = ToVector(&im3d_points_frag_spv_bin[0], im3d_points_frag_spv_bin_SIZE);
+    ShaderStage points_frag = ShaderStage::Create(vk, points_frag_bin, ShaderStage::Type::Fragment);
+    ShaderProgram points_prog = ShaderProgram::Create(vk, points_vert, points_frag);
+
+    return { tris_prog, points_prog, lines_prog };
+}
+
+LvkIm3dViewState AddIm3dForViewport(VulkanAPI& vk, LvkIm3dState& state, VkRenderPass renderPass)
+{
+    VkPipelineLayout tris_layout;
+    VkPipeline tris_pipeline = vk.CreateRasterizationGraphicsPipeline(
+        state.m_TriProg.m_Stages[0].m_StageBinary, state.m_TriProg.m_Stages[1].m_StageBinary,
+        state.m_TriProg.m_DescriptorSetLayout,
+        Vector<VkVertexInputBindingDescription>{VertexDataPosUv::GetBindingDescription() },
+        VertexDataPosUv::GetAttributeDescriptions(),
+        vk.m_SwapchainImageRenderPass,
+        vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
+        VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, false,
+        VK_COMPARE_OP_LESS, tris_layout);
+    Material tris_material = Material::Create(vk, state.m_TriProg);
+
+    VkPipelineLayout points_layout;
+    VkPipeline points_pipeline = vk.CreateRasterizationGraphicsPipeline(
+        state.m_PointsProg.m_Stages[0].m_StageBinary, state.m_PointsProg.m_Stages[1].m_StageBinary,
+        state.m_PointsProg.m_DescriptorSetLayout,
+        Vector<VkVertexInputBindingDescription>{VertexDataPosUv::GetBindingDescription() },
+        VertexDataPosUv::GetAttributeDescriptions(),
+        vk.m_SwapchainImageRenderPass,
+        vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
+        VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, false,
+        VK_COMPARE_OP_LESS, points_layout);
+    Material points_material = Material::Create(vk, state.m_PointsProg);
+
+
+    VkPipelineLayout lines_layout;
+    VkPipeline lines_pipeline = vk.CreateRasterizationGraphicsPipeline(
+        state.m_LinesProg.m_Stages[0].m_StageBinary, state.m_LinesProg.m_Stages[1].m_StageBinary,
+        state.m_LinesProg.m_DescriptorSetLayout,
+        Vector<VkVertexInputBindingDescription>{VertexDataPosUv::GetBindingDescription() },
+        VertexDataPosUv::GetAttributeDescriptions(),
+        vk.m_SwapchainImageRenderPass,
+        vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
+        VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, false,
+        VK_COMPARE_OP_LESS, lines_layout);
+    Material lines_material = Material::Create(vk, state.m_LinesProg);
+
+
+    return {tris_material, points_material, lines_material,  
+            tris_pipeline, points_pipeline, lines_pipeline,
+            tris_layout, points_layout, lines_layout };
+}
+
+void DrawIm3d(VulkanAPI& vk, VkCommandBuffer& buffer, uint32_t frameIndex, LvkIm3dState& state, LvkIm3dViewState& viewState)
+{
+
+}
+
 void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
     VkPipeline& gbufferPipeline, VkPipelineLayout& gbufferPipelineLayout, VkRenderPass gbufferRenderPass, Vector<VkFramebuffer>& gbufferFramebuffers,
     VkPipeline& lightingPassPipeline, VkPipelineLayout& lightingPassPipelineLayout, VkRenderPass lightingPassRenderPass, Material& lightPassMaterial, Vector<VkFramebuffer>& lightingPassFramebuffers,
-    RenderModel& model, Mesh& screenQuad)
+    RenderModel& model, Mesh& screenQuad, LvkIm3dState& im3dState, LvkIm3dViewState& im3dViewState)
 {
     vk.RecordGraphicsCommands([&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
         {
@@ -116,6 +223,8 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
         renderPassInfo.pClearValues = clearValues.data();
 
         vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+        DrawIm3d(vk, commandBuffer, frameIndex, im3dState, im3dViewState);
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, lightingPassPipeline);
         VkViewport viewport{};
         viewport.x = 0.0f;
@@ -249,43 +358,14 @@ void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu)
     ImGui::End();
 }
 
-Vector<char> ToVector(const char* src, uint32_t count)
-{
-    Vector<char> chars{};
-    for (int i = 0; i < count; i++)
-    {
-        chars.push_back(src[i]);
-    }
-    return chars;
-}
-
-void LoadIm3D(VulkanAPI& vk)
-{
-    Vector<char> tris_vert_bin = ToVector(&im3d_tris_vert_spv_bin[0], im3d_tris_vert_spv_bin_SIZE);
-    ShaderStage tris_vert = ShaderStage::Create(vk, tris_vert_bin, ShaderStage::Type::Vertex);
-    Vector<char> tris_frag_bin = ToVector(&im3d_tris_frag_spv_bin[0], im3d_tris_frag_spv_bin_SIZE);
-    ShaderStage tris_frag = ShaderStage::Create(vk, tris_frag_bin, ShaderStage::Type::Fragment);
-    ShaderProgram tris_prog = ShaderProgram::Create(vk, tris_vert, tris_frag);
-
-    Vector<char> lines_vert_bin = ToVector(&im3d_lines_vert_spv_bin[0], im3d_lines_vert_spv_bin_SIZE);
-    ShaderStage lines_vert = ShaderStage::Create(vk, lines_vert_bin, ShaderStage::Type::Vertex);
-    Vector<char> lines_frag_bin = ToVector(&im3d_lines_frag_spv_bin[0], im3d_lines_frag_spv_bin_SIZE);
-    ShaderStage lines_frag = ShaderStage::Create(vk, lines_frag_bin, ShaderStage::Type::Fragment);
-    ShaderProgram lines_prog = ShaderProgram::Create(vk, lines_vert, lines_frag);
-
-    Vector<char> points_vert_bin = ToVector(&im3d_points_vert_spv_bin[0], im3d_points_vert_spv_bin_SIZE);
-    ShaderStage points_vert = ShaderStage::Create(vk, points_vert_bin, ShaderStage::Type::Vertex);
-    Vector<char> points_frag_bin = ToVector(&im3d_points_frag_spv_bin[0], im3d_points_frag_spv_bin_SIZE);
-    ShaderStage points_frag = ShaderStage::Create(vk, points_frag_bin, ShaderStage::Type::Fragment);
-    ShaderProgram points_prog = ShaderProgram::Create(vk, points_vert, points_frag);
-
-}
 
 int main() {
     VulkanAPI_SDL vk;
     bool enableMSAA = false;
     vk.Start(1280, 720, enableMSAA);
-    LoadIm3D(vk);
+    auto im3dState = LoadIm3D(vk);
+    auto im3dViewState = AddIm3dForViewport(vk, im3dState, vk.m_SwapchainImageRenderPass);
+
     DeferredLightData lightDataCpu{};
     FillExampleLightData(lightDataCpu);
 
@@ -316,8 +396,8 @@ int main() {
     VkPipeline gbufferPipeline = vk.CreateRasterizationGraphicsPipeline(
         gbufferProg.m_Stages[0].m_StageBinary, gbufferProg.m_Stages[1].m_StageBinary,
         gbufferProg.m_DescriptorSetLayout,
-        Vector<VkVertexInputBindingDescription>{VertexDataNormal::GetBindingDescription() },
-        VertexDataNormal::GetAttributeDescriptions(),
+        Vector<VkVertexInputBindingDescription>{VertexDataPosNormalUv::GetBindingDescription() },
+        VertexDataPosNormalUv::GetAttributeDescriptions(),
         gbuffer.m_RenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
         VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, false,
@@ -329,8 +409,8 @@ int main() {
     VkPipeline pipeline = vk.CreateRasterizationGraphicsPipeline(
         lightPassProg.m_Stages[0].m_StageBinary, lightPassProg.m_Stages[1].m_StageBinary,
         lightPassProg.m_DescriptorSetLayout,
-        Vector<VkVertexInputBindingDescription>{VertexData::GetBindingDescription() },
-        VertexData::GetAttributeDescriptions(),
+        Vector<VkVertexInputBindingDescription>{VertexDataPosUv::GetBindingDescription() },
+        VertexDataPosUv::GetAttributeDescriptions(),
         vk.m_SwapchainImageRenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
         VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, enableMSAA,
@@ -352,7 +432,7 @@ int main() {
         RecordCommandBuffersV2(vk,
             gbufferPipeline, gbufferPipelineLayout, gbuffer.m_RenderPass, gbuffer.m_SwapchainFramebuffers,
             pipeline, lightPassPipelineLayout, vk.m_SwapchainImageRenderPass, lightPassMat, vk.m_SwapChainFramebuffers,
-            m, *Mesh::g_ScreenSpaceQuad);
+            m, *Mesh::g_ScreenSpaceQuad, im3dState, im3dViewState);
 
         OnImGui(vk, lightDataCpu);
 

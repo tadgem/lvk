@@ -275,8 +275,8 @@ int main() {
     VkPipeline gbufferPipeline = vk.CreateRasterizationGraphicsPipeline(
         gbufferProg.m_Stages[0].m_StageBinary, gbufferProg.m_Stages[1].m_StageBinary,
         gbufferProg.m_DescriptorSetLayout,
-        Vector<VkVertexInputBindingDescription>{VertexDataNormal::GetBindingDescription() },
-        VertexDataNormal::GetAttributeDescriptions(),
+        Vector<VkVertexInputBindingDescription>{VertexDataPosNormalUv::GetBindingDescription() },
+        VertexDataPosNormalUv::GetAttributeDescriptions(),
         gbuffer.m_RenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
         VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, false,
@@ -288,8 +288,8 @@ int main() {
     VkPipeline pipeline = vk.CreateRasterizationGraphicsPipeline(
         lightPassProg.m_Stages[0].m_StageBinary, lightPassProg.m_Stages[1].m_StageBinary,
         lightPassProg.m_DescriptorSetLayout,
-        Vector<VkVertexInputBindingDescription>{VertexData::GetBindingDescription() },
-        VertexData::GetAttributeDescriptions(),
+        Vector<VkVertexInputBindingDescription>{VertexDataPosUv::GetBindingDescription() },
+        VertexDataPosUv::GetAttributeDescriptions(),
         vk.m_SwapchainImageRenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
         VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, enableMSAA,

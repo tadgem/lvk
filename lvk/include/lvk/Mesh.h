@@ -4,7 +4,7 @@
 
 namespace lvk
 {
-    struct VertexDataCol
+    struct VertexDataPosColUv
     {
         glm::vec3 Position;
         glm::vec3 Colour;
@@ -20,23 +20,23 @@ namespace lvk
             attributeDescriptions[0].binding = 0;
             attributeDescriptions[0].location = 0;
             attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-            attributeDescriptions[0].offset = offsetof(VertexDataCol, Position);
+            attributeDescriptions[0].offset = offsetof(VertexDataPosColUv, Position);
 
             attributeDescriptions[1].binding = 0;
             attributeDescriptions[1].location = 1;
             attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-            attributeDescriptions[1].offset = offsetof(VertexDataCol, Colour);
+            attributeDescriptions[1].offset = offsetof(VertexDataPosColUv, Colour);
 
             attributeDescriptions[2].binding = 0;
             attributeDescriptions[2].location = 2;
             attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-            attributeDescriptions[2].offset = offsetof(VertexDataCol, UV);
+            attributeDescriptions[2].offset = offsetof(VertexDataPosColUv, UV);
 
             return attributeDescriptions;
         }
     };
 
-    struct VertexData
+    struct VertexDataPosUv
     {
         glm::vec3 Position;
         glm::vec2 UV;
@@ -45,7 +45,7 @@ namespace lvk
             VkVertexInputBindingDescription bindingDescription{};
 
             bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-            bindingDescription.stride = sizeof(VertexData);
+            bindingDescription.stride = sizeof(VertexDataPosUv);
             bindingDescription.binding = 0;
 
             return bindingDescription;
@@ -59,18 +59,18 @@ namespace lvk
             attributeDescriptions[0].binding = 0;
             attributeDescriptions[0].location = 0;
             attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-            attributeDescriptions[0].offset = offsetof(VertexData, Position);
+            attributeDescriptions[0].offset = offsetof(VertexDataPosUv, Position);
 
             attributeDescriptions[1].binding = 0;
             attributeDescriptions[1].location = 1;
             attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
-            attributeDescriptions[1].offset = offsetof(VertexData, UV);
+            attributeDescriptions[1].offset = offsetof(VertexDataPosUv, UV);
 
             return attributeDescriptions;
         }
     };
 
-    struct VertexDataNormal
+    struct VertexDataPosNormalUv
     {
         glm::vec3 Position;
         glm::vec3 Normal;
@@ -80,7 +80,7 @@ namespace lvk
             VkVertexInputBindingDescription bindingDescription{};
 
             bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-            bindingDescription.stride = sizeof(VertexDataNormal);
+            bindingDescription.stride = sizeof(VertexDataPosNormalUv);
             bindingDescription.binding = 0;
 
             return bindingDescription;
@@ -94,17 +94,17 @@ namespace lvk
             attributeDescriptions[0].binding = 0;
             attributeDescriptions[0].location = 0;
             attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-            attributeDescriptions[0].offset = offsetof(VertexDataNormal, Position);
+            attributeDescriptions[0].offset = offsetof(VertexDataPosNormalUv, Position);
 
             attributeDescriptions[1].binding = 0;
             attributeDescriptions[1].location = 1;
             attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-            attributeDescriptions[1].offset = offsetof(VertexDataNormal, Normal);
+            attributeDescriptions[1].offset = offsetof(VertexDataPosNormalUv, Normal);
 
             attributeDescriptions[2].binding = 0;
             attributeDescriptions[2].location = 2;
             attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-            attributeDescriptions[2].offset = offsetof(VertexDataNormal, UV);
+            attributeDescriptions[2].offset = offsetof(VertexDataPosNormalUv, UV);
 
             return attributeDescriptions;
         }

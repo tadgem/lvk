@@ -227,7 +227,7 @@ int main()
     VkPipelineLayout pipelineLayout;
     VkPipeline pipeline = vk.CreateRasterizationGraphicsPipeline(
         vertBin, fragBin,
-        descriptorSetLayout, Vector<VkVertexInputBindingDescription>{VertexDataNormal::GetBindingDescription() }, VertexDataNormal::GetAttributeDescriptions(),
+        descriptorSetLayout, Vector<VkVertexInputBindingDescription>{VertexDataPosNormalUv::GetBindingDescription() }, VertexDataPosNormalUv::GetAttributeDescriptions(),
         vk.m_SwapchainImageRenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
         VK_POLYGON_MODE_FILL,

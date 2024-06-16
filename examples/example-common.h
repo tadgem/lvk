@@ -174,10 +174,10 @@ void ProcessMesh(lvk::VulkanAPI& vk, Model& model, aiMesh* mesh, aiNode* node, c
     bool hasUVs = mesh->HasTextureCoords(0);
     bool hasIndices = mesh->HasFaces();
 
-    Vector<VertexData> verts;
+    Vector<VertexDataPosUv> verts;
     if (hasPositions && hasUVs) {
         for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
-            VertexData vert {};
+            VertexDataPosUv vert {};
             vert.Position = AssimpToGLM(mesh->mVertices[i]);
             vert.UV = glm::vec2(mesh->mTextureCoords[0][i].x, 1.0f - mesh->mTextureCoords[0][i].y);
             verts.push_back(vert);
@@ -199,7 +199,7 @@ void ProcessMesh(lvk::VulkanAPI& vk, Model& model, aiMesh* mesh, aiNode* node, c
     }
 
     MeshEx m{};
-    vk.CreateVertexBuffer<VertexData>(verts, m.m_VertexBuffer, m.m_VertexBufferMemory);
+    vk.CreateVertexBuffer<VertexDataPosUv>(verts, m.m_VertexBuffer, m.m_VertexBufferMemory);
     vk.CreateIndexBuffer(indices, m.m_IndexBuffer, m.m_IndexBufferMemory);
     m.m_IndexCount = static_cast<uint32_t>(indices.size());
 
@@ -221,10 +221,10 @@ void ProcessMeshWithNormals(lvk::VulkanAPI& vk, Model& model, aiMesh* mesh, aiNo
         aiMaterialProperty* prop = meshMaterial->mProperties[i];
         properties.push_back(prop);
     }
-    Vector<VertexDataNormal> verts;
+    Vector<VertexDataPosNormalUv> verts;
     if (hasPositions && hasUVs && hasNormals) {
         for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
-            VertexDataNormal vert{};
+            VertexDataPosNormalUv vert{};
             vert.Position = AssimpToGLM(mesh->mVertices[i]);
             vert.UV = glm::vec2(mesh->mTextureCoords[0][i].x, 1.0f - mesh->mTextureCoords[0][i].y);
             vert.Normal = AssimpToGLM(mesh->mNormals[i]);
@@ -247,7 +247,7 @@ void ProcessMeshWithNormals(lvk::VulkanAPI& vk, Model& model, aiMesh* mesh, aiNo
     }
 
     MeshEx m{};
-    vk.CreateVertexBuffer<VertexDataNormal>(verts, m.m_VertexBuffer, m.m_VertexBufferMemory);
+    vk.CreateVertexBuffer<VertexDataPosNormalUv>(verts, m.m_VertexBuffer, m.m_VertexBufferMemory);
     vk.CreateIndexBuffer(indices, m.m_IndexBuffer, m.m_IndexBufferMemory);
     m.m_IndexCount = static_cast<uint32_t>(indices.size());
     m.m_MaterialIndex = mesh->mMaterialIndex;
@@ -316,13 +316,13 @@ void LoadModelAssimp(lvk::VulkanAPI& vk, Model& model, const lvk::String& path, 
     }
 }
 
-MeshEx BuildScreenSpaceQuad(lvk::VulkanAPI& vk, lvk::Vector <lvk::VertexData > & verts, lvk::Vector<uint32_t>& indices)
+MeshEx BuildScreenSpaceQuad(lvk::VulkanAPI& vk, lvk::Vector <lvk::VertexDataPosUv > & verts, lvk::Vector<uint32_t>& indices)
 {
     VkBuffer vertexBuffer;
     VmaAllocation vertexBufferMemory;
     VkBuffer indexBuffer;
     VmaAllocation indexBufferMemory;
-    vk.CreateVertexBuffer<lvk::VertexData>(verts, vertexBuffer, vertexBufferMemory);
+    vk.CreateVertexBuffer<lvk::VertexDataPosUv>(verts, vertexBuffer, vertexBufferMemory);
     vk.CreateIndexBuffer(indices, indexBuffer, indexBufferMemory);
 
     return MeshEx{ vertexBuffer, vertexBufferMemory, indexBuffer, indexBufferMemory, 6 };

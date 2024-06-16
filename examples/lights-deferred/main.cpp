@@ -46,7 +46,7 @@ struct RenderModel
     Vector<RenderItem> m_RenderItems;
 };
 
-static Vector<VertexData> g_ScreenSpaceQuadVertexData = {
+static Vector<VertexDataPosUv> g_ScreenSpaceQuadVertexData = {
     { { -1.0f, -1.0f , 0.0f}, { 1.0f, 0.0f } },
     { {1.0f, -1.0f, 0.0f}, {0.0f, 0.0f} },
     { {1.0f, 1.0f, 0.0f}, {0.0f, 1.0f} },
@@ -480,7 +480,7 @@ int main()
     VkPipelineLayout gbufferPipelineLayout;
     VkPipeline gbufferPipeline = vk.CreateRasterizationGraphicsPipeline(
         gbufferVertBin, gbufferFragBin,
-        gbufferDescriptorSetLayout, Vector<VkVertexInputBindingDescription>{VertexDataNormal::GetBindingDescription() }, VertexDataNormal::GetAttributeDescriptions(),
+        gbufferDescriptorSetLayout, Vector<VkVertexInputBindingDescription>{VertexDataPosNormalUv::GetBindingDescription() }, VertexDataPosNormalUv::GetAttributeDescriptions(),
         gbufferRenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
         VK_POLYGON_MODE_FILL,
@@ -495,7 +495,7 @@ int main()
     VkPipelineLayout lightPassPipelineLayout;
     VkPipeline pipeline = vk.CreateRasterizationGraphicsPipeline(
         lightPassVertBin, lightPassFragBin,
-        lightPassDescriptorSetLayout, Vector<VkVertexInputBindingDescription>{VertexData::GetBindingDescription() }, VertexData::GetAttributeDescriptions(),
+        lightPassDescriptorSetLayout, Vector<VkVertexInputBindingDescription>{VertexDataPosUv::GetBindingDescription() }, VertexDataPosUv::GetAttributeDescriptions(),
         vk.m_SwapchainImageRenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
         VK_POLYGON_MODE_FILL,
