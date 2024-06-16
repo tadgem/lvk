@@ -8,6 +8,7 @@
 #include "Im3D/shaders/im3d_tris.frag.spv.h"
 #include "Im3D/shaders/im3d_points.vert.spv.h"
 #include "Im3D/shaders/im3d_points.frag.spv.h"
+#include "Im3D/im3d.h"
 
 using namespace lvk;
 
@@ -148,7 +149,17 @@ LvkIm3dViewState AddIm3dForViewport(VulkanAPI& vk, LvkIm3dState& state, VkRender
 
 void DrawIm3d(VulkanAPI& vk, VkCommandBuffer& buffer, uint32_t frameIndex, LvkIm3dState& state, LvkIm3dViewState& viewState)
 {
+    auto& context = Im3d::GetContext();
 
+    for (int i = 0; i < context.getDrawListCount(); i++)
+    {
+        auto drawList = &context.getDrawLists()[i];
+        
+        switch (drawList->m_primType)
+        {
+
+        }
+    }
 }
 
 void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
@@ -358,6 +369,10 @@ void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu)
     ImGui::End();
 }
 
+void OnIm3D()
+{
+    Im3d::DrawCircle({ 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, 10.0f);
+}
 
 int main() {
     VulkanAPI_SDL vk;
@@ -424,10 +439,16 @@ int main() {
     {
         vk.PreFrame();
 
+        Im3d::NewFrame();
+
         for (auto& item : m.m_RenderItems)
         {
             UpdateUniformBuffer(vk, item.m_Material, lightPassMat, lightDataCpu);
         }
+
+        OnIm3D();
+
+        Im3d::EndFrame();
 
         RecordCommandBuffersV2(vk,
             gbufferPipeline, gbufferPipelineLayout, gbuffer.m_RenderPass, gbuffer.m_SwapchainFramebuffers,
