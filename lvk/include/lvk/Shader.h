@@ -25,6 +25,12 @@ namespace lvk
 
             return { stageBin, stageLayoutDatas, stageType };
         }
+
+        static ShaderStage Create(VulkanAPI& vk, Vector<char>& binary, const ShaderStage::Type& type)
+        {
+            auto stageLayoutDatas = vk.ReflectDescriptorSetLayouts(binary);
+            return { binary, stageLayoutDatas, type };
+        }
     };
 
     struct ShaderProgram
@@ -37,6 +43,15 @@ namespace lvk
         {
             ShaderStage vert = ShaderStage::Create(vk, vertPath, ShaderStage::Type::Vertex);
             ShaderStage frag = ShaderStage::Create(vk, fragPath, ShaderStage::Type::Fragment);
+            VkDescriptorSetLayout layout;
+            vk.CreateDescriptorSetLayout(vert.m_LayoutDatas, frag.m_LayoutDatas, layout);
+
+            return { Vector<ShaderStage> {vert, frag} , layout };
+
+        }
+
+        static ShaderProgram Create(VulkanAPI& vk, ShaderStage& vert, ShaderStage& frag)
+        {
             VkDescriptorSetLayout layout;
             vk.CreateDescriptorSetLayout(vert.m_LayoutDatas, frag.m_LayoutDatas, layout);
 

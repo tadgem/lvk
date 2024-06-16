@@ -17,6 +17,7 @@ add_library(${PROJECT_NAME} STATIC src/lvk/VulkanAPI.cpp
                             src/ImGui/imgui_tables.cpp
                             src/ImGui/imgui_widgets.cpp
                             src/ImGui/imgui.cpp
+                            src/Im3D/im3d.cpp
                             include/lvk/VulkanAPI.h
                             include/lvk/Texture.h
                             include/lvk/Framebuffer.h
@@ -27,6 +28,9 @@ add_library(${PROJECT_NAME} STATIC src/lvk/VulkanAPI.cpp
                             include/spirv_reflect.h
                             include/VulkanMemoryAllocator.h
                             include/stb_image.h
+                            include/Im3D/im3d.h
+                            include/Im3D/im3d_math.h
+                            include/Im3D/im3d_config.h
                             include/ImGui/imgui_impl_vulkan.h
                             include/ImGui/imconfig.h
                             include/ImGui/imgui_internal.h
