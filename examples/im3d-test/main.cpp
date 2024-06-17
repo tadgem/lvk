@@ -151,13 +151,60 @@ void DrawIm3d(VulkanAPI& vk, VkCommandBuffer& buffer, uint32_t frameIndex, LvkIm
 {
     auto& context = Im3d::GetContext();
 
+
     for (int i = 0; i < context.getDrawListCount(); i++)
     {
         auto drawList = &context.getDrawLists()[i];
+        int primVertexCount;
+
+        ShaderProgram* shader = nullptr;
+        Material* mat = nullptr;
         
         switch (drawList->m_primType)
         {
+            case Im3d::DrawPrimitiveType::DrawPrimitive_Triangles:
+                shader = &state.m_TriProg;
+                mat = &viewState.m_TrisMaterial;
+                primVertexCount = 3;
+                break;
+            case Im3d::DrawPrimitiveType::DrawPrimitive_Lines:
+                shader = &state.m_LinesProg;
+                mat = &viewState.m_LinesMaterial;
+                primVertexCount = 2;
+                break;
+            case Im3d::DrawPrimitiveType::DrawPrimitive_Points:
+                shader = &state.m_PointsProg;
+                mat = &viewState.m_PointsMaterial;
+                primVertexCount = 1;
+                break;
+            default:
+                spdlog::error("Im3d: unknown primitive type");
+                break;
+        }
 
+        const int kMaxBufferSize = 64 * 1024; // assuming 64kb here but the application should check the implementation limit
+        const int kPrimsPerPass = kMaxBufferSize / (sizeof(Im3d::VertexData) * primVertexCount);
+        
+        int remainingPrimCount = drawList->m_vertexCount / primVertexCount;
+        const Im3d::VertexData* vertexData = drawList->m_vertexData;
+
+        while (remainingPrimCount > 0)
+        {
+            int passPrimCount = remainingPrimCount < kPrimsPerPass ? remainingPrimCount : kPrimsPerPass;
+            int passVertexCount = passPrimCount * primVertexCount;
+
+            // set appropriate buffers in material
+            // might need support for sending data when specifying where the data is cpu side
+            // e.g. someway into an existing array, need a T* to array elem and uint& count,
+            //glAssert(glBindBuffer(GL_UNIFORM_BUFFER, g_Im3dUniformBuffer));
+            //glAssert(glBufferData(GL_UNIFORM_BUFFER, (GLsizeiptr)passVertexCount * sizeof(Im3d::VertexData), (GLvoid*)vertexData, GL_DYNAMIC_DRAW));
+
+            //// instanced draw call, 1 instance per prim
+            //glAssert(glBindBufferBase(GL_UNIFORM_BUFFER, 0, g_Im3dUniformBuffer));
+            //glDrawArraysInstanced(prim, 0, prim == GL_TRIANGLES ? 3 : 4, passPrimCount); // for triangles just use the first 3 verts of the strip
+
+            //vertexData += passVertexCount;
+            //remainingPrimCount -= passPrimCount;
         }
     }
 }
