@@ -109,18 +109,18 @@ LvkIm3dState LoadIm3D(VulkanAPI& vk)
     ShaderProgram points_prog = ShaderProgram::Create(vk, points_vert, points_frag);
 
 
-    Vector<Im3d::Vec4> vertexData =
+    Vector<VertexDataPos4> vertexData =
     {
-        Im3d::Vec4(-1.0f, -1.0f, 0.0f, 1.0f),
-        Im3d::Vec4(1.0f, -1.0f, 0.0f, 1.0f),
-        Im3d::Vec4(-1.0f,  1.0f, 0.0f, 1.0f),
-        Im3d::Vec4(1.0f,  1.0f, 0.0f, 1.0f)
+        VertexDataPos4{{-1.0f, -1.0f, 0.0f, 0.0f}},
+        VertexDataPos4{{1.0f, -1.0f, 0.0f, 0.0f}},
+        VertexDataPos4{{1.0f,  1.0f, 0.0f, 0.0f}},
+        VertexDataPos4{{-1.0f,  1.0f, 0.0f, 0.0f}}
     };
 
 
     VkBuffer vertexBuffer;
     VmaAllocation vertexBufferMemory;
-    vk.CreateVertexBuffer<Im3d::Vec4>(vertexData, vertexBuffer, vertexBufferMemory);
+    vk.CreateVertexBuffer<VertexDataPos4>(vertexData, vertexBuffer, vertexBufferMemory);
 
     return { tris_prog, points_prog, lines_prog, vertexBuffer, vertexBufferMemory };
 }
@@ -136,7 +136,7 @@ LvkIm3dViewState AddIm3dForViewport(VulkanAPI& vk, LvkIm3dState& state, VkRender
         vk.m_SwapchainImageRenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
         VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, false,
-        VK_COMPARE_OP_LESS, tris_layout);
+        VK_COMPARE_OP_ALWAYS, tris_layout);
     Material tris_material = Material::Create(vk, state.m_TriProg);
 
     VkPipelineLayout points_layout;
@@ -148,7 +148,7 @@ LvkIm3dViewState AddIm3dForViewport(VulkanAPI& vk, LvkIm3dState& state, VkRender
         vk.m_SwapchainImageRenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
         VK_POLYGON_MODE_POINT, VK_CULL_MODE_NONE, false,
-        VK_COMPARE_OP_LESS, points_layout);
+        VK_COMPARE_OP_ALWAYS, points_layout);
     Material points_material = Material::Create(vk, state.m_PointsProg);
 
 
@@ -161,7 +161,7 @@ LvkIm3dViewState AddIm3dForViewport(VulkanAPI& vk, LvkIm3dState& state, VkRender
         vk.m_SwapchainImageRenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
         VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE, false,
-        VK_COMPARE_OP_LESS, lines_layout);
+        VK_COMPARE_OP_ALWAYS, lines_layout);
     Material lines_material = Material::Create(vk, state.m_LinesProg);
 
 
@@ -244,6 +244,8 @@ void DrawIm3d(VulkanAPI& vk, VkCommandBuffer& buffer, uint32_t frameIndex, LvkIm
 
         while (remainingPrimCount > 0)
         {
+            static Im3d::VertexData buffer_data[64 * 1024 / (sizeof(Im3d::VertexData) + alignof(Im3d::VertexData))]{};
+
             int passPrimCount = remainingPrimCount < kPrimsPerPass ? remainingPrimCount : kPrimsPerPass;
             int passVertexCount = passPrimCount * primVertexCount;
 
@@ -252,9 +254,10 @@ void DrawIm3d(VulkanAPI& vk, VkCommandBuffer& buffer, uint32_t frameIndex, LvkIm
             // e.g. someway into an existing array, need a T* to array elem and uint& count,
             //glAssert(glBindBuffer(GL_UNIFORM_BUFFER, g_Im3dUniformBuffer));
             //glAssert(glBufferData(GL_UNIFORM_BUFFER, (GLsizeiptr)passVertexCount * sizeof(Im3d::VertexData), (GLvoid*)vertexData, GL_DYNAMIC_DRAW));
+            memcpy(&buffer_data[0], vertexData, passVertexCount * sizeof(Im3d::VertexData));
 
             // access violation
-            mat->SetBuffer(frameIndex, 0, 0, vertexData, passVertexCount * sizeof(Im3d::VertexData));
+            mat->SetBuffer(frameIndex, 0, 0, buffer_data);
             mat->SetBuffer(frameIndex, 0, 1, camData);
             //// instanced draw call, 1 instance per prim
             //glAssert(glBindBufferBase(GL_UNIFORM_BUFFER, 0, g_Im3dUniformBuffer));
@@ -284,8 +287,7 @@ void DrawIm3d(VulkanAPI& vk, VkCommandBuffer& buffer, uint32_t frameIndex, LvkIm
             vkCmdBindVertexBuffers(buffer, 0, 1, &state.m_ScreenQuad, sizes);
             vkCmdBindDescriptorSets(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *pipelineLayout, 0, 1, &mat->m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
 
-            vkCmdDrawIndexed(buffer, primVertexCount == 3 ? 3 : 4, passPrimCount, 0, 0, 0);
-
+            vkCmdDraw(buffer, primVertexCount == 3 ? 3 : 4, passPrimCount, 0, 0);
             vertexData += passVertexCount;
             remainingPrimCount -= passPrimCount;
         }
@@ -521,7 +523,7 @@ void OnIm3D()
     Im3d::PushDrawState();
     Im3d::SetSize(2.0f);
     Im3d::SetColor(Im3d::Color_White);
-    Im3d::DrawCircle({ 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, 0.5f, 32);
+    Im3d::DrawCircleFilled({ 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, 20.5f, 32);
     Im3d::PopDrawState();
     Im3d::PopMatrix();
 }

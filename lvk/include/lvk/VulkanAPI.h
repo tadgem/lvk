@@ -95,7 +95,7 @@ namespace lvk
         }
 
         template<typename _Ty>
-        void Set(uint32_t frameIndex, _Ty* start, uint64_t count)
+        void Set(uint32_t frameIndex, const _Ty* start, uint64_t count)
         {
             constexpr size_t _ty_size = sizeof(_Ty);
             void* addr = m_UniformBuffersMapped[frameIndex];
