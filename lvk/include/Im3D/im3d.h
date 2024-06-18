@@ -425,7 +425,7 @@ constexpr Color Color_Purple  = Color(0x800080ff);
 constexpr Color Color_Teal    = Color(0x008080ff);
 constexpr Color Color_Navy    = Color(0x000080ff);
 
-struct alignas(IM3D_VERTEX_ALIGNMENT) VertexData
+struct alignas(32) VertexData
 {
 	Vec4   m_positionSize; // xyz = position, w = size
 	Color  m_color;        // rgba8 (MSB = r)

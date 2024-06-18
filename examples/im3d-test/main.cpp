@@ -49,6 +49,9 @@ struct Camera
     glm::vec3 Rotation;
     float FOV = 90.0f;
     float Near = 0.001f, Far = 300.0f;
+
+    glm::mat4 View;
+    glm::mat4 Proj;
 };
 
 static Transform g_Transform;
@@ -173,23 +176,8 @@ LvkIm3dViewState AddIm3dForViewport(VulkanAPI& vk, LvkIm3dState& state, VkRender
 void DrawIm3d(VulkanAPI& vk, VkCommandBuffer& buffer, uint32_t frameIndex, LvkIm3dState& state, LvkIm3dViewState& viewState)
 {
     auto& context = Im3d::GetContext();
-    // TODO: Pass in a camera
-    glm::quat qPitch = glm::angleAxis(glm::radians(-g_Camera.Rotation.x), glm::vec3(1, 0, 0));
-    glm::quat qYaw = glm::angleAxis(glm::radians(g_Camera.Rotation.y), glm::vec3(0, 1, 0));
-    // omit roll
-    glm::quat Rotation = qPitch * qYaw;
-    Rotation = glm::normalize(Rotation);
-    glm::mat4 rotate = glm::mat4_cast(Rotation);
-    glm::mat4 translate = glm::mat4(1.0f);
-    translate = glm::translate(translate, -g_Camera.Position);
 
-    glm::mat4 View = rotate * translate;
-    
-    glm::mat4 Proj = glm::perspective(glm::radians(45.0f), vk.m_SwapChainImageExtent.width / (float)vk.m_SwapChainImageExtent.height, 0.1f, 1000.0f);
-    Proj[1][1] *= -1;
-    
-
-    glm::mat4 viewProj = Proj * View;
+    glm::mat4 viewProj = g_Camera.Proj * g_Camera.View;
 
     for (int i = 0; i < context.getDrawListCount(); i++)
     {
@@ -415,10 +403,12 @@ void UpdateUniformBuffer(VulkanAPI_SDL& vk, Material& renderItemMaterial, Materi
     translate = glm::translate(translate, -g_Camera.Position);
 
     ubo.View = rotate * translate;
+    g_Camera.View = ubo.View;
     if (vk.m_SwapChainImageExtent.width > 0 || vk.m_SwapChainImageExtent.height)
     {
         ubo.Proj = glm::perspective(glm::radians(45.0f), vk.m_SwapChainImageExtent.width / (float)vk.m_SwapChainImageExtent.height, 0.1f, 1000.0f);
         ubo.Proj[1][1] *= -1;
+        g_Camera.Proj = ubo.Proj;
     }
     renderItemMaterial.SetBuffer(vk.GetFrameIndex(), 0, 0, ubo);
     lightPassMaterial.SetBuffer(vk.GetFrameIndex(), 0, 0, ubo);
@@ -523,7 +513,7 @@ void OnIm3D()
     Im3d::PushDrawState();
     Im3d::SetSize(2.0f);
     Im3d::SetColor(Im3d::Color_White);
-    Im3d::DrawCircleFilled({ 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, 20.5f, 32);
+    Im3d::DrawCircle({ 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, 20.5f, 32);
     Im3d::PopDrawState();
     Im3d::PopMatrix();
 }
