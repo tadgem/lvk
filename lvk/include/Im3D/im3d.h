@@ -1,5 +1,5 @@
 #pragma once
-
+#include "glm/glm.hpp"
 // Define IM3D_CONFIG "myfilename.h" from your build system if you do not want to modify im3d_config.h directly.
 #ifdef IM3D_CONFIG
 	#include IM3D_CONFIG
@@ -425,7 +425,7 @@ constexpr Color Color_Purple  = Color(0x800080ff);
 constexpr Color Color_Teal    = Color(0x008080ff);
 constexpr Color Color_Navy    = Color(0x000080ff);
 
-struct alignas(32) VertexData
+struct alignas(IM3D_VERTEX_ALIGNMENT) VertexData
 {
 	Vec4   m_positionSize; // xyz = position, w = size
 	Color  m_color;        // rgba8 (MSB = r)

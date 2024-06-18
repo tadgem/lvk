@@ -3,10 +3,10 @@
 lvk::Mesh* lvk::Mesh::g_ScreenSpaceQuad = nullptr;
 
 static lvk::Vector<lvk::VertexDataPosUv> g_ScreenSpaceQuadVertexData = {
-    { { -1.0f, -1.0f , 0.0f}, { 1.0f, 0.0f } },
-    { {1.0f, -1.0f, 0.0f}, {0.0f, 0.0f} },
-    { {1.0f, 1.0f, 0.0f}, {0.0f, 1.0f} },
-    { {-1.0f, 1.0f, 0.0f}, {1.0f, 1.0f} }
+    { { -1.0f, -1.0f , 0.0f}, { 0.0f, 0.0f } },
+    { {1.0f, -1.0f, 0.0f}, {1.0f, 0.0f} },
+    { {1.0f, 1.0f, 0.0f}, {1.0f, 1.0f} },
+    { {-1.0f, 1.0f, 0.0f}, {0.0f, 1.0f} }
 };
 
 static lvk::Vector<uint32_t> g_ScreenSpaceQuadIndexData = {
