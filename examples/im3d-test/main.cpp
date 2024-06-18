@@ -130,7 +130,7 @@ LvkIm3dState LoadIm3D(VulkanAPI& vk)
     return { tris_prog, points_prog, lines_prog, vertexBuffer, vertexBufferMemory };
 }
 
-LvkIm3dViewState AddIm3dForViewport(VulkanAPI& vk, LvkIm3dState& state, VkRenderPass renderPass)
+LvkIm3dViewState AddIm3dForViewport(VulkanAPI& vk, LvkIm3dState& state, VkRenderPass renderPass, bool enableMSAA)
 {
     VkPipelineLayout tris_layout;
     VkPipeline tris_pipeline = vk.CreateRasterizationGraphicsPipeline(
@@ -140,7 +140,7 @@ LvkIm3dViewState AddIm3dForViewport(VulkanAPI& vk, LvkIm3dState& state, VkRender
         VertexDataPos4::GetAttributeDescriptions(),
         vk.m_SwapchainImageRenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
-        VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, false,
+        VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, enableMSAA,
         VK_COMPARE_OP_ALWAYS, tris_layout);
     Material tris_material = Material::Create(vk, state.m_TriProg);
 
@@ -152,7 +152,7 @@ LvkIm3dViewState AddIm3dForViewport(VulkanAPI& vk, LvkIm3dState& state, VkRender
         VertexDataPos4::GetAttributeDescriptions(),
         vk.m_SwapchainImageRenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
-        VK_POLYGON_MODE_POINT, VK_CULL_MODE_NONE, false,
+        VK_POLYGON_MODE_POINT, VK_CULL_MODE_NONE, enableMSAA,
         VK_COMPARE_OP_ALWAYS, points_layout);
     Material points_material = Material::Create(vk, state.m_PointsProg);
 
@@ -165,7 +165,7 @@ LvkIm3dViewState AddIm3dForViewport(VulkanAPI& vk, LvkIm3dState& state, VkRender
         VertexDataPos4::GetAttributeDescriptions(),
         vk.m_SwapchainImageRenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
-        VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE, false,
+        VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE, enableMSAA,
         VK_COMPARE_OP_ALWAYS, lines_layout);
     Material lines_material = Material::Create(vk, state.m_LinesProg);
 
@@ -340,27 +340,12 @@ void DrawIm3d(VulkanAPI& vk, VkCommandBuffer& buffer, uint32_t frameIndex, LvkIm
 
         while (remainingPrimCount > 0)
         {
-            static Im3d::VertexData buffer_data[64 * 1024 / (sizeof(Im3d::VertexData) + alignof(Im3d::VertexData))]{};
-
             int passPrimCount = remainingPrimCount < kPrimsPerPass ? remainingPrimCount : kPrimsPerPass;
             int passVertexCount = passPrimCount * primVertexCount;
 
-            // set appropriate buffers in material
-            // might need support for sending data when specifying where the data is cpu side
-            // e.g. someway into an existing array, need a T* to array elem and uint& count,
-            //glAssert(glBindBuffer(GL_UNIFORM_BUFFER, g_Im3dUniformBuffer));
-            //glAssert(glBufferData(GL_UNIFORM_BUFFER, (GLsizeiptr)passVertexCount * sizeof(Im3d::VertexData), (GLvoid*)vertexData, GL_DYNAMIC_DRAW));
-            memcpy(&buffer_data[0], vertexData, passVertexCount * sizeof(Im3d::VertexData));
-
             // access violation
-            mat->SetBuffer(frameIndex, 0, 0, buffer_data);
+            mat->SetBuffer(frameIndex, 0, 0, vertexData, passVertexCount * sizeof(Im3d::VertexData));
             mat->SetBuffer(frameIndex, 0, 1, camData);
-            //// instanced draw call, 1 instance per prim
-            //glAssert(glBindBufferBase(GL_UNIFORM_BUFFER, 0, g_Im3dUniformBuffer));
-            //glDrawArraysInstanced(prim, 0, prim == GL_TRIANGLES ? 3 : 4, passPrimCount); // for triangles just use the first 3 verts of the strip
-            // mode=prim, starting index, number of indices to be rendered, the number of instances of the specified range of indices to be rendered
-
-            // get correct pipeline and bind
 
             VkViewport viewport{};
             viewport.x = 0.0f;
@@ -390,7 +375,7 @@ void DrawIm3d(VulkanAPI& vk, VkCommandBuffer& buffer, uint32_t frameIndex, LvkIm
     }
 
     DrawIm3dTextListsImGui(context.getTextDrawLists(), context.getTextDrawListCount(),
-        1280, 720, viewProj);
+        vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height, viewProj);
 }
 
 void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
@@ -619,17 +604,27 @@ void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu)
 
 void OnIm3D()
 {
+    Im3d::PushColor(Im3d::Color_Red);
     Im3d::DrawCircle({ 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, 20.5f, 32);
-    Im3d::DrawArrow({ 23.0f, 0.0f, 0.0f }, { 3.0f, 23.0f, 0.0f }, 2.0f, 2.0f);
+    Im3d::DrawCone({ 40.0f, 0.0f, 0.0f }, { 0.0, 1.0, 0.0 }, 30.0f, 30.0f, 32);
+    Im3d::DrawPrism({ 80.0f, 0.0f, 0.0f }, { 80.0f, 80.0f, 0.0f }, 10.0f, 32);
+    Im3d::PopColor();
+    Im3d::PushColor(Im3d::Color_Green);
+    Im3d::DrawArrow({ 120.0f, 0.0f, 0.0f }, { 3.0f, 23.0f, 0.0f }, 2.0f, 2.0f);
+    Im3d::DrawXyzAxes();
+    Im3d::DrawCylinder({ 160.0f, 0.0f, 0.0f }, { 160.0f,20.0f, 0.0f }, 20.0f, 32);
+    Im3d::PopColor();
+    Im3d::PushColor(Im3d::Color_White);
     Im3d::Text({ 0.0, 20.0f, 0.0f }, 0, "Hello from you fuck you bloody");
+    Im3d::PopColor();
 }
 
 int main() {
     VulkanAPI_SDL vk;
-    bool enableMSAA = false;
+    bool enableMSAA = true;
     vk.Start(1280, 720, enableMSAA);
     auto im3dState = LoadIm3D(vk);
-    auto im3dViewState = AddIm3dForViewport(vk, im3dState, vk.m_SwapchainImageRenderPass);
+    auto im3dViewState = AddIm3dForViewport(vk, im3dState, vk.m_SwapchainImageRenderPass, enableMSAA);
 
     DeferredLightData lightDataCpu{};
     FillExampleLightData(lightDataCpu);

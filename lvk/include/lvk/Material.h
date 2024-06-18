@@ -79,7 +79,7 @@ namespace lvk
             sb.m_Set = set;
             sb.m_Binding = binding;
 
-            m_UniformBuffers[sb.m_Data].m_Buffer.Set(frameIndex, start, count);
+            m_UniformBuffers[sb.m_Data].m_Buffer.SetMemory(frameIndex, start, count);
 
             return true;
         }
