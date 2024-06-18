@@ -10,14 +10,14 @@ struct VertexData
 
 layout(set =0, binding = 0) uniform VertexDataBlock
 {
-    VertexData uVertexData[(64 * 1024) / 32]; // assume a 64kb block size, 32 is the aligned size of VertexData
-};
+    VertexData VertexData[(64 * 1024) / 32]; // assume a 64kb block size, 32 is the aligned size of VertexData
+} uVertexData;
 
 layout(set = 0, binding = 1) uniform CameraDataBlock
 {
-    mat4 uViewProjMatrix;
-    vec2 uViewport;
-};
+    mat4 ViewProjMatrix;
+    vec2 Viewport;
+} uCameraData;
 
 
 layout(location = 0) in vec4 aPosition;

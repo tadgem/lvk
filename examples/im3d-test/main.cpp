@@ -52,6 +52,8 @@ struct LvkIm3dState
     ShaderProgram m_PointsProg;
     ShaderProgram m_LinesProg;
     // also ss quad mesh
+    VkBuffer        m_ScreenQuad;
+    VmaAllocation   m_ScreenQuadMemory;
 };
 
 struct LvkIm3dViewState
@@ -99,7 +101,21 @@ LvkIm3dState LoadIm3D(VulkanAPI& vk)
     ShaderStage points_frag = ShaderStage::Create(vk, points_frag_bin, ShaderStage::Type::Fragment);
     ShaderProgram points_prog = ShaderProgram::Create(vk, points_vert, points_frag);
 
-    return { tris_prog, points_prog, lines_prog };
+
+    Vector<Im3d::Vec4> vertexData =
+    {
+        Im3d::Vec4(-1.0f, -1.0f, 0.0f, 1.0f),
+        Im3d::Vec4(1.0f, -1.0f, 0.0f, 1.0f),
+        Im3d::Vec4(-1.0f,  1.0f, 0.0f, 1.0f),
+        Im3d::Vec4(1.0f,  1.0f, 0.0f, 1.0f)
+    };
+
+
+    VkBuffer vertexBuffer;
+    VmaAllocation vertexBufferMemory;
+    vk.CreateVertexBuffer<Im3d::Vec4>(vertexData, vertexBuffer, vertexBufferMemory);
+
+    return { tris_prog, points_prog, lines_prog, vertexBuffer, vertexBufferMemory };
 }
 
 LvkIm3dViewState AddIm3dForViewport(VulkanAPI& vk, LvkIm3dState& state, VkRenderPass renderPass)
@@ -108,8 +124,8 @@ LvkIm3dViewState AddIm3dForViewport(VulkanAPI& vk, LvkIm3dState& state, VkRender
     VkPipeline tris_pipeline = vk.CreateRasterizationGraphicsPipeline(
         state.m_TriProg.m_Stages[0].m_StageBinary, state.m_TriProg.m_Stages[1].m_StageBinary,
         state.m_TriProg.m_DescriptorSetLayout,
-        Vector<VkVertexInputBindingDescription>{VertexDataPosUv::GetBindingDescription() },
-        VertexDataPosUv::GetAttributeDescriptions(),
+        Vector<VkVertexInputBindingDescription>{VertexDataPos4::GetBindingDescription() },
+        VertexDataPos4::GetAttributeDescriptions(),
         vk.m_SwapchainImageRenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
         VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, false,
@@ -120,11 +136,11 @@ LvkIm3dViewState AddIm3dForViewport(VulkanAPI& vk, LvkIm3dState& state, VkRender
     VkPipeline points_pipeline = vk.CreateRasterizationGraphicsPipeline(
         state.m_PointsProg.m_Stages[0].m_StageBinary, state.m_PointsProg.m_Stages[1].m_StageBinary,
         state.m_PointsProg.m_DescriptorSetLayout,
-        Vector<VkVertexInputBindingDescription>{VertexDataPosUv::GetBindingDescription() },
-        VertexDataPosUv::GetAttributeDescriptions(),
+        Vector<VkVertexInputBindingDescription>{VertexDataPos4::GetBindingDescription() },
+        VertexDataPos4::GetAttributeDescriptions(),
         vk.m_SwapchainImageRenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
-        VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, false,
+        VK_POLYGON_MODE_POINT, VK_CULL_MODE_NONE, false,
         VK_COMPARE_OP_LESS, points_layout);
     Material points_material = Material::Create(vk, state.m_PointsProg);
 
@@ -133,11 +149,11 @@ LvkIm3dViewState AddIm3dForViewport(VulkanAPI& vk, LvkIm3dState& state, VkRender
     VkPipeline lines_pipeline = vk.CreateRasterizationGraphicsPipeline(
         state.m_LinesProg.m_Stages[0].m_StageBinary, state.m_LinesProg.m_Stages[1].m_StageBinary,
         state.m_LinesProg.m_DescriptorSetLayout,
-        Vector<VkVertexInputBindingDescription>{VertexDataPosUv::GetBindingDescription() },
-        VertexDataPosUv::GetAttributeDescriptions(),
+        Vector<VkVertexInputBindingDescription>{VertexDataPos4::GetBindingDescription() },
+        VertexDataPos4::GetAttributeDescriptions(),
         vk.m_SwapchainImageRenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
-        VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, false,
+        VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE, false,
         VK_COMPARE_OP_LESS, lines_layout);
     Material lines_material = Material::Create(vk, state.m_LinesProg);
 
@@ -150,7 +166,16 @@ LvkIm3dViewState AddIm3dForViewport(VulkanAPI& vk, LvkIm3dState& state, VkRender
 void DrawIm3d(VulkanAPI& vk, VkCommandBuffer& buffer, uint32_t frameIndex, LvkIm3dState& state, LvkIm3dViewState& viewState)
 {
     auto& context = Im3d::GetContext();
+    // TODO: Pass in a camera
+    glm::mat4 view = glm::lookAt(glm::vec3(20.0f, 20.0f, 20.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 proj = glm::mat4(1.0);
 
+    glm::mat4 viewProj = proj * view;
+    if (vk.m_SwapChainImageExtent.width > 0 || vk.m_SwapChainImageExtent.height)
+    {
+        proj = glm::perspective(glm::radians(45.0f), vk.m_SwapChainImageExtent.width / (float)vk.m_SwapChainImageExtent.height, 0.1f, 1000.0f);
+        proj[1][1] *= -1;
+    }
 
     for (int i = 0; i < context.getDrawListCount(); i++)
     {
@@ -159,27 +184,34 @@ void DrawIm3d(VulkanAPI& vk, VkCommandBuffer& buffer, uint32_t frameIndex, LvkIm
 
         ShaderProgram* shader = nullptr;
         Material* mat = nullptr;
-        
+        VkPipelineLayout* pipelineLayout = nullptr;
+        VkPipeline* pipeline = nullptr;
         switch (drawList->m_primType)
         {
             case Im3d::DrawPrimitiveType::DrawPrimitive_Triangles:
                 shader = &state.m_TriProg;
+                pipelineLayout = &viewState.m_TrisPipelineLayout;
+                pipeline = &viewState.m_TrisPipeline;
                 mat = &viewState.m_TrisMaterial;
                 primVertexCount = 3;
                 break;
             case Im3d::DrawPrimitiveType::DrawPrimitive_Lines:
                 shader = &state.m_LinesProg;
+                pipelineLayout = &viewState.m_LinesPipelineLayout;
+                pipeline = &viewState.m_LinesPipeline;
                 mat = &viewState.m_LinesMaterial;
                 primVertexCount = 2;
                 break;
             case Im3d::DrawPrimitiveType::DrawPrimitive_Points:
                 shader = &state.m_PointsProg;
+                pipelineLayout = &viewState.m_PointsPipelineLayout;
+                pipeline = &viewState.m_PointsPipeline;
                 mat = &viewState.m_PointsMaterial;
                 primVertexCount = 1;
                 break;
             default:
                 spdlog::error("Im3d: unknown primitive type");
-                break;
+                return;
         }
 
         const int kMaxBufferSize = 64 * 1024; // assuming 64kb here but the application should check the implementation limit
@@ -187,6 +219,14 @@ void DrawIm3d(VulkanAPI& vk, VkCommandBuffer& buffer, uint32_t frameIndex, LvkIm
         
         int remainingPrimCount = drawList->m_vertexCount / primVertexCount;
         const Im3d::VertexData* vertexData = drawList->m_vertexData;
+
+        struct CameraUniformData
+        {
+            glm::mat4 ViewProj;
+            glm::vec2 ViewPort;
+        };
+
+        CameraUniformData camData{ viewProj, {vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height} };
 
         while (remainingPrimCount > 0)
         {
@@ -199,12 +239,41 @@ void DrawIm3d(VulkanAPI& vk, VkCommandBuffer& buffer, uint32_t frameIndex, LvkIm
             //glAssert(glBindBuffer(GL_UNIFORM_BUFFER, g_Im3dUniformBuffer));
             //glAssert(glBufferData(GL_UNIFORM_BUFFER, (GLsizeiptr)passVertexCount * sizeof(Im3d::VertexData), (GLvoid*)vertexData, GL_DYNAMIC_DRAW));
 
+            mat->SetBuffer(frameIndex, 0, 1, camData);
+            // access violation
+            // mat->SetBuffer<Im3d::VertexData>(frameIndex, 0, 0, vertexData, passVertexCount * sizeof(Im3d::VertexData));
             //// instanced draw call, 1 instance per prim
             //glAssert(glBindBufferBase(GL_UNIFORM_BUFFER, 0, g_Im3dUniformBuffer));
             //glDrawArraysInstanced(prim, 0, prim == GL_TRIANGLES ? 3 : 4, passPrimCount); // for triangles just use the first 3 verts of the strip
+            // mode=prim, starting index, number of indices to be rendered, the number of instances of the specified range of indices to be rendered
 
-            //vertexData += passVertexCount;
-            //remainingPrimCount -= passPrimCount;
+            // get correct pipeline and bind
+
+            VkViewport viewport{};
+            viewport.x = 0.0f;
+            viewport.x = 0.0f;
+            viewport.width = static_cast<float>(vk.m_SwapChainImageExtent.width);
+            viewport.height = static_cast<float>(vk.m_SwapChainImageExtent.height);
+            viewport.minDepth = 0.0f;
+            viewport.maxDepth = 1.0f;
+
+            VkRect2D scissor{};
+            scissor.offset = { 0,0 };
+            scissor.extent = VkExtent2D{
+                static_cast<uint32_t>(vk.m_SwapChainImageExtent.width) ,
+                static_cast<uint32_t>(vk.m_SwapChainImageExtent.height)
+            };
+            VkDeviceSize sizes[] = { 0 };
+            vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline);
+            vkCmdSetViewport(buffer, 0, 1, &viewport);
+            vkCmdSetScissor(buffer, 0, 1, &scissor);
+            vkCmdBindVertexBuffers(buffer, 0, 1, &state.m_ScreenQuad, sizes);
+            vkCmdBindDescriptorSets(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *pipelineLayout, 0, 1, &mat->m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
+
+            vkCmdDrawIndexed(buffer, primVertexCount == 3 ? 3 : 4, passPrimCount, 0, 0, 0);
+
+            vertexData += passVertexCount;
+            remainingPrimCount -= passPrimCount;
         }
     }
 }

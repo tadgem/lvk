@@ -54,9 +54,6 @@ namespace lvk
             };
         };
 
-        // todo: rework this to be a hashmap
-        // uint64 - buffer data
-
         HashMap<uint64_t, ShaderBufferBindingData>   m_UniformBuffers;
         HashMap<String, SamplerBindingData>             m_Samplers;
         HashMap<String, ShaderAccessorData>            m_UniformBufferAccessors;
@@ -74,6 +71,19 @@ namespace lvk
 
             return true;
         }
+
+        template<typename _Ty>
+        bool SetBuffer(uint32_t frameIndex, uint32_t set, uint32_t binding, const _Ty* start, uint32_t count)
+        {
+            Material::SetBinding sb = {};
+            sb.m_Set = set;
+            sb.m_Binding = binding;
+
+            m_UniformBuffers[sb.m_Data].m_Buffer.Set(frameIndex, start, count);
+
+            return true;
+        }
+
 
         // this will work for:
         // struct Particle {

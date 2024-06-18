@@ -88,9 +88,20 @@ namespace lvk
         template<typename _Ty>
         void Set(uint32_t frameIndex, const _Ty& data, uint32_t offset = 0)
         {
+            constexpr size_t _ty_size = sizeof(_Ty);
             uint64_t base_addr = (uint64_t)m_UniformBuffersMapped[frameIndex];
             void* addr = (void*)(base_addr + static_cast<uint64_t>(offset));
-            memcpy(addr, &data, sizeof(_Ty));
+            memcpy(addr, &data, _ty_size);
+        }
+
+        template<typename _Ty>
+        void Set(uint32_t frameIndex, _Ty* start, uint32_t count)
+        {
+            constexpr size_t _ty_size = sizeof(_Ty);
+            void* addr = m_UniformBuffersMapped[frameIndex];
+            size_t copy_size = _ty_size * count;
+            memcpy(addr, start, copy_size);
+
         }
 
         void Free(VulkanAPI& vk);
