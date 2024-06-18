@@ -39,6 +39,11 @@ namespace lvk
 
         VkDescriptorSetLayout m_DescriptorSetLayout;
 
+        void Free(VulkanAPI& vk)
+        {
+            vkDestroyDescriptorSetLayout(vk.m_LogicalDevice, m_DescriptorSetLayout, nullptr);
+        }
+
         static ShaderProgram Create(VulkanAPI& vk, const String& vertPath, const String& fragPath)
         {
             ShaderStage vert = ShaderStage::Create(vk, vertPath, ShaderStage::Type::Vertex);

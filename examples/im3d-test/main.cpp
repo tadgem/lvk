@@ -175,6 +175,31 @@ LvkIm3dViewState AddIm3dForViewport(VulkanAPI& vk, LvkIm3dState& state, VkRender
             tris_layout, points_layout, lines_layout };
 }
 
+void FreeIm3dViewport(VulkanAPI& vk, LvkIm3dViewState& viewState)
+{
+    viewState.m_TrisMaterial.Free(vk);
+    viewState.m_LinesMaterial.Free(vk);
+    viewState.m_PointsMaterial.Free(vk);
+
+    vkDestroyPipelineLayout(vk.m_LogicalDevice, viewState.m_TrisPipelineLayout, nullptr);
+    vkDestroyPipelineLayout(vk.m_LogicalDevice, viewState.m_LinesPipelineLayout, nullptr);
+    vkDestroyPipelineLayout(vk.m_LogicalDevice, viewState.m_PointsPipelineLayout, nullptr);
+
+    vkDestroyPipeline(vk.m_LogicalDevice, viewState.m_TrisPipeline, nullptr);
+    vkDestroyPipeline(vk.m_LogicalDevice, viewState.m_LinesPipeline, nullptr);
+    vkDestroyPipeline(vk.m_LogicalDevice, viewState.m_PointsPipeline, nullptr);
+}
+
+void FreeIm3d(VulkanAPI& vk, LvkIm3dState& state)
+{
+    state.m_TriProg.Free(vk);
+    state.m_LinesProg.Free(vk);
+    state.m_PointsProg.Free(vk);
+
+    vkDestroyBuffer(vk.m_LogicalDevice, state.m_ScreenQuad, nullptr);
+    vmaFreeMemory(vk.m_Allocator, state.m_ScreenQuadMemory);
+}
+
 Im3d::Mat4 ToIm3D(const glm::mat4& _m) { 
     Im3d::Mat4 m(1.0);
     for (int i = 0; i < 16; ++i)
@@ -704,15 +729,17 @@ int main() {
 
         vk.PostFrame();
     }
+    gbufferProg.Free(vk);
+    lightPassProg.Free(vk);
 
     lightPassMat.Free(vk);
     gbuffer.Free(vk);
     m.Free(vk);
 
-    vkDestroyRenderPass(vk.m_LogicalDevice, gbuffer.m_RenderPass, nullptr);
+    FreeIm3dViewport(vk, im3dViewState);
+    FreeIm3d(vk, im3dState);
 
-    vkDestroyDescriptorSetLayout(vk.m_LogicalDevice, gbufferProg.m_DescriptorSetLayout, nullptr);
-    vkDestroyDescriptorSetLayout(vk.m_LogicalDevice, lightPassProg.m_DescriptorSetLayout, nullptr);
+    vkDestroyRenderPass(vk.m_LogicalDevice, gbuffer.m_RenderPass, nullptr);
 
     vkDestroyPipelineLayout(vk.m_LogicalDevice, gbufferPipelineLayout, nullptr);
     vkDestroyPipeline(vk.m_LogicalDevice, gbufferPipeline, nullptr);
