@@ -43,9 +43,16 @@ struct RenderModel
     }
 };
 
+struct Camera
+{
+    glm::vec3 Position;
+    glm::vec3 Rotation;
+    float FOV = 90.0f;
+    float Near = 0.001f, Far = 300.0f;
+};
+
 static Transform g_Transform;
-
-
+static Camera g_Camera;
 struct LvkIm3dState
 {
     ShaderProgram m_TriProg;
@@ -167,15 +174,22 @@ void DrawIm3d(VulkanAPI& vk, VkCommandBuffer& buffer, uint32_t frameIndex, LvkIm
 {
     auto& context = Im3d::GetContext();
     // TODO: Pass in a camera
-    glm::mat4 view = glm::lookAt(glm::vec3(20.0f, 20.0f, 20.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    glm::mat4 proj = glm::mat4(1.0);
+    glm::quat qPitch = glm::angleAxis(glm::radians(-g_Camera.Rotation.x), glm::vec3(1, 0, 0));
+    glm::quat qYaw = glm::angleAxis(glm::radians(g_Camera.Rotation.y), glm::vec3(0, 1, 0));
+    // omit roll
+    glm::quat Rotation = qPitch * qYaw;
+    Rotation = glm::normalize(Rotation);
+    glm::mat4 rotate = glm::mat4_cast(Rotation);
+    glm::mat4 translate = glm::mat4(1.0f);
+    translate = glm::translate(translate, -g_Camera.Position);
 
-    glm::mat4 viewProj = proj * view;
-    if (vk.m_SwapChainImageExtent.width > 0 || vk.m_SwapChainImageExtent.height)
-    {
-        proj = glm::perspective(glm::radians(45.0f), vk.m_SwapChainImageExtent.width / (float)vk.m_SwapChainImageExtent.height, 0.1f, 1000.0f);
-        proj[1][1] *= -1;
-    }
+    glm::mat4 View = rotate * translate;
+    
+    glm::mat4 Proj = glm::perspective(glm::radians(45.0f), vk.m_SwapChainImageExtent.width / (float)vk.m_SwapChainImageExtent.height, 0.1f, 1000.0f);
+    Proj[1][1] *= -1;
+    
+
+    glm::mat4 viewProj = Proj * View;
 
     for (int i = 0; i < context.getDrawListCount(); i++)
     {
@@ -239,9 +253,9 @@ void DrawIm3d(VulkanAPI& vk, VkCommandBuffer& buffer, uint32_t frameIndex, LvkIm
             //glAssert(glBindBuffer(GL_UNIFORM_BUFFER, g_Im3dUniformBuffer));
             //glAssert(glBufferData(GL_UNIFORM_BUFFER, (GLsizeiptr)passVertexCount * sizeof(Im3d::VertexData), (GLvoid*)vertexData, GL_DYNAMIC_DRAW));
 
-            mat->SetBuffer(frameIndex, 0, 1, camData);
             // access violation
-            // mat->SetBuffer<Im3d::VertexData>(frameIndex, 0, 0, vertexData, passVertexCount * sizeof(Im3d::VertexData));
+            mat->SetBuffer(frameIndex, 0, 0, vertexData, passVertexCount * sizeof(Im3d::VertexData));
+            mat->SetBuffer(frameIndex, 0, 1, camData);
             //// instanced draw call, 1 instance per prim
             //glAssert(glBindBufferBase(GL_UNIFORM_BUFFER, 0, g_Im3dUniformBuffer));
             //glDrawArraysInstanced(prim, 0, prim == GL_TRIANGLES ? 3 : 4, passPrimCount); // for triangles just use the first 3 verts of the strip
@@ -351,7 +365,6 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
 
         vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        DrawIm3d(vk, commandBuffer, frameIndex, im3dState, im3dViewState);
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, lightingPassPipeline);
         VkViewport viewport{};
         viewport.x = 0.0f;
@@ -374,6 +387,8 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
         vkCmdBindIndexBuffer(commandBuffer, screenQuad.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, lightingPassPipelineLayout, 0, 1, &lightPassMaterial.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
         vkCmdDrawIndexed(commandBuffer, screenQuad.m_IndexCount, 1, 0, 0, 0);
+
+        DrawIm3d(vk, commandBuffer, frameIndex, im3dState, im3dViewState);
         vkCmdEndRenderPass(commandBuffer);
         });
 }
@@ -388,7 +403,16 @@ void UpdateUniformBuffer(VulkanAPI_SDL& vk, Material& renderItemMaterial, Materi
     MvpData ubo{};
     ubo.Model = g_Transform.to_mat4();
 
-    ubo.View = glm::lookAt(glm::vec3(20.0f, 20.0f, 20.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::quat qPitch = glm::angleAxis(glm::radians(-g_Camera.Rotation.x), glm::vec3(1, 0, 0));
+    glm::quat qYaw = glm::angleAxis(glm::radians(g_Camera.Rotation.y), glm::vec3(0, 1, 0));
+    // omit roll
+    glm::quat Rotation = qPitch * qYaw;
+    Rotation = glm::normalize(Rotation);
+    glm::mat4 rotate = glm::mat4_cast(Rotation);
+    glm::mat4 translate = glm::mat4(1.0f);
+    translate = glm::translate(translate, -g_Camera.Position);
+
+    ubo.View = rotate * translate;
     if (vk.m_SwapChainImageExtent.width > 0 || vk.m_SwapChainImageExtent.height)
     {
         ubo.Proj = glm::perspective(glm::radians(45.0f), vk.m_SwapChainImageExtent.width / (float)vk.m_SwapChainImageExtent.height, 0.1f, 1000.0f);
@@ -430,6 +454,11 @@ void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu)
         ImGui::DragFloat3("Position", &g_Transform.m_Position[0]);
         ImGui::DragFloat3("Euler Rotation", &g_Transform.m_Rotation[0]);
         ImGui::DragFloat3("Scale", &g_Transform.m_Scale[0]);
+
+        ImGui::Separator();
+
+        ImGui::DragFloat3("Cam Position", &g_Camera.Position[0]);
+        ImGui::DragFloat3("Cam Euler Rotation", &g_Camera.Rotation[0]);
     }
     ImGui::End();
 
@@ -487,7 +516,14 @@ void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu)
 
 void OnIm3D()
 {
-    Im3d::DrawCircle({ 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, 10.0f);
+    static Im3d::Mat4 transform(1.0f);
+    Im3d::PushMatrix(transform);
+    Im3d::PushDrawState();
+    Im3d::SetSize(2.0f);
+    Im3d::SetColor(Im3d::Color_White);
+    Im3d::DrawCircle({ 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, 0.5f, 32);
+    Im3d::PopDrawState();
+    Im3d::PopMatrix();
 }
 
 int main() {

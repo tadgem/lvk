@@ -95,12 +95,11 @@ namespace lvk
         }
 
         template<typename _Ty>
-        void Set(uint32_t frameIndex, _Ty* start, uint32_t count)
+        void Set(uint32_t frameIndex, _Ty* start, uint64_t count)
         {
             constexpr size_t _ty_size = sizeof(_Ty);
             void* addr = m_UniformBuffersMapped[frameIndex];
-            size_t copy_size = _ty_size * count;
-            memcpy(addr, start, copy_size);
+            memcpy(addr, start, count);
 
         }
 

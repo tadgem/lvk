@@ -73,7 +73,7 @@ namespace lvk
         }
 
         template<typename _Ty>
-        bool SetBuffer(uint32_t frameIndex, uint32_t set, uint32_t binding, const _Ty* start, uint32_t count)
+        bool SetBuffer(uint32_t frameIndex, uint32_t set, uint32_t binding, _Ty* start, uint32_t count)
         {
             Material::SetBinding sb = {};
             sb.m_Set = set;
