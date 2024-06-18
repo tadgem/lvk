@@ -619,7 +619,7 @@ void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu)
 
 void OnIm3D()
 {
-    Im3d::DrawCircleFilled({ 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, 20.5f, 32);
+    Im3d::DrawCircle({ 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, 20.5f, 32);
     Im3d::DrawArrow({ 23.0f, 0.0f, 0.0f }, { 3.0f, 23.0f, 0.0f }, 2.0f, 2.0f);
     Im3d::Text({ 0.0, 20.0f, 0.0f }, 0, "Hello from you fuck you bloody");
 }
