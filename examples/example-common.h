@@ -40,12 +40,20 @@ struct MvpData {
     glm::mat4 Proj;
 };
 
+
+struct AABB
+{
+    glm::vec3 m_Min;
+    glm::vec3 m_Max;
+};
+
 struct MeshEx
 {
     VkBuffer m_VertexBuffer;
     VmaAllocation m_VertexBufferMemory;
     VkBuffer m_IndexBuffer;
     VmaAllocation m_IndexBufferMemory;
+    AABB m_AABB;
 
     uint32_t m_IndexCount;
     uint32_t m_MaterialIndex;
@@ -197,12 +205,13 @@ void ProcessMesh(lvk::VulkanAPI& vk, Model& model, aiMesh* mesh, aiNode* node, c
             }
         }
     }
-
+    AABB aabb = { {mesh->mAABB.mMin.x, mesh->mAABB.mMin.y, mesh->mAABB.mMin.z},
+                    {mesh->mAABB.mMax.x, mesh->mAABB.mMax.y, mesh->mAABB.mMax.z} };
     MeshEx m{};
     vk.CreateVertexBuffer<VertexDataPosUv>(verts, m.m_VertexBuffer, m.m_VertexBufferMemory);
     vk.CreateIndexBuffer(indices, m.m_IndexBuffer, m.m_IndexBufferMemory);
     m.m_IndexCount = static_cast<uint32_t>(indices.size());
-
+    m.m_AABB = aabb;
     model.m_Meshes.push_back(m);
 }
 
@@ -245,12 +254,15 @@ void ProcessMeshWithNormals(lvk::VulkanAPI& vk, Model& model, aiMesh* mesh, aiNo
             }
         }
     }
+    AABB aabb = { {mesh->mAABB.mMin.x, mesh->mAABB.mMin.y, mesh->mAABB.mMin.z},
+                {mesh->mAABB.mMax.x, mesh->mAABB.mMax.y, mesh->mAABB.mMax.z} };
 
     MeshEx m{};
     vk.CreateVertexBuffer<VertexDataPosNormalUv>(verts, m.m_VertexBuffer, m.m_VertexBufferMemory);
     vk.CreateIndexBuffer(indices, m.m_IndexBuffer, m.m_IndexBufferMemory);
     m.m_IndexCount = static_cast<uint32_t>(indices.size());
     m.m_MaterialIndex = mesh->mMaterialIndex;
+    m.m_AABB = aabb;
     model.m_Meshes.push_back(m);
 }
 
@@ -290,7 +302,9 @@ void LoadModelAssimp(lvk::VulkanAPI& vk, Model& model, const lvk::String& path, 
         aiProcess_GenSmoothNormals |
         aiProcess_OptimizeGraph |
         aiProcess_FixInfacingNormals |
-        aiProcess_FindInvalidData);
+        aiProcess_FindInvalidData | 
+        aiProcess_GenBoundingBoxes
+    );
     //
     if (scene == nullptr) {
         spdlog::error("AssimpModelAssetFactory : Failed to load asset at path : {}", path);
@@ -325,7 +339,7 @@ MeshEx BuildScreenSpaceQuad(lvk::VulkanAPI& vk, lvk::Vector <lvk::VertexDataPosU
     vk.CreateVertexBuffer<lvk::VertexDataPosUv>(verts, vertexBuffer, vertexBufferMemory);
     vk.CreateIndexBuffer(indices, indexBuffer, indexBufferMemory);
 
-    return MeshEx{ vertexBuffer, vertexBufferMemory, indexBuffer, indexBufferMemory, 6 };
+    return MeshEx{ vertexBuffer, vertexBufferMemory, indexBuffer, indexBufferMemory, {}, 6 };
 }
 
 

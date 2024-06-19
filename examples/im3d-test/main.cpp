@@ -141,7 +141,7 @@ LvkIm3dViewState AddIm3dForViewport(VulkanAPI& vk, LvkIm3dState& state, VkRender
         vk.m_SwapchainImageRenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
         VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, enableMSAA,
-        VK_COMPARE_OP_ALWAYS, tris_layout);
+        VK_COMPARE_OP_GREATER_OR_EQUAL, tris_layout);
     Material tris_material = Material::Create(vk, state.m_TriProg);
 
     VkPipelineLayout points_layout;
@@ -153,7 +153,7 @@ LvkIm3dViewState AddIm3dForViewport(VulkanAPI& vk, LvkIm3dState& state, VkRender
         vk.m_SwapchainImageRenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
         VK_POLYGON_MODE_POINT, VK_CULL_MODE_NONE, enableMSAA,
-        VK_COMPARE_OP_ALWAYS, points_layout);
+        VK_COMPARE_OP_GREATER_OR_EQUAL, points_layout);
     Material points_material = Material::Create(vk, state.m_PointsProg);
 
 
@@ -166,7 +166,7 @@ LvkIm3dViewState AddIm3dForViewport(VulkanAPI& vk, LvkIm3dState& state, VkRender
         vk.m_SwapchainImageRenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
         VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE, enableMSAA,
-        VK_COMPARE_OP_ALWAYS, lines_layout);
+        VK_COMPARE_OP_GREATER_OR_EQUAL, lines_layout);
     Material lines_material = Material::Create(vk, state.m_LinesProg);
 
 
@@ -448,6 +448,7 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
             for (int i = 0; i < model.m_RenderItems.size(); i++)
             {
                 MeshEx& mesh = model.m_RenderItems[i].m_Mesh;
+
                 VkBuffer vertexBuffers[]{ mesh.m_VertexBuffer };
                 VkDeviceSize sizes[] = { 0 };
 
@@ -527,7 +528,7 @@ void UpdateUniformBuffer(VulkanAPI_SDL& vk, Material& renderItemMaterial, Materi
     g_Camera.View = ubo.View;
     if (vk.m_SwapChainImageExtent.width > 0 || vk.m_SwapChainImageExtent.height)
     {
-        ubo.Proj = glm::perspective(glm::radians(45.0f), vk.m_SwapChainImageExtent.width / (float)vk.m_SwapChainImageExtent.height, 0.1f, 1000.0f);
+        ubo.Proj = glm::perspective(glm::radians(45.0f), vk.m_SwapChainImageExtent.width / (float)vk.m_SwapChainImageExtent.height, 0.1f, 3000.0f);
         ubo.Proj[1][1] *= -1;
         g_Camera.Proj = ubo.Proj;
     }
@@ -661,11 +662,11 @@ int main() {
     Framebuffer gbuffer{};
     gbuffer.m_Width = vk.m_SwapChainImageExtent.width;
     gbuffer.m_Height = vk.m_SwapChainImageExtent.height;
-    gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+    gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
-    gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+    gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
-    gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+    gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
     gbuffer.AddDepthAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
@@ -718,8 +719,16 @@ int main() {
 
         OnIm3D();
 
-        Im3d::EndFrame();
+        for (auto item : m.m_RenderItems)
+        {
+            auto& mesh = item.m_Mesh;
+            /*Im3d::DrawAlignedBox(
+                { mesh.m_AABB.m_Min.x, mesh.m_AABB.m_Min.y, mesh.m_AABB.m_Min.z },
+                { mesh.m_AABB.m_Max.x, mesh.m_AABB.m_Max.y, mesh.m_AABB.m_Max.z }
+            );*/
+        }
 
+        Im3d::EndFrame();
         RecordCommandBuffersV2(vk,
             gbufferPipeline, gbufferPipelineLayout, gbuffer.m_RenderPass, gbuffer.m_SwapchainFramebuffers,
             pipeline, lightPassPipelineLayout, vk.m_SwapchainImageRenderPass, lightPassMat, vk.m_SwapChainFramebuffers,
