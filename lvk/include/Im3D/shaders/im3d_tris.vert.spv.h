@@ -7,6 +7,10 @@
 /*
 	im3d_tris.vert.spv.h
 */
+#pragma once
+#pragma warning( push )
+#pragma warning( disable : 4838)
+#pragma warning( disable : 4309)
 
 const char im3d_tris_vert_spv_bin[3200] = {
     0x03, 0x02, 0x23, 0x07, 0x00, 0x00, 0x01, 0x00, 0x0A, 0x00, 0x0D, 0x00, 0x72, 0x00, 0x00, 0x00,
@@ -214,3 +218,4 @@ const char im3d_tris_vert_spv_bin[3200] = {
 
 size_t im3d_tris_vert_spv_bin_SIZE = 3200;
 const char * im3d_tris_vert_spv_bin_NAME = "im3d_tris.vert.spv";
+#pragma warning( pop )

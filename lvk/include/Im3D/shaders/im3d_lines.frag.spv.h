@@ -1,3 +1,4 @@
+#pragma once
 /*
 	File Generated with bin2c Conversion Tool v0.15.0 - Windows - [FINAL].
 	Free for any use.
@@ -7,6 +8,9 @@
 /*
 	im3d_lines.frag.spv.h
 */
+#pragma warning( push )
+#pragma warning( disable : 4838)
+#pragma warning( disable : 4309)
 
 const char im3d_lines_frag_spv_bin[1028] = {
     0x03, 0x02, 0x23, 0x07, 0x00, 0x00, 0x01, 0x00, 0x0A, 0x00, 0x0D, 0x00, 0x25, 0x00, 0x00, 0x00,
@@ -78,3 +82,5 @@ const char im3d_lines_frag_spv_bin[1028] = {
 
 size_t im3d_lines_frag_spv_bin_SIZE = 1028;
 const char * im3d_lines_frag_spv_bin_NAME = "im3d_lines.frag.spv";
+
+#pragma warning( pop )

@@ -5,7 +5,7 @@
 #include <fstream>
 #include <array>
 #include "lvk/VulkanAPI.h"
-#include "spirv_reflect.h"
+#include "ThirdParty/spirv_reflect.h"
 #include "spdlog/spdlog.h"
 #include "ImGui/imgui_impl_vulkan.h"
 #include "lvk/Texture.h"

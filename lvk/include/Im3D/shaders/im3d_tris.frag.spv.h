@@ -7,6 +7,11 @@
 /*
 	im3d_tris.frag.spv.h
 */
+#pragma once
+#pragma warning( push )
+#pragma warning( disable : 4838)
+#pragma warning( disable : 4309)
+
 
 const char im3d_tris_frag_spv_bin[524] = {
     0x03, 0x02, 0x23, 0x07, 0x00, 0x00, 0x01, 0x00, 0x0A, 0x00, 0x0D, 0x00, 0x0F, 0x00, 0x00, 0x00,
@@ -46,3 +51,5 @@ const char im3d_tris_frag_spv_bin[524] = {
 
 size_t im3d_tris_frag_spv_bin_SIZE = 524;
 const char * im3d_tris_frag_spv_bin_NAME = "im3d_tris.frag.spv";
+
+#pragma warning( pop )

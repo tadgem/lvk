@@ -7,6 +7,10 @@
 /*
 	im3d_lines.vert.spv.h
 */
+#pragma once
+#pragma warning( push )
+#pragma warning( disable : 4838)
+#pragma warning( disable : 4309)
 
 const char im3d_lines_vert_spv_bin[5528] = {
     0x03, 0x02, 0x23, 0x07, 0x00, 0x00, 0x01, 0x00, 0x0A, 0x00, 0x0D, 0x00, 0xDB, 0x00, 0x00, 0x00,
@@ -359,3 +363,5 @@ const char im3d_lines_vert_spv_bin[5528] = {
 
 const size_t im3d_lines_vert_spv_bin_SIZE = 5528;
 const char * im3d_lines_vert_spv_bin_NAME = "im3d_lines.vert.spv";
+
+#pragma warning( pop )

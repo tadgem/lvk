@@ -5,9 +5,9 @@ spdlog::error("VK check failed at {} Line {} : {}",_filePath, _lineNumber, #X);}
 
 #include "Alias.h"
 #include <vulkan/vulkan.h>
-#include "spirv_reflect.h"
-#include "VulkanMemoryAllocator.h"
-#include "stb_image.h"
+#include "ThirdParty/spirv_reflect.h"
+#include "ThirdParty/VulkanMemoryAllocator.h"
+#include "ThirdParty/stb_image.h"
 #include "ImGui/imgui.h"
 #include "spdlog/spdlog.h"
 
