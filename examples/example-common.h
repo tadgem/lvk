@@ -47,6 +47,8 @@ struct AABB
     glm::vec3 m_Max;
 };
 
+
+
 struct MeshEx
 {
     VkBuffer m_VertexBuffer;
@@ -54,6 +56,7 @@ struct MeshEx
     VkBuffer m_IndexBuffer;
     VmaAllocation m_IndexBufferMemory;
     AABB m_AABB;
+    glm::mat4 m_OBB;
 
     uint32_t m_IndexCount;
     uint32_t m_MaterialIndex;
@@ -213,6 +216,37 @@ void ProcessMesh(lvk::VulkanAPI& vk, Model& model, aiMesh* mesh, aiNode* node, c
     m.m_IndexCount = static_cast<uint32_t>(indices.size());
     m.m_AABB = aabb;
     model.m_Meshes.push_back(m);
+}
+
+AABB TransformAABB(AABB& in, glm::mat4& m)
+{
+    float scalingFactor = m[0][0] * m[0][0] + m[0][1] * m[0][1] + m[0][2] * m[0][2];
+    float f = 1.0 / scalingFactor;
+    glm::mat3 rotationMatrix =
+    {
+        {m[0][0] * f, m[0][1] * f, m[0][2] * f},
+        {m[1][0] * f, m[1][1] * f, m[1][2] * f},
+        {m[2][0] * f, m[2][1] * f, m[2][2] * f}
+    };
+
+    glm::vec3 translation = { m[0][3],m[1][3], m[2][3] };
+    AABB ret;
+    ret.m_Min = glm::vec3(0.0f);
+    ret.m_Max = glm::vec3(0.0f);
+
+    for (int i = 0; i < 3; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            auto a = rotationMatrix[i][j] * in.m_Min[j];
+            auto b = rotationMatrix[i][j] * in.m_Max[j];
+
+            ret.m_Min[i] += a < b ? a : b;
+            ret.m_Max[i] += a < b ? b : a;
+        }
+    }
+
+    return ret;
 }
 
 void ProcessMeshWithNormals(lvk::VulkanAPI& vk, Model& model, aiMesh* mesh, aiNode* node, const aiScene* scene) {

@@ -542,6 +542,11 @@ VkExtent2D lvk::VulkanAPI::ChooseSwapExtent(VkSurfaceCapabilitiesKHR& surfaceCap
     }
 }
 
+VkExtent2D lvk::VulkanAPI::GetMaxFramebufferExtent()
+{
+    return p_MaxFramebufferExtent;
+}
+
 void lvk::VulkanAPI::CreateSwapChain()
 {
     SwapChainSupportDetais swapChainDetails = GetSwapChainSupportDetails(m_PhysicalDevice);
@@ -1835,6 +1840,8 @@ void lvk::VulkanAPI::Start(uint32_t width, uint32_t height, bool enableSwapchain
 {
     CreateWindowLVK(width, height);
     InitVulkan(enableSwapchainMsaa);
+
+    p_MaxFramebufferExtent = GetMaxFramebufferResolution();
 
     if (p_UseImGui)
     {

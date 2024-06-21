@@ -142,6 +142,32 @@ VkExtent2D lvk::VulkanAPI_SDL::GetSurfaceExtent(VkSurfaceCapabilitiesKHR surface
     return VkExtent2D();
 }
 
+VkExtent2D lvk::VulkanAPI_SDL::GetMaxFramebufferResolution()
+{
+    auto numDispays = SDL_GetNumVideoDisplays();
+    VkExtent2D res{};
+    for (auto i = 0; i < numDispays; i++)
+    {
+        auto displayModes = SDL_GetNumDisplayModes(i);
+        for (int j = 0; j < displayModes; j++)
+        {
+            SDL_DisplayMode displayMode;
+            SDL_GetDisplayMode(i, j, &displayMode);
+
+            if (res.width < displayMode.w)
+            {
+                res.width = displayMode.w;
+            }
+
+            if (res.height < displayMode.h)
+            {
+                res.height = displayMode.h;
+            }
+        }
+    }
+    return res;
+}
+
 lvk::VulkanAPIWindowHandle_SDL::VulkanAPIWindowHandle_SDL(SDL_Window* sdlWindow) : m_SdlWindow(sdlWindow)
 {
     

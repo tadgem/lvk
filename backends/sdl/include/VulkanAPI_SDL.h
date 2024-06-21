@@ -28,6 +28,7 @@ namespace lvk {
 		virtual void 						CleanupWindow() override;
 		virtual void 						Run(std::function<void()> callback) override;
 		virtual VkExtent2D					GetSurfaceExtent(VkSurfaceCapabilitiesKHR surface) override;
+		virtual VkExtent2D                  GetMaxFramebufferResolution() override;
 		virtual bool						ShouldRun() override;
 		virtual void 						PreFrame() override;
 		virtual void 						PostFrame() override;

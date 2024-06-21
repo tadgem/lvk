@@ -1,10 +1,11 @@
 #pragma once
-#include "Alias.h"
-#include <vulkan/vulkan.h>
-#include "spirv_reflect.h"
 #define VK_CHECK(X) {int _lineNumber = __LINE__; const char* _filePath = __FILE__;\
 if(X != VK_SUCCESS){\
 spdlog::error("VK check failed at {} Line {} : {}",_filePath, _lineNumber, #X);}}
+
+#include "Alias.h"
+#include <vulkan/vulkan.h>
+#include "spirv_reflect.h"
 #include "VulkanMemoryAllocator.h"
 #include "stb_image.h"
 #include "ImGui/imgui.h"
@@ -242,6 +243,7 @@ public:
         void                                Start(uint32_t width, uint32_t height, bool enableSwapchainMsaa = false);
         void                                Quit();
         inline int                          GetFrameIndex() { return p_CurrentFrameIndex; }
+        VkExtent2D                          GetMaxFramebufferExtent();
 
         // API Begin
         uint32_t                            FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
@@ -354,6 +356,9 @@ public:
         virtual void                        CreateWindowLVK(uint32_t width, uint32_t height) = 0;
         virtual void                        CleanupWindow() = 0;
         virtual VkExtent2D                  GetSurfaceExtent(VkSurfaceCapabilitiesKHR surface) = 0;
+        protected:
+        virtual VkExtent2D                  GetMaxFramebufferResolution() = 0;
+        public:
         virtual bool                        ShouldRun() = 0;
         virtual void                        PreFrame() = 0;
         virtual void                        PostFrame() = 0;
@@ -366,5 +371,6 @@ public:
         bool            p_ShouldRun = true;
         uint64_t        p_LastFrameTime;
         int             p_CurrentFrameIndex;
+        VkExtent2D      p_MaxFramebufferExtent;
     };
 }
