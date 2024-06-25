@@ -66,7 +66,7 @@ namespace lvk
             state.m_TriProg.m_DescriptorSetLayout,
             Vector<VkVertexInputBindingDescription>{VertexDataPos4::GetBindingDescription() },
             VertexDataPos4::GetAttributeDescriptions(),
-            vk.m_SwapchainImageRenderPass,
+            renderPass,
             vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
             VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, enableMSAA,
             VK_COMPARE_OP_GREATER_OR_EQUAL, tris_layout);
@@ -78,7 +78,7 @@ namespace lvk
             state.m_PointsProg.m_DescriptorSetLayout,
             Vector<VkVertexInputBindingDescription>{VertexDataPos4::GetBindingDescription() },
             VertexDataPos4::GetAttributeDescriptions(),
-            vk.m_SwapchainImageRenderPass,
+            renderPass,
             vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
             VK_POLYGON_MODE_POINT, VK_CULL_MODE_NONE, enableMSAA,
             VK_COMPARE_OP_GREATER_OR_EQUAL, points_layout);
@@ -91,7 +91,7 @@ namespace lvk
             state.m_LinesProg.m_DescriptorSetLayout,
             Vector<VkVertexInputBindingDescription>{VertexDataPos4::GetBindingDescription() },
             VertexDataPos4::GetAttributeDescriptions(),
-            vk.m_SwapchainImageRenderPass,
+            renderPass,
             vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
             VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE, enableMSAA,
             VK_COMPARE_OP_GREATER_OR_EQUAL, lines_layout);
