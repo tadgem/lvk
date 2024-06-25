@@ -147,7 +147,7 @@ void lvk::VulkanAPI::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreat
 
 void lvk::VulkanAPI::CreateInstance()
 {
-    if (p_UseValidation && !CheckValidationLayerSupport())
+    if (m_UseValidation && !CheckValidationLayerSupport())
     {
         spdlog::error("Validation layers requested but not available.");
         std::cerr << "Validation layers requested but not available.";
@@ -194,7 +194,7 @@ void lvk::VulkanAPI::CreateInstance()
     createInfo.enabledExtensionCount = static_cast<uint32_t>(extensionNames.size());
     createInfo.ppEnabledExtensionNames = extensionNames.data();
 
-    if (p_UseValidation)
+    if (m_UseValidation)
     {
         VkDebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo;
         createInfo.enabledLayerCount = (uint32_t)p_ValidationLayers.size();
@@ -220,7 +220,7 @@ void lvk::VulkanAPI::Cleanup()
 {
     Texture::FreeDefaultTexture(*this);
     Mesh::FreeScreenQuad(*this);
-    if (p_UseImGui)
+    if (m_UseImGui)
     {
         vkDestroyRenderPass(m_LogicalDevice, m_ImGuiRenderPass, nullptr);
         ImGui_ImplVulkan_Shutdown();
@@ -232,7 +232,7 @@ void lvk::VulkanAPI::Cleanup()
 
 void lvk::VulkanAPI::SetupDebugOutput()
 {
-    if (!p_UseValidation) return;
+    if (!m_UseValidation) return;
 
     VkDebugUtilsMessengerCreateInfoEXT createInfo{};
     PopulateDebugMessengerCreateInfo(createInfo);
@@ -275,7 +275,7 @@ void lvk::VulkanAPI::CleanupVulkan()
     vmaDestroyAllocator(m_Allocator);
     CleanupSwapChain();
 
-    if (p_UseValidation)
+    if (m_UseValidation)
     {
         CleanupDebugOutput();
     }
@@ -473,7 +473,7 @@ void lvk::VulkanAPI::CreateLogicalDevice()
     createInfo.enabledExtensionCount    = static_cast<uint32_t>(p_DeviceExtensions.size());
     createInfo.ppEnabledExtensionNames  = p_DeviceExtensions.data();
 
-    if (p_UseValidation)
+    if (m_UseValidation)
     {
         createInfo.enabledLayerCount    = static_cast<uint32_t>(p_ValidationLayers.size());
         createInfo.ppEnabledLayerNames  = p_ValidationLayers.data();
@@ -1473,7 +1473,7 @@ void lvk::VulkanAPI::DrawFrame()
         std::cerr << "Failed to submit draw command buffer!" << std::endl;
     }
 
-    if (p_UseImGui)
+    if (m_UseImGui)
     {
         RenderImGui();
     }
@@ -1843,10 +1843,13 @@ void lvk::VulkanAPI::Start(uint32_t width, uint32_t height, bool enableSwapchain
 
     p_MaxFramebufferExtent = GetMaxFramebufferResolution();
 
-    if (p_UseImGui)
+    if (m_UseImGui)
     {
         InitImGui();
     }
+
+    Texture::InitDefaultTexture(*this);
+    Mesh::InitScreenQuad(*this);
 }
 
 lvk::ShaderBindingType GetBindingType(const SpvReflectDescriptorBinding& binding)
@@ -2049,8 +2052,6 @@ void lvk::VulkanAPI::InitVulkan(bool enableSwapchainMsaa)
     CreateFences();
     CreateCommandBuffers();
     CreateVmaAllocator();
-    Texture::InitDefaultTexture(*this);
-    Mesh::InitScreenQuad(*this);
 }
 
 void lvk::VulkanAPI::InitImGui()

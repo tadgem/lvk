@@ -34,6 +34,7 @@ add_library(${PROJECT_NAME} STATIC src/lvk/VulkanAPI.cpp
                             include/Im3D/im3d_config.h
                             include/Im3D/im3d_lvk.h
                             include/ImGui/imgui_impl_vulkan.h
+                            include/ImGui/lvk_extensions.h
                             include/ImGui/imconfig.h
                             include/ImGui/imgui_internal.h
                             include/ImGui/imgui.h

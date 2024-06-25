@@ -21,6 +21,8 @@ namespace lvk
 
     class VulkanAPIWindowHandle {};
 
+
+
     enum class ShaderBindingType
     {
         UniformBuffer,
@@ -110,8 +112,6 @@ namespace lvk
     class VulkanAPI
     {
     protected:
-        const bool                  p_UseValidation = true;
-        const bool                  p_UseImGui      = true;
 
         
         const Vector<const char*>   p_ValidationLayers = {
@@ -122,6 +122,8 @@ namespace lvk
         };
     public:
         bool    m_UseSwapchainMsaa = false;
+        const bool                  m_UseValidation = true;
+        const bool                  m_UseImGui      = true;
 
 
         enum class ShaderStage

@@ -8,6 +8,7 @@
 #include "Im3D/shaders/im3d_points.frag.spv.h"
 #include "Im3D/im3d_math.h"
 #include "ImGui/imgui_internal.h"
+#include "ImGui/imgui.h"
 
 namespace lvk
 {

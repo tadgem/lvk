@@ -33,7 +33,7 @@ std::vector<const char*> lvk::VulkanAPI_SDL::GetRequiredExtensions()
     std::vector<const char*> extensionNames(extensionCount);
     SDL_Vulkan_GetInstanceExtensions(m_SdlHandle->m_SdlWindow, &extensionCount, extensionNames.data());
 
-    if (p_UseValidation)
+    if (m_UseValidation)
     {
         extensionNames.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }

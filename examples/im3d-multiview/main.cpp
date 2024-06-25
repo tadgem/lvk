@@ -3,6 +3,7 @@
 #include "lvk/Material.h"
 #include <algorithm>
 #include "Im3D/im3d_lvk.h"
+#include "ImGui/lvk_extensions.h"
 
 using namespace lvk;
 
@@ -288,9 +289,22 @@ RenderModel CreateRenderModelGbuffer(VulkanAPI& vk, const String& modelPath, Sha
     return renderModel;
 }
 
-void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu)
+void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu, Vector<ViewData> views)
 {
-    if (ImGui::Begin("Debug"))
+
+    if (ImGui::Begin("View 1"))
+    {
+        ImGuiX::Image(views[0].m_LightPassFB.m_ColourAttachments[0].m_AttachmentSwapchainImages[vk.GetFrameIndex()], { 1280, 720 });
+    }
+    ImGui::End();
+
+    if (ImGui::Begin("View 2"))
+    {
+        ImGuiX::Image(views[1].m_LightPassFB.m_ColourAttachments[0].m_AttachmentSwapchainImages[vk.GetFrameIndex()], { 1280, 720 });
+    }
+    ImGui::End();
+
+    if (ImGui::Begin("Scene Debug"))
     {
         ImGui::Text("Frametime: %f", (1.0 / vk.m_DeltaTime));
         ImGui::Separator();
@@ -305,7 +319,7 @@ void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu)
     }
     ImGui::End();
 
-    if (ImGui::Begin("Menu"))
+    if (ImGui::Begin("Lights Menu"))
     {
         ImGui::Text("Frametime: %f", (1.0 / vk.m_DeltaTime));
         ImGui::DragFloat3("Directional Light Dir", &lightDataCpu.m_DirectionalLight.Direction[0]);
@@ -412,7 +426,7 @@ int main() {
 
         RecordCommandBuffersV2(vk, views, m, *Mesh::g_ScreenSpaceQuad, im3dState);
 
-        OnImGui(vk, lightDataCpu);
+        OnImGui(vk, lightDataCpu, views);
 
         vk.PostFrame();
     }

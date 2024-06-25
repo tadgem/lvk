@@ -192,4 +192,5 @@ struct ImGui_ImplVulkanH_Window
     }
 };
 
+
 #endif // #ifndef IMGUI_DISABLE
