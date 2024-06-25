@@ -138,7 +138,7 @@ namespace lvk
         vmaFreeMemory(vk.m_Allocator, state.m_ScreenQuadMemory);
     }
 
-    void DrawIm3d(VulkanAPI& vk, VkCommandBuffer& buffer, uint32_t frameIndex, LvkIm3dState& state, LvkIm3dViewState& viewState, glm::mat4 _viewProj)
+    void DrawIm3d(VulkanAPI& vk, VkCommandBuffer& buffer, uint32_t frameIndex, LvkIm3dState& state, LvkIm3dViewState& viewState, glm::mat4 _viewProj, bool drawText)
     {
         auto& context = Im3d::GetContext();
 
@@ -228,6 +228,10 @@ namespace lvk
                 remainingPrimCount -= passPrimCount;
             }
         }
+        if (!drawText)
+        {
+            return;
+        }
 
         DrawIm3dTextListsImGui(context.getTextDrawLists(), context.getTextDrawListCount(),
             vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height, _viewProj);
@@ -251,6 +255,14 @@ namespace lvk
             | ImGuiWindowFlags_NoBringToFrontOnFocus
         );
 
+        DrawIm3dTextListsImGuiAsChild(_textDrawLists, _count, width, height, _viewProj);
+
+        ImGui::End();
+        ImGui::PopStyleColor(1);
+    }
+
+    void DrawIm3dTextListsImGuiAsChild(const Im3d::TextDrawList _textDrawLists[], uint32_t _count, uint32_t width, uint32_t height, glm::mat4 _viewProj)
+    {
         ImDrawList* imDrawList = ImGui::GetWindowDrawList();
         const Im3d::Mat4 viewProj = ToIm3D(_viewProj);
         for (uint32_t i = 0; i < _count; ++i)
@@ -315,7 +327,8 @@ namespace lvk
                 ImFont* font = nullptr;
                 // Add text to the window draw list.
                 screen = screen + textOffset;
-                ImVec2 imguiScreen{ screen.x, screen.y };
+                ImVec2 windowPos = ImGui::GetWindowPos();
+                ImVec2 imguiScreen{ windowPos.x + screen.x, windowPos.y + screen.y };
                 imDrawList->AddText(
                     font,
                     (float)(textData.m_positionSize.w * ImGui::GetFontSize()),
@@ -325,9 +338,6 @@ namespace lvk
                     text + textData.m_textLength);
             }
         }
-
-        ImGui::End();
-        ImGui::PopStyleColor(1);
     }
 
 }

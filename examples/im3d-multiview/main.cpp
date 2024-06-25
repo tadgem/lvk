@@ -295,12 +295,14 @@ void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu, Vector<ViewData> vi
     if (ImGui::Begin("View 1"))
     {
         ImGuiX::Image(views[0].m_LightPassFB.m_ColourAttachments[0].m_AttachmentSwapchainImages[vk.GetFrameIndex()], { 1280, 720 });
+        DrawIm3dTextListsImGuiAsChild(Im3d::GetTextDrawLists(), Im3d::GetTextDrawListCount(), 1280, 720, g_Camera.Proj * g_Camera.View);
     }
     ImGui::End();
 
     if (ImGui::Begin("View 2"))
     {
         ImGuiX::Image(views[1].m_LightPassFB.m_ColourAttachments[0].m_AttachmentSwapchainImages[vk.GetFrameIndex()], { 1280, 720 });
+        DrawIm3dTextListsImGuiAsChild(Im3d::GetTextDrawLists(), Im3d::GetTextDrawListCount(), 1280, 720, g_Camera.Proj * g_Camera.View);
     }
     ImGui::End();
 
