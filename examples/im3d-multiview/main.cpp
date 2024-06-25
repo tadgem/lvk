@@ -89,9 +89,41 @@ void FreeView(VulkanAPI& vk, ViewData& view)
 }
 
 static Transform g_Transform;
-static Camera g_Camera;
 
-void RecordCommandBuffersV2(VulkanAPI_SDL& vk, Vector<ViewData> views, RenderModel& model, Mesh& screenQuad, LvkIm3dState& im3dState)
+void UpdateUniformBuffer(VulkanAPI_SDL& vk, Material& renderItemMaterial, ViewData view, DeferredLightData& lightDataCpu)
+{
+    static auto startTime = std::chrono::high_resolution_clock::now();
+
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+    MvpData ubo{};
+    ubo.Model = g_Transform.to_mat4();
+
+    glm::quat qPitch = glm::angleAxis(glm::radians(-view.m_Camera.Rotation.x), glm::vec3(1, 0, 0));
+    glm::quat qYaw = glm::angleAxis(glm::radians(view.m_Camera.Rotation.y), glm::vec3(0, 1, 0));
+    // omit roll
+    glm::quat Rotation = qPitch * qYaw;
+    Rotation = glm::normalize(Rotation);
+    glm::mat4 rotate = glm::mat4_cast(Rotation);
+    glm::mat4 translate = glm::mat4(1.0f);
+    translate = glm::translate(translate, -view.m_Camera.Position);
+
+    ubo.View = rotate * translate;
+    view.m_Camera.View = ubo.View;
+    if (vk.m_SwapChainImageExtent.width > 0 || vk.m_SwapChainImageExtent.height)
+    {
+        ubo.Proj = glm::perspective(glm::radians(45.0f), vk.m_SwapChainImageExtent.width / (float)vk.m_SwapChainImageExtent.height, 0.1f, 10000.0f);
+        ubo.Proj[1][1] *= -1;
+        view.m_Camera.Proj = ubo.Proj;
+    }
+    renderItemMaterial.SetBuffer(vk.GetFrameIndex(), 0, 0, ubo);
+    view.m_LightPassMaterial.SetBuffer(vk.GetFrameIndex(), 0, 0, ubo);
+    view.m_LightPassMaterial.SetBuffer(vk.GetFrameIndex(), 0, 4, lightDataCpu);
+
+}
+
+void RecordCommandBuffersV2(VulkanAPI_SDL& vk, Vector<ViewData*> views, RenderModel& model, Mesh& screenQuad, LvkIm3dState& im3dState, DeferredLightData& lightData)
 {
     vk.RecordGraphicsCommands([&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
         {
@@ -143,8 +175,8 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk, Vector<ViewData> views, RenderMod
 
                 VkRenderPassBeginInfo renderPassInfo{};
                 renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-                renderPassInfo.renderPass = view.m_GBuffer.m_RenderPass;
-                renderPassInfo.framebuffer = view.m_GBuffer.m_SwapchainFramebuffers[frameIndex];
+                renderPassInfo.renderPass = view->m_GBuffer.m_RenderPass;
+                renderPassInfo.framebuffer = view->m_GBuffer.m_SwapchainFramebuffers[frameIndex];
                 renderPassInfo.renderArea.offset = { 0,0 };
                 renderPassInfo.renderArea.extent = vk.m_SwapChainImageExtent;
 
@@ -152,7 +184,7 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk, Vector<ViewData> views, RenderMod
                 renderPassInfo.pClearValues = clearValues.data();
 
                 vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, view.m_GBufferPipeline);
+                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, view->m_GBufferPipeline);
                 VkViewport viewport{};
                 viewport.x = 0.0f;
                 viewport.x = 0.0f;
@@ -177,10 +209,11 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk, Vector<ViewData> views, RenderMod
                     VkBuffer vertexBuffers[]{ mesh.m_VertexBuffer };
                     VkDeviceSize sizes[] = { 0 };
 
+                    UpdateUniformBuffer(vk, model.m_RenderItems[i].m_Material, *view, lightData);
 
                     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, sizes);
                     vkCmdBindIndexBuffer(commandBuffer, mesh.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-                    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, view.m_GBufferPipelineLayout, 0, 1, &model.m_RenderItems[i].m_Material.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
+                    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, view->m_GBufferPipelineLayout, 0, 1, &model.m_RenderItems[i].m_Material.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
                     vkCmdDrawIndexed(commandBuffer, mesh.m_IndexCount, 1, 0, 0, 0);
                 }
                 vkCmdEndRenderPass(commandBuffer);
@@ -192,8 +225,8 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk, Vector<ViewData> views, RenderMod
 
             VkRenderPassBeginInfo renderPassInfo{};
             renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-            renderPassInfo.renderPass = view.m_LightPassFB.m_RenderPass;
-            renderPassInfo.framebuffer = view.m_LightPassFB.m_SwapchainFramebuffers[frameIndex];
+            renderPassInfo.renderPass = view->m_LightPassFB.m_RenderPass;
+            renderPassInfo.framebuffer = view->m_LightPassFB.m_SwapchainFramebuffers[frameIndex];
             renderPassInfo.renderArea.offset = { 0,0 };
             renderPassInfo.renderArea.extent = vk.m_SwapChainImageExtent;
 
@@ -202,7 +235,7 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk, Vector<ViewData> views, RenderMod
 
             vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, view.m_LightPassPipeline);
+            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, view->m_LightPassPipeline);
             VkViewport viewport{};
             viewport.x = 0.0f;
             viewport.x = 0.0f;
@@ -222,50 +255,17 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk, Vector<ViewData> views, RenderMod
             VkDeviceSize sizes[] = { 0 };
             vkCmdBindVertexBuffers(commandBuffer, 0, 1, &screenQuad.m_VertexBuffer, sizes);
             vkCmdBindIndexBuffer(commandBuffer, screenQuad.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, view.m_LightPassPipelineLayour, 0, 1, &view.m_LightPassMaterial.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
+            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, view->m_LightPassPipelineLayour, 0, 1, &view->m_LightPassMaterial.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
             vkCmdDrawIndexed(commandBuffer, screenQuad.m_IndexCount, 1, 0, 0, 0);
 
-            DrawIm3d(vk, commandBuffer, frameIndex, im3dState, view.m_Im3dState, g_Camera.Proj * g_Camera.View);
+            DrawIm3d(vk, commandBuffer, frameIndex, im3dState, view->m_Im3dState, view->m_Camera.Proj * view->m_Camera.View);
             vkCmdEndRenderPass(commandBuffer);
         }
         }
     );
 }
 
-void UpdateUniformBuffer(VulkanAPI_SDL& vk, Material& renderItemMaterial, Vector<ViewData> views, DeferredLightData& lightDataCpu)
-{
-    static auto startTime = std::chrono::high_resolution_clock::now();
 
-    auto currentTime = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
-    MvpData ubo{};
-    ubo.Model = g_Transform.to_mat4();
-
-    glm::quat qPitch = glm::angleAxis(glm::radians(-g_Camera.Rotation.x), glm::vec3(1, 0, 0));
-    glm::quat qYaw = glm::angleAxis(glm::radians(g_Camera.Rotation.y), glm::vec3(0, 1, 0));
-    // omit roll
-    glm::quat Rotation = qPitch * qYaw;
-    Rotation = glm::normalize(Rotation);
-    glm::mat4 rotate = glm::mat4_cast(Rotation);
-    glm::mat4 translate = glm::mat4(1.0f);
-    translate = glm::translate(translate, -g_Camera.Position);
-
-    ubo.View = rotate * translate;
-    g_Camera.View = ubo.View;
-    if (vk.m_SwapChainImageExtent.width > 0 || vk.m_SwapChainImageExtent.height)
-    {
-        ubo.Proj = glm::perspective(glm::radians(45.0f), vk.m_SwapChainImageExtent.width / (float)vk.m_SwapChainImageExtent.height, 0.1f, 10000.0f);
-        ubo.Proj[1][1] *= -1;
-        g_Camera.Proj = ubo.Proj;
-    }
-    renderItemMaterial.SetBuffer(vk.GetFrameIndex(), 0, 0, ubo);
-    for (auto& view : views)
-    {
-        view.m_LightPassMaterial.SetBuffer(vk.GetFrameIndex(), 0, 0, ubo);
-        view.m_LightPassMaterial.SetBuffer(vk.GetFrameIndex(), 0, 4, lightDataCpu);
-    }
-}
 
 RenderModel CreateRenderModelGbuffer(VulkanAPI& vk, const String& modelPath, ShaderProgram& shader)
 {
@@ -289,20 +289,20 @@ RenderModel CreateRenderModelGbuffer(VulkanAPI& vk, const String& modelPath, Sha
     return renderModel;
 }
 
-void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu, Vector<ViewData> views)
+void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu, Vector<ViewData*> views)
 {
 
     if (ImGui::Begin("View 1"))
     {
-        ImGuiX::Image(views[0].m_LightPassFB.m_ColourAttachments[0].m_AttachmentSwapchainImages[vk.GetFrameIndex()], { 1280, 720 });
-        DrawIm3dTextListsImGuiAsChild(Im3d::GetTextDrawLists(), Im3d::GetTextDrawListCount(), 1280, 720, g_Camera.Proj * g_Camera.View);
+        ImGuiX::Image(views[0]->m_LightPassFB.m_ColourAttachments[0].m_AttachmentSwapchainImages[vk.GetFrameIndex()], { 1280, 720 });
+        DrawIm3dTextListsImGuiAsChild(Im3d::GetTextDrawLists(), Im3d::GetTextDrawListCount(), 1280, 720, views[0]->m_Camera.Proj * views[0]->m_Camera.View);
     }
     ImGui::End();
 
     if (ImGui::Begin("View 2"))
     {
-        ImGuiX::Image(views[1].m_LightPassFB.m_ColourAttachments[0].m_AttachmentSwapchainImages[vk.GetFrameIndex()], { 1280, 720 });
-        DrawIm3dTextListsImGuiAsChild(Im3d::GetTextDrawLists(), Im3d::GetTextDrawListCount(), 1280, 720, g_Camera.Proj * g_Camera.View);
+        ImGuiX::Image(views[1]->m_LightPassFB.m_ColourAttachments[0].m_AttachmentSwapchainImages[vk.GetFrameIndex()], { 1280, 720 });
+        DrawIm3dTextListsImGuiAsChild(Im3d::GetTextDrawLists(), Im3d::GetTextDrawListCount(), 1280, 720, views[1]->m_Camera.Proj * views[1]->m_Camera.View);
     }
     ImGui::End();
 
@@ -316,8 +316,13 @@ void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu, Vector<ViewData> vi
 
         ImGui::Separator();
 
-        ImGui::DragFloat3("Cam Position", &g_Camera.Position[0]);
-        ImGui::DragFloat3("Cam Euler Rotation", &g_Camera.Rotation[0]);
+        ImGui::DragFloat3("Cam 1 Position", &views[0]->m_Camera.Position[0]);
+        ImGui::DragFloat3("Cam 1 Euler Rotation", &views[0]->m_Camera.Rotation[0]);
+
+        ImGui::Separator();
+
+        ImGui::DragFloat3("Cam 2 Position", &views[1]->m_Camera.Position[0]);
+        ImGui::DragFloat3("Cam 2 Euler Rotation", &views[1]->m_Camera.Rotation[0]);
     }
     ImGui::End();
 
@@ -403,9 +408,11 @@ int main() {
     ShaderProgram lightPassProg = ShaderProgram::Create(vk, "shaders/lights.vert.spv", "shaders/lights.frag.spv");
 
     ViewData viewA = CreateView(vk, im3dState, gbufferProg, lightPassProg);
+    viewA.m_Camera.Position = { -40.0, 10.0f, 30.0f };
     ViewData viewB = CreateView(vk, im3dState, gbufferProg, lightPassProg);
+    viewB.m_Camera.Position = { 30.0, 0.0f, -20.0f };
 
-    Vector<ViewData> views{ viewA, viewB };
+    Vector<ViewData*> views{ &viewA, &viewB };
 
     // create vertex and index buffer
     // allocate materials instead of raw buffers etc.
@@ -417,16 +424,11 @@ int main() {
 
         Im3d::NewFrame();
 
-        for (auto& item : m.m_RenderItems)
-        {
-            UpdateUniformBuffer(vk, item.m_Material, views, lightDataCpu);
-        }
-
         OnIm3D();
 
         Im3d::EndFrame();
 
-        RecordCommandBuffersV2(vk, views, m, *Mesh::g_ScreenSpaceQuad, im3dState);
+        RecordCommandBuffersV2(vk, views, m, *Mesh::g_ScreenSpaceQuad, im3dState, lightDataCpu);
 
         OnImGui(vk, lightDataCpu, views);
 

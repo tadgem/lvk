@@ -106,7 +106,7 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, lightingPassPipelineLayout, 0, 1, &lightPassMaterial.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
         vkCmdDrawIndexed(commandBuffer, screenQuad.m_IndexCount, 1, 0, 0, 0);
 
-        DrawIm3d(vk, commandBuffer, frameIndex, im3dState, im3dViewState, g_Camera.Proj * g_Camera.View);
+        DrawIm3d(vk, commandBuffer, frameIndex, im3dState, im3dViewState, g_Camera.Proj * g_Camera.View, true);
         vkCmdEndRenderPass(commandBuffer);
         });
 }
