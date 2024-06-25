@@ -3,6 +3,7 @@
 #include "VulkanAPI_SDL.h"
 #include "lvk/Framebuffer.h"
 #include "lvk/Mesh.h"
+#include "lvk/Material.h"
 #include "assimp/Importer.hpp"
 #include "assimp/postprocess.h"
 #include "assimp/cimport.h"
@@ -377,3 +378,42 @@ MeshEx BuildScreenSpaceQuad(lvk::VulkanAPI& vk, lvk::Vector <lvk::VertexDataPosU
 }
 
 
+#define NUM_LIGHTS 512
+using DeferredLightData = FrameLightDataT<NUM_LIGHTS>;
+
+struct RenderItem
+{
+    MeshEx      m_Mesh;
+    lvk::Material    m_Material;
+};
+
+struct RenderModel
+{
+    Model m_Original;
+    lvk::Vector<RenderItem> m_RenderItems;
+    void Free(lvk::VulkanAPI& vk)
+    {
+        for (auto& item : m_RenderItems)
+        {
+            item.m_Material.Free(vk);
+            FreeMesh(vk, item.m_Mesh);
+        }
+
+        for (auto& mat : m_Original.m_Materials)
+        {
+            mat.m_Diffuse.Free(vk);
+        }
+        m_RenderItems.clear();
+    }
+};
+
+struct Camera
+{
+    glm::vec3 Position;
+    glm::vec3 Rotation;
+    float FOV = 90.0f;
+    float Near = 0.001f, Far = 300.0f;
+
+    glm::mat4 View;
+    glm::mat4 Proj;
+};

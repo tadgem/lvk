@@ -6,46 +6,6 @@
 
 using namespace lvk;
 
-#define NUM_LIGHTS 512
-using DeferredLightData = FrameLightDataT<NUM_LIGHTS>;
-
-struct RenderItem
-{
-    MeshEx      m_Mesh;
-    Material    m_Material;
-};
-
-struct RenderModel
-{
-    Model m_Original;
-    Vector<RenderItem> m_RenderItems;
-    void Free(VulkanAPI& vk)
-    {
-        for (auto& item : m_RenderItems)
-        {
-            item.m_Material.Free(vk);
-            FreeMesh(vk, item.m_Mesh);
-        }
-
-        for (auto& mat : m_Original.m_Materials)
-        {
-            mat.m_Diffuse.Free(vk);
-        }
-        m_RenderItems.clear();
-    }
-};
-
-struct Camera
-{
-    glm::vec3 Position;
-    glm::vec3 Rotation;
-    float FOV = 90.0f;
-    float Near = 0.001f, Far = 300.0f;
-
-    glm::mat4 View;
-    glm::mat4 Proj;
-};
-
 static Transform g_Transform;
 static Camera g_Camera;
 
