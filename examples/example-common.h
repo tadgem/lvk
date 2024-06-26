@@ -41,6 +41,10 @@ struct MvpData {
     glm::mat4 Proj;
 };
 
+struct MvpData2 {
+    glm::mat4 Model;
+};
+
 
 struct AABB
 {

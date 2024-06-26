@@ -63,8 +63,7 @@ namespace lvk
     {
         VkPipelineLayout tris_layout;
         VkPipeline tris_pipeline = vk.CreateRasterizationGraphicsPipeline(
-            state.m_TriProg.m_Stages[0].m_StageBinary, state.m_TriProg.m_Stages[1].m_StageBinary,
-            state.m_TriProg.m_DescriptorSetLayout,
+            state.m_TriProg,
             Vector<VkVertexInputBindingDescription>{VertexDataPos4::GetBindingDescription() },
             VertexDataPos4::GetAttributeDescriptions(),
             renderPass,
@@ -75,8 +74,7 @@ namespace lvk
 
         VkPipelineLayout points_layout;
         VkPipeline points_pipeline = vk.CreateRasterizationGraphicsPipeline(
-            state.m_PointsProg.m_Stages[0].m_StageBinary, state.m_PointsProg.m_Stages[1].m_StageBinary,
-            state.m_PointsProg.m_DescriptorSetLayout,
+            state.m_PointsProg,
             Vector<VkVertexInputBindingDescription>{VertexDataPos4::GetBindingDescription() },
             VertexDataPos4::GetAttributeDescriptions(),
             renderPass,
@@ -88,8 +86,7 @@ namespace lvk
 
         VkPipelineLayout lines_layout;
         VkPipeline lines_pipeline = vk.CreateRasterizationGraphicsPipeline(
-            state.m_LinesProg.m_Stages[0].m_StageBinary, state.m_LinesProg.m_Stages[1].m_StageBinary,
-            state.m_LinesProg.m_DescriptorSetLayout,
+            state.m_LinesProg,
             Vector<VkVertexInputBindingDescription>{VertexDataPos4::GetBindingDescription() },
             VertexDataPos4::GetAttributeDescriptions(),
             renderPass,

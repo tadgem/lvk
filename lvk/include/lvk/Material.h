@@ -54,9 +54,10 @@ namespace lvk
             };
         };
 
-        HashMap<uint64_t, ShaderBufferBindingData>   m_UniformBuffers;
+        Vector<PushConstantBlock>                       m_PushConstants;
+        HashMap<uint64_t, ShaderBufferBindingData>      m_UniformBuffers;
         HashMap<String, SamplerBindingData>             m_Samplers;
-        HashMap<String, ShaderAccessorData>            m_UniformBufferAccessors;
+        HashMap<String, ShaderAccessorData>             m_UniformBufferAccessors;
 
         static Material Create(VulkanAPI& vk, ShaderProgram& shader);
 
@@ -84,23 +85,6 @@ namespace lvk
             return true;
         }
 
-
-        // this will work for:
-        // struct Particle {
-        /*  vec4 position;
-            vec4 velocity;
-            vec4 color;
-        };*/
-        //layout(std140, binding = 1) readonly buffer ParticleSSBOIn {
-        //    Particle particlesIn[8192];
-        //} in_particles;
-
-        //layout(std140, binding = 2) buffer ParticleSSBOOut {
-        //    Particle particlesOut[8192];
-        //} out_particles;
-
-        // e.g.
-        // m.SetBufferArrayElement<glm::vec4>(frame, 0, 0, 43, glm::vec4(), sizeof(glm::vec4)); /* 0 for position, sizeof(glm::vec4) for velocity etc.*/ 
 
         template<typename _Ty>
         bool SetBufferArrayElement(uint32_t frameIndex, uint32_t set, uint32_t binding, uint32_t index, const _Ty& value, uint32_t innerElementOffset = 0)

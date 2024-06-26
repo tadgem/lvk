@@ -15,21 +15,25 @@ namespace lvk
         };
 
         StageBinary m_StageBinary;
+        Vector<PushConstantBlock>       m_PushConstants;
         Vector<DescriptorSetLayoutData> m_LayoutDatas;
         ShaderStage::Type m_Type;
 
         static ShaderStage Create(VulkanAPI& vk, const String& stagePath, const ShaderStage::Type& stageType)
         {
             auto stageBin = vk.LoadSpirvBinary(stagePath);
+            auto pushConstants = vk.ReflectPushConstants(stageBin);
             auto stageLayoutDatas = vk.ReflectDescriptorSetLayouts(stageBin);
 
-            return { stageBin, stageLayoutDatas, stageType };
+            return { stageBin, pushConstants, stageLayoutDatas, stageType };
         }
 
         static ShaderStage Create(VulkanAPI& vk, Vector<char>& binary, const ShaderStage::Type& type)
         {
             auto stageLayoutDatas = vk.ReflectDescriptorSetLayouts(binary);
-            return { binary, stageLayoutDatas, type };
+            auto pushConstants = vk.ReflectPushConstants(binary);
+
+            return { binary, pushConstants, stageLayoutDatas, type };
         }
     };
 

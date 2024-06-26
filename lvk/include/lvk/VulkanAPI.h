@@ -19,6 +19,8 @@ namespace lvk
     
     using StageBinary = std::vector<char>;
 
+    struct ShaderProgram;
+
     class VulkanAPIWindowHandle {};
 
 
@@ -27,6 +29,7 @@ namespace lvk
     {
         UniformBuffer,
         ShaderStorageBuffer,
+        PushConstants,
         Sampler
     };
 
@@ -49,13 +52,22 @@ namespace lvk
 
     static ShaderBufferMemberType GetTypeFromSpvReflect(SpvReflectTypeDescription* typeDescription);
 
+
+    struct PushConstantBlock
+    {
+        uint32_t                m_Size;
+        uint32_t                m_Offset;
+        String                  m_Name;
+        VkShaderStageFlags      m_Stage;
+    };
+
     struct ShaderBufferMember
     {
         uint32_t                m_Size;
         uint32_t                m_Offset;
         uint32_t                m_Stride;
         String                  m_Name;
-        ShaderBufferMemberType m_Type;
+        ShaderBufferMemberType  m_Type;
     };
 
     struct DescriptorSetLayoutBindingData
@@ -63,7 +75,7 @@ namespace lvk
         String                      m_BindingName;
         uint32_t                    m_BindingIndex;
         uint32_t                    m_ExpectedBufferSize;
-        ShaderBindingType            m_BufferType;
+        ShaderBindingType           m_BufferType;
         Vector<ShaderBufferMember>  m_Members;
     };
 
@@ -74,12 +86,6 @@ namespace lvk
         VkDescriptorSetLayout                       m_Layout;
         Vector<VkDescriptorSetLayoutBinding>        m_Bindings;
         Vector<DescriptorSetLayoutBindingData>      m_BindingDatas;
-    };
-
-    struct ShaderModule
-    {
-        Vector<DescriptorSetLayoutData>     m_DescriptorSetLayoutData;
-        StageBinary                         m_Binary;
     };
 
     struct ShaderBufferFrameData
@@ -307,9 +313,7 @@ public:
                                             VkPipelineLayout& pipelineLayout);
 
         VkPipeline                          CreateRasterizationGraphicsPipeline(
-                                            StageBinary& vert, 
-                                            StageBinary& frag, 
-                                            VkDescriptorSetLayout& descriptorSetLayout, 
+                                            ShaderProgram& shader,
                                             Vector<VkVertexInputBindingDescription>& vertexBindingDescriptions,
                                             Vector<VkVertexInputAttributeDescription>& vertexAttributeDescriptions,
                                             VkRenderPass& pipelineRenderPass,
@@ -323,9 +327,9 @@ public:
 
         Vector<VkExtensionProperties>       GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice);
         StageBinary                         LoadSpirvBinary(const String& path);
-        ShaderModule                        LoadShaderModule(const String& path);
         VkShaderModule                      CreateShaderModule(const StageBinary& data);
         Vector<DescriptorSetLayoutData>     ReflectDescriptorSetLayouts(StageBinary& stageBin);
+        Vector<PushConstantBlock>           ReflectPushConstants(StageBinary& stageBin);
         VkDescriptorSet                     CreateDescriptorSet(DescriptorSetLayoutData& layoutData);
 
         template<typename _Ty>

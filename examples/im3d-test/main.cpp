@@ -287,8 +287,7 @@ int main() {
     // create gbuffer pipeline
     VkPipelineLayout gbufferPipelineLayout;
     VkPipeline gbufferPipeline = vk.CreateRasterizationGraphicsPipeline(
-        gbufferProg.m_Stages[0].m_StageBinary, gbufferProg.m_Stages[1].m_StageBinary,
-        gbufferProg.m_DescriptorSetLayout,
+        gbufferProg,
         Vector<VkVertexInputBindingDescription>{VertexDataPosNormalUv::GetBindingDescription() },
         VertexDataPosNormalUv::GetAttributeDescriptions(),
         gbuffer.m_RenderPass,
@@ -300,8 +299,7 @@ int main() {
     // Pipeline stage?
     VkPipelineLayout lightPassPipelineLayout;
     VkPipeline pipeline = vk.CreateRasterizationGraphicsPipeline(
-        lightPassProg.m_Stages[0].m_StageBinary, lightPassProg.m_Stages[1].m_StageBinary,
-        lightPassProg.m_DescriptorSetLayout,
+        lightPassProg,
         Vector<VkVertexInputBindingDescription>{VertexDataPosUv::GetBindingDescription() },
         VertexDataPosUv::GetAttributeDescriptions(),
         vk.m_SwapchainImageRenderPass,

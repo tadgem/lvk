@@ -32,17 +32,16 @@ layout(location = 0) in vec2 UV;
 
 layout(location = 0) out vec4 outColor;
 
-layout(set = 0, binding = 0) uniform UniformBufferObject {
-    mat4 model;
+layout(push_constant, std430) uniform pc {
     mat4 view;
     mat4 proj;
-} ubo;
+};
 
-layout(binding = 1) uniform sampler2D positionBufferSampler;
-layout(binding = 2) uniform sampler2D normalBufferSampler;
-layout(binding = 3) uniform sampler2D colourBufferSampler;
+layout(binding = 0) uniform sampler2D positionBufferSampler;
+layout(binding = 1) uniform sampler2D normalBufferSampler;
+layout(binding = 2) uniform sampler2D colourBufferSampler;
 
-layout(binding = 4) uniform UniformLightObject{
+layout(binding = 3) uniform UniformLightObject{
     DirectionalLight    u_DirectionalLight;
     PointLight          u_PointLights[MAX_NUM_EACH_LIGHTS];
     SpotLight           u_SpotLights[MAX_NUM_EACH_LIGHTS];
@@ -117,7 +116,7 @@ vec3 BlinnPhong_Spot(int lightIdx, vec3 position, vec3 normal, vec3 materialAmbi
         float   diff    = max(dot(norm, slDir), 0.0);
         vec3    diffuse = lightUbo.u_SpotLights[lightIdx].Colour.xyz * diff * materialDiffuse; 
         
-        vec3    viewPos = vec3(ubo.view[3][0], ubo.view[3][1], ubo.view[3][2]);
+        vec3    viewPos = vec3(view[3][0], view[3][1], view[3][2]);
         vec3    viewDir = normalize(viewPos - position);
         vec3    reflectDir = reflect(-slDir, norm);  
         float   spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);

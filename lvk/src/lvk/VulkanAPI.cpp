@@ -10,6 +10,7 @@
 #include "ImGui/imgui_impl_vulkan.h"
 #include "lvk/Texture.h"
 #include "lvk/Mesh.h"
+#include "lvk/Shader.h"
 
 using namespace lvk;
 
@@ -1135,8 +1136,7 @@ void lvk::VulkanAPI::CreateFramebuffer(Vector<VkImageView>& attachments, VkRende
     VK_CHECK (vkCreateFramebuffer(m_LogicalDevice, &framebufferCreateInfo, nullptr, &framebuffer) != VK_SUCCESS)
 }
 
-VkPipeline lvk::VulkanAPI::CreateRasterizationGraphicsPipeline(StageBinary& vert, StageBinary& frag,
-    VkDescriptorSetLayout& descriptorSetLayout, 
+VkPipeline lvk::VulkanAPI::CreateRasterizationGraphicsPipeline(ShaderProgram& shader,
     Vector<VkVertexInputBindingDescription>& vertexBindingDescriptions, Vector<VkVertexInputAttributeDescription>& vertexAttributeDescriptions, 
     VkRenderPass& pipelineRenderPass, 
     uint32_t width, uint32_t height, 
@@ -1147,8 +1147,8 @@ VkPipeline lvk::VulkanAPI::CreateRasterizationGraphicsPipeline(StageBinary& vert
     VkPipelineLayout& pipelineLayout,
     uint32_t colourAttachmentCount)
 {
-    VkShaderModule vertShaderModule = CreateShaderModule(vert);
-    VkShaderModule fragShaderModule = CreateShaderModule(frag);
+    VkShaderModule vertShaderModule = CreateShaderModule(shader.m_Stages[0].m_StageBinary);
+    VkShaderModule fragShaderModule = CreateShaderModule(shader.m_Stages[1].m_StageBinary);
 
     spdlog::info("Loaded vertex and fragment shaders & created shader modules");
 
@@ -1284,7 +1284,9 @@ VkPipeline lvk::VulkanAPI::CreateRasterizationGraphicsPipeline(StageBinary& vert
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount = 1;
-    pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
+    pipelineLayoutInfo.pSetLayouts = &shader.m_DescriptorSetLayout;
+
+    // update
     pipelineLayoutInfo.pushConstantRangeCount = 0;
     pipelineLayoutInfo.pPushConstantRanges = 0;
 
@@ -1545,15 +1547,6 @@ StageBinary lvk::VulkanAPI::LoadSpirvBinary(const String& path)
 
     file.close();
     return data;
-}
-
-ShaderModule lvk::VulkanAPI::LoadShaderModule(const String& path)
-{
-    ShaderModule sm{};
-
-    sm.m_Binary = LoadSpirvBinary(path);
-    sm.m_DescriptorSetLayoutData = ReflectDescriptorSetLayouts(sm.m_Binary);
-    return sm;
 }
 
 VkDescriptorSet lvk::VulkanAPI::CreateDescriptorSet(DescriptorSetLayoutData& layoutData)
@@ -1887,6 +1880,7 @@ Vector<DescriptorSetLayoutData> lvk::VulkanAPI::ReflectDescriptorSetLayouts(Stag
     std::vector<SpvReflectDescriptorSet*> reflectedDescriptorSets;
     reflectedDescriptorSets.resize(descriptorSetCount);
     spvReflectEnumerateDescriptorSets(&shaderReflectModule, &descriptorSetCount, &reflectedDescriptorSets[0]);
+    
 
     std::vector<DescriptorSetLayoutData> layoutDatas(descriptorSetCount, DescriptorSetLayoutData{});
 
@@ -1969,6 +1963,28 @@ Vector<DescriptorSetLayoutData> lvk::VulkanAPI::ReflectDescriptorSetLayouts(Stag
     }
 
     return layoutDatas;
+}
+
+Vector<PushConstantBlock> lvk::VulkanAPI::ReflectPushConstants(StageBinary& stageBin)
+{
+    Vector<PushConstantBlock> pushConstants{};
+    SpvReflectShaderModule shaderReflectModule;
+    SpvReflectResult result = spvReflectCreateShaderModule(stageBin.size(), stageBin.data(), &shaderReflectModule);
+
+    uint32_t pushConstantBlockCount = 0;
+    spvReflectEnumeratePushConstantBlocks(&shaderReflectModule, &pushConstantBlockCount, nullptr);
+    std::vector<SpvReflectBlockVariable*> reflectedPushConstantBlocks;
+    reflectedPushConstantBlocks.resize(pushConstantBlockCount);
+    spvReflectEnumeratePushConstantBlocks(&shaderReflectModule, &pushConstantBlockCount, reflectedPushConstantBlocks.data());
+
+    
+    for (int i = 0; i < pushConstantBlockCount; i++)
+    {
+        const SpvReflectBlockVariable& pcBlock = *reflectedPushConstantBlocks[i];
+        pushConstants.push_back({ pcBlock.size, pcBlock.offset, pcBlock.name, (VkShaderStageFlags) shaderReflectModule.shader_stage });
+    }
+
+    return pushConstants;
 }
 
 void lvk::VulkanAPI::CreateCommandBuffers()

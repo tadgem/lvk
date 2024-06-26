@@ -5,6 +5,12 @@
 static auto collect_uniform_data = [](lvk::ShaderStage& stage, lvk::Material &mat, lvk::VulkanAPI& vk)
     {
         using namespace lvk;
+
+        for (auto& pushConstant : stage.m_PushConstants)
+        {
+            mat.m_PushConstants.push_back(pushConstant);
+        }
+
         for (auto& descriptorSetInfo : stage.m_LayoutDatas)
         {
             for (auto& bindingInfo : descriptorSetInfo.m_BindingDatas)
@@ -69,6 +75,14 @@ lvk::Material lvk::Material::Create(VulkanAPI& vk, ShaderProgram& shader)
     }
     
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+
+        for (int i = 0; i < mat.m_PushConstants.size(); i++)
+        {
+            VkPushConstantRange pushConstant;
+
+        }
+
+
         // write buffers to descriptor set + default texture for any samplers
         Vector<VkDescriptorBufferInfo>  bufferWriteInfos;
         for (auto& [setBinding, bufferInfo] : mat.m_UniformBuffers)
