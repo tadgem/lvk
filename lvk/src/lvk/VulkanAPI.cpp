@@ -221,12 +221,7 @@ void lvk::VulkanAPI::Cleanup()
 {
     Texture::FreeDefaultTexture(*this);
     Mesh::FreeScreenQuad(*this);
-    if (m_UseImGui)
-    {
-        vkDestroyRenderPass(m_LogicalDevice, m_ImGuiRenderPass, nullptr);
-        ImGui_ImplVulkan_Shutdown();
-        CleanupImGuiBackend();
-    }
+    CleanupImGui();
     CleanupWindow();
     CleanupVulkan();
 }
@@ -651,12 +646,15 @@ void lvk::VulkanAPI::RecreateSwapChain()
     while (vkDeviceWaitIdle(m_LogicalDevice) != VK_SUCCESS);
 
     CleanupSwapChain();
-
+    CleanupImGui();
+    
     CreateSwapChain();
     CreateSwapChainImageViews();
     CreateSwapChainColourTexture(m_EnableSwapchainMsaa);
     CreateSwapChainDepthTexture(m_EnableSwapchainMsaa);
     CreateSwapChainFramebuffers();
+
+    InitImGui();
 }
 
 void lvk::VulkanAPI::CreateSwapChainColourTexture(bool enableMsaa)
@@ -1882,10 +1880,7 @@ void lvk::VulkanAPI::Start(uint32_t width, uint32_t height, bool enableSwapchain
 
     p_MaxFramebufferExtent = GetMaxFramebufferResolution();
 
-    if (m_UseImGui)
-    {
-        InitImGui();
-    }
+    InitImGui();
 
     Texture::InitDefaultTexture(*this);
     Mesh::InitScreenQuad(*this);
@@ -2118,6 +2113,10 @@ void lvk::VulkanAPI::InitVulkan(bool enableSwapchainMsaa)
 
 void lvk::VulkanAPI::InitImGui()
 {
+    if (!m_UseImGui)
+    {
+        return;
+    }
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -2487,4 +2486,15 @@ void lvk::VulkanAPI::CreateUniformBuffers(ShaderBufferFrameData& uniformData, Vk
         VK_CHECK(vmaMapMemory(m_Allocator, uniformData.m_UniformBuffersMemory[i], &uniformData.m_UniformBuffersMapped[i]))
     }
 
+}
+
+void lvk::VulkanAPI::CleanupImGui()
+{
+    if (m_UseImGui)
+    {
+        // TODO: destroy with other built in render passes
+        // vkDestroyRenderPass(m_LogicalDevice, m_ImGuiRenderPass, nullptr);
+        ImGui_ImplVulkan_Shutdown();
+        CleanupImGuiBackend();
+    }
 }

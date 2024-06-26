@@ -371,6 +371,7 @@ public:
         virtual void                        Run(std::function<void()> callback) = 0;
         virtual void                        InitImGuiBackend() = 0;
         virtual void                        CleanupImGuiBackend() = 0;
+        void                                CleanupImGui();
 
         // API End
     protected:

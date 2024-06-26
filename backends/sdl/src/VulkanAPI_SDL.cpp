@@ -20,6 +20,9 @@ void lvk::VulkanAPI_SDL::HandleSDLEvent(SDL_Event& sdl_event)
         if (sdl_event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
             RecreateSwapChain();
         }
+        if (sdl_event.window.event == SDL_WINDOWEVENT_MAXIMIZED) {
+            RecreateSwapChain();
+        }
     }
 }
 std::vector<const char*> lvk::VulkanAPI_SDL::GetRequiredExtensions()

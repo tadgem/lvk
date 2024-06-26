@@ -173,6 +173,7 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk, Vector<ViewData*> views, RenderMo
 
 
             PCViewData pcData{ view->m_Camera.View, view->m_Camera.Proj };
+            VkExtent2D viewExtent{ view->m_LightPassFB.m_Width, view->m_LightPassFB.m_Height };
 
             {
                 Array<VkClearValue, 4> clearValues{};
@@ -186,7 +187,7 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk, Vector<ViewData*> views, RenderMo
                 renderPassInfo.renderPass = view->m_GBuffer.m_RenderPass;
                 renderPassInfo.framebuffer = view->m_GBuffer.m_SwapchainFramebuffers[frameIndex];
                 renderPassInfo.renderArea.offset = { 0,0 };
-                renderPassInfo.renderArea.extent = vk.m_SwapChainImageExtent;
+                renderPassInfo.renderArea.extent = viewExtent;
 
                 renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
                 renderPassInfo.pClearValues = clearValues.data();
@@ -196,16 +197,16 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk, Vector<ViewData*> views, RenderMo
                 VkViewport viewport{};
                 viewport.x = 0.0f;
                 viewport.x = 0.0f;
-                viewport.width = static_cast<float>(vk.m_SwapChainImageExtent.width);
-                viewport.height = static_cast<float>(vk.m_SwapChainImageExtent.height);
+                viewport.width = static_cast<float>(view->m_LightPassFB.m_Width);
+                viewport.height = static_cast<float>(view->m_LightPassFB.m_Height);
                 viewport.minDepth = 0.0f;
                 viewport.maxDepth = 1.0f;
 
                 VkRect2D scissor{};
                 scissor.offset = { 0,0 };
                 scissor.extent = VkExtent2D{
-                    static_cast<uint32_t>(vk.m_SwapChainImageExtent.width) ,
-                    static_cast<uint32_t>(vk.m_SwapChainImageExtent.height)
+                    static_cast<uint32_t>(view->m_LightPassFB.m_Width) ,
+                    static_cast<uint32_t>(view->m_LightPassFB.m_Height)
                 };
 
                 vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
@@ -236,7 +237,7 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk, Vector<ViewData*> views, RenderMo
             renderPassInfo.renderPass = view->m_LightPassFB.m_RenderPass;
             renderPassInfo.framebuffer = view->m_LightPassFB.m_SwapchainFramebuffers[frameIndex];
             renderPassInfo.renderArea.offset = { 0,0 };
-            renderPassInfo.renderArea.extent = vk.m_SwapChainImageExtent;
+            renderPassInfo.renderArea.extent = viewExtent;
 
             renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
             renderPassInfo.pClearValues = clearValues.data();
@@ -247,16 +248,16 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk, Vector<ViewData*> views, RenderMo
             VkViewport viewport{};
             viewport.x = 0.0f;
             viewport.x = 0.0f;
-            viewport.width = static_cast<float>(vk.m_SwapChainImageExtent.width);
-            viewport.height = static_cast<float>(vk.m_SwapChainImageExtent.height);
+            viewport.width = static_cast<float>(view->m_LightPassFB.m_Width);
+            viewport.height = static_cast<float>(view->m_LightPassFB.m_Height);
             viewport.minDepth = 0.0f;
             viewport.maxDepth = 1.0f;
 
             VkRect2D scissor{};
             scissor.offset = { 0,0 };
             scissor.extent = VkExtent2D{
-                static_cast<uint32_t>(vk.m_SwapChainImageExtent.width) ,
-                static_cast<uint32_t>(vk.m_SwapChainImageExtent.height)
+                static_cast<uint32_t>(view->m_LightPassFB.m_Width) ,
+                static_cast<uint32_t>(view->m_LightPassFB.m_Height)
             };
             vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
             vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
