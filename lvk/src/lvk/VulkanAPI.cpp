@@ -1287,8 +1287,54 @@ VkPipeline lvk::VulkanAPI::CreateRasterizationGraphicsPipeline(ShaderProgram& sh
     pipelineLayoutInfo.pSetLayouts = &shader.m_DescriptorSetLayout;
 
     // update
-    pipelineLayoutInfo.pushConstantRangeCount = 0;
-    pipelineLayoutInfo.pPushConstantRanges = 0;
+    // valid combos:
+    // 1 stage has 1 push constant block
+    // both stages share the same push constant block
+    // each stage has a separate push constant block
+    // e.g. only ever 1 block per stage
+
+    Vector<VkPushConstantRange> pushConstantRanges{};
+
+    for (auto& stage : shader.m_Stages)
+    {
+        if (stage.m_PushConstants.empty())
+        {
+            continue;
+        }
+
+        if (stage.m_PushConstants.size() > 1)
+        {
+            spdlog::error("VulkanAPI : CreateRasterizationPipeline : Supplied stage has more than 1 push constant block, this is not allowed.");
+            continue;
+        }
+
+        PushConstantBlock& block = stage.m_PushConstants[0];
+
+        bool skip = false;
+
+        for (auto& range : pushConstantRanges)
+        {
+            if (block.m_Offset == range.offset && block.m_Size == range.size)
+            {
+                range.stageFlags |= block.m_Stage;
+            }
+        }
+
+        if (skip)
+        {
+            continue;
+        }
+
+        VkPushConstantRange range{};
+        range.offset = block.m_Offset;
+        range.size = block.m_Size;
+        range.stageFlags = block.m_Stage;
+
+        pushConstantRanges.push_back(range);
+    }
+
+    pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstantRanges.size());
+    pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.size() > 0 ? pushConstantRanges.data() : 0;
 
     VK_CHECK(vkCreatePipelineLayout(m_LogicalDevice, &pipelineLayoutInfo, nullptr, &pipelineLayout))
 
