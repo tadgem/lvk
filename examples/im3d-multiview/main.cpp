@@ -17,6 +17,7 @@ struct ViewData
     VkPipelineLayout    m_GBufferPipelineLayout, m_LightPassPipelineLayour;
 
     LvkIm3dViewState m_Im3dState;
+    VkExtent2D  m_CurrentResolution{ 1920, 1080 };
 
     Camera      m_Camera;
 };
@@ -24,9 +25,6 @@ struct ViewData
 ViewData CreateView(VulkanAPI& vk, LvkIm3dState im3dState, ShaderProgram gbufferProg, ShaderProgram lightPassProg)
 {
     Framebuffer gbuffer{};
-    gbuffer.m_Width = vk.m_SwapChainImageExtent.width;
-    gbuffer.m_Height = vk.m_SwapChainImageExtent.height;
-
     gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
     gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
@@ -38,9 +36,6 @@ ViewData CreateView(VulkanAPI& vk, LvkIm3dState im3dState, ShaderProgram gbuffer
     gbuffer.Build(vk);
 
     Framebuffer finalImage{};
-    finalImage.m_Width = vk.m_SwapChainImageExtent.width;
-    finalImage.m_Height = vk.m_SwapChainImageExtent.height;
-
     finalImage.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
     finalImage.AddDepthAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
@@ -173,7 +168,7 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk, Vector<ViewData*> views, RenderMo
 
 
             PCViewData pcData{ view->m_Camera.View, view->m_Camera.Proj };
-            VkExtent2D viewExtent{ view->m_LightPassFB.m_Width, view->m_LightPassFB.m_Height };
+            VkExtent2D viewExtent = view->m_CurrentResolution;
 
             {
                 Array<VkClearValue, 4> clearValues{};
@@ -197,16 +192,16 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk, Vector<ViewData*> views, RenderMo
                 VkViewport viewport{};
                 viewport.x = 0.0f;
                 viewport.x = 0.0f;
-                viewport.width = static_cast<float>(view->m_LightPassFB.m_Width);
-                viewport.height = static_cast<float>(view->m_LightPassFB.m_Height);
+                viewport.width = static_cast<float>(viewExtent.width);
+                viewport.height = static_cast<float>(viewExtent.height);
                 viewport.minDepth = 0.0f;
                 viewport.maxDepth = 1.0f;
 
                 VkRect2D scissor{};
                 scissor.offset = { 0,0 };
                 scissor.extent = VkExtent2D{
-                    static_cast<uint32_t>(view->m_LightPassFB.m_Width) ,
-                    static_cast<uint32_t>(view->m_LightPassFB.m_Height)
+                    static_cast<uint32_t>(viewExtent.width) ,
+                    static_cast<uint32_t>(viewExtent.height)
                 };
 
                 vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
@@ -248,16 +243,16 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk, Vector<ViewData*> views, RenderMo
             VkViewport viewport{};
             viewport.x = 0.0f;
             viewport.x = 0.0f;
-            viewport.width = static_cast<float>(view->m_LightPassFB.m_Width);
-            viewport.height = static_cast<float>(view->m_LightPassFB.m_Height);
+            viewport.width = static_cast<float>(viewExtent.width);
+            viewport.height = static_cast<float>(viewExtent.height);
             viewport.minDepth = 0.0f;
             viewport.maxDepth = 1.0f;
 
             VkRect2D scissor{};
             scissor.offset = { 0,0 };
             scissor.extent = VkExtent2D{
-                static_cast<uint32_t>(view->m_LightPassFB.m_Width) ,
-                static_cast<uint32_t>(view->m_LightPassFB.m_Height)
+                static_cast<uint32_t>(viewExtent.width) ,
+                static_cast<uint32_t>(viewExtent.height)
             };
             vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
             vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
@@ -268,7 +263,7 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk, Vector<ViewData*> views, RenderMo
             vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, view->m_LightPassPipelineLayour, 0, 1, &view->m_LightPassMaterial.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
             vkCmdDrawIndexed(commandBuffer, screenQuad.m_IndexCount, 1, 0, 0, 0);
 
-            DrawIm3d(vk, commandBuffer, frameIndex, im3dState, view->m_Im3dState, view->m_Camera.Proj * view->m_Camera.View);
+            DrawIm3d(vk, commandBuffer, frameIndex, im3dState, view->m_Im3dState, view->m_Camera.Proj * view->m_Camera.View, viewExtent.width, viewExtent.height);
             vkCmdEndRenderPass(commandBuffer);
         }
         }
@@ -302,15 +297,19 @@ void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu, Vector<ViewData*> v
 
     if (ImGui::Begin("View 1"))
     {
-        ImGuiX::Image(views[0]->m_LightPassFB.m_ColourAttachments[0].m_AttachmentSwapchainImages[vk.GetFrameIndex()], { 1280, 720 });
-        DrawIm3dTextListsImGuiAsChild(Im3d::GetTextDrawLists(), Im3d::GetTextDrawListCount(), 1280, 720, views[0]->m_Camera.Proj * views[0]->m_Camera.View);
+        // size needs to be the current resolution
+        // uv0 will likely always be 0,0
+        // uv1 needs to be MaxResolution / CurrentResolution;
+        ImVec2 uv1 = { (float)views[0]->m_CurrentResolution.width / views[0]->m_LightPassFB.m_Resolution.width, (float)views[0]->m_CurrentResolution.height / views[0]->m_LightPassFB.m_Resolution.height };
+        ImGuiX::Image(views[0]->m_LightPassFB.m_ColourAttachments[0].m_AttachmentSwapchainImages[vk.GetFrameIndex()], { (float)views[0]->m_CurrentResolution.width, (float)views[0]->m_CurrentResolution.height }, { 0,0 }, uv1);
+        DrawIm3dTextListsImGuiAsChild(Im3d::GetTextDrawLists(), Im3d::GetTextDrawListCount(), (float)views[0]->m_CurrentResolution.width, (float)views[0]->m_CurrentResolution.height, views[0]->m_Camera.Proj * views[0]->m_Camera.View);
     }
     ImGui::End();
 
     if (ImGui::Begin("View 2"))
     {
-        ImGuiX::Image(views[1]->m_LightPassFB.m_ColourAttachments[0].m_AttachmentSwapchainImages[vk.GetFrameIndex()], { 1280, 720 });
-        DrawIm3dTextListsImGuiAsChild(Im3d::GetTextDrawLists(), Im3d::GetTextDrawListCount(), 1280, 720, views[1]->m_Camera.Proj * views[1]->m_Camera.View);
+        ImGuiX::Image(views[1]->m_LightPassFB.m_ColourAttachments[0].m_AttachmentSwapchainImages[vk.GetFrameIndex()], { (float)views[0]->m_CurrentResolution.width, (float)views[0]->m_CurrentResolution.height });
+        DrawIm3dTextListsImGuiAsChild(Im3d::GetTextDrawLists(), Im3d::GetTextDrawListCount(), (float)views[0]->m_CurrentResolution.width, (float)views[0]->m_CurrentResolution.height, views[1]->m_Camera.Proj * views[1]->m_Camera.View);
     }
     ImGui::End();
 

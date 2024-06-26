@@ -64,20 +64,19 @@ namespace lvk
 
         Vector <VkClearColorValue>  m_ClearValues;
         VkAttachmentLoadOp          m_AttachmentLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        VkExtent2D                  m_Resolution;
         
-        uint32_t m_Width = 0;
-        uint32_t m_Height = 0;
-
         void AddColourAttachment(lvk::VulkanAPI& vk, ResolutionScale scale,
             uint32_t numMips, VkSampleCountFlagBits sampleCount,
             VkFormat format, VkImageUsageFlags usageFlags,
             VkMemoryPropertyFlagBits memoryFlags, VkImageAspectFlagBits imageAspect,
             VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
         {
-            VkExtent2D resolution{};
-            ResolveResolutionScale(scale, m_Width, m_Height, resolution.width, resolution.height);
+            VkExtent2D resolution = vk.GetMaxFramebufferExtent();
+            ResolveResolutionScale(scale, resolution.width, resolution.height, resolution.width, resolution.height);
             m_ColourAttachments.push_back(Attachment::CreateColourAttachment(vk,
                 resolution, numMips, sampleCount, format, usageFlags, memoryFlags, imageAspect, samplerFilter, samplerAddressMode));
+            m_Resolution = resolution;
         }
 
         void AddDepthAttachment(lvk::VulkanAPI& vk, ResolutionScale scale,
@@ -86,10 +85,12 @@ namespace lvk
             VkMemoryPropertyFlagBits memoryFlags, VkImageAspectFlagBits imageAspect,
             VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
         {
-            VkExtent2D resolution{};
-            ResolveResolutionScale(scale, m_Width, m_Height, resolution.width, resolution.height);
+            VkExtent2D resolution = vk.GetMaxFramebufferExtent();
+            ResolveResolutionScale(scale, resolution.width, resolution.height, resolution.width, resolution.height);
             m_DepthAttachments.push_back(Attachment::CreateDepthAttachment(vk,
                 resolution, numMips, sampleCount, usageFlags, memoryFlags, imageAspect, samplerFilter, samplerAddressMode));
+            m_Resolution = resolution;
+
         }
 
         void AddResolveAttachment(lvk::VulkanAPI& vk, ResolutionScale scale,
@@ -98,10 +99,12 @@ namespace lvk
             VkMemoryPropertyFlagBits memoryFlags, VkImageAspectFlagBits imageAspect,
             VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
         {
-            VkExtent2D resolution{};
-            ResolveResolutionScale(scale, m_Width, m_Height, resolution.width, resolution.height);
+            VkExtent2D resolution = vk.GetMaxFramebufferExtent();
+            ResolveResolutionScale(scale, resolution.width, resolution.height, resolution.width, resolution.height);
             m_ResolveAttachments.push_back(Attachment::CreateColourAttachment(vk,
                 resolution, numMips, sampleCount, format, usageFlags, memoryFlags, imageAspect, samplerFilter, samplerAddressMode));
+            m_Resolution = resolution;
+
         }
 
 
@@ -175,7 +178,7 @@ namespace lvk
                     framebufferAttachments.push_back(resolve.m_AttachmentSwapchainImages[i].m_ImageView);
                 }
                 VkFramebuffer fb;
-                vk.CreateFramebuffer(framebufferAttachments, m_RenderPass, VkExtent2D {m_Width, m_Height}, fb);
+                vk.CreateFramebuffer(framebufferAttachments, m_RenderPass, m_Resolution, fb);
                 m_SwapchainFramebuffers.push_back(fb);
             }
         }

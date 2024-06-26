@@ -135,7 +135,7 @@ namespace lvk
         vmaFreeMemory(vk.m_Allocator, state.m_ScreenQuadMemory);
     }
 
-    void DrawIm3d(VulkanAPI& vk, VkCommandBuffer& buffer, uint32_t frameIndex, LvkIm3dState& state, LvkIm3dViewState& viewState, glm::mat4 _viewProj, bool drawText)
+    void DrawIm3d(VulkanAPI& vk, VkCommandBuffer& buffer, uint32_t frameIndex, LvkIm3dState& state, LvkIm3dViewState& viewState, glm::mat4 _viewProj, uint32_t width, uint32_t height, bool drawText)
     {
         auto& context = Im3d::GetContext();
 
@@ -188,7 +188,7 @@ namespace lvk
                 glm::vec2 ViewPort;
             };
 
-            CameraUniformData camData{ _viewProj, {vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height} };
+            CameraUniformData camData{ _viewProj, {width, height} };
 
             while (remainingPrimCount > 0)
             {
@@ -202,16 +202,16 @@ namespace lvk
                 VkViewport viewport{};
                 viewport.x = 0.0f;
                 viewport.x = 0.0f;
-                viewport.width = static_cast<float>(vk.m_SwapChainImageExtent.width);
-                viewport.height = static_cast<float>(vk.m_SwapChainImageExtent.height);
+                viewport.width = static_cast<float>(width);
+                viewport.height = static_cast<float>(height);
                 viewport.minDepth = 0.0f;
                 viewport.maxDepth = 1.0f;
 
                 VkRect2D scissor{};
                 scissor.offset = { 0,0 };
                 scissor.extent = VkExtent2D{
-                    static_cast<uint32_t>(vk.m_SwapChainImageExtent.width) ,
-                    static_cast<uint32_t>(vk.m_SwapChainImageExtent.height)
+                    static_cast<uint32_t>(width) ,
+                    static_cast<uint32_t>(height)
                 };
                 VkDeviceSize sizes[] = { 0 };
                 vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline);
