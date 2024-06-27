@@ -72,6 +72,8 @@ ViewData CreateView(VulkanAPI& vk, LvkIm3dState im3dState, ShaderProgram gbuffer
 
     auto im3dViewState = AddIm3dForViewport(vk, im3dState, finalImage.m_RenderPass, false);
 
+    
+
     return { gbuffer, finalImage, lightPassMat, gbufferPipeline, pipeline, gbufferPipelineLayout, lightPassPipelineLayout, im3dViewState };
 }
 
@@ -168,6 +170,22 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk, Vector<ViewData*> views, RenderMo
 
             PCViewData pcData{ view->m_Camera.View, view->m_Camera.Proj };
             VkExtent2D viewExtent = view->m_CurrentResolution;
+
+            // update screen quad
+            {
+                auto max = vk.GetMaxFramebufferResolution();
+                float w = static_cast<float>((float) viewExtent.width / (float) max.width);
+                float h = static_cast<float>((float) viewExtent.height / (float) max.height);
+
+                Vector<VertexDataPosUv> newScreenQuadData = {
+                    { { -1.0f, -1.0f , 0.0f}, { 0.0f, 0.0f } },
+                    { {1.0f, -1.0f, 0.0f}, {w, 0.0f} },
+                    { {1.0f, 1.0f, 0.0f}, {w, h} },
+                    { {-1.0f, 1.0f, 0.0f}, {0.0f, h} }
+                };
+
+                vkCmdUpdateBuffer(commandBuffer, screenQuad.m_VertexBuffer, 0, 4 * sizeof(VertexDataPosUv), &newScreenQuadData[0]);
+            }
 
             {
                 Array<VkClearValue, 4> clearValues{};
@@ -302,9 +320,12 @@ void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu, Vector<ViewData*> v
         // size needs to be the current resolution
         // uv0 will likely always be 0,0
         // uv1 needs to be MaxResolution / CurrentResolution;
+        auto extent = ImGui::GetWindowContentRegionMax();
+        views[0]->m_CurrentResolution = { (uint32_t)extent.x, (uint32_t)extent.y };
         ImVec2 uv1 = { (float)views[0]->m_CurrentResolution.width / views[0]->m_LightPassFB.m_Resolution.width, (float)views[0]->m_CurrentResolution.height / views[0]->m_LightPassFB.m_Resolution.height };
         ImGuiX::Image(views[0]->m_LightPassFB.m_ColourAttachments[0].m_AttachmentSwapchainImages[vk.GetFrameIndex()], { (float)views[0]->m_CurrentResolution.width, (float)views[0]->m_CurrentResolution.height }, { 0,0 }, uv1);
-        DrawIm3dTextListsImGuiAsChild(Im3d::GetTextDrawLists(), Im3d::GetTextDrawListCount(), (float)views[0]->m_CurrentResolution.width, (float)views[0]->m_CurrentResolution.height, views[0]->m_Camera.Proj * views[0]->m_Camera.View);
+        DrawIm3dTextListsImGuiAsChild(Im3d::GetTextDrawLists(), Im3d::GetTextDrawListCount(), (float)extent.x, (float)extent.y, views[0]->m_Camera.Proj * views[0]->m_Camera.View);
+
     }
     ImGui::End();
 
