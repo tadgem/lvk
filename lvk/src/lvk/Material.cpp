@@ -88,7 +88,7 @@ lvk::Material lvk::Material::Create(VulkanAPI& vk, ShaderProgram& shader)
         for (auto& [setBinding, bufferInfo] : mat.m_UniformBuffers)
         {
             VkDescriptorBufferInfo bufferWriteInfo{};
-            bufferWriteInfo.buffer = bufferInfo.m_Buffer.m_UniformBuffers[0];
+            bufferWriteInfo.buffer = bufferInfo.m_Buffer.m_UniformBuffers[0].m_GpuBuffer;
             bufferWriteInfo.offset = 0;
             bufferWriteInfo.range = bufferInfo.m_BufferSize;
             bufferWriteInfos.push_back(bufferWriteInfo);

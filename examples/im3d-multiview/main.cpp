@@ -9,6 +9,7 @@ using namespace lvk;
 
 struct ViewData
 {
+    // most of this can be encapsulated in a view pipeline
     Framebuffer m_GBuffer;
     Framebuffer m_LightPassFB;
     Material    m_LightPassMaterial;

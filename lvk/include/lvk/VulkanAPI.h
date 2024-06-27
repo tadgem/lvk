@@ -88,17 +88,25 @@ namespace lvk
         Vector<DescriptorSetLayoutBindingData>      m_BindingDatas;
     };
 
+    // reuse this for generic cpu dynamic buffer
+    struct MappedBuffer
+    {
+        VkBuffer        m_GpuBuffer;
+        VmaAllocation   m_GpuMemory;
+        void*           m_MappedAddr;
+
+        void Free(VulkanAPI& vk);
+    };
+
     struct ShaderBufferFrameData
     {
-        Vector<VkBuffer>            m_UniformBuffers;
-        Vector<VmaAllocation>       m_UniformBuffersMemory;
-        Vector<void*>               m_UniformBuffersMapped;
+        Vector<MappedBuffer>            m_UniformBuffers;
 
         template<typename _Ty>
         void Set(uint32_t frameIndex, const _Ty& data, uint32_t offset = 0)
         {
             constexpr size_t _ty_size = sizeof(_Ty);
-            uint64_t base_addr = (uint64_t)m_UniformBuffersMapped[frameIndex];
+            uint64_t base_addr = (uint64_t)m_UniformBuffers[frameIndex].m_MappedAddr;
             void* addr = (void*)(base_addr + static_cast<uint64_t>(offset));
             memcpy(addr, &data, _ty_size);
         }
@@ -107,7 +115,7 @@ namespace lvk
         void SetMemory(uint32_t frameIndex, const _Ty* start, uint64_t count)
         {
             constexpr size_t _ty_size = sizeof(_Ty);
-            void* addr = m_UniformBuffersMapped[frameIndex];
+            void* addr = m_UniformBuffers[frameIndex].m_MappedAddr;
             memcpy(addr, start, count);
 
         }
@@ -349,6 +357,7 @@ public:
 
         }
 
+        void                                CreateMappedBuffer(MappedBuffer& buf, VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags memoryProperties, uint32_t size);
         void                                CreateUniformBuffers(ShaderBufferFrameData& uniformData, VkDeviceSize bufferSize);
         template<typename _Ty>
         void                                CreateUniformBuffers(ShaderBufferFrameData& uniformData)

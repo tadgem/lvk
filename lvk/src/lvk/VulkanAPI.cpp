@@ -44,13 +44,21 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     return VK_FALSE;
 }
 
+void lvk::MappedBuffer::Free(VulkanAPI& vk)
+{
+    vmaUnmapMemory(vk.m_Allocator, m_GpuMemory);
+    vkDestroyBuffer(vk.m_LogicalDevice, m_GpuBuffer, nullptr);
+    vmaFreeMemory(vk.m_Allocator, m_GpuMemory);
+}
+
+
 void lvk::ShaderBufferFrameData::Free(lvk::VulkanAPI& vk)
 {
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        vmaUnmapMemory(vk.m_Allocator, m_UniformBuffersMemory[i]);
-        vkDestroyBuffer(vk.m_LogicalDevice, m_UniformBuffers[i], nullptr);
-        vmaFreeMemory(vk.m_Allocator, m_UniformBuffersMemory[i]);
+        m_UniformBuffers[i].Free(vk);
     }
+
+    m_UniformBuffers.clear();
 }
 
 bool lvk::VulkanAPI::QueueFamilyIndices::IsComplete()
@@ -2473,17 +2481,19 @@ ShaderBufferMemberType lvk::GetTypeFromSpvReflect(SpvReflectTypeDescription* typ
     return ShaderBufferMemberType::UNKNOWN;
 }
 
+
+void lvk::VulkanAPI::CreateMappedBuffer(MappedBuffer& buf, VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags memoryProperties, uint32_t size)
+{
+    CreateBufferVMA(VkDeviceSize{ size }, bufferUsage, memoryProperties, buf.m_GpuBuffer, buf.m_GpuMemory);
+    VK_CHECK(vmaMapMemory(m_Allocator, buf.m_GpuMemory, &buf.m_MappedAddr));
+}
+
 void lvk::VulkanAPI::CreateUniformBuffers(ShaderBufferFrameData& uniformData, VkDeviceSize bufferSize)
 {
-
     uniformData.m_UniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-    uniformData.m_UniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
-    uniformData.m_UniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        CreateBufferVMA(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformData.m_UniformBuffers[i], uniformData.m_UniformBuffersMemory[i]);
-
-        VK_CHECK(vmaMapMemory(m_Allocator, uniformData.m_UniformBuffersMemory[i], &uniformData.m_UniformBuffersMapped[i]))
+        CreateMappedBuffer(uniformData.m_UniformBuffers[i], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, bufferSize);
     }
 
 }
@@ -2498,3 +2508,4 @@ void lvk::VulkanAPI::CleanupImGui()
         CleanupImGuiBackend();
     }
 }
+
