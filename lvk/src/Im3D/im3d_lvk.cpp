@@ -45,10 +45,10 @@ namespace lvk
 
         Vector<VertexDataPos4> vertexData =
         {
-            VertexDataPos4{{-1.0f, -1.0f, 0.0f, 0.0f}},
-            VertexDataPos4{{1.0f, -1.0f, 0.0f, 0.0f}},
-            VertexDataPos4{{1.0f,  1.0f, 0.0f, 0.0f}},
-            VertexDataPos4{{-1.0f,  1.0f, 0.0f, 0.0f}}
+            VertexDataPos4{{-1.0f, -1.0f, 0.0f,1.0f}},
+            VertexDataPos4{{1.0f, -1.0f, 0.0f, 1.0f}},
+            VertexDataPos4{{1.0f,  1.0f, 0.0f, 1.0f}},
+            VertexDataPos4{{-1.0f,  1.0f, 0.0f, 1.0f}}
         };
 
 
@@ -69,7 +69,7 @@ namespace lvk
             renderPass,
             vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
             VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, enableMSAA,
-            VK_COMPARE_OP_GREATER_OR_EQUAL, tris_layout);
+            VK_COMPARE_OP_LESS, tris_layout);
         Material tris_material = Material::Create(vk, state.m_TriProg);
 
         VkPipelineLayout points_layout;
@@ -80,7 +80,7 @@ namespace lvk
             renderPass,
             vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
             VK_POLYGON_MODE_POINT, VK_CULL_MODE_NONE, enableMSAA,
-            VK_COMPARE_OP_GREATER_OR_EQUAL, points_layout);
+            VK_COMPARE_OP_LESS, points_layout);
         Material points_material = Material::Create(vk, state.m_PointsProg);
 
 
@@ -92,7 +92,7 @@ namespace lvk
             renderPass,
             vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
             VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE, enableMSAA,
-            VK_COMPARE_OP_GREATER_OR_EQUAL, lines_layout);
+            VK_COMPARE_OP_LESS, lines_layout);
         Material lines_material = Material::Create(vk, state.m_LinesProg);
 
 

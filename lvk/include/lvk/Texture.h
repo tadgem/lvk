@@ -64,7 +64,7 @@ namespace lvk
             uint32_t numMips, VkSampleCountFlagBits sampleCount,
             VkFormat format, VkImageTiling tiling, VkImageUsageFlags usageFlags,
             VkMemoryPropertyFlagBits memoryFlags, VkImageAspectFlagBits imageAspect,
-            VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
+            VkFilter samplerFilter = VK_FILTER_NEAREST, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
         {
             VkImage image;
             VkImageView imageView;

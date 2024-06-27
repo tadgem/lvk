@@ -350,8 +350,8 @@ void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu, Vector<ViewData*> v
         auto max = vk.GetMaxFramebufferExtent();
         ImVec2 uv1 = { extent.x / max.width, extent.y / max.height };
         auto& image = views[0]->m_LightPassFB.m_ColourAttachments[0].m_AttachmentSwapchainImages[vk.GetFrameIndex()];
-        ImGuiX::Image(image, extent, { 0,0 }, uv1);
 
+        ImGuiX::Image(image, extent, { 0,0 }, uv1);
         DrawIm3dTextListsImGuiAsChild(Im3d::GetTextDrawLists(), Im3d::GetTextDrawListCount(), (float)views[0]->m_CurrentResolution.width, (float)views[0]->m_CurrentResolution.height, views[0]->m_Camera.Proj * views[0]->m_Camera.View);
         views[0]->m_CurrentResolution = { (uint32_t)extent.x, (uint32_t)extent.y };
 
@@ -439,7 +439,9 @@ void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu, Vector<ViewData*> v
 
 void OnIm3D()
 {
+    Im3d::PushAlpha(1.0f);
     Im3d::PushColor(Im3d::Color_Red);
+    Im3d::SetAlpha(1.0f);
     Im3d::DrawCircle({ 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, 20.5f, 32);
     Im3d::DrawCone({ 40.0f, 0.0f, 0.0f }, { 0.0, 1.0, 0.0 }, 30.0f, 30.0f, 32);
     Im3d::DrawPrism({ 80.0f, 0.0f, 0.0f }, { 80.0f, 80.0f, 0.0f }, 10.0f, 32);
@@ -452,6 +454,7 @@ void OnIm3D()
     Im3d::PushColor(Im3d::Color_White);
     Im3d::Text({ 0.0, 20.0f, 0.0f }, 0, "Hello from you fuck you bloody");
     Im3d::PopColor();
+    Im3d::PopAlpha();
 }
 
 int main() {
