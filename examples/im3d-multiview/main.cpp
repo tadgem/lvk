@@ -38,8 +38,6 @@ ViewData CreateView(VulkanAPI& vk, LvkIm3dState im3dState, ShaderProgram gbuffer
     Framebuffer finalImage{};
     finalImage.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
-    finalImage.AddDepthAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
     finalImage.Build(vk);
 
     Material lightPassMat = Material::Create(vk, lightPassProg);
@@ -254,6 +252,9 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk, Vector<ViewData*> views, RenderMo
                 static_cast<uint32_t>(viewExtent.width) ,
                 static_cast<uint32_t>(viewExtent.height)
             };
+
+            // issue with lighting pass is that uvs are just 0,0 -> 1,1
+            // meaning the entire buffer will be resampled
             vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
             vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
             vkCmdPushConstants(commandBuffer, view->m_LightPassPipelineLayour, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PCViewData), &pcData);
