@@ -10,7 +10,7 @@ spdlog::error("VK check failed at {} Line {} : {}",_filePath, _lineNumber, #X);}
 #include "ThirdParty/stb_image.h"
 #include "ImGui/imgui.h"
 #include "spdlog/spdlog.h"
-
+#include "lvk/DescriptorSetAllocator.h"
 namespace lvk
 {
     class VulkanAPI;
@@ -169,6 +169,7 @@ namespace lvk
             Vector<VkPresentModeKHR>   m_SupportedPresentModes;
         };
 
+
         VkInstance                      m_Instance;
         VkSurfaceKHR                    m_Surface;
         VkSwapchainKHR                  m_SwapChain;
@@ -178,8 +179,8 @@ namespace lvk
         VkRenderPass                    m_SwapchainImageRenderPass;
         VkRenderPass                    m_ImGuiRenderPass;
         VkCommandPool                   m_GraphicsQueueCommandPool;
-        VkDescriptorPool                m_DescriptorPool;
         VmaAllocator                    m_Allocator;
+        DescriptorSetAllocator          m_DescriptorSetAllocator;
 
         Vector<VkSemaphore>             m_ImageAvailableSemaphores;
         Vector<VkSemaphore>             m_RenderFinishedSemaphores;
@@ -212,6 +213,24 @@ namespace lvk
         double                          m_DeltaTime;
         VkSampleCountFlagBits           m_MaxMsaaSamples;
         bool                            m_EnableSwapchainMsaa = false ;
+
+
+
+        virtual Vector<const char*>         GetRequiredExtensions() = 0;
+        virtual void                        CreateSurface() = 0;
+        virtual void                        CreateWindowLVK(uint32_t width, uint32_t height) = 0;
+        virtual void                        CleanupWindow() = 0;
+        virtual VkExtent2D                  GetSurfaceExtent(VkSurfaceCapabilitiesKHR surface) = 0;
+    protected:
+        virtual VkExtent2D                  GetMaxFramebufferResolution() = 0;
+    public:
+        virtual bool                        ShouldRun() = 0;
+        virtual void                        PreFrame() = 0;
+        virtual void                        PostFrame() = 0;
+        virtual void                        Run(std::function<void()> callback) = 0;
+        virtual void                        InitImGuiBackend() = 0;
+        virtual void                        CleanupImGuiBackend() = 0;
+        void                                CleanupImGui();
 
     protected:
         // Debug
@@ -247,7 +266,7 @@ namespace lvk
         void                                CreateSwapChainDepthTexture(bool enableMsaa = false);
         VkExtent2D                          ChooseSwapExtent(VkSurfaceCapabilitiesKHR& surfaceCapabilities);
         void                                CreateCommandPool();
-        void                                CreateDescriptorPool();
+        void                                CreateDescriptorSetAllocator();
         void                                CreateSemaphores();
         void                                CreateFences();
         void                                DrawFrame();
@@ -365,22 +384,6 @@ public:
             constexpr VkDeviceSize bufferSize = sizeof(_Ty);
             CreateUniformBuffers(uniformData, bufferSize);
         }
-
-        virtual Vector<const char*>         GetRequiredExtensions() = 0;
-        virtual void                        CreateSurface() = 0;
-        virtual void                        CreateWindowLVK(uint32_t width, uint32_t height) = 0;
-        virtual void                        CleanupWindow() = 0;
-        virtual VkExtent2D                  GetSurfaceExtent(VkSurfaceCapabilitiesKHR surface) = 0;
-        protected:
-        virtual VkExtent2D                  GetMaxFramebufferResolution() = 0;
-        public:
-        virtual bool                        ShouldRun() = 0;
-        virtual void                        PreFrame() = 0;
-        virtual void                        PostFrame() = 0;
-        virtual void                        Run(std::function<void()> callback) = 0;
-        virtual void                        InitImGuiBackend() = 0;
-        virtual void                        CleanupImGuiBackend() = 0;
-        void                                CleanupImGui();
 
         // API End
     protected:

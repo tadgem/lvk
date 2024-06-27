@@ -59,15 +59,12 @@ static auto collect_uniform_data = [](lvk::ShaderStage& stage, lvk::Material &ma
 lvk::Material lvk::Material::Create(VulkanAPI& vk, ShaderProgram& shader)
 {
     Material mat{};
-    Vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, shader.m_DescriptorSetLayout);
-    VkDescriptorSetAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = vk.m_DescriptorPool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-    allocInfo.pSetLayouts = layouts.data();
 
     mat.m_DescriptorSets.push_back(FrameDescriptorSets{});
-    VK_CHECK(vkAllocateDescriptorSets(vk.m_LogicalDevice, &allocInfo, mat.m_DescriptorSets.front().m_Sets.data()));
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        mat.m_DescriptorSets.front().m_Sets[i] = vk.m_DescriptorSetAllocator.Allocate(vk.m_LogicalDevice, shader.m_DescriptorSetLayout, nullptr);
+    }
     
     for (auto& stage : shader.m_Stages)
     {
@@ -245,13 +242,13 @@ void lvk::Material::Free(VulkanAPI& vk)
     m_UniformBuffers.clear();
     m_Samplers.clear();
 
-    for (auto& frameDescriptorSets : m_DescriptorSets)
+    /*for (auto& frameDescriptorSets : m_DescriptorSets)
     {
         for (auto& set : frameDescriptorSets.m_Sets)
         {
             VK_CHECK(vkFreeDescriptorSets(vk.m_LogicalDevice, vk.m_DescriptorPool, 1, &set));
         }
-    }
+    }*/
 
 
 }

@@ -279,6 +279,8 @@ void lvk::VulkanAPI::CleanupVulkan()
     vmaDestroyAllocator(m_Allocator);
     CleanupSwapChain();
 
+    m_DescriptorSetAllocator.Free(m_LogicalDevice);
+
     if (m_UseValidation)
     {
         CleanupDebugOutput();
@@ -291,8 +293,6 @@ void lvk::VulkanAPI::CleanupVulkan()
     }
 
     vkDestroyCommandPool(m_LogicalDevice, m_GraphicsQueueCommandPool, nullptr);
-    vkDestroyDescriptorPool(m_LogicalDevice, m_DescriptorPool, nullptr);
-
     vkDestroyRenderPass(m_LogicalDevice, m_SwapchainImageRenderPass, nullptr);
     
 
@@ -374,7 +374,7 @@ bool lvk::VulkanAPI::IsDeviceSuitable(VkPhysicalDevice physicalDevice)
     VkPhysicalDeviceFeatures supportedFeatures;
     vkGetPhysicalDeviceFeatures(physicalDevice, &supportedFeatures);
 
-    return indices.IsComplete() && extensionsSupported && swapChainSupport && supportedFeatures.samplerAnisotropy;
+    return indices.IsComplete() && extensionsSupported && swapChainSupport && supportedFeatures.samplerAnisotropy && supportedFeatures.wideLines;
 }
 
 uint32_t lvk::VulkanAPI::AssessDeviceSuitability(VkPhysicalDevice m_PhysicalDevice)
@@ -467,6 +467,7 @@ void lvk::VulkanAPI::CreateLogicalDevice()
     physicalDeviceFeatures.samplerAnisotropy = VK_TRUE;
     physicalDeviceFeatures.sampleRateShading = VK_TRUE;
     physicalDeviceFeatures.fillModeNonSolid = VK_TRUE;
+    physicalDeviceFeatures.wideLines = VK_TRUE;
 
     VkDeviceCreateInfo createInfo{};
     createInfo.sType                    = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -1212,7 +1213,7 @@ VkPipeline lvk::VulkanAPI::CreateRasterizationGraphicsPipeline(ShaderProgram& sh
     // using anything other than FILL requires enableing a gpu feature.
     rasterizerInfo.polygonMode = polyMode;
     // thickness of lines in terms of pixels. > 1.0f requires wide lines gpu feature.
-    rasterizerInfo.lineWidth = 1.0f;
+    rasterizerInfo.lineWidth = 2.0f;
 
     //rasterizerInfo.cullMode = VK_CULL_MODE_NONE;
     //// From vk-tutorial: The frontFace variable specifies the vertex order 
@@ -1279,7 +1280,6 @@ VkPipeline lvk::VulkanAPI::CreateRasterizationGraphicsPipeline(ShaderProgram& sh
     {
         VK_DYNAMIC_STATE_VIEWPORT,
         VK_DYNAMIC_STATE_SCISSOR,
-        VK_DYNAMIC_STATE_LINE_WIDTH
     };
 
     VkPipelineDynamicStateCreateInfo dynamicStateInfo{};
@@ -1428,22 +1428,13 @@ void lvk::VulkanAPI::CreateCommandPool()
     }
 }
 
-void lvk::VulkanAPI::CreateDescriptorPool()
+void lvk::VulkanAPI::CreateDescriptorSetAllocator()
 {
-    std::array<VkDescriptorPoolSize, 2> poolSizes{};
-    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT * 128);
-    poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT * 128);
-
-    VkDescriptorPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = static_cast<uint32_t>(2);
-    poolInfo.pPoolSizes = poolSizes.data();
-    poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT * 128);
-    poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT | VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
-
-    VK_CHECK(vkCreateDescriptorPool(m_LogicalDevice, &poolInfo, nullptr, &m_DescriptorPool) != VK_SUCCESS);
+    m_DescriptorSetAllocator.Init(*this, MAX_FRAMES_IN_FLIGHT * 128, {
+        {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0.33f},
+        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0.33f},
+        {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0.33f},
+    });
 }
 
 void lvk::VulkanAPI::CreateSemaphores()
@@ -1603,33 +1594,7 @@ StageBinary lvk::VulkanAPI::LoadSpirvBinary(const String& path)
 
 VkDescriptorSet lvk::VulkanAPI::CreateDescriptorSet(DescriptorSetLayoutData& layoutData)
 {
-    VkDescriptorSet descriptorSet;
-    VkDescriptorSetAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = m_DescriptorPool;
-    allocInfo.descriptorSetCount = 1;
-    allocInfo.pSetLayouts = &layoutData.m_Layout;
-
-    VK_CHECK(vkAllocateDescriptorSets(m_LogicalDevice, &allocInfo, &descriptorSet));
-
-    VkDescriptorBufferInfo bufferInfo{};
-    // bufferInfo.buffer = uniformBuffers[i];
-    bufferInfo.offset = 0;
-    // bufferInfo.range = sizeof(MvpData);
-
-    VkWriteDescriptorSet descriptorWrite{};
-    descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    // descriptorWrite.dstSet = descriptorSets[i];
-    descriptorWrite.dstBinding = 0;
-    descriptorWrite.dstArrayElement = 0;
-    descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    descriptorWrite.descriptorCount = 1;
-    descriptorWrite.pBufferInfo = &bufferInfo;
-    descriptorWrite.pImageInfo = nullptr; // Optional
-    descriptorWrite.pTexelBufferView = nullptr; // Optional
-
-    vkUpdateDescriptorSets(m_LogicalDevice, 1, &descriptorWrite, 0, nullptr);
-    return descriptorSet;
+    return m_DescriptorSetAllocator.Allocate(m_LogicalDevice, layoutData.m_Layout, nullptr);
 }
 
 void lvk::VulkanAPI::CreateBuiltInRenderPasses()
@@ -2112,7 +2077,7 @@ void lvk::VulkanAPI::InitVulkan(bool enableSwapchainMsaa)
     CreateSwapChainColourTexture(m_EnableSwapchainMsaa);
     CreateBuiltInRenderPasses();
     CreateSwapChainFramebuffers();
-    CreateDescriptorPool();
+    CreateDescriptorSetAllocator();
     CreateSemaphores();
     CreateFences();
     CreateCommandBuffers();
@@ -2140,7 +2105,8 @@ void lvk::VulkanAPI::InitImGui()
     init_info.QueueFamily = m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::GraphicsAndCompute];
     init_info.Queue = m_GraphicsQueue;
     init_info.PipelineCache = VK_NULL_HANDLE;
-    init_info.DescriptorPool = m_DescriptorPool;
+    // TODO: this is a bit shit, need to clean this pool some wheere
+    init_info.DescriptorPool = m_DescriptorSetAllocator.CreatePool(m_LogicalDevice, 2048);
     init_info.Allocator = nullptr;
     init_info.MinImageCount = 2;
     init_info.ImageCount = 2;
