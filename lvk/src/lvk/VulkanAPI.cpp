@@ -12,6 +12,11 @@
 #include "lvk/Mesh.h"
 #include "lvk/Shader.h"
 
+//#ifdef WIN32
+//#include "windows.h"
+//#include <dwmapi.h>
+//#endif
+
 using namespace lvk;
 
 static const bool QUIT_ON_ERROR = false;
@@ -1846,8 +1851,12 @@ void lvk::VulkanAPI::CreateRenderPass(VkRenderPass& renderPass, Vector<VkAttachm
     }
 }
 
+#include "windows.h"
+#include <dwmapi.h>
 void lvk::VulkanAPI::Start(uint32_t width, uint32_t height, bool enableSwapchainMsaa)
 {
+    SetProcessDPIAware();
+
     CreateWindowLVK(width, height);
     InitVulkan(enableSwapchainMsaa);
 

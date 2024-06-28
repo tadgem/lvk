@@ -360,8 +360,18 @@ void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu, Vector<ViewData*> v
 
     if (ImGui::Begin("View 2"))
     {
-        ImGuiX::Image(views[1]->m_LightPassFB.m_ColourAttachments[0].m_AttachmentSwapchainImages[vk.GetFrameIndex()], { (float)views[0]->m_CurrentResolution.width, (float)views[0]->m_CurrentResolution.height });
-        DrawIm3dTextListsImGuiAsChild(Im3d::GetTextDrawLists(), Im3d::GetTextDrawListCount(), (float)views[0]->m_CurrentResolution.width, (float)views[0]->m_CurrentResolution.height, views[1]->m_Camera.Proj * views[1]->m_Camera.View);
+        // size needs to be the current resolution
+        // uv0 will likely always be 0,0
+        // uv1 needs to be MaxResolution / CurrentResolution;
+        auto extent = ImGui::GetContentRegionAvail();
+        auto max = vk.GetMaxFramebufferExtent();
+        ImVec2 uv1 = { extent.x / max.width, extent.y / max.height };
+        auto& image = views[1]->m_LightPassFB.m_ColourAttachments[0].m_AttachmentSwapchainImages[vk.GetFrameIndex()];
+
+        ImGuiX::Image(image, extent, { 0,0 }, uv1);
+        DrawIm3dTextListsImGuiAsChild(Im3d::GetTextDrawLists(), Im3d::GetTextDrawListCount(), (float)views[1]->m_CurrentResolution.width, (float)views[1]->m_CurrentResolution.height, views[1]->m_Camera.Proj * views[1]->m_Camera.View);
+        views[1]->m_CurrentResolution = { (uint32_t)extent.x, (uint32_t)extent.y };
+
     }
     ImGui::End();
 
