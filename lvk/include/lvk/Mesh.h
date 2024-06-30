@@ -137,20 +137,4 @@ namespace lvk
             return attributeDescriptions;
         }
     };
-
-    class Mesh
-    {
-    public:
-        VkBuffer m_VertexBuffer;
-        VmaAllocation m_VertexBufferMemory;
-        VkBuffer m_IndexBuffer;
-        VmaAllocation m_IndexBufferMemory;
-
-        uint32_t m_IndexCount;
-
-        static Mesh* g_ScreenSpaceQuad;
-
-        static void InitScreenQuad(lvk::VulkanAPI& vk);
-        static void FreeScreenQuad(lvk::VulkanAPI& vk);
-    };
 }

@@ -6,31 +6,15 @@
 #include "ImGui/lvk_extensions.h"
 using namespace lvk;
 
-class MeshRenderable : public Renderable
-{
-public:
-
-    MeshRenderable(Mesh& mesh, VkDescriptorSet& descriptorSet, VkPipelineLayout& pipelineLayout) : 
-        Renderable(descriptorSet, pipelineLayout), m_Mesh(mesh)
-    {
-
-    }
-
-    const Mesh& m_Mesh;
-    void RecordGraphicsCommands(VkCommandBuffer& commandBuffer) override
-    {
-        VkBuffer vertexBuffers[]{ m_Mesh.m_VertexBuffer };
-        VkDeviceSize sizes[] = { 0 };
-
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, sizes);
-        vkCmdBindIndexBuffer(commandBuffer, m_Mesh.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSet, 0, nullptr);
-        vkCmdDrawIndexed(commandBuffer, m_Mesh.m_IndexCount, 1, 0, 0, 0);
-    }
-};
 
 struct VkPipelineData
 {
+    VkPipelineData(VkPipeline pipeline, VkPipelineLayout layout)
+    {
+        m_Pipeline = pipeline;
+        m_PipelineLayout = layout;
+    }
+
     VkPipeline          m_Pipeline;
     VkPipelineLayout    m_PipelineLayout;
 };
@@ -41,28 +25,29 @@ struct View
     VkExtent2D  m_CurrentResolution;
 };
 
-using VkRecordCommandCallback = std::function<void(VkCommandBuffer&, uint32_t, View&, Mesh&, Vector<Renderable*>)>;
+using VkRecordCommandCallback = std::function<void(VkCommandBuffer&, uint32_t, View&, Mesh&, Vector<Renderable>)>;
 
-struct Pipeline
+class Pipeline
 {
-    Vector<Framebuffer>                 m_FBs;
-    Vector<Material>                    m_PipelineMaterials;
-    Vector<VkPipelineData>              m_PipelineDatas;
+public:
+    Vector<Framebuffer*>                 m_FBs;
+    Vector<Material*>                    m_PipelineMaterials;
+    Vector<VkPipelineData*>              m_PipelineDatas;
 
-    Optional<Framebuffer*>        m_OutputFramebuffer;
-    Optional<LvkIm3dViewState>          m_Im3dState;
+    Optional<Framebuffer*>              m_OutputFramebuffer;
+    LvkIm3dViewState*                   m_Im3dState = nullptr;
 
     Optional<VkRecordCommandCallback>   m_CommandCallback;
 
-    Framebuffer& AddFramebuffer(VulkanAPI& vk)
+    Framebuffer* AddFramebuffer(VulkanAPI& vk)
     {
-        m_FBs.push_back(Framebuffer{});
-        return m_FBs.back();
+        m_FBs.push_back(new Framebuffer());
+        return m_FBs[m_FBs.size() - 1];
     }
 
-    void SetOutputFramebuffer(Framebuffer& fb)
+    void SetOutputFramebuffer(Framebuffer* fb)
     {
-        m_OutputFramebuffer = &fb;
+        m_OutputFramebuffer = fb;
     }
 
     Framebuffer* GetOutputFramebuffer()
@@ -74,21 +59,22 @@ struct Pipeline
         return nullptr;
     }
 
-    Material& AddMaterial(VulkanAPI& vk, ShaderProgram& prog)
+    Material* AddMaterial(VulkanAPI& vk, ShaderProgram& prog)
     {
-        m_PipelineMaterials.push_back(Material::Create(vk, prog));
+        m_PipelineMaterials.push_back( new Material(Material::Create(vk, prog)));
         return m_PipelineMaterials.back();
     }
 
-    VkPipelineData& AddPipeline(VulkanAPI& vk, VkPipelineData data)
+    VkPipelineData* AddPipeline(VulkanAPI& vk, VkPipeline pipeline, VkPipelineLayout layout)
     {
-        return m_PipelineDatas.emplace_back(data);
+        m_PipelineDatas.emplace_back(new VkPipelineData (pipeline, layout));
+        return m_PipelineDatas.back();
     }
 
-    LvkIm3dViewState& AddIm3d(VulkanAPI& vk, LvkIm3dState im3dState)
+    LvkIm3dViewState* AddIm3d(VulkanAPI& vk, LvkIm3dState im3dState)
     {
-        m_Im3dState = AddIm3dForViewport(vk, im3dState, m_OutputFramebuffer.value()->m_RenderPass, false);
-        return m_Im3dState.value();
+        m_Im3dState = new LvkIm3dViewState(AddIm3dForViewport(vk, im3dState, m_OutputFramebuffer.value()->m_RenderPass, false));
+        return m_Im3dState;
     }
 
     void RecordCommands(VkRecordCommandCallback callback)
@@ -106,28 +92,28 @@ struct ViewData
 Pipeline CreateViewPipeline(VulkanAPI& vk, LvkIm3dState& im3dState, ShaderProgram& gbufferProg, ShaderProgram& lightPassProg)
 {
     Pipeline p{};
-    auto& gbuffer = p.AddFramebuffer(vk);
-    gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+    auto* gbuffer = p.AddFramebuffer(vk);
+    gbuffer->AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
-    gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+    gbuffer->AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
-    gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+    gbuffer->AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
-    gbuffer.AddDepthAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+    gbuffer->AddDepthAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
-    gbuffer.Build(vk);
+    gbuffer->Build(vk);
 
-    auto& finalImage = p.AddFramebuffer(vk);
-    finalImage.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+    auto* finalImage = p.AddFramebuffer(vk);
+    finalImage->AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
-    finalImage.Build(vk);
+    finalImage->Build(vk);
 
     p.SetOutputFramebuffer(finalImage);
 
-    auto& lightPassMat = p.AddMaterial(vk, lightPassProg);
-    lightPassMat.SetColourAttachment(vk, "positionBufferSampler", gbuffer, 1);
-    lightPassMat.SetColourAttachment(vk, "normalBufferSampler", gbuffer, 2);
-    lightPassMat.SetColourAttachment(vk, "colourBufferSampler", gbuffer, 0);
+    auto* lightPassMat = p.AddMaterial(vk, lightPassProg);
+    lightPassMat->SetColourAttachment(vk, "positionBufferSampler", *gbuffer, 1);
+    lightPassMat->SetColourAttachment(vk, "normalBufferSampler", *gbuffer, 2);
+    lightPassMat->SetColourAttachment(vk, "colourBufferSampler", *gbuffer, 0);
 
     // create gbuffer pipeline
     VkPipelineLayout gbufferPipelineLayout;
@@ -135,7 +121,7 @@ Pipeline CreateViewPipeline(VulkanAPI& vk, LvkIm3dState& im3dState, ShaderProgra
         gbufferProg,
         Vector<VkVertexInputBindingDescription>{VertexDataPosNormalUv::GetBindingDescription() },
         VertexDataPosNormalUv::GetAttributeDescriptions(),
-        gbuffer.m_RenderPass,
+        gbuffer->m_RenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
         VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, false,
         VK_COMPARE_OP_LESS, gbufferPipelineLayout, 3);
@@ -147,19 +133,19 @@ Pipeline CreateViewPipeline(VulkanAPI& vk, LvkIm3dState& im3dState, ShaderProgra
         lightPassProg,
         Vector<VkVertexInputBindingDescription>{VertexDataPosUv::GetBindingDescription() },
         VertexDataPosUv::GetAttributeDescriptions(),
-        finalImage.m_RenderPass,
+        finalImage->m_RenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
         VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, false,
         VK_COMPARE_OP_LESS, lightPassPipelineLayout);
 
 
-    VkPipelineData& gbufferPipelineData = p.AddPipeline(vk, { gbufferPipeline, gbufferPipelineLayout });
-    VkPipelineData& lightPassPipelineData = p.AddPipeline(vk, { lightPassPipeline, lightPassPipelineLayout });
+    VkPipelineData* gbufferPipelineData = p.AddPipeline(vk, gbufferPipeline, gbufferPipelineLayout );
+    VkPipelineData* lightPassPipelineData = p.AddPipeline(vk, lightPassPipeline, lightPassPipelineLayout );
 
-    auto& im3dViewState = p.AddIm3d(vk, im3dState);
+    auto* im3dViewState = p.AddIm3d(vk, im3dState);
 
     p.RecordCommands(
-        [&](auto& commandBuffer, uint32_t frameIndex, View& view, Mesh& screenQuad, Vector<Renderable*> renderables)
+        [gbuffer, gbufferPipelineData, finalImage, lightPassPipelineData, lightPassMat, &vk, &im3dState, im3dViewState](auto& commandBuffer, uint32_t frameIndex, View& view, Mesh& screenQuad, Vector<Renderable> renderables)
         {
             struct PCViewData
             {
@@ -196,8 +182,8 @@ Pipeline CreateViewPipeline(VulkanAPI& vk, LvkIm3dState& im3dState, ShaderProgra
 
                 VkRenderPassBeginInfo renderPassInfo{};
                 renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-                renderPassInfo.renderPass = gbuffer.m_RenderPass;
-                renderPassInfo.framebuffer = gbuffer.m_SwapchainFramebuffers[frameIndex];
+                renderPassInfo.renderPass = gbuffer->m_RenderPass;
+                renderPassInfo.framebuffer = gbuffer->m_SwapchainFramebuffers[frameIndex];
                 renderPassInfo.renderArea.offset = { 0,0 };
                 renderPassInfo.renderArea.extent = viewExtent;
 
@@ -205,7 +191,7 @@ Pipeline CreateViewPipeline(VulkanAPI& vk, LvkIm3dState& im3dState, ShaderProgra
                 renderPassInfo.pClearValues = clearValues.data();
 
                 vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gbufferPipelineData.m_Pipeline);
+                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gbufferPipelineData->m_Pipeline);
                 VkViewport viewport{};
                 viewport.x = 0.0f;
                 viewport.x = 0.0f;
@@ -223,11 +209,11 @@ Pipeline CreateViewPipeline(VulkanAPI& vk, LvkIm3dState& im3dState, ShaderProgra
 
                 vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
                 vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-                vkCmdPushConstants(commandBuffer, gbufferPipelineData.m_PipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PCViewData), &pcData);
+                vkCmdPushConstants(commandBuffer, gbufferPipelineData->m_PipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PCViewData), &pcData);
 
-                for (auto* renderable : renderables)
+                for (auto& renderable : renderables)
                 {
-                    renderable->RecordGraphicsCommands(commandBuffer);
+                    renderable.RecordGraphicsCommands(commandBuffer);
                 }
                 vkCmdEndRenderPass(commandBuffer);
             }
@@ -238,8 +224,8 @@ Pipeline CreateViewPipeline(VulkanAPI& vk, LvkIm3dState& im3dState, ShaderProgra
 
             VkRenderPassBeginInfo renderPassInfo{};
             renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-            renderPassInfo.renderPass = finalImage.m_RenderPass;
-            renderPassInfo.framebuffer = finalImage.m_SwapchainFramebuffers[frameIndex];
+            renderPassInfo.renderPass = finalImage->m_RenderPass;
+            renderPassInfo.framebuffer = finalImage->m_SwapchainFramebuffers[frameIndex];
             renderPassInfo.renderArea.offset = { 0,0 };
             renderPassInfo.renderArea.extent = viewExtent;
 
@@ -248,7 +234,7 @@ Pipeline CreateViewPipeline(VulkanAPI& vk, LvkIm3dState& im3dState, ShaderProgra
 
             vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, lightPassPipelineData.m_Pipeline);
+            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, lightPassPipelineData->m_Pipeline);
             VkViewport viewport{};
             viewport.x = 0.0f;
             viewport.x = 0.0f;
@@ -268,14 +254,14 @@ Pipeline CreateViewPipeline(VulkanAPI& vk, LvkIm3dState& im3dState, ShaderProgra
             // meaning the entire buffer will be resampled
             vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
             vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-            vkCmdPushConstants(commandBuffer, lightPassPipelineData.m_PipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PCViewData), &pcData);
+            vkCmdPushConstants(commandBuffer, lightPassPipelineData->m_PipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PCViewData), &pcData);
             VkDeviceSize sizes[] = { 0 };
             vkCmdBindVertexBuffers(commandBuffer, 0, 1, &screenQuad.m_VertexBuffer, sizes);
             vkCmdBindIndexBuffer(commandBuffer, screenQuad.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, lightPassPipelineData.m_PipelineLayout, 0, 1, &lightPassMat.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
+            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, lightPassPipelineData->m_PipelineLayout, 0, 1, &lightPassMat->m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
             vkCmdDrawIndexed(commandBuffer, screenQuad.m_IndexCount, 1, 0, 0, 0);
 
-            DrawIm3d(vk, commandBuffer, frameIndex, im3dState, im3dViewState, view.m_Camera.Proj * view.m_Camera.View, viewExtent.width, viewExtent.height);
+            DrawIm3d(vk, commandBuffer, frameIndex, im3dState, *im3dViewState, view.m_Camera.Proj * view.m_Camera.View, viewExtent.width, viewExtent.height);
             vkCmdEndRenderPass(commandBuffer);
         }
     );
@@ -343,7 +329,7 @@ void UpdateViewData(VulkanAPI& vk, ViewData* view, DeferredLightData& lightData)
         view->m_View.m_Camera.Proj[1][1] *= -1;
     }
 
-    view->m_Pipeline.m_PipelineMaterials[0].SetBuffer(vk.GetFrameIndex(), 0, 3, lightData);
+    view->m_Pipeline.m_PipelineMaterials[0]->SetBuffer(vk.GetFrameIndex(), 0, 3, lightData);
 }
 
 void RecordCommandBuffersV2(VulkanAPI_SDL& vk, Vector<ViewData*> views, RenderModel& model, Mesh& screenQuad, LvkIm3dState& im3dState, DeferredLightData& lightData)
@@ -355,7 +341,7 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk, Vector<ViewData*> views, RenderMo
                     { {-1.0f, 1.0f, 0.0f}, {0.0f, 1.0} }
     };
 
-    Vector<Renderable*> renderables{};
+    
 
     vk.RecordGraphicsCommands([&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
         {
@@ -396,14 +382,31 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk, Vector<ViewData*> views, RenderMo
             vkCmdEndRenderPass(commandBuffer);
         }
 
+
         for (auto& view : views)
         {
             if (view->m_Pipeline.m_CommandCallback.has_value())
             {
+                Vector<Renderable> renderables{};
+                for (auto item : model.m_RenderItems)
+                {
+                    Mesh m = {
+                            item.m_Mesh.m_VertexBuffer, item.m_Mesh.m_VertexBufferMemory,
+                            item.m_Mesh.m_IndexBuffer, item.m_Mesh.m_IndexBufferMemory,
+                            item.m_Mesh.m_IndexCount
+                    };
+                    Renderable renderable =
+                    {
+                        item.m_Material.m_DescriptorSets[0].m_Sets[frameIndex],
+                        view->m_Pipeline.m_PipelineDatas[0]->m_PipelineLayout,
+                        m
+                    };
+                    renderables.push_back(renderable);
+                }
                 auto& draw_commands = view->m_Pipeline.m_CommandCallback.value();
 
                 //todo: convert meshes to renderables
-                draw_commands(commandBuffer, frameIndex, view->m_View, view->m_ViewQuad, {});
+                draw_commands(commandBuffer, frameIndex, view->m_View, view->m_ViewQuad, renderables);
             }
         }
     });
@@ -433,21 +436,22 @@ RenderModel CreateRenderModelGbuffer(VulkanAPI& vk, const String& modelPath, Sha
 
 void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu, Vector<ViewData*> views)
 {
-    if (ImGui::Begin("Memory"))
+    if (ImGui::Begin("Statistics"))
     {
+        ImGui::Text("FPS: %.3f", (1.0 / vk.m_DeltaTime));
+        ImGui::Text("Frametime: %.3f ms", vk.m_DeltaTime * 1000.0f);
+        ImGui::Separator();
+        
         VmaBudget budgets[VK_MAX_MEMORY_HEAPS];
         vmaGetHeapBudgets(vk.m_Allocator, budgets);
 
-        for (int i = 0; i < VK_MAX_MEMORY_HEAPS; i++)
+        for (int i = 0; i < 3; i++)
         {
-            if (budgets[i].budget > INT64_MAX)
-            {
-                continue;
-            }
             const String heapName = "Heap " + std::to_string(i);
             if (ImGui::TreeNode(heapName.c_str()))
             {
                 ImGui::Text("Allocs : %i", budgets[i].statistics.allocationCount);
+                ImGui::Text("Block Count: %i", budgets[i].statistics.blockCount);
                 ImGui::Text("Memory Usage: %d MB / %d MB", (budgets[i].usage / 1024 / 1024), (budgets[i].budget / 1024 / 1024));
                 ImGui::TreePop();
             }
@@ -486,9 +490,7 @@ void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu, Vector<ViewData*> v
     ImGui::End();
 
     if (ImGui::Begin("Scene Debug"))
-    {
-        ImGui::Text("Frametime: %f", (1.0 / vk.m_DeltaTime));
-        ImGui::Separator();
+    {        
         ImGui::DragFloat3("Position", &g_Transform.m_Position[0]);
         ImGui::DragFloat3("Euler Rotation", &g_Transform.m_Rotation[0]);
         ImGui::DragFloat3("Scale", &g_Transform.m_Scale[0]);
@@ -507,7 +509,6 @@ void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu, Vector<ViewData*> v
 
     if (ImGui::Begin("Lights Menu"))
     {
-        ImGui::Text("Frametime: %f", (1.0 / vk.m_DeltaTime));
         ImGui::DragFloat3("Directional Light Dir", &lightDataCpu.m_DirectionalLight.Direction[0]);
         ImGui::DragFloat4("Directional Light Colour", &lightDataCpu.m_DirectionalLight.Colour[0]);
         ImGui::DragFloat4("Directional Light Ambient Colour", &lightDataCpu.m_DirectionalLight.Ambient[0]);

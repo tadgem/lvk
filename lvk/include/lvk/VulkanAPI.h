@@ -389,17 +389,38 @@ public:
         VkExtent2D      p_MaxFramebufferExtent;
     };
 
+    class Mesh
+    {
+    public:
+        VkBuffer m_VertexBuffer;
+        VmaAllocation m_VertexBufferMemory;
+        VkBuffer m_IndexBuffer;
+        VmaAllocation m_IndexBufferMemory;
+
+        uint32_t m_IndexCount;
+
+        static Mesh* g_ScreenSpaceQuad;
+
+        static void InitScreenQuad(lvk::VulkanAPI& vk);
+        static void FreeScreenQuad(lvk::VulkanAPI& vk);
+    };
+
     class Renderable
     {
     public:
-        VkDescriptorSet& m_DescriptorSet;
-        VkPipelineLayout& m_PipelineLayout;
+        VkDescriptorSet    m_DescriptorSet;
+        VkPipelineLayout   m_PipelineLayout;
+        Mesh               m_Mesh;
 
-        Renderable(VkDescriptorSet& descriptorSet, VkPipelineLayout& pipelineLayout) :
-            m_DescriptorSet(descriptorSet), m_PipelineLayout(pipelineLayout)
+        void RecordGraphicsCommands(VkCommandBuffer& commandBuffer)
         {
+            VkBuffer vertexBuffers[]{ m_Mesh.m_VertexBuffer };
+            VkDeviceSize sizes[] = { 0 };
 
+            vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, sizes);
+            vkCmdBindIndexBuffer(commandBuffer, m_Mesh.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSet, 0, nullptr);
+            vkCmdDrawIndexed(commandBuffer, m_Mesh.m_IndexCount, 1, 0, 0, 0);
         }
-        virtual void RecordGraphicsCommands(VkCommandBuffer& cmd) = 0;
     };
 }

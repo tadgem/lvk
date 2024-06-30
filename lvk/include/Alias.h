@@ -6,6 +6,7 @@
 #include <functional>
 #include <array>
 #include <optional>
+#include <memory>
 
 namespace lvk
 {
@@ -22,5 +23,8 @@ namespace lvk
 
 	template<typename _Ty>
 	using Optional = std::optional<_Ty>;
+
+	template<typename _Ty>
+	using Unique = std::unique_ptr<_Ty>;
 }
 
