@@ -388,4 +388,18 @@ public:
         int             p_CurrentFrameIndex;
         VkExtent2D      p_MaxFramebufferExtent;
     };
+
+    class Renderable
+    {
+    public:
+        VkDescriptorSet& m_DescriptorSet;
+        VkPipelineLayout& m_PipelineLayout;
+
+        Renderable(VkDescriptorSet& descriptorSet, VkPipelineLayout& pipelineLayout) :
+            m_DescriptorSet(descriptorSet), m_PipelineLayout(pipelineLayout)
+        {
+
+        }
+        virtual void RecordGraphicsCommands(VkCommandBuffer& cmd) = 0;
+    };
 }
