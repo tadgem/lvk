@@ -14,15 +14,12 @@ spdlog::error("VK check failed at {} Line {} : {}",_filePath, _lineNumber, #X);}
 namespace lvk
 {
     class VulkanAPI;
-
-    static constexpr int        MAX_FRAMES_IN_FLIGHT = 2;
-    
-    using StageBinary = std::vector<char>;
-
     struct ShaderProgram;
-
+    
     class VulkanAPIWindowHandle {};
 
+    using StageBinary = std::vector<char>;
+    static constexpr int        MAX_FRAMES_IN_FLIGHT = 2;
 
 
     enum class ShaderBindingType
@@ -221,9 +218,8 @@ namespace lvk
         virtual void                        CreateWindowLVK(uint32_t width, uint32_t height) = 0;
         virtual void                        CleanupWindow() = 0;
         virtual VkExtent2D                  GetSurfaceExtent(VkSurfaceCapabilitiesKHR surface) = 0;
-    protected:
-        virtual VkExtent2D                  GetMaxFramebufferResolution() = 0;
     public:
+        virtual VkExtent2D                  GetMaxFramebufferResolution() = 0;
         virtual bool                        ShouldRun() = 0;
         virtual void                        PreFrame() = 0;
         virtual void                        PostFrame() = 0;

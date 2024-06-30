@@ -5,6 +5,7 @@
 #include <vector>
 #include <functional>
 #include <array>
+#include <optional>
 
 namespace lvk
 {
@@ -18,5 +19,8 @@ namespace lvk
 
 	template<typename _Key, typename _Value>
 	using HashMap = std::unordered_map<_Key, _Value>;
+
+	template<typename _Ty>
+	using Optional = std::optional<_Ty>;
 }
 

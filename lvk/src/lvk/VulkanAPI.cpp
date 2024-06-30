@@ -1520,7 +1520,6 @@ void lvk::VulkanAPI::DrawFrame()
     if (vkQueueSubmit(m_GraphicsQueue, 1, &submitInfo, m_FrameInFlightFences[p_CurrentFrameIndex]) != VK_SUCCESS)
     {
         spdlog::error("Failed to submit draw command buffer!");
-        std::cerr << "Failed to submit draw command buffer!" << std::endl;
     }
 
     if (m_UseImGui)
