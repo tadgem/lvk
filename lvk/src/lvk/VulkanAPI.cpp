@@ -1218,13 +1218,13 @@ VkPipeline lvk::VulkanAPI::CreateRasterizationGraphicsPipeline(ShaderProgram& sh
     // using anything other than FILL requires enableing a gpu feature.
     rasterizerInfo.polygonMode = polyMode;
     // thickness of lines in terms of pixels. > 1.0f requires wide lines gpu feature.
-    rasterizerInfo.lineWidth = 2.0f;
+    rasterizerInfo.lineWidth = 1.0f;
 
     //rasterizerInfo.cullMode = VK_CULL_MODE_NONE;
     //// From vk-tutorial: The frontFace variable specifies the vertex order 
     //// for faces to be considered front-facing and can be clockwise or counterclockwise.
     //// ??
-    //rasterizerInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    rasterizerInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
 
     rasterizerInfo.cullMode = cullMode;
     rasterizerInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;

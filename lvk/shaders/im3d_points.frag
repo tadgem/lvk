@@ -13,5 +13,5 @@ void main()
     fResult = vColor;
     float d = length(vUv - vec2(0.5));
     d = smoothstep(0.5, 0.5 - (kAntialiasing / vSize), d);
-    fResult.a *= d;
+    fResult.a = 1.0;
 }

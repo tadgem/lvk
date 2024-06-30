@@ -13,5 +13,5 @@ void main()
     fResult = vColor;
     float d = abs(vEdgeDistance) / vSize;
     d = smoothstep(1.0, 1.0 - (kAntialiasing / vSize), d);
-    fResult.a *= d;
+    fResult.a = 1.0;
 }
