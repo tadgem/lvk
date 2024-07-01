@@ -119,6 +119,14 @@ Pipeline CreateViewPipeline(VulkanAPI& vk, LvkIm3dState& im3dState, ShaderProgra
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
     finalImage->Build(vk);
 
+    // rework pipeline to do the following:
+    // normal gbuffer
+    // light pass now has 1 HDR 32bit output
+    // R channel encodes tonemapped lit image e.g. current output of lighting pass (colour)
+    // G channel packs emissiveness, surfaces are white(1.0) if non emissive, store emissive colour otherwise
+    // B channel packs normal
+    // A channel is depth
+
     auto* ssgiMat = p.AddMaterial(vk, ssgiProg);
     ssgiMat->SetDepthAttachment(vk, "depthImageSampler", *gbuffer);
     ssgiMat->SetColourAttachment(vk, "positionBufferSampler", *gbuffer, 1);
