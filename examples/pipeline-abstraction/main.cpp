@@ -90,7 +90,7 @@ struct ViewData
     Mesh        m_ViewQuad;
 };
 
-Pipeline CreateViewPipeline(VulkanAPI& vk, LvkIm3dState& im3dState, ShaderProgram& gbufferProg, ShaderProgram& lightPassProg, ShaderProgram& ssgiProg)
+Pipeline CreateViewPipeline(VulkanAPI& vk, LvkIm3dState& im3dState, ShaderProgram& gbufferProg, ShaderProgram& lightPassProg)
 {
     Pipeline p{};
     auto* gbuffer = p.AddFramebuffer(vk);
@@ -114,18 +114,7 @@ Pipeline CreateViewPipeline(VulkanAPI& vk, LvkIm3dState& im3dState, ShaderProgra
     lightPassMat->SetColourAttachment(vk, "normalBufferSampler", *gbuffer, 2);
     lightPassMat->SetColourAttachment(vk, "colourBufferSampler", *gbuffer, 0);
 
-    auto* finalImage = p.AddFramebuffer(vk);
-    finalImage->AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
-    finalImage->Build(vk);
-
-    auto* ssgiMat = p.AddMaterial(vk, ssgiProg);
-    ssgiMat->SetDepthAttachment(vk, "depthImageSampler", *gbuffer);
-    ssgiMat->SetColourAttachment(vk, "positionBufferSampler", *gbuffer, 1);
-    ssgiMat->SetColourAttachment(vk, "normalBufferSampler", *gbuffer, 2);
-    ssgiMat->SetColourAttachment(vk, "lightPassImageSampler", *lightPassImage, 0);
-
-    p.SetOutputFramebuffer(finalImage);
+    p.SetOutputFramebuffer(lightPassImage);
 
 
     // create gbuffer pipeline
@@ -151,28 +140,15 @@ Pipeline CreateViewPipeline(VulkanAPI& vk, LvkIm3dState& im3dState, ShaderProgra
         VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, false,
         VK_COMPARE_OP_LESS, lightPassPipelineLayout);
 
-    VkPipelineLayout ssgiPassPipelineLayout;
-    VkPipeline ssgiPassPipeline= vk.CreateRasterizationGraphicsPipeline(
-        ssgiProg,
-        Vector<VkVertexInputBindingDescription>{VertexDataPosUv::GetBindingDescription() },
-        VertexDataPosUv::GetAttributeDescriptions(),
-        finalImage->m_RenderPass,
-        vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
-        VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, false,
-        VK_COMPARE_OP_LESS, ssgiPassPipelineLayout);
-
 
     VkPipelineData* gbufferPipelineData = p.AddPipeline(vk, gbufferPipeline, gbufferPipelineLayout );
     VkPipelineData* lightPassPipelineData = p.AddPipeline(vk, lightPassPipeline, lightPassPipelineLayout);
-    VkPipelineData* ssgiPassPipelineData = p.AddPipeline(vk, ssgiPassPipeline, ssgiPassPipelineLayout);
-
     auto* im3dViewState = p.AddIm3d(vk, im3dState);
 
     p.RecordCommands(
         [
             gbuffer, gbufferPipelineData, 
             lightPassImage, lightPassPipelineData, lightPassMat, 
-            finalImage, ssgiPassPipelineData, ssgiMat,
             &vk, &im3dState, im3dViewState
         ]
             (auto& commandBuffer, uint32_t frameIndex, View& view, Mesh& screenQuad, Vector<Renderable> renderables)
@@ -291,69 +267,6 @@ Pipeline CreateViewPipeline(VulkanAPI& vk, LvkIm3dState& im3dState, ShaderProgra
                 vkCmdBindIndexBuffer(commandBuffer, screenQuad.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
                 vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, lightPassPipelineData->m_PipelineLayout, 0, 1, &lightPassMat->m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
                 vkCmdDrawIndexed(commandBuffer, screenQuad.m_IndexCount, 1, 0, 0, 0);
-
-                vkCmdEndRenderPass(commandBuffer);
-            }
-            // SS Horizon GI pass
-            {
-                struct SSGIPCData
-                {
-                    glm::mat4   view;
-                    glm::mat4   proj;
-                    glm::vec4   resolutionFov;
-                    glm::vec4   eyePos;
-                    uint32_t    frameIndex;
-                };
-
-                SSGIPCData data{};
-                data.view = view.m_Camera.View;
-                data.proj = view.m_Camera.Proj;
-                data.resolutionFov = glm::vec4{ static_cast<float>(view.m_CurrentResolution.width), static_cast<float>(view.m_CurrentResolution.height), view.m_Camera.FOV, 0.0f };
-                data.eyePos = glm::vec4(view.m_Camera.Position, 0.0);
-                data.frameIndex = frameCount++;
-
-                Array<VkClearValue, 1> clearValues{};
-                clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
-
-                VkRenderPassBeginInfo renderPassInfo{};
-                renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-                renderPassInfo.renderPass = finalImage->m_RenderPass;
-                renderPassInfo.framebuffer = finalImage->m_SwapchainFramebuffers[frameIndex];
-                renderPassInfo.renderArea.offset = { 0,0 };
-                renderPassInfo.renderArea.extent = viewExtent;
-
-                renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-                renderPassInfo.pClearValues = clearValues.data();
-
-                vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, ssgiPassPipelineData->m_Pipeline);
-                VkViewport viewport{};
-                viewport.x = 0.0f;
-                viewport.x = 0.0f;
-                viewport.width = static_cast<float>(viewExtent.width);
-                viewport.height = static_cast<float>(viewExtent.height);
-                viewport.minDepth = 0.0f;
-                viewport.maxDepth = 1.0f;
-
-                VkRect2D scissor{};
-                scissor.offset = { 0,0 };
-                scissor.extent = VkExtent2D{
-                    static_cast<uint32_t>(viewExtent.width),
-                    static_cast<uint32_t>(viewExtent.height)
-                };
-
-                // issue with lighting pass is that uvs are just 0,0 -> 1,1
-                // meaning the entire buffer will be resampled
-                vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-                vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-                vkCmdPushConstants(commandBuffer, ssgiPassPipelineData->m_PipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(SSGIPCData), &data);
-                VkDeviceSize sizes[] = { 0 };
-                vkCmdBindVertexBuffers(commandBuffer, 0, 1, &screenQuad.m_VertexBuffer, sizes);
-                vkCmdBindIndexBuffer(commandBuffer, screenQuad.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-                vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, ssgiPassPipelineData->m_PipelineLayout, 0, 1, &ssgiMat->m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
-                vkCmdDrawIndexed(commandBuffer, screenQuad.m_IndexCount, 1, 0, 0, 0);
-                
                 DrawIm3d(vk, commandBuffer, frameIndex, im3dState, *im3dViewState, view.m_Camera.Proj * view.m_Camera.View, viewExtent.width, viewExtent.height);
                 vkCmdEndRenderPass(commandBuffer);
             }
@@ -362,9 +275,9 @@ Pipeline CreateViewPipeline(VulkanAPI& vk, LvkIm3dState& im3dState, ShaderProgra
     return p;
 }
 
-ViewData CreateView(VulkanAPI& vk, LvkIm3dState im3dState, ShaderProgram gbufferProg, ShaderProgram lightPassProg, ShaderProgram& ssgiProg)
+ViewData CreateView(VulkanAPI& vk, LvkIm3dState im3dState, ShaderProgram gbufferProg, ShaderProgram lightPassProg)
 {
-    Pipeline pipeline = CreateViewPipeline(vk, im3dState, gbufferProg, lightPassProg, ssgiProg);
+    Pipeline pipeline = CreateViewPipeline(vk, im3dState, gbufferProg, lightPassProg);
 
     static Vector<VertexDataPosUv> screenQuadVerts = {
                     { { -1.0f, -1.0f , 0.0f}, { 0.0f, 0.0f } },
@@ -683,11 +596,10 @@ int main() {
 
     ShaderProgram gbufferProg = ShaderProgram::Create(vk, "shaders/gbuffer.vert.spv", "shaders/gbuffer.frag.spv");
     ShaderProgram lightPassProg = ShaderProgram::Create(vk, "shaders/lights.vert.spv", "shaders/lights.frag.spv");
-    ShaderProgram ssgiProg = ShaderProgram::Create(vk, "shaders/lights.vert.spv", "shaders/ssgi.frag.spv");
-
-    ViewData viewA = CreateView(vk, im3dState, gbufferProg, lightPassProg, ssgiProg);
+    
+    ViewData viewA = CreateView(vk, im3dState, gbufferProg, lightPassProg);
     viewA.m_View.m_Camera.Position = { -40.0, 10.0f, 30.0f };
-    ViewData viewB = CreateView(vk, im3dState, gbufferProg, lightPassProg, ssgiProg);
+    ViewData viewB = CreateView(vk, im3dState, gbufferProg, lightPassProg);
     viewB.m_View.m_Camera.Position = { 30.0, 0.0f, -20.0f };
 
     Vector<ViewData*> views{ &viewA, &viewB };
