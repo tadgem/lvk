@@ -41,6 +41,7 @@ void main() {
     float CurrentFrame = FrameIndex;
     vec2 SSOffset = vec2(0.);
     vec2 fragCoord = gl_FragCoord.xy;
+    // send these in push constant buffer
     vec2 IRES = 1.0 / resolutionFov.xy;
     float fov = resolutionFov[2];
     float CFOV = tan(fov);
