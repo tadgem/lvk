@@ -150,7 +150,7 @@ namespace lvk
                 depthAttachmentDescription.format = depth.m_Format;
                 depthAttachmentDescription.samples = depth.m_SampleCount;
                 depthAttachmentDescription.loadOp = m_AttachmentLoadOp;
-                depthAttachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+                depthAttachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
                 depthAttachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
                 depthAttachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
                 depthAttachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
