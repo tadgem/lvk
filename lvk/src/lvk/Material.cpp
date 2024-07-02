@@ -123,7 +123,7 @@ lvk::Material lvk::Material::Create(VulkanAPI& vk, ShaderProgram& shader)
             VkWriteDescriptorSet write{};
             write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             write.dstSet = mat.m_DescriptorSets.front().m_Sets[i];
-            write.dstBinding = 1;
+            write.dstBinding = bindings[j];
             write.dstArrayElement = 0;
             write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
             write.descriptorCount = 1;

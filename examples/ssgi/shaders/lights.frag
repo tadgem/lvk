@@ -156,6 +156,23 @@ void main() {
         //lightColour
         lightColour += BlinnPhong_Spot(i, position, normal, vec3(0.0f), textureColour.xyz, vec3(0.0f), 0.0f);
     }
+    vec3 emissiveness = vec3(0.0);
+    if(length(lightColour) > length(vec3(LightCoeff)))
+    {
+        emissiveness = lightColour;
+    }
+    else
+    {
+        emissiveness = vec3(1.0);
+    }
+    // emissiveness
+    float gbx = Vec3ToFloat(emissiveness);
+    // out colour as float
+    float gby = Vec3ToFloat(lightColour);
+    // pack normal to z
+    float gbz = Vec3ToFloat(normal);
+    // depth as w
+    float gbw = gl_FragCoord.z;
 
-    outColor = vec4(lightColour, 1.0);
+    outColor = vec4(gbx, gby, gbz, gbw);
 }

@@ -5,7 +5,6 @@
 // which is an implementation of this paper:  https://arxiv.org/pdf/2301.11376.pdf
 
 #include "SSGI.utils.glsl"
-
 layout(location = 0) in vec2 UV;
 
 layout(location = 0) out vec4 outColor;
@@ -15,13 +14,14 @@ layout(push_constant, std430) uniform pc {
     mat4 proj;
     vec4 resolutionFov;
     vec4 eyePos; 
+    vec4 eyeAngles;
     int FrameIndex;
 };
 
-layout(binding = 0) uniform sampler2D positionBufferSampler;
-layout(binding = 1) uniform sampler2D normalBufferSampler;
-layout(binding = 2) uniform sampler2D lightPassImageSampler;
-layout(binding = 3) uniform sampler2D depthImageSampler;
+#define fragCoord gl_FragCoord.xy
+#define IRES 1.0 / resolutionFov.xy
+
+layout(binding = 0) uniform sampler2D lightPassBuffer;
 
 // this counts the number of 1s in the binary representation of val
 int CountBits(int val)
@@ -35,82 +35,71 @@ int CountBits(int val)
 }
 
 void main() {
-    vec4 result = vec4(0.0);
-    result.w = 1.0;
-    
-    float CurrentFrame = FrameIndex;
-    vec2 SSOffset = vec2(0.);
-    vec2 fragCoord = gl_FragCoord.xy;
-    // send these in push constant buffer
-    vec2 IRES = 1.0 / resolutionFov.xy;
-    float fov = resolutionFov[2];
-    float CFOV = tan(fov);
-    vec2 ASPECT = vec2(resolutionFov.x/resolutionFov.y,1.0);
-    
-    
-    // sample gbuffer
-    vec3 colour = (texture(lightPassImageSampler, UV) * proj * view).xyz;
-    // vec3 position = texture(positionBufferSampler, UV).xyz;
-    vec3 position = (texture(positionBufferSampler, UV) * proj * view).xyz;
-    // vec3 normal = texture(normalBufferSampler, UV).xyz;
-    vec3 normal = (texture(normalBufferSampler, UV) * proj * view).xyz;
-    vec3 Tan = vec3(0.0);
-    vec3 Bit = TBN(eyePos.xyz, Tan);
-    mat3 EyeMat = TBN(eyePos.xyz);
-
-    if(length(colour) > -0.5)
+    vec4 Output = vec4(0.0);
+    Output.w = 1.0;
+    vec2 ASPECT = vec2(resolutionFov.x / resolutionFov.y, 1.0);
+    float CFOV = tan(resolutionFov.z);
+    if (FrameIndex > 1 && DFBox(fragCoord - 1.0,resolutionFov.xy) < 0.0)
     {
-        // Horizons (AKA wtf is happening)
-        // vec3 VNormal = vec3(dot(normal, Tan), dot(normal, Bit), dot(normal, eyePos.xyz));
-        vec3 VNormal = normal;
-        // vec3 VPPos = vec3(dot(position, Tan), dot(position, Bit), dot(position, eyePos.xyz));
-        vec3 VPPos = position;
-        // vec2 ModFC = mod(fragCoord, 4.0);
-    	vec2 ModFC = fragCoord;
-        float RandPhiOffset = ARand21(vec2(1.234)+mod(CurrentFrame*3.26346,7.2634));
-        float RandPhiMultiplier = 2 * PI * I64;
-        float RandPhi = (mod(floor(ModFC.x)+floor(ModFC.y)*4.0+CurrentFrame*5.0, 16.0) + RandPhiOffset) * RandPhiMultiplier;
-        
-        for(int i = 0; i < 4; i++)
+        float CurrentFrame = float(FrameIndex);
+        vec2 SSOffset = vec2(0.);
+        vec3 Tan; 
+        vec3 Bit = TBN(eyePos.xyz,Tan);
+        mat3 EyeMat = TBN(eyePos.xyz);
+        vec3 Dir = normalize(vec3(((fragCoord+SSOffset)*IRES*2.-1.)*(ASPECT*CFOV),1.)*EyeMat);
+        vec4 Attr = texture(lightPassBuffer, UV);
+
+        if(Attr.y > -0.5)
         {
-            RandPhi += PI * 0.5;
-            vec2 SSDir = vec2(cos(RandPhi), sin(RandPhi));
-            float StepDist = 1.0;
-            float StepCoeff = 0.15+0.15*ARand21(fragCoord*IRES*(1.4+mod(CurrentFrame *3.26346,6.2634)));
-            int BitMask = 0;
+            vec3 PPos = eyePos.xyz+Dir*Attr.w;
+            vec3 Normal = FloatToVec3(Attr.z)*2.-1.;
+            Output.xyz = vec3(0.);
+            vec3 VNormal = vec3(dot(Normal,Tan),dot(Normal,Bit),dot(Normal,eyeAngles.xyz));
+            vec3 VPPos = vec3(dot(PPos-eyePos.xyz,Tan),dot(PPos-eyePos.xyz,Bit),dot(PPos-eyePos.xyz,eyeAngles.xyz));
 
-            for (int s= 1; s < 32; s++) {
-                vec2 SUV = fragCoord+SSDir*StepDist;
-                float CurrentStep = max(1.,StepDist*StepCoeff);
-                StepDist += CurrentStep;
-                if (DFBox(SUV-1.,resolutionFov.xy-1.)>0.) break;
-                vec2 SAttrUV = SUV * IRES;
-                vec3 SAttrY = texture(lightPassImageSampler, SAttrUV * resolutionFov.xy).xyz;
-                if (length(SAttrY) <-1.5) continue;
-                vec3 SAttrZ = texture(normalBufferSampler, SAttrUV).xyz;
-                vec3 SVPPos = texture(positionBufferSampler, SAttrUV).xyz;
-                float NorDot = dot(VNormal, SVPPos - VPPos) - EPSILON;
-                float TanDist = length(SVPPos-VPPos-NorDot*VNormal);
-                float Angle1f = atan(NorDot,TanDist);
-                float Angle2f = atan(NorDot-0.03*max(1.,StepDist*0.07),TanDist);
-                float Angle1 = max(0.,ceil(Angle1f/(PI*0.5)*32.));
-                float Angle2 = max(0.,floor(Angle2f/(PI*0.5)*32.));
-                int SBitMask = (int(pow(2.,Angle1-Angle2))-1) << int(Angle2);
-                vec3 SNormal = SAttrZ *2.-1.;
-                SNormal = vec3(dot(SNormal,Tan),dot(SNormal,Bit),dot(SNormal,eyePos.xyz));
+            vec2 ModFC = mod(fragCoord,4.);
+            float RandPhiOffset = ARand21(vec2(1.234)+mod(CurrentFrame*3.26346,7.2634));
+            float RandPhi = (mod(floor(ModFC.x)+floor(ModFC.y)*4.+CurrentFrame*5.,16.)+RandPhiOffset)*2.*PI*I64;
 
-                result.xyz += float(CountBits(SBitMask & (~BitMask)))/max(1.,Angle1-Angle2)*SAttrY *LightCoeff
-                    *(pow(cos(Angle2*I64*PI),2.)-pow(cos(Angle1*I64*PI),2.))
-                    *sqrt(max(0.,dot(SNormal,-normalize(SVPPos-VPPos))));
+            for (float i=0.; i<3.5; i++) {
+                RandPhi += PI*0.5;
+                vec2 SSDir = vec2(cos(RandPhi),sin(RandPhi));
+                float StepDist = 1.;
+                float StepCoeff = 0.15+0.15*ARand21(fragCoord*IRES*(1.4+mod(float(FrameIndex)*3.26346,6.2634)));
+                int BitMask = int(0);
 
-                //Update bitmask
-                BitMask = BitMask | SBitMask;
+                for (float s=1.; s<32.5; s++) {
+                   //32 steps
+                    vec2 SUV = fragCoord+SSDir*StepDist;
+                    float CurrentStep = max(1.,StepDist*StepCoeff);
+                    StepDist += CurrentStep;
+                    if (DFBox(SUV-1.,resolutionFov.xy-1.)>0.) break;
+                    vec4 SAttr = texture(lightPassBuffer,SUV*IRES);
 
+                    vec3 SVPPos = normalize(vec3((SUV*IRES*2.-1.)*(ASPECT*CFOV),1.))*SAttr.w;
+                    float NorDot = dot(VNormal,SVPPos-VPPos)-0.001;
+                    float TanDist = length(SVPPos-VPPos-NorDot*VNormal);
+                    float Angle1f = atan(NorDot,TanDist);
+                    float Angle2f = atan(NorDot-0.03*max(1.,StepDist*0.07),TanDist);
+                    float Angle1 = max(0.,ceil(Angle1f/(PI*0.5)*32.));
+                    float Angle2 = max(0.,floor(Angle2f/(PI*0.5)*32.));
+                    int SBitMask = (int(pow(2.,Angle1-Angle2))-1) << int(Angle2);
+                    vec3 SNormal = FloatToVec3(SAttr.z)*2.-1.;
+                    SNormal = vec3(dot(SNormal,Tan),dot(SNormal,Bit),dot(SNormal,eyeAngles.xyz));
+                    Output.xyz += float(CountBits(SBitMask & (~BitMask)))/max(1.,Angle1-Angle2)*FloatToVec3(SAttr.x)*LightCoeff
+                                  *(pow(cos(Angle2*I64*PI),2.)-pow(cos(Angle1*I64*PI),2.))
+                                  *sqrt(max(0.,dot(SNormal,-normalize(SVPPos-VPPos))));
+
+                    //Update bitmask
+                    BitMask = BitMask | SBitMask;
+                }
             }
         }
+        else
+        {
+            Output.xyz = FloatToVec3(Attr.x) * LightCoeff;
+        }
+
     }
-
-    vec3 final = (result.xyz * 0.5) + (colour * 0.5);
-
-    outColor = result;
+    outColor = Output;
 }

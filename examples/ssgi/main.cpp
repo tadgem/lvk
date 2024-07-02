@@ -105,7 +105,7 @@ Pipeline CreateViewPipeline(VulkanAPI& vk, LvkIm3dState& im3dState, ShaderProgra
     gbuffer->Build(vk);
 
     auto* lightPassImage = p.AddFramebuffer(vk);
-    lightPassImage->AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+    lightPassImage->AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
     lightPassImage->Build(vk);
 
@@ -128,10 +128,7 @@ Pipeline CreateViewPipeline(VulkanAPI& vk, LvkIm3dState& im3dState, ShaderProgra
     // A channel is depth
 
     auto* ssgiMat = p.AddMaterial(vk, ssgiProg);
-    ssgiMat->SetDepthAttachment(vk, "depthImageSampler", *gbuffer);
-    ssgiMat->SetColourAttachment(vk, "positionBufferSampler", *gbuffer, 1);
-    ssgiMat->SetColourAttachment(vk, "normalBufferSampler", *gbuffer, 2);
-    ssgiMat->SetColourAttachment(vk, "lightPassImageSampler", *lightPassImage, 0);
+    ssgiMat->SetColourAttachment(vk, "lightPassBuffer", *lightPassImage, 0);
 
     p.SetOutputFramebuffer(finalImage);
 
@@ -310,6 +307,7 @@ Pipeline CreateViewPipeline(VulkanAPI& vk, LvkIm3dState& im3dState, ShaderProgra
                     glm::mat4   proj;
                     glm::vec4   resolutionFov;
                     glm::vec4   eyePos;
+                    glm::vec4   eyeAngles;
                     uint32_t    frameIndex;
                 };
 
@@ -318,6 +316,7 @@ Pipeline CreateViewPipeline(VulkanAPI& vk, LvkIm3dState& im3dState, ShaderProgra
                 data.proj = view.m_Camera.Proj;
                 data.resolutionFov = glm::vec4{ static_cast<float>(view.m_CurrentResolution.width), static_cast<float>(view.m_CurrentResolution.height), view.m_Camera.FOV, 0.0f };
                 data.eyePos = glm::vec4(view.m_Camera.Position, 0.0);
+                data.eyeAngles = glm::vec4(view.m_Camera.Rotation, 0.0);
                 data.frameIndex = frameCount++;
 
                 Array<VkClearValue, 1> clearValues{};
