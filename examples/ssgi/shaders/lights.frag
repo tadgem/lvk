@@ -30,7 +30,8 @@ struct SpotLight
 
 layout(location = 0) in vec2 UV;
 
-layout(location = 0) out vec4 outColor;
+layout(location = 0) out vec4 outColorEmissive;
+layout(location = 1) out vec4 outNormalDepth;
 
 layout(push_constant, std430) uniform pc {
     mat4 view;
@@ -40,8 +41,9 @@ layout(push_constant, std430) uniform pc {
 layout(binding = 0) uniform sampler2D positionBufferSampler;
 layout(binding = 1) uniform sampler2D normalBufferSampler;
 layout(binding = 2) uniform sampler2D colourBufferSampler;
+layout(binding = 3) uniform sampler2D depthBufferSampler;
 
-layout(binding = 3) uniform UniformLightObject{
+layout(binding = 4) uniform UniformLightObject{
     DirectionalLight    u_DirectionalLight;
     PointLight          u_PointLights[MAX_NUM_EACH_LIGHTS];
     SpotLight           u_SpotLights[MAX_NUM_EACH_LIGHTS];
@@ -157,7 +159,7 @@ void main() {
         lightColour += BlinnPhong_Spot(i, position, normal, vec3(0.0f), textureColour.xyz, vec3(0.0f), 0.0f);
     }
     vec3 emissiveness = vec3(0.0);
-    if(length(lightColour) > length(vec3(LightCoeff)))
+    if(length(lightColour) > length(vec3(1.0)))
     {
         emissiveness = lightColour;
     }
@@ -166,13 +168,17 @@ void main() {
         emissiveness = vec3(1.0);
     }
     // emissiveness
-    float gbx = Vec3ToFloat(emissiveness);
+    // float gbx = Vec3ToFloat(emissiveness);
     // out colour as float
     float gby = Vec3ToFloat(lightColour);
-    // pack normal to z
-    float gbz = Vec3ToFloat(normal);
-    // depth as w
-    float gbw = gl_FragCoord.z;
+    // // pack normal to z
+    // float gbz = Vec3ToFloat(normal);
+    // // depth as w
+    // float gbw = gl_FragCoord.z;
 
-    outColor = vec4(gbx, gby, gbz, gbw);
+    float d = texture(depthBufferSampler, UV).x;
+
+    outColorEmissive = vec4(gby, emissiveness.x, emissiveness.y, emissiveness.z);
+    // depth needs to be sampled from gbuffer
+    outNormalDepth = vec4(normal.x, normal.y, normal.z, d);
 }

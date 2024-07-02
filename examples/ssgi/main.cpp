@@ -107,28 +107,24 @@ Pipeline CreateViewPipeline(VulkanAPI& vk, LvkIm3dState& im3dState, ShaderProgra
     auto* lightPassImage = p.AddFramebuffer(vk);
     lightPassImage->AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
+    lightPassImage->AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
     lightPassImage->Build(vk);
 
     auto* lightPassMat = p.AddMaterial(vk, lightPassProg);
     lightPassMat->SetColourAttachment(vk, "positionBufferSampler", *gbuffer, 1);
     lightPassMat->SetColourAttachment(vk, "normalBufferSampler", *gbuffer, 2);
     lightPassMat->SetColourAttachment(vk, "colourBufferSampler", *gbuffer, 0);
+    lightPassMat->SetDepthAttachment(vk, "depthBufferSampler", *gbuffer);
 
     auto* finalImage = p.AddFramebuffer(vk);
     finalImage->AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
     finalImage->Build(vk);
 
-    // rework pipeline to do the following:
-    // normal gbuffer
-    // light pass now has 1 HDR 32bit output
-    // R channel encodes tonemapped lit image e.g. current output of lighting pass (colour)
-    // G channel packs emissiveness, surfaces are white(1.0) if non emissive, store emissive colour otherwise
-    // B channel packs normal
-    // A channel is depth
-
     auto* ssgiMat = p.AddMaterial(vk, ssgiProg);
-    ssgiMat->SetColourAttachment(vk, "lightPassBuffer", *lightPassImage, 0);
+    ssgiMat->SetColourAttachment(vk, "lightPassColourEmissive", *lightPassImage, 0);
+    ssgiMat->SetColourAttachment(vk, "lightPassNormalDepth", *lightPassImage, 1);
 
     p.SetOutputFramebuffer(finalImage);
 
@@ -154,7 +150,7 @@ Pipeline CreateViewPipeline(VulkanAPI& vk, LvkIm3dState& im3dState, ShaderProgra
         lightPassImage->m_RenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
         VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, false,
-        VK_COMPARE_OP_LESS, lightPassPipelineLayout);
+        VK_COMPARE_OP_LESS, lightPassPipelineLayout, 2);
 
     VkPipelineLayout ssgiPassPipelineLayout;
     VkPipeline ssgiPassPipeline= vk.CreateRasterizationGraphicsPipeline(
@@ -255,8 +251,10 @@ Pipeline CreateViewPipeline(VulkanAPI& vk, LvkIm3dState& im3dState, ShaderProgra
             }
             // Light pass
             {
-                Array<VkClearValue, 1> clearValues{};
+                Array<VkClearValue, 2> clearValues{};
                 clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
+                clearValues[1].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
+
 
                 VkRenderPassBeginInfo renderPassInfo{};
                 renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -430,7 +428,7 @@ void UpdateViewData(VulkanAPI& vk, ViewData* view, DeferredLightData& lightData)
         view->m_View.m_Camera.Proj[1][1] *= -1;
     }
 
-    view->m_Pipeline.m_PipelineMaterials[0]->SetBuffer(vk.GetFrameIndex(), 0, 3, lightData);
+    view->m_Pipeline.m_PipelineMaterials[0]->SetBuffer(vk.GetFrameIndex(), 0, 4, lightData);
 }
 
 void RecordCommandBuffersV2(VulkanAPI_SDL& vk, Vector<ViewData*> views, RenderModel& model, Mesh& screenQuad, LvkIm3dState& im3dState, DeferredLightData& lightData)
