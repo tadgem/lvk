@@ -7,3 +7,6 @@
 [submodule "submodules/im3d"]
 	path = submodules/im3d
 	url = https://github.com/john-chapman/im3d.git
+[submodule "submodules/vkvg"]
+	path = submodules/vkvg
+	url = https://github.com/jpbruyere/vkvg.git

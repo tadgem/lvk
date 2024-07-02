@@ -13,6 +13,7 @@ set(BUILD_SHARED_LIBS           OFF     CACHE BOOL "Disable ASSIMP dynamic linki
 
 add_subdirectory(submodules/glm)
 add_subdirectory(submodules/assimp)
+# add_subdirectory(submodules/vkvg)
 add_subdirectory(third-party/spdlog)
 add_subdirectory(third-party/sdl)
 
