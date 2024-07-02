@@ -70,12 +70,12 @@ void main() {
         int BitMask = int(0);
         for(int i = 0; i < STEP_COUNT; i++)
         {
-            vec2 SUV = UV+(SSDir*StepDist);
+            vec2 SUV = UV+(SSDir*StepDist * IRES);
             float CurrentStep = max(1.,StepDist*StepCoeff);
             StepDist += CurrentStep;
             if(SUV.x > 1.0 || SUV.y > 1.0) break;
             vec4 SColourAttr = texture(lightPassColourEmissive,SUV);
-            if(length(SColourAttr.yzw) < length(vec3(1.1))) continue;
+            if(length(SColourAttr.yzw) <= LightCoeff) continue;
             vec4 SNormalDepthAttr = texture(lightPassNormalDepth,SUV);
             vec3 SVPPos = normalize(vec3((SUV*IRES*2.-1.)*(ASPECT*CFOV),1.))*SNormalDepthAttr.w;
             float NorDot = dot(VNormal,SVPPos-VPPos)-0.001;
