@@ -242,7 +242,7 @@ Pipeline CreateViewPipeline(VulkanAPI& vk, LvkIm3dState& im3dState, ShaderProgra
                 vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
                 vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
                 vkCmdPushConstants(commandBuffer, gbufferPipelineData->m_PipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PCViewData), &pcData);
-
+                
                 for (auto& renderable : renderables)
                 {
                     renderable.RecordGraphicsCommands(commandBuffer);
