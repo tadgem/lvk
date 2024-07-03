@@ -527,6 +527,10 @@ void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu, Vector<ViewData*> v
                 ImGui::PushID(i);
                 if (ImGui::TreeNode("Point Light"))
                 {
+                    Im3d::Vec3 pos = { lightDataCpu.m_PointLights[i].PositionRadius.x , lightDataCpu.m_PointLights[i].PositionRadius.y, lightDataCpu.m_PointLights[i].PositionRadius.z };
+                    float radius = lightDataCpu.m_PointLights[i].PositionRadius.w * lightDataCpu.m_PointLights[i].PositionRadius.w;
+                    Im3d::DrawSphere(pos, radius);
+
                     ImGui::DragFloat3("Position", &lightDataCpu.m_PointLights[i].PositionRadius[0]);
                     ImGui::DragFloat("Radius", &lightDataCpu.m_PointLights[i].PositionRadius[3]);
                     ImGui::DragFloat4("Colour", &lightDataCpu.m_PointLights[i].Colour[0]);
@@ -626,12 +630,12 @@ int main() {
 
 
         OnIm3D();
+        OnImGui(vk, lightDataCpu, views);
 
         Im3d::EndFrame();
 
         RecordCommandBuffersV2(vk, views, m, *Mesh::g_ScreenSpaceQuad, im3dState, lightDataCpu);
 
-        OnImGui(vk, lightDataCpu, views);
 
         vk.PostFrame();
     }

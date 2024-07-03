@@ -118,7 +118,7 @@ Pipeline CreateViewPipeline(VulkanAPI& vk, LvkIm3dState& im3dState, ShaderProgra
     lightPassMat->SetDepthAttachment(vk, "depthBufferSampler", *gbuffer);
 
     auto* finalImage = p.AddFramebuffer(vk);
-    finalImage->AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+    finalImage->AddColourAttachment(vk, ResolutionScale::Half, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
     finalImage->Build(vk);
 
@@ -336,16 +336,16 @@ Pipeline CreateViewPipeline(VulkanAPI& vk, LvkIm3dState& im3dState, ShaderProgra
                 VkViewport viewport{};
                 viewport.x = 0.0f;
                 viewport.x = 0.0f;
-                viewport.width = static_cast<float>(viewExtent.width);
-                viewport.height = static_cast<float>(viewExtent.height);
+                viewport.width = static_cast<float>(viewExtent.width / 2);
+                viewport.height = static_cast<float>(viewExtent.height / 2);
                 viewport.minDepth = 0.0f;
                 viewport.maxDepth = 1.0f;
 
                 VkRect2D scissor{};
                 scissor.offset = { 0,0 };
                 scissor.extent = VkExtent2D{
-                    static_cast<uint32_t>(viewExtent.width),
-                    static_cast<uint32_t>(viewExtent.height)
+                    static_cast<uint32_t>(viewExtent.width / 2),
+                    static_cast<uint32_t>(viewExtent.height / 2)
                 };
 
                 // issue with lighting pass is that uvs are just 0,0 -> 1,1
@@ -359,7 +359,7 @@ Pipeline CreateViewPipeline(VulkanAPI& vk, LvkIm3dState& im3dState, ShaderProgra
                 vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, ssgiPassPipelineData->m_PipelineLayout, 0, 1, &ssgiMat->m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
                 vkCmdDrawIndexed(commandBuffer, screenQuad.m_IndexCount, 1, 0, 0, 0);
                 
-                DrawIm3d(vk, commandBuffer, frameIndex, im3dState, *im3dViewState, view.m_Camera.Proj * view.m_Camera.View, viewExtent.width, viewExtent.height);
+                DrawIm3d(vk, commandBuffer, frameIndex, im3dState, *im3dViewState, view.m_Camera.Proj * view.m_Camera.View, viewExtent.width /2 , viewExtent.height / 2);
                 vkCmdEndRenderPass(commandBuffer);
             }
         }
@@ -564,12 +564,15 @@ void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu, Vector<ViewData*> v
         // uv1 needs to be MaxResolution / CurrentResolution;
         auto extent = ImGui::GetContentRegionAvail();
         auto max = vk.GetMaxFramebufferExtent();
-        ImVec2 uv1 = { extent.x / max.width, extent.y / max.height };
+        ImVec2 uv1 = { extent.x / 2.0f / max.width, extent.y /2.0f / max.height };
         // auto& image = views[0]->m_LightPassFB.m_ColourAttachments[0].m_AttachmentSwapchainImages[vk.GetFrameIndex()];
         auto& image = views[0]->m_Pipeline.GetOutputFramebuffer()->m_ColourAttachments[0].m_AttachmentSwapchainImages[vk.GetFrameIndex()];
         ImGuiX::Image(image, extent, { 0,0 }, uv1);
         DrawIm3dTextListsImGuiAsChild(Im3d::GetTextDrawLists(), Im3d::GetTextDrawListCount(), (float)views[0]->m_View.m_CurrentResolution.width, (float)views[0]->m_View.m_CurrentResolution.height, views[0]->m_View.m_Camera.Proj * views[0]->m_View.m_Camera.View);
         views[0]->m_View.m_CurrentResolution = { (uint32_t)extent.x, (uint32_t)extent.y };
+
+        ImGui::SetCursorPos({ 0 , 20 });
+        ImGui::Text("Res: %d / %d", views[0]->m_View.m_CurrentResolution.width, views[0]->m_View.m_CurrentResolution.height);
 
     }
     ImGui::End();
@@ -584,6 +587,9 @@ void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu, Vector<ViewData*> v
         ImGuiX::Image(image, extent, { 0,0 }, uv1);
         DrawIm3dTextListsImGuiAsChild(Im3d::GetTextDrawLists(), Im3d::GetTextDrawListCount(), (float)views[1]->m_View.m_CurrentResolution.width, (float)views[1]->m_View.m_CurrentResolution.height, views[1]->m_View.m_Camera.Proj * views[1]->m_View.m_Camera.View);
         views[1]->m_View.m_CurrentResolution = { (uint32_t)extent.x, (uint32_t)extent.y };
+
+        ImGui::SetCursorPos({ 0, 20 });
+        ImGui::Text("Res: %d / %d", views[1]->m_View.m_CurrentResolution.width, views[1]->m_View.m_CurrentResolution.height);
 
     }
     ImGui::End();
@@ -619,6 +625,9 @@ void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu, Vector<ViewData*> v
                 ImGui::PushID(i);
                 if (ImGui::TreeNode("Point Light"))
                 {
+                    Im3d::Vec3 pos = { lightDataCpu.m_PointLights[i].PositionRadius.x , lightDataCpu.m_PointLights[i].PositionRadius.y, lightDataCpu.m_PointLights[i].PositionRadius.z };
+                    float radius = lightDataCpu.m_PointLights[i].PositionRadius.w * lightDataCpu.m_PointLights[i].PositionRadius.w;
+                    Im3d::DrawSphere(pos, radius);
                     ImGui::DragFloat3("Position", &lightDataCpu.m_PointLights[i].PositionRadius[0]);
                     ImGui::DragFloat("Radius", &lightDataCpu.m_PointLights[i].PositionRadius[3]);
                     ImGui::DragFloat4("Colour", &lightDataCpu.m_PointLights[i].Colour[0]);
@@ -719,12 +728,12 @@ int main() {
 
 
         OnIm3D();
+        OnImGui(vk, lightDataCpu, views);
 
         Im3d::EndFrame();
 
         RecordCommandBuffersV2(vk, views, m, *Mesh::g_ScreenSpaceQuad, im3dState, lightDataCpu);
 
-        OnImGui(vk, lightDataCpu, views);
 
         vk.PostFrame();
     }
