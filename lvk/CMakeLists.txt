@@ -27,6 +27,7 @@ add_library(${PROJECT_NAME} STATIC src/lvk/VulkanAPI.cpp
                             include/lvk/Material.h
                             include/lvk/Shader.h
                             include/lvk/DescriptorSetAllocator.h
+                            include/lvk/Pipeline.h
                             include/Alias.h
                             include/ThirdParty/spirv_reflect.h
                             include/ThirdParty/VulkanMemoryAllocator.h

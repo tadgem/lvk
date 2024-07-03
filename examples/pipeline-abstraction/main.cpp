@@ -1,23 +1,12 @@
 #include "example-common.h"
 #include "lvk/Shader.h"
 #include "lvk/Material.h"
+#include "lvk/Pipeline.h"
 #include <algorithm>
 #include "Im3D/im3d_lvk.h"
 #include "ImGui/lvk_extensions.h"
 using namespace lvk;
 
-
-struct VkPipelineData
-{
-    VkPipelineData(VkPipeline pipeline, VkPipelineLayout layout)
-    {
-        m_Pipeline = pipeline;
-        m_PipelineLayout = layout;
-    }
-
-    VkPipeline          m_Pipeline;
-    VkPipelineLayout    m_PipelineLayout;
-};
 
 struct View
 {
@@ -27,72 +16,17 @@ struct View
 
 using VkRecordCommandCallback = std::function<void(VkCommandBuffer&, uint32_t, View&, Mesh&, Vector<Renderable>)>;
 
-class Pipeline
-{
-public:
-    Vector<Framebuffer*>                 m_FBs;
-    Vector<Material*>                    m_PipelineMaterials;
-    Vector<VkPipelineData*>              m_PipelineDatas;
-
-    Optional<Framebuffer*>              m_OutputFramebuffer;
-    LvkIm3dViewState*                   m_Im3dState = nullptr;
-
-    Optional<VkRecordCommandCallback>   m_CommandCallback;
-
-    Framebuffer* AddFramebuffer(VulkanAPI& vk)
-    {
-        m_FBs.push_back(new Framebuffer());
-        return m_FBs[m_FBs.size() - 1];
-    }
-
-    void SetOutputFramebuffer(Framebuffer* fb)
-    {
-        m_OutputFramebuffer = fb;
-    }
-
-    Framebuffer* GetOutputFramebuffer()
-    {
-        if (m_OutputFramebuffer.has_value())
-        {
-            return m_OutputFramebuffer.value();
-        }
-        return nullptr;
-    }
-
-    Material* AddMaterial(VulkanAPI& vk, ShaderProgram& prog)
-    {
-        m_PipelineMaterials.push_back( new Material(Material::Create(vk, prog)));
-        return m_PipelineMaterials.back();
-    }
-
-    VkPipelineData* AddPipeline(VulkanAPI& vk, VkPipeline pipeline, VkPipelineLayout layout)
-    {
-        m_PipelineDatas.emplace_back(new VkPipelineData (pipeline, layout));
-        return m_PipelineDatas.back();
-    }
-
-    LvkIm3dViewState* AddIm3d(VulkanAPI& vk, LvkIm3dState im3dState)
-    {
-        m_Im3dState = new LvkIm3dViewState(AddIm3dForViewport(vk, im3dState, m_OutputFramebuffer.value()->m_RenderPass, false));
-        return m_Im3dState;
-    }
-
-    void RecordCommands(VkRecordCommandCallback callback)
-    {
-        m_CommandCallback = callback;
-    }
-};
 
 struct ViewData
 {
-    Pipeline    m_Pipeline;
+    Pipeline<VkRecordCommandCallback>    m_Pipeline;
     View        m_View;
     Mesh        m_ViewQuad;
 };
 
-Pipeline CreateViewPipeline(VulkanAPI& vk, LvkIm3dState& im3dState, ShaderProgram& gbufferProg, ShaderProgram& lightPassProg)
+Pipeline<VkRecordCommandCallback> CreateViewPipeline(VulkanAPI& vk, LvkIm3dState& im3dState, ShaderProgram& gbufferProg, ShaderProgram& lightPassProg)
 {
-    Pipeline p{};
+    Pipeline<VkRecordCommandCallback> p{};
     auto* gbuffer = p.AddFramebuffer(vk);
     gbuffer->AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
