@@ -21,7 +21,7 @@ namespace lvk {
 		virtual void 						CreateWindowLVK(uint32_t width, uint32_t height) override
 		{
 			SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
-			SDL_Window* window = SDL_CreateWindow("SDL Vulkan Example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
+			SDL_Window* window = SDL_CreateWindow(p_AppName.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
 			m_SdlHandle = new VulkanAPIWindowHandle_SDL(window);
 			m_WindowHandle = m_SdlHandle;
 		}

@@ -1852,8 +1852,10 @@ void lvk::VulkanAPI::CreateRenderPass(VkRenderPass& renderPass, Vector<VkAttachm
 
 #include "windows.h"
 #include <dwmapi.h>
-void lvk::VulkanAPI::Start(uint32_t width, uint32_t height, bool enableSwapchainMsaa)
+void lvk::VulkanAPI::Start(const String& appName, uint32_t width, uint32_t height, bool enableSwapchainMsaa)
 {
+    p_AppName = appName;
+
     SetProcessDPIAware();
 
     CreateWindowLVK(width, height);

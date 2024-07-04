@@ -271,7 +271,7 @@ namespace lvk
         void                                CreateVmaAllocator();
         void                                GetMaxUsableSampleCount();
 public:
-        void                                Start(uint32_t width, uint32_t height, bool enableSwapchainMsaa = false);
+        void                                Start(const String& appName, uint32_t width, uint32_t height, bool enableSwapchainMsaa = false);
         void                                Quit();
         inline int                          GetFrameIndex() { return p_CurrentFrameIndex; }
         VkExtent2D                          GetMaxFramebufferExtent();
@@ -387,6 +387,7 @@ public:
         uint64_t        p_LastFrameTime;
         int             p_CurrentFrameIndex;
         VkExtent2D      p_MaxFramebufferExtent;
+        String          p_AppName;
     };
 
     class Mesh
