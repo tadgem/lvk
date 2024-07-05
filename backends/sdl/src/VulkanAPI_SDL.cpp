@@ -7,7 +7,6 @@
 
 lvk::VulkanAPI_SDL::~VulkanAPI_SDL()
 {
-    Cleanup();
 }
 
 void lvk::VulkanAPI_SDL::HandleSDLEvent(SDL_Event& sdl_event)

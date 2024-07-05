@@ -227,7 +227,7 @@ namespace lvk
         virtual void                        InitImGuiBackend() = 0;
         virtual void                        CleanupImGuiBackend() = 0;
         void                                CleanupImGui();
-
+        void                                Cleanup();
     protected:
         // Debug
         bool                                CheckValidationLayerSupport();
@@ -242,7 +242,6 @@ namespace lvk
         void                                RenderImGui();
         VkApplicationInfo                   CreateAppInfo();
         void                                CreateInstance();
-        void                                Cleanup();
         void                                CleanupVulkan();
         QueueFamilyIndices                  FindQueueFamilies(VkPhysicalDevice physicalDevice);
         SwapChainSupportDetais              GetSwapChainSupportDetails(VkPhysicalDevice physicalDevice);
