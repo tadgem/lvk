@@ -15,7 +15,7 @@ namespace lvk
     Vector<char> ToVector(const char* src, uint32_t count)
     {
         Vector<char> chars{};
-        for (int i = 0; i < count; i++)
+        for (uint32_t i = 0; i < count; i++)
         {
             chars.push_back(src[i]);
         }
@@ -24,21 +24,21 @@ namespace lvk
 
     LvkIm3dState LoadIm3D(VulkanAPI& vk)
     {
-        Vector<char> tris_vert_bin = ToVector(&im3d_tris_vert_spv_bin[0], im3d_tris_vert_spv_bin_SIZE);
+        Vector<char> tris_vert_bin = ToVector(&im3d_tris_vert_spv_bin[0], (uint32_t)im3d_tris_vert_spv_bin_SIZE);
         ShaderStage tris_vert = ShaderStage::Create(vk, tris_vert_bin, ShaderStage::Type::Vertex);
-        Vector<char> tris_frag_bin = ToVector(&im3d_tris_frag_spv_bin[0], im3d_tris_frag_spv_bin_SIZE);
+        Vector<char> tris_frag_bin = ToVector(&im3d_tris_frag_spv_bin[0], (uint32_t)im3d_tris_frag_spv_bin_SIZE);
         ShaderStage tris_frag = ShaderStage::Create(vk, tris_frag_bin, ShaderStage::Type::Fragment);
         ShaderProgram tris_prog = ShaderProgram::Create(vk, tris_vert, tris_frag);
 
-        Vector<char> lines_vert_bin = ToVector(&im3d_lines_vert_spv_bin[0], im3d_lines_vert_spv_bin_SIZE);
+        Vector<char> lines_vert_bin = ToVector(&im3d_lines_vert_spv_bin[0], (uint32_t)im3d_lines_vert_spv_bin_SIZE);
         ShaderStage lines_vert = ShaderStage::Create(vk, lines_vert_bin, ShaderStage::Type::Vertex);
-        Vector<char> lines_frag_bin = ToVector(&im3d_lines_frag_spv_bin[0], im3d_lines_frag_spv_bin_SIZE);
+        Vector<char> lines_frag_bin = ToVector(&im3d_lines_frag_spv_bin[0], (uint32_t)im3d_lines_frag_spv_bin_SIZE);
         ShaderStage lines_frag = ShaderStage::Create(vk, lines_frag_bin, ShaderStage::Type::Fragment);
         ShaderProgram lines_prog = ShaderProgram::Create(vk, lines_vert, lines_frag);
 
-        Vector<char> points_vert_bin = ToVector(&im3d_points_vert_spv_bin[0], im3d_points_vert_spv_bin_SIZE);
+        Vector<char> points_vert_bin = ToVector(&im3d_points_vert_spv_bin[0], (uint32_t)im3d_points_vert_spv_bin_SIZE);
         ShaderStage points_vert = ShaderStage::Create(vk, points_vert_bin, ShaderStage::Type::Vertex);
-        Vector<char> points_frag_bin = ToVector(&im3d_points_frag_spv_bin[0], im3d_points_frag_spv_bin_SIZE);
+        Vector<char> points_frag_bin = ToVector(&im3d_points_frag_spv_bin[0], (uint32_t)im3d_points_frag_spv_bin_SIZE);
         ShaderStage points_frag = ShaderStage::Create(vk, points_frag_bin, ShaderStage::Type::Fragment);
         ShaderProgram points_prog = ShaderProgram::Create(vk, points_vert, points_frag);
 
@@ -139,7 +139,7 @@ namespace lvk
     {
         auto& context = Im3d::GetContext();
 
-        for (int i = 0; i < context.getDrawListCount(); i++)
+        for (uint32_t i = 0; i < context.getDrawListCount(); i++)
         {
             auto drawList = &context.getDrawLists()[i];
             int primVertexCount;

@@ -594,7 +594,7 @@ void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu, Vector<ViewData*> v
     }
     ImGui::End();
 
-    if (ImGui::Begin("Scene Debug"))
+    if (ImGui::Begin("ECS Debug"))
     {        
         ImGui::DragFloat3("Position", &g_Transform.m_Position[0]);
         ImGui::DragFloat3("Euler Rotation", &g_Transform.m_Rotation[0]);

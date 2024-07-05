@@ -75,8 +75,6 @@ lvk::Material lvk::Material::Create(VulkanAPI& vk, ShaderProgram& shader)
 
         for (int i = 0; i < mat.m_PushConstants.size(); i++)
         {
-            VkPushConstantRange pushConstant;
-
         }
 
 
@@ -165,8 +163,7 @@ bool lvk::Material::SetSampler(VulkanAPI& vk, const String& name, const VkImageV
 
         vkUpdateDescriptorSets(vk.m_LogicalDevice, 1, &write, 0, nullptr);
     }
-
-
+    return true;
 }
 
 bool lvk::Material::SetColourAttachment(VulkanAPI& vk, const String& name, Framebuffer& framebuffer, uint32_t colourAttachmentIndex)
@@ -198,6 +195,8 @@ bool lvk::Material::SetColourAttachment(VulkanAPI& vk, const String& name, Frame
         vkUpdateDescriptorSets(vk.m_LogicalDevice, 1, &write, 0, nullptr);
     }
 
+    return true;
+
 }
 
 bool lvk::Material::SetDepthAttachment(VulkanAPI& vk, const String& name, Framebuffer& framebuffer)
@@ -228,6 +227,7 @@ bool lvk::Material::SetDepthAttachment(VulkanAPI& vk, const String& name, Frameb
 
         vkUpdateDescriptorSets(vk.m_LogicalDevice, 1, &write, 0, nullptr);
     }
+    return true;
 }
 
 void lvk::Material::Free(VulkanAPI& vk)

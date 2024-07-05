@@ -4,7 +4,7 @@
 #include "lvk/Framebuffer.h"
 namespace lvk
 {
-    class ShaderProgram;
+    struct ShaderProgram;
     class Material
     {
     public:
@@ -35,8 +35,8 @@ namespace lvk
             uint32_t    m_ExpectedSize;
             uint32_t    m_Offset;
             uint32_t    m_Stride;
-            uint16_t    m_ArraySize;
-            uint16_t    m_BufferIndex;
+            uint32_t    m_ArraySize;
+            uint32_t    m_BufferIndex;
         };
 
         struct FrameDescriptorSets

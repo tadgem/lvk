@@ -375,7 +375,7 @@ void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu, Vector<ViewData*> v
     }
     ImGui::End();
 
-    if (ImGui::Begin("Scene Debug"))
+    if (ImGui::Begin("ECS Debug"))
     {
         ImGui::Text("Frametime: %f", (1.0 / vk.m_DeltaTime));
         ImGui::Separator();
