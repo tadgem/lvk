@@ -1849,14 +1849,16 @@ void lvk::VulkanAPI::CreateRenderPass(VkRenderPass& renderPass, Vector<VkAttachm
         std::cerr << "Failed to create Render Pass!" << std::endl;
     }
 }
-
+#ifdef WIN32
 #include "windows.h"
 #include <dwmapi.h>
+#endif
 void lvk::VulkanAPI::Start(const String& appName, uint32_t width, uint32_t height, bool enableSwapchainMsaa)
 {
     p_AppName = appName;
-
+#ifdef WIN32
     SetProcessDPIAware();
+#endif
 
     CreateWindowLVK(width, height);
     InitVulkan(enableSwapchainMsaa);
