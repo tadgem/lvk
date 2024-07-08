@@ -2118,7 +2118,7 @@ void lvk::VulkanAPI::InitImGui()
     init_info.Queue = m_GraphicsQueue;
     init_info.PipelineCache = VK_NULL_HANDLE;
     // TODO: this is a bit shit, need to clean this pool some wheere
-    init_info.DescriptorPool = m_DescriptorSetAllocator.CreatePool(m_LogicalDevice, 2048);
+    init_info.DescriptorPool = m_DescriptorSetAllocator.CreatePool(m_LogicalDevice, 4096);
     init_info.Allocator = nullptr;
     init_info.MinImageCount = 2;
     init_info.ImageCount = 2;
