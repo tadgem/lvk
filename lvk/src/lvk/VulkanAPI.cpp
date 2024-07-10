@@ -1590,7 +1590,8 @@ StageBinary lvk::VulkanAPI::LoadSpirvBinary(const String& path)
     StageBinary data(fileSize);
 
     file.seekg(0);
-    file.read(data.data(), fileSize);
+
+    file.read((char*) data.data(), fileSize);
 
     file.close();
     return data;
@@ -1723,7 +1724,7 @@ VkPipeline lvk::VulkanAPI::CreateComputePipeline(StageBinary& comp, VkDescriptor
         return pipeline;
     }
 
-
+    return VK_NULL_HANDLE;
 }
 
 Vector<VkDescriptorSetLayoutBinding> lvk::VulkanAPI::GetDescriptorSetLayoutBindings(Vector<DescriptorSetLayoutData>& vertLayoutDatas, Vector<DescriptorSetLayoutData>& fragLayoutDatas)

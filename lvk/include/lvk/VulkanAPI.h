@@ -18,7 +18,7 @@ namespace lvk
     
     class VulkanAPIWindowHandle {};
 
-    using StageBinary = std::vector<char>;
+    using StageBinary = std::vector<unsigned char>;
     static constexpr int        MAX_FRAMES_IN_FLIGHT = 2;
 
 
@@ -392,12 +392,12 @@ public:
     class Mesh
     {
     public:
-        VkBuffer m_VertexBuffer;
+        VkBuffer m_VertexBuffer = VK_NULL_HANDLE;
         VmaAllocation m_VertexBufferMemory;
-        VkBuffer m_IndexBuffer;
+        VkBuffer m_IndexBuffer = VK_NULL_HANDLE;
         VmaAllocation m_IndexBufferMemory;
 
-        uint32_t m_IndexCount;
+        uint32_t m_IndexCount = 0;
 
         static Mesh* g_ScreenSpaceQuad;
 
