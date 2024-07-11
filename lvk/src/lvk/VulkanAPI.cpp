@@ -1254,7 +1254,7 @@ VkPipeline lvk::VulkanAPI::CreateRasterizationGraphicsPipeline(ShaderProgram& sh
 
     Vector<VkPipelineColorBlendAttachmentState> colorAttachmentBlendStates;
 
-    for (int i = 0; i < colourAttachmentCount; i++)
+    for (uint32_t i = 0; i < colourAttachmentCount; i++)
     {
         VkPipelineColorBlendAttachmentState colorBlendAttachment{};
         colorBlendAttachment.colorWriteMask = 
@@ -1278,7 +1278,7 @@ VkPipeline lvk::VulkanAPI::CreateRasterizationGraphicsPipeline(ShaderProgram& sh
     colorBlendStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colorBlendStateInfo.logicOpEnable = VK_FALSE;
     colorBlendStateInfo.logicOp = VK_LOGIC_OP_COPY;
-    colorBlendStateInfo.attachmentCount = colorAttachmentBlendStates.size();
+    colorBlendStateInfo.attachmentCount = static_cast<uint32_t>(colorAttachmentBlendStates.size());
     colorBlendStateInfo.pAttachments = colorAttachmentBlendStates.data();
 
     VkDynamicState dynamicStates[] =
@@ -1935,7 +1935,7 @@ Vector<DescriptorSetLayoutData> lvk::VulkanAPI::ReflectDescriptorSetLayouts(Stag
             if (bufferType == ShaderBindingType::ShaderStorageBuffer)
             {
                 uint32_t requiredBufferSize = 0;
-                for (int i = 0; i < reflectedBinding.type_description->member_count; i++)
+                for (uint32_t i = 0; i < reflectedBinding.type_description->member_count; i++)
                 {
                     auto* member = &reflectedBinding.type_description->members[i];
                     if (member->type_flags & SPV_REFLECT_TYPE_FLAG_ARRAY)
@@ -1943,7 +1943,7 @@ Vector<DescriptorSetLayoutData> lvk::VulkanAPI::ReflectDescriptorSetLayouts(Stag
                         requiredBufferSize += member->traits.array.dims[0] * member->traits.array.stride; // todo: support more than 1D arrays
                     }
 
-                    for (int j = 0; j < member->member_count; j++)
+                    for (uint32_t j = 0; j < member->member_count; j++)
                     {
                         auto* childMember = &member->members[i];
                         int jkj = 420;
@@ -1953,7 +1953,7 @@ Vector<DescriptorSetLayoutData> lvk::VulkanAPI::ReflectDescriptorSetLayouts(Stag
                 continue;
             }
 
-            for (int i = 0; i < reflectedBinding.block.member_count; i++)
+            for (uint32_t i = 0; i < reflectedBinding.block.member_count; i++)
             {
                 auto member = reflectedBinding.block.members[i];
                 ShaderBufferMember reflectedMember{};
@@ -2005,7 +2005,7 @@ Vector<PushConstantBlock> lvk::VulkanAPI::ReflectPushConstants(StageBinary& stag
     spvReflectEnumeratePushConstantBlocks(&shaderReflectModule, &pushConstantBlockCount, reflectedPushConstantBlocks.data());
 
     
-    for (int i = 0; i < pushConstantBlockCount; i++)
+    for (uint32_t i = 0; i < pushConstantBlockCount; i++)
     {
         const SpvReflectBlockVariable& pcBlock = *reflectedPushConstantBlocks[i];
         pushConstants.push_back({ pcBlock.size, pcBlock.offset, pcBlock.name, (VkShaderStageFlags) shaderReflectModule.shader_stage });
@@ -2474,7 +2474,8 @@ void lvk::VulkanAPI::CreateUniformBuffers(ShaderBufferFrameData& uniformData, Vk
     uniformData.m_UniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        CreateMappedBuffer(uniformData.m_UniformBuffers[i], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, bufferSize);
+        CreateMappedBuffer(uniformData.m_UniformBuffers[i], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                           static_cast<uint32_t>(bufferSize));
     }
 
 }

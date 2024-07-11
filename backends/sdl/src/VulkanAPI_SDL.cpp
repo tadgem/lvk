@@ -156,12 +156,12 @@ VkExtent2D lvk::VulkanAPI_SDL::GetMaxFramebufferResolution()
             SDL_DisplayMode displayMode;
             SDL_GetDisplayMode(i, j, &displayMode);
 
-            if (res.width < displayMode.w)
+            if (res.width < static_cast<uint32_t>(displayMode.w))
             {
                 res.width = displayMode.w;
             }
 
-            if (res.height < displayMode.h)
+            if (res.height < static_cast<uint32_t>(displayMode.h))
             {
                 res.height = displayMode.h;
             }

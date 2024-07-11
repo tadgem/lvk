@@ -7,7 +7,7 @@ void lvk::DescriptorSetAllocator::Init(VulkanAPI& vk, uint32_t initialSetAmount,
 
 	VkDescriptorPool pool = CreatePool(vk.m_LogicalDevice, initialSetAmount);
 
-	p_SetsPerPool = initialSetAmount * 1.5;
+	p_SetsPerPool = static_cast<uint32_t>(initialSetAmount * 1.5);
 	m_FreePool.push_back(pool);
 }
 
