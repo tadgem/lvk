@@ -2194,6 +2194,22 @@ void lvk::VulkanAPI::EndSingleTimeCommands(VkCommandBuffer& commandBuffer)
     vkFreeCommandBuffers(m_LogicalDevice , m_GraphicsQueueCommandPool, 1, &commandBuffer);
 }
 
+VkCommandBuffer& VulkanAPI::BeginGraphicsCommands(uint32_t frameIndex) {
+    VkCommandBufferBeginInfo commandBufferBeginInfo{};
+    commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    commandBufferBeginInfo.flags = 0;
+    commandBufferBeginInfo.pInheritanceInfo = nullptr;
+
+    VK_CHECK(vkBeginCommandBuffer(m_CommandBuffers[frameIndex], &commandBufferBeginInfo));
+    return m_CommandBuffers[frameIndex];
+}
+
+void VulkanAPI::EndGraphicsCommands(uint32_t frameIndex) {
+    VK_CHECK(vkEndCommandBuffer(m_CommandBuffers[frameIndex]));
+}
+
+
+
 void lvk::VulkanAPI::RecordGraphicsCommands(std::function<void(VkCommandBuffer&, uint32_t)> graphicsCommandsCallback)
 {
     for (uint32_t i = 0; i < m_CommandBuffers.size(); i++)

@@ -292,6 +292,8 @@ public:
         void                                CopyBufferToImage(VkBuffer& src, VkImage& image,  uint32_t width, uint32_t height);
         VkCommandBuffer                     BeginSingleTimeCommands();
         void                                EndSingleTimeCommands(VkCommandBuffer& commandBuffer);
+        VkCommandBuffer&                    BeginGraphicsCommands(uint32_t frameIndex);
+        void                                EndGraphicsCommands(uint32_t frameIndex);
         void                                RecordGraphicsCommands(std::function<void(VkCommandBuffer&, uint32_t)> graphicsCommandsCallback);
         void                                TransitionImageLayout(VkImage image, VkFormat format, uint32_t numMips, VkImageLayout oldLayout, VkImageLayout newLayout);
         void                                GenerateMips(VkImage image, VkFormat format, uint32_t imageWidth, uint32_t imageHeight, uint32_t numMips, VkFilter filterMethod);

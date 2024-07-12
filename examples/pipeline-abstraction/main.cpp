@@ -19,14 +19,14 @@ using VkRecordCommandCallback = std::function<void(VkCommandBuffer&, uint32_t, V
 
 struct ViewData
 {
-    Pipeline<VkRecordCommandCallback>    m_Pipeline;
+    PipelineT<VkRecordCommandCallback>    m_Pipeline;
     View        m_View;
     Mesh        m_ViewQuad;
 };
 
-Pipeline<VkRecordCommandCallback> CreateViewPipeline(VulkanAPI& vk, LvkIm3dState& im3dState, ShaderProgram& gbufferProg, ShaderProgram& lightPassProg)
+PipelineT<VkRecordCommandCallback> CreateViewPipeline(VulkanAPI& vk, LvkIm3dState& im3dState, ShaderProgram& gbufferProg, ShaderProgram& lightPassProg)
 {
-    Pipeline<VkRecordCommandCallback> p{};
+    PipelineT<VkRecordCommandCallback> p{};
     auto* gbuffer = p.AddFramebuffer(vk);
     gbuffer->AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
@@ -53,10 +53,12 @@ Pipeline<VkRecordCommandCallback> CreateViewPipeline(VulkanAPI& vk, LvkIm3dState
 
     // create gbuffer pipeline
     VkPipelineLayout gbufferPipelineLayout;
+    auto gbufferBindingDescriptions = Vector<VkVertexInputBindingDescription>{VertexDataPosNormalUv::GetBindingDescription() };
+    auto gbufferAttributeDescriptions = VertexDataPosNormalUv::GetAttributeDescriptions();
     VkPipeline gbufferPipeline = vk.CreateRasterizationGraphicsPipeline(
         gbufferProg,
-        Vector<VkVertexInputBindingDescription>{VertexDataPosNormalUv::GetBindingDescription() },
-        VertexDataPosNormalUv::GetAttributeDescriptions(),
+        gbufferBindingDescriptions,
+        gbufferAttributeDescriptions,
         gbuffer->m_RenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
         VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, false,
@@ -65,10 +67,12 @@ Pipeline<VkRecordCommandCallback> CreateViewPipeline(VulkanAPI& vk, LvkIm3dState
     // create present graphics pipeline
     // Pipeline stage?
     VkPipelineLayout lightPassPipelineLayout;
+    auto lightPassBindingDescriptions = Vector<VkVertexInputBindingDescription>{VertexDataPosUv::GetBindingDescription() };
+    auto lightPassAttributeDescriptions = VertexDataPosUv::GetAttributeDescriptions();
     VkPipeline lightPassPipeline = vk.CreateRasterizationGraphicsPipeline(
         lightPassProg,
-        Vector<VkVertexInputBindingDescription>{VertexDataPosUv::GetBindingDescription() },
-        VertexDataPosUv::GetAttributeDescriptions(),
+        lightPassBindingDescriptions,
+        lightPassAttributeDescriptions,
         lightPassImage->m_RenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
         VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, false,
@@ -211,7 +215,7 @@ Pipeline<VkRecordCommandCallback> CreateViewPipeline(VulkanAPI& vk, LvkIm3dState
 
 ViewData CreateView(VulkanAPI& vk, LvkIm3dState im3dState, ShaderProgram gbufferProg, ShaderProgram lightPassProg)
 {
-    Pipeline pipeline = CreateViewPipeline(vk, im3dState, gbufferProg, lightPassProg);
+    PipelineT<VkRecordCommandCallback> pipeline = CreateViewPipeline(vk, im3dState, gbufferProg, lightPassProg);
 
     static Vector<VertexDataPosUv> screenQuadVerts = {
                     { { -1.0f, -1.0f , 0.0f}, { 0.0f, 0.0f } },
@@ -526,14 +530,14 @@ void OnIm3D()
 int main() {
     VulkanAPI_SDL vk;
     bool enableMSAA = false;
-    vk.Start(1920, 1080, enableMSAA);
+    vk.Start("Pipeline Example",1920, 1080, enableMSAA);
     auto im3dState = LoadIm3D(vk);
 
     DeferredLightData lightDataCpu{};
     FillExampleLightData(lightDataCpu);
 
-    ShaderProgram gbufferProg = ShaderProgram::Create(vk, "shaders/gbuffer.vert.spv", "shaders/gbuffer.frag.spv");
-    ShaderProgram lightPassProg = ShaderProgram::Create(vk, "shaders/lights.vert.spv", "shaders/lights.frag.spv");
+    ShaderProgram gbufferProg = ShaderProgram::Create(vk, "../shaders/gbuffer.vert.spv", "../shaders/gbuffer.frag.spv");
+    ShaderProgram lightPassProg = ShaderProgram::Create(vk, "../shaders/lights.vert.spv", "../shaders/lights.frag.spv");
     
     ViewData viewA = CreateView(vk, im3dState, gbufferProg, lightPassProg);
     viewA.m_View.m_Camera.Position = { -40.0, 10.0f, 30.0f };
@@ -544,7 +548,7 @@ int main() {
 
     // create vertex and index buffer
     // allocate materials instead of raw buffers etc.
-    RenderModel m = CreateRenderModelGbuffer(vk, "assets/sponza/sponza.gltf", gbufferProg);
+    RenderModel m = CreateRenderModelGbuffer(vk, "../assets/sponza/sponza.gltf", gbufferProg);
 
     while (vk.ShouldRun())
     {
