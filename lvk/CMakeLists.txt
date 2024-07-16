@@ -3,7 +3,7 @@ project(lvk)
 
 set (CMAKE_CXX_STANDARD 17)
 
-find_package(Vulkan REQUIRED FATAL_ERROR) # error
+find_package(Vulkan REQUIRED) # error
 
 add_library(${PROJECT_NAME} STATIC src/lvk/VulkanAPI.cpp 
                             src/lvk/Texture.cpp
