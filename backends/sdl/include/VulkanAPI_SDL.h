@@ -13,6 +13,7 @@ namespace lvk {
 	class VulkanAPI_SDL : public VulkanAPI
 	{
 	public:
+        VulkanAPI_SDL(bool enableDebugValidation = true);
 		virtual ~VulkanAPI_SDL();
 		void 								HandleSDLEvent(SDL_Event& sdl_event);
 		// Inherited via VulkanAPI

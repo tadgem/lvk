@@ -171,20 +171,23 @@ void lvk::VulkanAPI::CreateInstance()
 
     std::vector<const char*> extensionNames = GetRequiredExtensions();
 
-    for (const auto& extension : extensionNames)
-    {
-        spdlog::info("SDL Extension : {}", extension);
+    if(m_UseValidation) {
+        for (const auto &extension: extensionNames) {
+            spdlog::info("Backend Extension : {}", extension);
+        }
     }
-
     uint32_t extensionCount;
     vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
     std::vector<VkExtensionProperties> extensions(extensionCount);
     vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 
-    spdlog::info("Supported m_Instance extensions: ");
-    for (const auto& extension : extensions)
-    {
-        spdlog::info("{}", &extension.extensionName[0]);
+    if(m_UseValidation) {
+        spdlog::info("Supported m_Instance extensions: ");
+    }
+    for (const auto& extension : extensions) {
+        if (m_UseValidation) {
+            spdlog::info("{}", &extension.extensionName[0]);
+        }
         bool shouldAdd = true;
         for (int i = 0; i < extensionNames.size(); i++)
         {
@@ -447,9 +450,10 @@ void lvk::VulkanAPI::PickPhysicalDevice()
     VkPhysicalDeviceProperties deviceProperties{};
     vkGetPhysicalDeviceProperties(m_PhysicalDevice, &deviceProperties);
 
-    spdlog::info("Chose GPU : {}", &deviceProperties.deviceName[0]);
-    ListDeviceExtensions(m_PhysicalDevice);
-
+    if(m_UseValidation) {
+        spdlog::info("Chose GPU : {}", &deviceProperties.deviceName[0]);
+        ListDeviceExtensions(m_PhysicalDevice);
+    }
 }
 
 void lvk::VulkanAPI::CreateLogicalDevice()
@@ -2505,5 +2509,10 @@ void lvk::VulkanAPI::CleanupImGui()
         ImGui_ImplVulkan_Shutdown();
         CleanupImGuiBackend();
     }
+}
+
+VulkanAPI::VulkanAPI(bool enableDebugValidation) : m_UseValidation(enableDebugValidation)
+{
+
 }
 

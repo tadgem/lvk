@@ -170,6 +170,11 @@ VkExtent2D lvk::VulkanAPI_SDL::GetMaxFramebufferResolution()
     return res;
 }
 
+lvk::VulkanAPI_SDL::VulkanAPI_SDL(bool enableDebugValidation) : VulkanAPI(enableDebugValidation)
+{
+
+}
+
 lvk::VulkanAPIWindowHandle_SDL::VulkanAPIWindowHandle_SDL(SDL_Window* sdlWindow) : m_SdlWindow(sdlWindow)
 {
     

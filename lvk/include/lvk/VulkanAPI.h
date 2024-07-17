@@ -136,6 +136,8 @@ namespace lvk
         const bool                  m_UseValidation = true;
         const bool                  m_UseImGui      = true;
 
+        VulkanAPI(bool enableDebugValidation);
+
 
         enum class ShaderStage
         {
