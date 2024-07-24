@@ -19,7 +19,7 @@ void main() {
 
     Colour = vertexColour;
 
-    mat4 normalMatrix = transpose(inverse(ubo.model));    
+    mat4 normalMatrix = transpose(inverse(ubo.model));
     Normal = normalize((normalMatrix * vec4(vertexVelocity, 0)).xyz);
 
     Position = (ubo.model * vec4(vertexPosition, 1.0)).xyz;

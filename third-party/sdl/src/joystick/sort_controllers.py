@@ -4,7 +4,6 @@
 
 import re
 
-
 filename = "SDL_gamecontrollerdb.h"
 input = open(filename)
 output = open(f"{filename}.new", "w")
@@ -14,26 +13,29 @@ controller_guids = {}
 conditionals = []
 split_pattern = re.compile(r'([^"]*")([^,]*,)([^,]*,)([^"]*)(".*)')
 #                                     BUS (1)         CRC (3,2)                       VID (5,4)                       (6)   PID (8,7)                       (9)   VERSION (11,10)                 MISC (12)
-standard_guid_pattern = re.compile(r'^([0-9a-fA-F]{4})([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})(0000)([0-9a-fA-F]{2})([0-9a-fA-F]{2})(0000)([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{4},)$')
+standard_guid_pattern = re.compile(
+    r'^([0-9a-fA-F]{4})([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})(0000)([0-9a-fA-F]{2})([0-9a-fA-F]{2})(0000)([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{4},)$')
 
 # These chipsets are used in multiple controllers with different mappings,
 # without enough unique information to differentiate them. e.g.
 # https://github.com/gabomdq/SDL_GameControllerDB/issues/202
 invalid_controllers = (
-    ('0079', '0006', '0000'), # DragonRise Inc. Generic USB Joystick
-    ('0079', '0006', '6120'), # DragonRise Inc. Generic USB Joystick
-    ('04b4', '2412', 'c529'), # Flydigi Vader 2, Vader 2 Pro, Apex 2, Apex 3
-    ('16c0', '05e1', '0000'), # Xinmotek Controller
+    ('0079', '0006', '0000'),  # DragonRise Inc. Generic USB Joystick
+    ('0079', '0006', '6120'),  # DragonRise Inc. Generic USB Joystick
+    ('04b4', '2412', 'c529'),  # Flydigi Vader 2, Vader 2 Pro, Apex 2, Apex 3
+    ('16c0', '05e1', '0000'),  # Xinmotek Controller
 )
 
+
 def find_element(prefix, bindings):
-    i=0
+    i = 0
     for element in bindings:
         if element.startswith(prefix):
             return i
-        i=(i + 1)
+        i = (i + 1)
 
     return -1
+
 
 def get_crc_from_entry(entry):
     crc = ""
@@ -44,10 +46,11 @@ def get_crc_from_entry(entry):
         crc = bindings[pos][4:]
     return crc
 
+
 def save_controller(line):
     global controllers
     match = split_pattern.match(line)
-    entry = [ match.group(1), match.group(2), match.group(3) ]
+    entry = [match.group(1), match.group(2), match.group(3)]
     bindings = sorted(match.group(4).split(","))
     if (bindings[0] == ""):
         bindings.pop(0)
@@ -67,7 +70,7 @@ def save_controller(line):
         vid_value = groups[4] + groups[3]
         pid_value = groups[7] + groups[6]
         version_value = groups[10] + groups[9]
-        #print("CRC: %s, VID: %s, PID: %s, VERSION: %s" % (crc_value, vid_value, pid_value, version_value))
+        # print("CRC: %s, VID: %s, PID: %s, VERSION: %s" % (crc_value, vid_value, pid_value, version_value))
 
         if crc_value == "0000":
             if crc != "":
@@ -98,6 +101,7 @@ def save_controller(line):
     if ',sdk' in line or ',hint:' in line:
         conditionals.append(entry_id)
 
+
 def write_controllers():
     global controllers
     global controller_guids
@@ -120,12 +124,14 @@ def write_controllers():
     for entry in sorted(controllers, key=lambda entry: f"{entry[2]}-{entry[1]}"):
         line = "".join(entry) + "\n"
         line = line.replace("\t", "    ")
-        if not line.endswith(",\n") and not line.endswith("*/\n") and not line.endswith(",\r\n") and not line.endswith("*/\r\n"):
+        if not line.endswith(",\n") and not line.endswith("*/\n") and not line.endswith(",\r\n") and not line.endswith(
+                "*/\r\n"):
             print("Warning: '%s' is missing a comma at the end of the line" % (line))
         output.write(line)
 
     controllers = []
     controller_guids = {}
+
 
 for line in input:
     if parsing_controllers:

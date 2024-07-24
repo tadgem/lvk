@@ -10,7 +10,7 @@ struct VertexData
 
 layout(set =0, binding = 0) uniform VertexDataBlock
 {
-    VertexData uVertexData[(64 * 1024) / 32]; // assume a 64kb block size, 32 is the aligned size of VertexData
+    VertexData uVertexData[(64 * 1024) / 32];// assume a 64kb block size, 32 is the aligned size of VertexData
 };
 
 layout(set = 0, binding = 1) uniform CameraDataBlock
@@ -35,7 +35,7 @@ vec4 UintToRgba(uint _u)
     return ret;
 }
 
-void main() 
+void main()
 {
     int vid = gl_InstanceIndex * 3 + gl_VertexIndex;
     vColor = UintToRgba(uVertexData[vid].m_color);

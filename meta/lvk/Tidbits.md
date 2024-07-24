@@ -1,4 +1,5 @@
 Reconstruct position from depth:
+
 ```glsl
 float z = texture(depthTexture, texCoord).x;
 vec2 clipSpaceTexCoord = texCoord;

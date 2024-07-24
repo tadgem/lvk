@@ -8,7 +8,7 @@ layout(location = 2) smooth in vec4  vColor;
 
 layout(location = 0) out vec4 fResult;
 
-void main() 
+void main()
 {
     fResult = vColor;
     float d = abs(vEdgeDistance) / vSize;

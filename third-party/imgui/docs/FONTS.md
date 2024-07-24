@@ -1,16 +1,21 @@
-_(You may browse this at https://github.com/ocornut/imgui/blob/master/docs/FONTS.md or view this file with any Markdown viewer)_
+_(You may browse this at https://github.com/ocornut/imgui/blob/master/docs/FONTS.md or view this file with any Markdown
+viewer)_
 
 ## Dear ImGui: Using Fonts
 
 The code in imgui.cpp embeds a copy of 'ProggyClean.ttf' (by Tristan Grimmer),
-a 13 pixels high, pixel-perfect font used by default. We embed it in the source code so you can use Dear ImGui without any file system access. ProggyClean does not scale smoothly, therefore it is recommended that you load your own file when using Dear ImGui in an application aiming to look nice and wanting to support multiple resolutions.
+a 13 pixels high, pixel-perfect font used by default. We embed it in the source code so you can use Dear ImGui without
+any file system access. ProggyClean does not scale smoothly, therefore it is recommended that you load your own file
+when using Dear ImGui in an application aiming to look nice and wanting to support multiple resolutions.
 
 You may also load external .TTF/.OTF files.
-In the [misc/fonts/](https://github.com/ocornut/imgui/tree/master/misc/fonts) folder you can find a few suggested fonts, provided as a convenience.
+In the [misc/fonts/](https://github.com/ocornut/imgui/tree/master/misc/fonts) folder you can find a few suggested fonts,
+provided as a convenience.
 
 **Also read the FAQ:** https://www.dearimgui.com/faq (there is a Fonts section!)
 
 ## Index
+
 - [Troubleshooting](#troubleshooting)
 - [How should I handle DPI in my application?](#how-should-i-handle-dpi-in-my-application)
 - [Fonts Loading Instructions](#fonts-loading-instructions)
@@ -39,26 +44,42 @@ See [About Filenames](#about-filenames). AddFontXXX functions should assert if t
 
 ### (2) Invalid UTF-8 encoding of your non-ASCII strings.
 
-See [About UTF-8 Encoding](#about-utf-8-encoding). Use the encoding viewer to confirm encoding of string literal in your source code is correct.
+See [About UTF-8 Encoding](#about-utf-8-encoding). Use the encoding viewer to confirm encoding of string literal in your
+source code is correct.
 
 ### (3) Missing glyph ranges.
 
-You need to load a font with explicit glyph ranges if you want to use non-ASCII characters. See [Fonts Loading Instructions](#fonts-loading-instructions). Use [Debug Tools](#debug-tools) confirm loaded fonts and loaded glyph ranges.
+You need to load a font with explicit glyph ranges if you want to use non-ASCII characters.
+See [Fonts Loading Instructions](#fonts-loading-instructions). Use [Debug Tools](#debug-tools) confirm loaded fonts and
+loaded glyph ranges.
 
-This is a current constraint of Dear ImGui (which we will lift in the future): when loading a font you need to specify which characters glyphs to load.
-All loaded fonts glyphs are rendered into a single texture atlas ahead of time. Calling either of `io.Fonts->GetTexDataAsAlpha8()`, `io.Fonts->GetTexDataAsRGBA32()` or `io.Fonts->Build()` will build the atlas. This is generally called by the Renderer backend, e.g. `ImGui_ImplDX11_NewFrame()` calls it. **If you use custom glyphs ranges, make sure the array is persistent** and available during the calls to `GetTexDataAsAlpha8()/GetTexDataAsRGBA32()/Build()`.
+This is a current constraint of Dear ImGui (which we will lift in the future): when loading a font you need to specify
+which characters glyphs to load.
+All loaded fonts glyphs are rendered into a single texture atlas ahead of time. Calling either
+of `io.Fonts->GetTexDataAsAlpha8()`, `io.Fonts->GetTexDataAsRGBA32()` or `io.Fonts->Build()` will build the atlas. This
+is generally called by the Renderer backend, e.g. `ImGui_ImplDX11_NewFrame()` calls it. **If you use custom glyphs
+ranges, make sure the array is persistent** and available during the calls
+to `GetTexDataAsAlpha8()/GetTexDataAsRGBA32()/Build()`.
 
 ### (4) Font atlas texture fails to upload to GPU.
 
-This is often of byproduct of point 3. If you have large number of glyphs or multiple fonts, the texture may become too big for your graphics API. **The typical result of failing to upload a texture is if every glyph or everything appears as empty black or white rectangle.** Mind the fact that some graphics drivers have texture size limitation. If you are building a PC application, mind the fact that your users may use hardware with lower limitations than yours.
+This is often of byproduct of point 3. If you have large number of glyphs or multiple fonts, the texture may become too
+big for your graphics API. **The typical result of failing to upload a texture is if every glyph or everything appears
+as empty black or white rectangle.** Mind the fact that some graphics drivers have texture size limitation. If you are
+building a PC application, mind the fact that your users may use hardware with lower limitations than yours.
 
 Some solutions:
+
 - You may reduce oversampling, e.g. `font_config.OversampleH = 1`, this will half your texture size for a quality loss.
-  Note that while OversampleH = 2 looks visibly very close to 3 in most situations, with OversampleH = 1 the quality drop will be noticeable. Read about oversampling [here](https://github.com/nothings/stb/blob/master/tests/oversample).
+  Note that while OversampleH = 2 looks visibly very close to 3 in most situations, with OversampleH = 1 the quality
+  drop will be noticeable. Read about oversampling [here](https://github.com/nothings/stb/blob/master/tests/oversample).
 - Reduce glyphs ranges by calculating them from source localization data.
-  You can use the `ImFontGlyphRangesBuilder` for this purpose and rebuilding your atlas between frames when new characters are needed. This will be the biggest win!
-- Set `io.Fonts.Flags |= ImFontAtlasFlags_NoPowerOfTwoHeight;` to disable rounding the texture height to the next power of two.
-- Set `io.Fonts.TexDesiredWidth` to specify a texture width to reduce maximum texture height (see comment in `ImFontAtlas::Build()` function).
+  You can use the `ImFontGlyphRangesBuilder` for this purpose and rebuilding your atlas between frames when new
+  characters are needed. This will be the biggest win!
+- Set `io.Fonts.Flags |= ImFontAtlasFlags_NoPowerOfTwoHeight;` to disable rounding the texture height to the next power
+  of two.
+- Set `io.Fonts.TexDesiredWidth` to specify a texture width to reduce maximum texture height (see comment
+  in `ImFontAtlas::Build()` function).
 
 ##### [Return to Index](#index)
 
@@ -75,19 +96,24 @@ See [FAQ entry](https://github.com/ocornut/imgui/blob/master/docs/FAQ.md#q-how-s
 ## Fonts Loading Instructions
 
 **Load default font:**
+
 ```cpp
 ImGuiIO& io = ImGui::GetIO();
 io.Fonts->AddFontDefault();
 ```
 
 **Load .TTF/.OTF file with:**
+
 ```cpp
 ImGuiIO& io = ImGui::GetIO();
 io.Fonts->AddFontFromFileTTF("font.ttf", size_pixels);
 ```
-If you get an assert stating "Could not load font file!", your font filename is likely incorrect. Read [About filenames](#about-filenames) carefully.
+
+If you get an assert stating "Could not load font file!", your font filename is likely incorrect.
+Read [About filenames](#about-filenames) carefully.
 
 **Load multiple fonts:**
+
 ```cpp
 // Init
 ImGuiIO& io = ImGui::GetIO();
@@ -96,6 +122,7 @@ ImFont* font2 = io.Fonts->AddFontFromFileTTF("anotherfont.otf", size_pixels);
 ```
 
 In your application loop, select which font to use:
+
 ```cpp
 ImGui::Text("Hello"); // use the default font (which is the first loaded font)
 ImGui::PushFont(font2);
@@ -103,7 +130,9 @@ ImGui::Text("Hello with another font");
 ImGui::PopFont();
 ```
 
-**For advanced options create a ImFontConfig structure and pass it to the AddFont() function (it will be copied internally):**
+**For advanced options create a ImFontConfig structure and pass it to the AddFont() function (it will be copied
+internally):**
+
 ```cpp
 ImFontConfig config;
 config.OversampleH = 2;
@@ -113,6 +142,7 @@ ImFont* font = io.Fonts->AddFontFromFileTTF("font.ttf", size_pixels, &config);
 ```
 
 **Combine multiple fonts into one:**
+
 ```cpp
 // Load a first font
 ImFont* font = io.Fonts->AddFontDefault();
@@ -140,6 +170,7 @@ io.Fonts->AddFontFromFileTTF("font.ttf", size_pixels, nullptr, io.Fonts->GetGlyp
 // Default + Hiragana, Katakana, Half-Width, Selection of 1946 Ideographs
 io.Fonts->AddFontFromFileTTF("font.ttf", size_pixels, nullptr, io.Fonts->GetGlyphRangesJapanese());
 ```
+
 See [Using Custom Glyph Ranges](#using-custom-glyph-ranges) section to create your own ranges.
 
 **Example loading and using a Japanese font:**
@@ -148,6 +179,7 @@ See [Using Custom Glyph Ranges](#using-custom-glyph-ranges) section to create yo
 ImGuiIO& io = ImGui::GetIO();
 io.Fonts->AddFontFromFileTTF("NotoSansCJKjp-Medium.otf", 20.0f, nullptr, io.Fonts->GetGlyphRangesJapanese());
 ```
+
 ```cpp
 ImGui::Text(u8"こんにちは！テスト %d", 123);
 if (ImGui::Button(u8"ロード"))
@@ -171,7 +203,8 @@ ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
 ImFont* font = io.Fonts->AddFontFromMemoryTTF(data, data_size, size_pixels, ...);
 ```
 
-IMPORTANT: `AddFontFromMemoryTTF()` by default transfer ownership of the data buffer to the font atlas, which will attempt to free it on destruction.
+IMPORTANT: `AddFontFromMemoryTTF()` by default transfer ownership of the data buffer to the font atlas, which will
+attempt to free it on destruction.
 This was to avoid an unnecessary copy, and is perhaps not a good API (a future version will redesign it).
 If you want to keep ownership of the data and free it yourself, you need to clear the `FontDataOwnedByAtlas` field:
 
@@ -187,16 +220,25 @@ ImFont* font = io.Fonts->AddFontFromMemoryTTF(data, data_size, size_pixels, &fon
 
 ## Loading Font Data Embedded In Source Code
 
-- Compile and use [binary_to_compressed_c.cpp](https://github.com/ocornut/imgui/blob/master/misc/fonts/binary_to_compressed_c.cpp) to create a compressed C style array that you can embed in source code.
-- See the documentation in [binary_to_compressed_c.cpp](https://github.com/ocornut/imgui/blob/master/misc/fonts/binary_to_compressed_c.cpp) for instructions on how to use the tool.
-- You may find a precompiled version binary_to_compressed_c.exe for Windows inside the demo binaries package (see [README](https://github.com/ocornut/imgui/blob/master/docs/README.md)).
-- The tool can optionally output Base85 encoding to reduce the size of _source code_ but the read-only arrays in the actual binary will be about 20% bigger.
+- Compile and
+  use [binary_to_compressed_c.cpp](https://github.com/ocornut/imgui/blob/master/misc/fonts/binary_to_compressed_c.cpp)
+  to create a compressed C style array that you can embed in source code.
+- See the documentation
+  in [binary_to_compressed_c.cpp](https://github.com/ocornut/imgui/blob/master/misc/fonts/binary_to_compressed_c.cpp)
+  for instructions on how to use the tool.
+- You may find a precompiled version binary_to_compressed_c.exe for Windows inside the demo binaries package (
+  see [README](https://github.com/ocornut/imgui/blob/master/docs/README.md)).
+- The tool can optionally output Base85 encoding to reduce the size of _source code_ but the read-only arrays in the
+  actual binary will be about 20% bigger.
 
 Then load the font with:
+
 ```cpp
 ImFont* font = io.Fonts->AddFontFromMemoryCompressedTTF(compressed_data, compressed_data_size, size_pixels, ...);
 ```
+
 or
+
 ```cpp
 ImFont* font = io.Fonts->AddFontFromMemoryCompressedBase85TTF(compressed_data_base85, size_pixels, ...);
 ```
@@ -207,14 +249,19 @@ ImFont* font = io.Fonts->AddFontFromMemoryCompressedBase85TTF(compressed_data_ba
 
 ## Using Icon Fonts
 
-Using an icon font (such as [FontAwesome](http://fontawesome.io) or [OpenFontIcons](https://github.com/traverseda/OpenFontIcons)) is an easy and practical way to use icons in your Dear ImGui application.
-A common pattern is to merge the icon font within your main font, so you can embed icons directly from your strings without having to change fonts back and forth.
+Using an icon font (such as [FontAwesome](http://fontawesome.io)
+or [OpenFontIcons](https://github.com/traverseda/OpenFontIcons)) is an easy and practical way to use icons in your Dear
+ImGui application.
+A common pattern is to merge the icon font within your main font, so you can embed icons directly from your strings
+without having to change fonts back and forth.
 
-To refer to the icon UTF-8 codepoints from your C++ code, you may use those headers files created by Juliette Foucaut: https://github.com/juliettef/IconFontCppHeaders.
+To refer to the icon UTF-8 codepoints from your C++ code, you may use those headers files created by Juliette
+Foucaut: https://github.com/juliettef/IconFontCppHeaders.
 
 So you can use `ICON_FA_SEARCH` as a string that will render as a "Search" icon.
 
 Example Setup:
+
 ```cpp
 // Merge icons into default tool font
 #include "IconsFontAwesome.h"
@@ -227,7 +274,9 @@ config.GlyphMinAdvanceX = 13.0f; // Use if you want to make the icon monospaced
 static const ImWchar icon_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
 io.Fonts->AddFontFromFileTTF("fonts/fontawesome-webfont.ttf", 13.0f, &config, icon_ranges);
 ```
+
 Example Usage:
+
 ```cpp
 // Usage, e.g.
 ImGui::Text("%s among %d items", ICON_FA_SEARCH, count);
@@ -235,11 +284,13 @@ ImGui::Button(ICON_FA_SEARCH " Search");
 // C string _literals_ can be concatenated at compilation time, e.g. "hello" " world"
 // ICON_FA_SEARCH is defined as a string literal so this is the same as "A" "B" becoming "AB"
 ```
+
 See Links below for other icons fonts and related tools.
 
 **Monospace Icons?**
 
-To make your icon look more monospace and facilitate alignment, you may want to set the ImFontConfig::GlyphMinAdvanceX value when loading an icon font.
+To make your icon look more monospace and facilitate alignment, you may want to set the ImFontConfig::GlyphMinAdvanceX
+value when loading an icon font.
 
 **Screenshot**
 
@@ -252,8 +303,10 @@ Here's an application using icons ("Avoyd", https://www.avoyd.com):
 
 ## Using FreeType Rasterizer (imgui_freetype)
 
-- Dear ImGui uses imstb\_truetype.h to rasterize fonts (with optional oversampling). This technique and its implementation are not ideal for fonts rendered at small sizes, which may appear a little blurry or hard to read.
-- There is an implementation of the ImFontAtlas builder using FreeType that you can use in the [misc/freetype/](https://github.com/ocornut/imgui/tree/master/misc/freetype) folder.
+- Dear ImGui uses imstb\_truetype.h to rasterize fonts (with optional oversampling). This technique and its
+  implementation are not ideal for fonts rendered at small sizes, which may appear a little blurry or hard to read.
+- There is an implementation of the ImFontAtlas builder using FreeType that you can use in
+  the [misc/freetype/](https://github.com/ocornut/imgui/tree/master/misc/freetype) folder.
 - FreeType supports auto-hinting which tends to improve the readability of small fonts.
 - Read documentation in the [misc/freetype/](https://github.com/ocornut/imgui/tree/master/misc/freetype) folder.
 - Correct sRGB space blending will have an important effect on your font rendering quality.
@@ -266,7 +319,8 @@ Here's an application using icons ("Avoyd", https://www.avoyd.com):
 
 - Rendering of colored emojis is supported by imgui_freetype with FreeType 2.10+.
 - You will need to load fonts with the `ImGuiFreeTypeBuilderFlags_LoadColor` flag.
-- Emojis are frequently encoded in upper Unicode layers (character codes >0x10000) and will need dear imgui compiled with `IMGUI_USE_WCHAR32`.
+- Emojis are frequently encoded in upper Unicode layers (character codes >0x10000) and will need dear imgui compiled
+  with `IMGUI_USE_WCHAR32`.
 - Not all types of color fonts are supported by FreeType at the moment.
 - Stateful Unicode features such as skin tone modifiers are not supported by the text renderer.
 
@@ -288,7 +342,9 @@ io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\seguiemj.ttf", 16.0f, &cfg, ra
 
 ## Using Custom Glyph Ranges
 
-You can use the `ImFontGlyphRangesBuilder` helper to create glyph ranges based on text input. For example: for a game where your script is known, if you can feed your entire script to it and only build the characters the game needs.
+You can use the `ImFontGlyphRangesBuilder` helper to create glyph ranges based on text input. For example: for a game
+where your script is known, if you can feed your entire script to it and only build the characters the game needs.
+
 ```cpp
 ImVector<ImWchar> ranges;
 ImFontGlyphRangesBuilder builder;
@@ -307,13 +363,19 @@ io.Fonts->Build();                                     // Build the atlas while 
 
 ## Using Custom Colorful Icons
 
-As an alternative to rendering colorful glyphs using imgui_freetype with `ImGuiFreeTypeBuilderFlags_LoadColor`, you may allocate your own space in the texture atlas and write yourself into it. **(This is a BETA api, use if you are familiar with dear imgui and with your rendering backend)**
+As an alternative to rendering colorful glyphs using imgui_freetype with `ImGuiFreeTypeBuilderFlags_LoadColor`, you may
+allocate your own space in the texture atlas and write yourself into it. **(This is a BETA api, use if you are familiar
+with dear imgui and with your rendering backend)**
 
-- You can use the `ImFontAtlas::AddCustomRect()` and `ImFontAtlas::AddCustomRectFontGlyph()` api to register rectangles that will be packed into the font atlas texture. Register them before building the atlas, then call Build()`.
-- You can then use `ImFontAtlas::GetCustomRectByIndex(int)` to query the position/size of your rectangle within the texture, and blit/copy any graphics data of your choice into those rectangles.
-- This API is beta because it is likely to change in order to support multi-dpi (multiple viewports on multiple monitors with varying DPI scale).
+- You can use the `ImFontAtlas::AddCustomRect()` and `ImFontAtlas::AddCustomRectFontGlyph()` api to register rectangles
+  that will be packed into the font atlas texture. Register them before building the atlas, then call Build()`.
+- You can then use `ImFontAtlas::GetCustomRectByIndex(int)` to query the position/size of your rectangle within the
+  texture, and blit/copy any graphics data of your choice into those rectangles.
+- This API is beta because it is likely to change in order to support multi-dpi (multiple viewports on multiple monitors
+  with varying DPI scale).
 
 #### Pseudo-code:
+
 ```cpp
 // Add font, then register two custom 13x13 rectangles mapped to glyph 'a' and 'b' of this font
 ImFont* font = io.Fonts->AddFontDefault();
@@ -351,22 +413,31 @@ for (int rect_n = 0; rect_n < IM_ARRAYSIZE(rect_ids); rect_n++)
 
 ## About Filenames
 
-**Please note that many new C/C++ users have issues loading their files _because the filename they provide is wrong_ due to incorrect assumption of what is the current directory.**
+**Please note that many new C/C++ users have issues loading their files _because the filename they provide is wrong_ due
+to incorrect assumption of what is the current directory.**
 
 Two things to watch for:
 
-(1) In C/C++ and most programming languages if you want to use a backslash `\` within a string literal, you need to write it double backslash `\\`. At it happens, Windows uses backslashes as a path separator, so be mindful.
+(1) In C/C++ and most programming languages if you want to use a backslash `\` within a string literal, you need to
+write it double backslash `\\`. At it happens, Windows uses backslashes as a path separator, so be mindful.
+
 ```cpp
 io.Fonts->AddFontFromFileTTF("MyFiles\MyImage01.jpg", ...);   // This is INCORRECT!!
 io.Fonts->AddFontFromFileTTF("MyFiles\\MyImage01.jpg", ...);  // This is CORRECT
 ```
+
 In some situations, you may also use `/` path separator under Windows.
 
-(2) Make sure your IDE/debugger settings starts your executable from the right working (current) directory. In Visual Studio you can change your working directory in project `Properties > General > Debugging > Working Directory`. People assume that their execution will start from the root folder of the project, where by default it often starts from the folder where object or executable files are stored.
+(2) Make sure your IDE/debugger settings starts your executable from the right working (current) directory. In Visual
+Studio you can change your working directory in project `Properties > General > Debugging > Working Directory`. People
+assume that their execution will start from the root folder of the project, where by default it often starts from the
+folder where object or executable files are stored.
+
 ```cpp
 io.Fonts->AddFontFromFileTTF("MyImage01.jpg", ...);       // Relative filename depends on your Working Directory when running your program!
 io.Fonts->AddFontFromFileTTF("../MyImage01.jpg", ...);    // Load from the parent folder of your Working Directory
 ```
+
 ##### [Return to Index](#index)
 
 ---------------------------------------
@@ -375,7 +446,8 @@ io.Fonts->AddFontFromFileTTF("../MyImage01.jpg", ...);    // Load from the paren
 
 **For non-ASCII characters display, a common user issue is not passing correctly UTF-8 encoded strings.**
 
-(1) We provide a function `ImGui::DebugTextEncoding(const char* text)` which you can call to verify the content of your UTF-8 strings.
+(1) We provide a function `ImGui::DebugTextEncoding(const char* text)` which you can call to verify the content of your
+UTF-8 strings.
 This is a convenient way to confirm that your encoding is correct.
 
 ```cpp
@@ -385,9 +457,11 @@ ImGui::DebugTextEncoding(u8"こんにちは");
 ImGui::SeparatorText("INCORRECT");
 ImGui::DebugTextEncoding("こんにちは");
 ```
+
 ![UTF-8 Encoding viewer](https://github.com/ocornut/imgui/assets/8225057/61c1696a-9a94-46c5-9627-cf91211111f0)
 
-You can also find this tool under `Metrics/Debuggers->Tools->UTF-8 Encoding viewer` if you want to paste from clipboard, but this won't validate the UTF-8 encoding done by your compiler.
+You can also find this tool under `Metrics/Debuggers->Tools->UTF-8 Encoding viewer` if you want to paste from clipboard,
+but this won't validate the UTF-8 encoding done by your compiler.
 
 (2) To encode in UTF-8:
 
@@ -395,21 +469,29 @@ There are also compiler-specific ways to enforce UTF-8 encoding by default:
 
 - Visual Studio compiler: `/utf-8` command-line flag.
 - Visual Studio compiler: `#pragma execution_character_set("utf-8")` inside your code.
-- Since May 2023 we have changed the Visual Studio projects of all our examples to use `/utf-8` ([see commit](https://github.com/ocornut/imgui/commit/513af1efc9080857bbd10000d98f98f2a0c96803)).
+- Since May 2023 we have changed the Visual Studio projects of all our examples to
+  use `/utf-8` ([see commit](https://github.com/ocornut/imgui/commit/513af1efc9080857bbd10000d98f98f2a0c96803)).
 
 Or, since C++11, you can use the `u8"my text"` syntax to encode literal strings as UTF-8. e.g.:
+
 ```cpp
 ImGui::Text(u8"hello");
 ImGui::Text(u8"こんにちは");   // this will always be encoded as UTF-8
 ImGui::Text("こんにちは");     // the encoding of this is depending on compiler settings/flags and may be incorrect.
 ```
 
-Since C++20, because the C++ committee hate its users, they decided to change the `u8""` syntax to not return `const char*` but a new type `const char8_t*` which doesn't cast to `const char*`.
+Since C++20, because the C++ committee hate its users, they decided to change the `u8""` syntax to not
+return `const char*` but a new type `const char8_t*` which doesn't cast to `const char*`.
 Because of type usage of `u8""` in C++20 is a little more tedious:
+
 ```cpp
 ImGui::Text((const char*)u8"こんにちは");
 ```
-However, you can disable this behavior completely using the compiler option [`/Zc:char8_t-`](https://learn.microsoft.com/en-us/cpp/build/reference/zc-char8-t?view=msvc-170) for MSVC and [`-fno-char8_t`](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1423r3.html) for Clang and GCC.
+
+However, you can disable this behavior completely using the compiler
+option [`/Zc:char8_t-`](https://learn.microsoft.com/en-us/cpp/build/reference/zc-char8-t?view=msvc-170) for MSVC
+and [`-fno-char8_t`](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1423r3.html) for Clang and GCC.
+
 ##### [Return to Index](#index)
 
 ---------------------------------------
@@ -417,12 +499,17 @@ However, you can disable this behavior completely using the compiler option [`/Z
 ## Debug Tools
 
 #### Metrics/Debugger->Fonts
-You can use the `Metrics/Debugger` window (available in `Demo>Tools`) to browse your fonts and understand what's going on if you have an issue. You can also reach it in `Demo->Tools->Style Editor->Fonts`. The same information are also available in the Style Editor under Fonts.
+
+You can use the `Metrics/Debugger` window (available in `Demo>Tools`) to browse your fonts and understand what's going
+on if you have an issue. You can also reach it in `Demo->Tools->Style Editor->Fonts`. The same information are also
+available in the Style Editor under Fonts.
 
 ![Fonts debugging](https://user-images.githubusercontent.com/8225057/135429892-0e41ef8d-33c5-4991-bcf6-f997a0bcfd6b.png)
 
 #### UTF-8 Encoding Viewer**
-You can use the `UTF-8 Encoding viewer` in `Metrics/Debugger` to verify the content of your UTF-8 strings. From C/C++ code, you can call `ImGui::DebugTextEncoding("my string");` function to verify that your UTF-8 encoding is correct.
+
+You can use the `UTF-8 Encoding viewer` in `Metrics/Debugger` to verify the content of your UTF-8 strings. From C/C++
+code, you can call `ImGui::DebugTextEncoding("my string");` function to verify that your UTF-8 encoding is correct.
 
 ![UTF-8 Encoding viewer](https://user-images.githubusercontent.com/8225057/166505963-8a0d7899-8ee8-4558-abb2-1ae523dc02f9.png)
 
@@ -466,7 +553,8 @@ Some fonts files are available in the `misc/fonts/` folder:
 
 #### ICON FONTS
 
-- C/C++ header for icon fonts (#define with code points to use in source code string literals) https://github.com/juliettef/IconFontCppHeaders
+- C/C++ header for icon fonts (#define with code points to use in source code string
+  literals) https://github.com/juliettef/IconFontCppHeaders
 - FontAwesome https://fortawesome.github.io/Font-Awesome
 - OpenFontIcons https://github.com/traverseda/OpenFontIcons
 - Google Icon Fonts https://design.google.com/icons/
@@ -482,17 +570,22 @@ Some fonts files are available in the `misc/fonts/` folder:
 #### MONOSPACE FONTS
 
 Pixel Perfect:
+
 - Proggy Fonts, by Tristan Grimmer http://www.proggyfonts.net or http://upperboundsinteractive.com/fonts.php
-- Sweet16, Sweet16 Mono, by Martin Sedlak (Latin + Supplemental + Extended A) https://github.com/kmar/Sweet16Font (also include an .inl file to use directly in dear imgui.)
+- Sweet16, Sweet16 Mono, by Martin Sedlak (Latin + Supplemental + Extended A) https://github.com/kmar/Sweet16Font (also
+  include an .inl file to use directly in dear imgui.)
 
 Regular:
+
 - Google Noto Mono Fonts https://www.google.com/get/noto/
 - Typefaces for source code beautification https://github.com/chrissimpkins/codeface
 - Programmation fonts http://s9w.github.io/font_compare/
 - Inconsolata http://www.levien.com/type/myfonts/inconsolata.html
-- Adobe Source Code Pro: Monospaced font family for ui & coding environments https://github.com/adobe-fonts/source-code-pro
+- Adobe Source Code Pro: Monospaced font family for ui & coding
+  environments https://github.com/adobe-fonts/source-code-pro
 - Monospace/Fixed Width Programmer's Fonts http://www.lowing.org/fonts/
 
-Or use Arial Unicode or other Unicode fonts provided with Windows for full characters coverage (not sure of their licensing).
+Or use Arial Unicode or other Unicode fonts provided with Windows for full characters coverage (not sure of their
+licensing).
 
 ##### [Return to Index](#index)

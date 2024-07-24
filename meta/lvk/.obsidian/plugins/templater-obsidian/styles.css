@@ -18,9 +18,9 @@
 }
 
 .templater_div
-    > .setting-item
-    > .setting-item-control
-    > .setting-editor-extra-setting-button {
+> .setting-item
+> .setting-item-control
+> .setting-editor-extra-setting-button {
     align-self: center;
 }
 

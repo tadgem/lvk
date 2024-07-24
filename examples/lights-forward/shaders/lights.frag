@@ -68,7 +68,7 @@ vec3 BlinnPhong_Directional(vec3 normal, vec3 materialAmbient, vec3 materialDiff
 
     vec3    ambient     = lightUbo.u_DirectionalLight.Ambient.xyz * materialAmbient;
     vec3    diffuse     = lightUbo.u_DirectionalLight.Colour.xyz * diff * materialDiffuse;
-	vec3    spec        = lightUbo.u_DirectionalLight.Colour.xyz * s * materialSpecular;
+    vec3    spec        = lightUbo.u_DirectionalLight.Colour.xyz * s * materialSpecular;
 
     return (ambient + diffuse + spec);
 }
@@ -81,8 +81,8 @@ vec3 BlinnPhong_Point(int lightIdx, vec3 position, vec3 normal, vec3 materialAmb
     float   sDotN      = max(dot(s, normal), 0.0);
     vec3    diffuse    = materialDiffuse * sDotN;
     vec3    spec       = vec3(0.0, 0.0, 0.0);
-    
-    if(sDotN > 0.0)
+
+    if (sDotN > 0.0)
     {
         vec3 v = normalize(-position);
         vec3 h = normalize(v + s);
@@ -106,19 +106,19 @@ vec3 BlinnPhong_Spot(int lightIdx, vec3 position, vec3 normal, vec3 materialAmbi
 
     float cosAngle     = dot(-s, normalize(lightUbo.u_SpotLights[lightIdx].DirectionAngle.xyz));
     float angle        = acos(cosAngle);
-    float   theta      = dot(slDir, normalize(-lightUbo.u_SpotLights[lightIdx].DirectionAngle.xyz ));
+    float   theta      = dot(slDir, normalize(-lightUbo.u_SpotLights[lightIdx].DirectionAngle.xyz));
 
-    if(angle < lightUbo.u_SpotLights[lightIdx].DirectionAngle.w)
+    if (angle < lightUbo.u_SpotLights[lightIdx].DirectionAngle.w)
     {
         vec3 ambient    = lightUbo.u_SpotLights[lightIdx].Ambient.xyz * materialAmbient;
 
         vec3    norm    = normalize(normal);
         float   diff    = max(dot(norm, slDir), 0.0);
-        vec3    diffuse = lightUbo.u_SpotLights[lightIdx].Colour.xyz * diff * materialDiffuse; 
-        
+        vec3    diffuse = lightUbo.u_SpotLights[lightIdx].Colour.xyz * diff * materialDiffuse;
+
         vec3    viewPos = vec3(ubo.view[3][0], ubo.view[3][1], ubo.view[3][2]);
         vec3    viewDir = normalize(viewPos - position);
-        vec3    reflectDir = reflect(-slDir, norm);  
+        vec3    reflectDir = reflect(-slDir, norm);
         float   spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
         vec3    specular = lightUbo.u_SpotLights[lightIdx].Colour.xyz * spec * materialSpecular;
 
@@ -142,13 +142,13 @@ void main() {
     vec4 textureColour = vec4(texture(texSampler, UV).rgb, 1.0f);
     vec3 lightColour = BlinnPhong_Directional(Normal, vec3(0.0f), textureColour.xyz, vec3(0.0f), 0.0f);
 
-    for(int i = 0; i < MAX_NUM_EACH_LIGHTS; i++)
+    for (int i = 0; i < MAX_NUM_EACH_LIGHTS; i++)
     {
         //lightColour
         lightColour += BlinnPhong_Point(i, Position, Normal, vec3(0.0f), textureColour.xyz, vec3(0.0f), 0.0f);
     }
 
-    for(int i = 0; i < MAX_NUM_EACH_LIGHTS; i++)
+    for (int i = 0; i < MAX_NUM_EACH_LIGHTS; i++)
     {
         //lightColour
         lightColour += BlinnPhong_Spot(i, Position, Normal, vec3(0.0f), textureColour.xyz, vec3(0.0f), 0.0f);

@@ -9,43 +9,50 @@ var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __markAsModule = (target) => __defProp(target, "__esModule", { value: true });
+var __markAsModule = (target) => __defProp(target, "__esModule", {value: true});
 var __export = (target, all) => {
-  __markAsModule(target);
-  for (var name in all)
-    __defProp(target, name, { get: all[name], enumerable: true });
+    __markAsModule(target);
+    for (var name in all)
+        __defProp(target, name, {get: all[name], enumerable: true});
 };
 var __reExport = (target, module2, desc) => {
-  if (module2 && typeof module2 === "object" || typeof module2 === "function") {
-    for (let key of __getOwnPropNames(module2))
-      if (!__hasOwnProp.call(target, key) && key !== "default")
-        __defProp(target, key, { get: () => module2[key], enumerable: !(desc = __getOwnPropDesc(module2, key)) || desc.enumerable });
-  }
-  return target;
+    if (module2 && typeof module2 === "object" || typeof module2 === "function") {
+        for (let key of __getOwnPropNames(module2))
+            if (!__hasOwnProp.call(target, key) && key !== "default")
+                __defProp(target, key, {
+                    get: () => module2[key],
+                    enumerable: !(desc = __getOwnPropDesc(module2, key)) || desc.enumerable
+                });
+    }
+    return target;
 };
 var __toModule = (module2) => {
-  return __reExport(__markAsModule(__defProp(module2 != null ? __create(__getProtoOf(module2)) : {}, "default", module2 && module2.__esModule && "default" in module2 ? { get: () => module2.default, enumerable: true } : { value: module2, enumerable: true })), module2);
+    return __reExport(__markAsModule(__defProp(module2 != null ? __create(__getProtoOf(module2)) : {}, "default", module2 && module2.__esModule && "default" in module2 ? {
+        get: () => module2.default,
+        enumerable: true
+    } : {value: module2, enumerable: true})), module2);
 };
 var __toBinary = /* @__PURE__ */ (() => {
-  var table = new Uint8Array(128);
-  for (var i = 0; i < 64; i++)
-    table[i < 26 ? i + 65 : i < 52 ? i + 71 : i < 62 ? i - 4 : i * 4 - 205] = i;
-  return (base64) => {
-    var n = base64.length, bytes = new Uint8Array((n - (base64[n - 1] == "=") - (base64[n - 2] == "=")) * 3 / 4 | 0);
-    for (var i2 = 0, j = 0; i2 < n; ) {
-      var c0 = table[base64.charCodeAt(i2++)], c1 = table[base64.charCodeAt(i2++)];
-      var c2 = table[base64.charCodeAt(i2++)], c3 = table[base64.charCodeAt(i2++)];
-      bytes[j++] = c0 << 2 | c1 >> 4;
-      bytes[j++] = c1 << 4 | c2 >> 2;
-      bytes[j++] = c2 << 6 | c3;
-    }
-    return bytes;
-  };
+    var table = new Uint8Array(128);
+    for (var i = 0; i < 64; i++)
+        table[i < 26 ? i + 65 : i < 52 ? i + 71 : i < 62 ? i - 4 : i * 4 - 205] = i;
+    return (base64) => {
+        var n = base64.length,
+            bytes = new Uint8Array((n - (base64[n - 1] == "=") - (base64[n - 2] == "=")) * 3 / 4 | 0);
+        for (var i2 = 0, j = 0; i2 < n;) {
+            var c0 = table[base64.charCodeAt(i2++)], c1 = table[base64.charCodeAt(i2++)];
+            var c2 = table[base64.charCodeAt(i2++)], c3 = table[base64.charCodeAt(i2++)];
+            bytes[j++] = c0 << 2 | c1 >> 4;
+            bytes[j++] = c1 << 4 | c2 >> 2;
+            bytes[j++] = c2 << 6 | c3;
+        }
+        return bytes;
+    };
 })();
 
 // src/main.ts
 __export(exports, {
-  default: () => TemplaterPlugin
+    default: () => TemplaterPlugin
 });
 var import_obsidian17 = __toModule(require("obsidian"));
 
@@ -54,46 +61,49 @@ var import_obsidian6 = __toModule(require("obsidian"));
 
 // src/utils/Log.ts
 var import_obsidian = __toModule(require("obsidian"));
+
 function log_error(e) {
-  const notice = new import_obsidian.Notice("", 8e3);
-  if (e instanceof TemplaterError && e.console_msg) {
-    notice.noticeEl.innerHTML = `<b>Templater Error</b>:<br/>${e.message}<br/>Check console for more information`;
-    console.error(`Templater Error:`, e.message, "\n", e.console_msg);
-  } else {
-    notice.noticeEl.innerHTML = `<b>Templater Error</b>:<br/>${e.message}`;
-  }
+    const notice = new import_obsidian.Notice("", 8e3);
+    if (e instanceof TemplaterError && e.console_msg) {
+        notice.noticeEl.innerHTML = `<b>Templater Error</b>:<br/>${e.message}<br/>Check console for more information`;
+        console.error(`Templater Error:`, e.message, "\n", e.console_msg);
+    } else {
+        notice.noticeEl.innerHTML = `<b>Templater Error</b>:<br/>${e.message}`;
+    }
 }
 
 // src/utils/Error.ts
 var TemplaterError = class extends Error {
-  constructor(msg, console_msg) {
-    super(msg);
-    this.console_msg = console_msg;
-    this.name = this.constructor.name;
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
+    constructor(msg, console_msg) {
+        super(msg);
+        this.console_msg = console_msg;
+        this.name = this.constructor.name;
+        if (Error.captureStackTrace) {
+            Error.captureStackTrace(this, this.constructor);
+        }
     }
-  }
 };
+
 async function errorWrapper(fn2, msg) {
-  try {
-    return await fn2();
-  } catch (e) {
-    if (!(e instanceof TemplaterError)) {
-      log_error(new TemplaterError(msg, e.message));
-    } else {
-      log_error(e);
+    try {
+        return await fn2();
+    } catch (e) {
+        if (!(e instanceof TemplaterError)) {
+            log_error(new TemplaterError(msg, e.message));
+        } else {
+            log_error(e);
+        }
+        return null;
     }
-    return null;
-  }
 }
+
 function errorWrapperSync(fn2, msg) {
-  try {
-    return fn2();
-  } catch (e) {
-    log_error(new TemplaterError(msg, e.message));
-    return null;
-  }
+    try {
+        return fn2();
+    } catch (e) {
+        log_error(new TemplaterError(msg, e.message));
+        return null;
+    }
 }
 
 // src/settings/suggesters/FolderSuggester.ts
@@ -115,11 +125,11 @@ var clippingParents = "clippingParents";
 var viewport = "viewport";
 var popper = "popper";
 var reference = "reference";
-var variationPlacements = /* @__PURE__ */ basePlacements.reduce(function(acc, placement) {
-  return acc.concat([placement + "-" + start, placement + "-" + end]);
+var variationPlacements = /* @__PURE__ */ basePlacements.reduce(function (acc, placement) {
+    return acc.concat([placement + "-" + start, placement + "-" + end]);
 }, []);
-var placements = /* @__PURE__ */ [].concat(basePlacements, [auto]).reduce(function(acc, placement) {
-  return acc.concat([placement, placement + "-" + start, placement + "-" + end]);
+var placements = /* @__PURE__ */ [].concat(basePlacements, [auto]).reduce(function (acc, placement) {
+    return acc.concat([placement, placement + "-" + start, placement + "-" + end]);
 }, []);
 var beforeRead = "beforeRead";
 var read = "read";
@@ -134,109 +144,113 @@ var modifierPhases = [beforeRead, read, afterRead, beforeMain, main, afterMain, 
 
 // node_modules/@popperjs/core/lib/dom-utils/getNodeName.js
 function getNodeName(element) {
-  return element ? (element.nodeName || "").toLowerCase() : null;
+    return element ? (element.nodeName || "").toLowerCase() : null;
 }
 
 // node_modules/@popperjs/core/lib/dom-utils/getWindow.js
 function getWindow(node) {
-  if (node == null) {
-    return window;
-  }
-  if (node.toString() !== "[object Window]") {
-    var ownerDocument = node.ownerDocument;
-    return ownerDocument ? ownerDocument.defaultView || window : window;
-  }
-  return node;
+    if (node == null) {
+        return window;
+    }
+    if (node.toString() !== "[object Window]") {
+        var ownerDocument = node.ownerDocument;
+        return ownerDocument ? ownerDocument.defaultView || window : window;
+    }
+    return node;
 }
 
 // node_modules/@popperjs/core/lib/dom-utils/instanceOf.js
 function isElement(node) {
-  var OwnElement = getWindow(node).Element;
-  return node instanceof OwnElement || node instanceof Element;
+    var OwnElement = getWindow(node).Element;
+    return node instanceof OwnElement || node instanceof Element;
 }
+
 function isHTMLElement(node) {
-  var OwnElement = getWindow(node).HTMLElement;
-  return node instanceof OwnElement || node instanceof HTMLElement;
+    var OwnElement = getWindow(node).HTMLElement;
+    return node instanceof OwnElement || node instanceof HTMLElement;
 }
+
 function isShadowRoot(node) {
-  if (typeof ShadowRoot === "undefined") {
-    return false;
-  }
-  var OwnElement = getWindow(node).ShadowRoot;
-  return node instanceof OwnElement || node instanceof ShadowRoot;
+    if (typeof ShadowRoot === "undefined") {
+        return false;
+    }
+    var OwnElement = getWindow(node).ShadowRoot;
+    return node instanceof OwnElement || node instanceof ShadowRoot;
 }
 
 // node_modules/@popperjs/core/lib/modifiers/applyStyles.js
 function applyStyles(_ref) {
-  var state = _ref.state;
-  Object.keys(state.elements).forEach(function(name) {
-    var style = state.styles[name] || {};
-    var attributes = state.attributes[name] || {};
-    var element = state.elements[name];
-    if (!isHTMLElement(element) || !getNodeName(element)) {
-      return;
-    }
-    Object.assign(element.style, style);
-    Object.keys(attributes).forEach(function(name2) {
-      var value = attributes[name2];
-      if (value === false) {
-        element.removeAttribute(name2);
-      } else {
-        element.setAttribute(name2, value === true ? "" : value);
-      }
+    var state = _ref.state;
+    Object.keys(state.elements).forEach(function (name) {
+        var style = state.styles[name] || {};
+        var attributes = state.attributes[name] || {};
+        var element = state.elements[name];
+        if (!isHTMLElement(element) || !getNodeName(element)) {
+            return;
+        }
+        Object.assign(element.style, style);
+        Object.keys(attributes).forEach(function (name2) {
+            var value = attributes[name2];
+            if (value === false) {
+                element.removeAttribute(name2);
+            } else {
+                element.setAttribute(name2, value === true ? "" : value);
+            }
+        });
     });
-  });
 }
+
 function effect(_ref2) {
-  var state = _ref2.state;
-  var initialStyles = {
-    popper: {
-      position: state.options.strategy,
-      left: "0",
-      top: "0",
-      margin: "0"
-    },
-    arrow: {
-      position: "absolute"
-    },
-    reference: {}
-  };
-  Object.assign(state.elements.popper.style, initialStyles.popper);
-  state.styles = initialStyles;
-  if (state.elements.arrow) {
-    Object.assign(state.elements.arrow.style, initialStyles.arrow);
-  }
-  return function() {
-    Object.keys(state.elements).forEach(function(name) {
-      var element = state.elements[name];
-      var attributes = state.attributes[name] || {};
-      var styleProperties = Object.keys(state.styles.hasOwnProperty(name) ? state.styles[name] : initialStyles[name]);
-      var style = styleProperties.reduce(function(style2, property) {
-        style2[property] = "";
-        return style2;
-      }, {});
-      if (!isHTMLElement(element) || !getNodeName(element)) {
-        return;
-      }
-      Object.assign(element.style, style);
-      Object.keys(attributes).forEach(function(attribute) {
-        element.removeAttribute(attribute);
-      });
-    });
-  };
+    var state = _ref2.state;
+    var initialStyles = {
+        popper: {
+            position: state.options.strategy,
+            left: "0",
+            top: "0",
+            margin: "0"
+        },
+        arrow: {
+            position: "absolute"
+        },
+        reference: {}
+    };
+    Object.assign(state.elements.popper.style, initialStyles.popper);
+    state.styles = initialStyles;
+    if (state.elements.arrow) {
+        Object.assign(state.elements.arrow.style, initialStyles.arrow);
+    }
+    return function () {
+        Object.keys(state.elements).forEach(function (name) {
+            var element = state.elements[name];
+            var attributes = state.attributes[name] || {};
+            var styleProperties = Object.keys(state.styles.hasOwnProperty(name) ? state.styles[name] : initialStyles[name]);
+            var style = styleProperties.reduce(function (style2, property) {
+                style2[property] = "";
+                return style2;
+            }, {});
+            if (!isHTMLElement(element) || !getNodeName(element)) {
+                return;
+            }
+            Object.assign(element.style, style);
+            Object.keys(attributes).forEach(function (attribute) {
+                element.removeAttribute(attribute);
+            });
+        });
+    };
 }
+
 var applyStyles_default = {
-  name: "applyStyles",
-  enabled: true,
-  phase: "write",
-  fn: applyStyles,
-  effect,
-  requires: ["computeStyles"]
+    name: "applyStyles",
+    enabled: true,
+    phase: "write",
+    fn: applyStyles,
+    effect,
+    requires: ["computeStyles"]
 };
 
 // node_modules/@popperjs/core/lib/utils/getBasePlacement.js
 function getBasePlacement(placement) {
-  return placement.split("-")[0];
+    return placement.split("-")[0];
 }
 
 // node_modules/@popperjs/core/lib/utils/math.js
@@ -246,1441 +260,1530 @@ var round = Math.round;
 
 // node_modules/@popperjs/core/lib/utils/userAgent.js
 function getUAString() {
-  var uaData = navigator.userAgentData;
-  if (uaData != null && uaData.brands && Array.isArray(uaData.brands)) {
-    return uaData.brands.map(function(item) {
-      return item.brand + "/" + item.version;
-    }).join(" ");
-  }
-  return navigator.userAgent;
+    var uaData = navigator.userAgentData;
+    if (uaData != null && uaData.brands && Array.isArray(uaData.brands)) {
+        return uaData.brands.map(function (item) {
+            return item.brand + "/" + item.version;
+        }).join(" ");
+    }
+    return navigator.userAgent;
 }
 
 // node_modules/@popperjs/core/lib/dom-utils/isLayoutViewport.js
 function isLayoutViewport() {
-  return !/^((?!chrome|android).)*safari/i.test(getUAString());
+    return !/^((?!chrome|android).)*safari/i.test(getUAString());
 }
 
 // node_modules/@popperjs/core/lib/dom-utils/getBoundingClientRect.js
 function getBoundingClientRect(element, includeScale, isFixedStrategy) {
-  if (includeScale === void 0) {
-    includeScale = false;
-  }
-  if (isFixedStrategy === void 0) {
-    isFixedStrategy = false;
-  }
-  var clientRect = element.getBoundingClientRect();
-  var scaleX = 1;
-  var scaleY = 1;
-  if (includeScale && isHTMLElement(element)) {
-    scaleX = element.offsetWidth > 0 ? round(clientRect.width) / element.offsetWidth || 1 : 1;
-    scaleY = element.offsetHeight > 0 ? round(clientRect.height) / element.offsetHeight || 1 : 1;
-  }
-  var _ref = isElement(element) ? getWindow(element) : window, visualViewport = _ref.visualViewport;
-  var addVisualOffsets = !isLayoutViewport() && isFixedStrategy;
-  var x = (clientRect.left + (addVisualOffsets && visualViewport ? visualViewport.offsetLeft : 0)) / scaleX;
-  var y = (clientRect.top + (addVisualOffsets && visualViewport ? visualViewport.offsetTop : 0)) / scaleY;
-  var width = clientRect.width / scaleX;
-  var height = clientRect.height / scaleY;
-  return {
-    width,
-    height,
-    top: y,
-    right: x + width,
-    bottom: y + height,
-    left: x,
-    x,
-    y
-  };
+    if (includeScale === void 0) {
+        includeScale = false;
+    }
+    if (isFixedStrategy === void 0) {
+        isFixedStrategy = false;
+    }
+    var clientRect = element.getBoundingClientRect();
+    var scaleX = 1;
+    var scaleY = 1;
+    if (includeScale && isHTMLElement(element)) {
+        scaleX = element.offsetWidth > 0 ? round(clientRect.width) / element.offsetWidth || 1 : 1;
+        scaleY = element.offsetHeight > 0 ? round(clientRect.height) / element.offsetHeight || 1 : 1;
+    }
+    var _ref = isElement(element) ? getWindow(element) : window, visualViewport = _ref.visualViewport;
+    var addVisualOffsets = !isLayoutViewport() && isFixedStrategy;
+    var x = (clientRect.left + (addVisualOffsets && visualViewport ? visualViewport.offsetLeft : 0)) / scaleX;
+    var y = (clientRect.top + (addVisualOffsets && visualViewport ? visualViewport.offsetTop : 0)) / scaleY;
+    var width = clientRect.width / scaleX;
+    var height = clientRect.height / scaleY;
+    return {
+        width,
+        height,
+        top: y,
+        right: x + width,
+        bottom: y + height,
+        left: x,
+        x,
+        y
+    };
 }
 
 // node_modules/@popperjs/core/lib/dom-utils/getLayoutRect.js
 function getLayoutRect(element) {
-  var clientRect = getBoundingClientRect(element);
-  var width = element.offsetWidth;
-  var height = element.offsetHeight;
-  if (Math.abs(clientRect.width - width) <= 1) {
-    width = clientRect.width;
-  }
-  if (Math.abs(clientRect.height - height) <= 1) {
-    height = clientRect.height;
-  }
-  return {
-    x: element.offsetLeft,
-    y: element.offsetTop,
-    width,
-    height
-  };
+    var clientRect = getBoundingClientRect(element);
+    var width = element.offsetWidth;
+    var height = element.offsetHeight;
+    if (Math.abs(clientRect.width - width) <= 1) {
+        width = clientRect.width;
+    }
+    if (Math.abs(clientRect.height - height) <= 1) {
+        height = clientRect.height;
+    }
+    return {
+        x: element.offsetLeft,
+        y: element.offsetTop,
+        width,
+        height
+    };
 }
 
 // node_modules/@popperjs/core/lib/dom-utils/contains.js
 function contains(parent, child) {
-  var rootNode = child.getRootNode && child.getRootNode();
-  if (parent.contains(child)) {
-    return true;
-  } else if (rootNode && isShadowRoot(rootNode)) {
-    var next = child;
-    do {
-      if (next && parent.isSameNode(next)) {
+    var rootNode = child.getRootNode && child.getRootNode();
+    if (parent.contains(child)) {
         return true;
-      }
-      next = next.parentNode || next.host;
-    } while (next);
-  }
-  return false;
+    } else if (rootNode && isShadowRoot(rootNode)) {
+        var next = child;
+        do {
+            if (next && parent.isSameNode(next)) {
+                return true;
+            }
+            next = next.parentNode || next.host;
+        } while (next);
+    }
+    return false;
 }
 
 // node_modules/@popperjs/core/lib/dom-utils/getComputedStyle.js
 function getComputedStyle(element) {
-  return getWindow(element).getComputedStyle(element);
+    return getWindow(element).getComputedStyle(element);
 }
 
 // node_modules/@popperjs/core/lib/dom-utils/isTableElement.js
 function isTableElement(element) {
-  return ["table", "td", "th"].indexOf(getNodeName(element)) >= 0;
+    return ["table", "td", "th"].indexOf(getNodeName(element)) >= 0;
 }
 
 // node_modules/@popperjs/core/lib/dom-utils/getDocumentElement.js
 function getDocumentElement(element) {
-  return ((isElement(element) ? element.ownerDocument : element.document) || window.document).documentElement;
+    return ((isElement(element) ? element.ownerDocument : element.document) || window.document).documentElement;
 }
 
 // node_modules/@popperjs/core/lib/dom-utils/getParentNode.js
 function getParentNode(element) {
-  if (getNodeName(element) === "html") {
-    return element;
-  }
-  return element.assignedSlot || element.parentNode || (isShadowRoot(element) ? element.host : null) || getDocumentElement(element);
+    if (getNodeName(element) === "html") {
+        return element;
+    }
+    return element.assignedSlot || element.parentNode || (isShadowRoot(element) ? element.host : null) || getDocumentElement(element);
 }
 
 // node_modules/@popperjs/core/lib/dom-utils/getOffsetParent.js
 function getTrueOffsetParent(element) {
-  if (!isHTMLElement(element) || getComputedStyle(element).position === "fixed") {
-    return null;
-  }
-  return element.offsetParent;
+    if (!isHTMLElement(element) || getComputedStyle(element).position === "fixed") {
+        return null;
+    }
+    return element.offsetParent;
 }
+
 function getContainingBlock(element) {
-  var isFirefox = /firefox/i.test(getUAString());
-  var isIE = /Trident/i.test(getUAString());
-  if (isIE && isHTMLElement(element)) {
-    var elementCss = getComputedStyle(element);
-    if (elementCss.position === "fixed") {
-      return null;
+    var isFirefox = /firefox/i.test(getUAString());
+    var isIE = /Trident/i.test(getUAString());
+    if (isIE && isHTMLElement(element)) {
+        var elementCss = getComputedStyle(element);
+        if (elementCss.position === "fixed") {
+            return null;
+        }
     }
-  }
-  var currentNode = getParentNode(element);
-  if (isShadowRoot(currentNode)) {
-    currentNode = currentNode.host;
-  }
-  while (isHTMLElement(currentNode) && ["html", "body"].indexOf(getNodeName(currentNode)) < 0) {
-    var css = getComputedStyle(currentNode);
-    if (css.transform !== "none" || css.perspective !== "none" || css.contain === "paint" || ["transform", "perspective"].indexOf(css.willChange) !== -1 || isFirefox && css.willChange === "filter" || isFirefox && css.filter && css.filter !== "none") {
-      return currentNode;
-    } else {
-      currentNode = currentNode.parentNode;
+    var currentNode = getParentNode(element);
+    if (isShadowRoot(currentNode)) {
+        currentNode = currentNode.host;
     }
-  }
-  return null;
+    while (isHTMLElement(currentNode) && ["html", "body"].indexOf(getNodeName(currentNode)) < 0) {
+        var css = getComputedStyle(currentNode);
+        if (css.transform !== "none" || css.perspective !== "none" || css.contain === "paint" || ["transform", "perspective"].indexOf(css.willChange) !== -1 || isFirefox && css.willChange === "filter" || isFirefox && css.filter && css.filter !== "none") {
+            return currentNode;
+        } else {
+            currentNode = currentNode.parentNode;
+        }
+    }
+    return null;
 }
+
 function getOffsetParent(element) {
-  var window2 = getWindow(element);
-  var offsetParent = getTrueOffsetParent(element);
-  while (offsetParent && isTableElement(offsetParent) && getComputedStyle(offsetParent).position === "static") {
-    offsetParent = getTrueOffsetParent(offsetParent);
-  }
-  if (offsetParent && (getNodeName(offsetParent) === "html" || getNodeName(offsetParent) === "body" && getComputedStyle(offsetParent).position === "static")) {
-    return window2;
-  }
-  return offsetParent || getContainingBlock(element) || window2;
+    var window2 = getWindow(element);
+    var offsetParent = getTrueOffsetParent(element);
+    while (offsetParent && isTableElement(offsetParent) && getComputedStyle(offsetParent).position === "static") {
+        offsetParent = getTrueOffsetParent(offsetParent);
+    }
+    if (offsetParent && (getNodeName(offsetParent) === "html" || getNodeName(offsetParent) === "body" && getComputedStyle(offsetParent).position === "static")) {
+        return window2;
+    }
+    return offsetParent || getContainingBlock(element) || window2;
 }
 
 // node_modules/@popperjs/core/lib/utils/getMainAxisFromPlacement.js
 function getMainAxisFromPlacement(placement) {
-  return ["top", "bottom"].indexOf(placement) >= 0 ? "x" : "y";
+    return ["top", "bottom"].indexOf(placement) >= 0 ? "x" : "y";
 }
 
 // node_modules/@popperjs/core/lib/utils/within.js
 function within(min2, value, max2) {
-  return max(min2, min(value, max2));
+    return max(min2, min(value, max2));
 }
+
 function withinMaxClamp(min2, value, max2) {
-  var v = within(min2, value, max2);
-  return v > max2 ? max2 : v;
+    var v = within(min2, value, max2);
+    return v > max2 ? max2 : v;
 }
 
 // node_modules/@popperjs/core/lib/utils/getFreshSideObject.js
 function getFreshSideObject() {
-  return {
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0
-  };
+    return {
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0
+    };
 }
 
 // node_modules/@popperjs/core/lib/utils/mergePaddingObject.js
 function mergePaddingObject(paddingObject) {
-  return Object.assign({}, getFreshSideObject(), paddingObject);
+    return Object.assign({}, getFreshSideObject(), paddingObject);
 }
 
 // node_modules/@popperjs/core/lib/utils/expandToHashMap.js
 function expandToHashMap(value, keys) {
-  return keys.reduce(function(hashMap, key) {
-    hashMap[key] = value;
-    return hashMap;
-  }, {});
+    return keys.reduce(function (hashMap, key) {
+        hashMap[key] = value;
+        return hashMap;
+    }, {});
 }
 
 // node_modules/@popperjs/core/lib/modifiers/arrow.js
 var toPaddingObject = function toPaddingObject2(padding, state) {
-  padding = typeof padding === "function" ? padding(Object.assign({}, state.rects, {
-    placement: state.placement
-  })) : padding;
-  return mergePaddingObject(typeof padding !== "number" ? padding : expandToHashMap(padding, basePlacements));
+    padding = typeof padding === "function" ? padding(Object.assign({}, state.rects, {
+        placement: state.placement
+    })) : padding;
+    return mergePaddingObject(typeof padding !== "number" ? padding : expandToHashMap(padding, basePlacements));
 };
+
 function arrow(_ref) {
-  var _state$modifiersData$;
-  var state = _ref.state, name = _ref.name, options = _ref.options;
-  var arrowElement = state.elements.arrow;
-  var popperOffsets2 = state.modifiersData.popperOffsets;
-  var basePlacement = getBasePlacement(state.placement);
-  var axis = getMainAxisFromPlacement(basePlacement);
-  var isVertical = [left, right].indexOf(basePlacement) >= 0;
-  var len = isVertical ? "height" : "width";
-  if (!arrowElement || !popperOffsets2) {
-    return;
-  }
-  var paddingObject = toPaddingObject(options.padding, state);
-  var arrowRect = getLayoutRect(arrowElement);
-  var minProp = axis === "y" ? top : left;
-  var maxProp = axis === "y" ? bottom : right;
-  var endDiff = state.rects.reference[len] + state.rects.reference[axis] - popperOffsets2[axis] - state.rects.popper[len];
-  var startDiff = popperOffsets2[axis] - state.rects.reference[axis];
-  var arrowOffsetParent = getOffsetParent(arrowElement);
-  var clientSize = arrowOffsetParent ? axis === "y" ? arrowOffsetParent.clientHeight || 0 : arrowOffsetParent.clientWidth || 0 : 0;
-  var centerToReference = endDiff / 2 - startDiff / 2;
-  var min2 = paddingObject[minProp];
-  var max2 = clientSize - arrowRect[len] - paddingObject[maxProp];
-  var center = clientSize / 2 - arrowRect[len] / 2 + centerToReference;
-  var offset2 = within(min2, center, max2);
-  var axisProp = axis;
-  state.modifiersData[name] = (_state$modifiersData$ = {}, _state$modifiersData$[axisProp] = offset2, _state$modifiersData$.centerOffset = offset2 - center, _state$modifiersData$);
-}
-function effect2(_ref2) {
-  var state = _ref2.state, options = _ref2.options;
-  var _options$element = options.element, arrowElement = _options$element === void 0 ? "[data-popper-arrow]" : _options$element;
-  if (arrowElement == null) {
-    return;
-  }
-  if (typeof arrowElement === "string") {
-    arrowElement = state.elements.popper.querySelector(arrowElement);
-    if (!arrowElement) {
-      return;
+    var _state$modifiersData$;
+    var state = _ref.state, name = _ref.name, options = _ref.options;
+    var arrowElement = state.elements.arrow;
+    var popperOffsets2 = state.modifiersData.popperOffsets;
+    var basePlacement = getBasePlacement(state.placement);
+    var axis = getMainAxisFromPlacement(basePlacement);
+    var isVertical = [left, right].indexOf(basePlacement) >= 0;
+    var len = isVertical ? "height" : "width";
+    if (!arrowElement || !popperOffsets2) {
+        return;
     }
-  }
-  if (!contains(state.elements.popper, arrowElement)) {
-    return;
-  }
-  state.elements.arrow = arrowElement;
+    var paddingObject = toPaddingObject(options.padding, state);
+    var arrowRect = getLayoutRect(arrowElement);
+    var minProp = axis === "y" ? top : left;
+    var maxProp = axis === "y" ? bottom : right;
+    var endDiff = state.rects.reference[len] + state.rects.reference[axis] - popperOffsets2[axis] - state.rects.popper[len];
+    var startDiff = popperOffsets2[axis] - state.rects.reference[axis];
+    var arrowOffsetParent = getOffsetParent(arrowElement);
+    var clientSize = arrowOffsetParent ? axis === "y" ? arrowOffsetParent.clientHeight || 0 : arrowOffsetParent.clientWidth || 0 : 0;
+    var centerToReference = endDiff / 2 - startDiff / 2;
+    var min2 = paddingObject[minProp];
+    var max2 = clientSize - arrowRect[len] - paddingObject[maxProp];
+    var center = clientSize / 2 - arrowRect[len] / 2 + centerToReference;
+    var offset2 = within(min2, center, max2);
+    var axisProp = axis;
+    state.modifiersData[name] = (_state$modifiersData$ = {}, _state$modifiersData$[axisProp] = offset2, _state$modifiersData$.centerOffset = offset2 - center, _state$modifiersData$);
 }
+
+function effect2(_ref2) {
+    var state = _ref2.state, options = _ref2.options;
+    var _options$element = options.element,
+        arrowElement = _options$element === void 0 ? "[data-popper-arrow]" : _options$element;
+    if (arrowElement == null) {
+        return;
+    }
+    if (typeof arrowElement === "string") {
+        arrowElement = state.elements.popper.querySelector(arrowElement);
+        if (!arrowElement) {
+            return;
+        }
+    }
+    if (!contains(state.elements.popper, arrowElement)) {
+        return;
+    }
+    state.elements.arrow = arrowElement;
+}
+
 var arrow_default = {
-  name: "arrow",
-  enabled: true,
-  phase: "main",
-  fn: arrow,
-  effect: effect2,
-  requires: ["popperOffsets"],
-  requiresIfExists: ["preventOverflow"]
+    name: "arrow",
+    enabled: true,
+    phase: "main",
+    fn: arrow,
+    effect: effect2,
+    requires: ["popperOffsets"],
+    requiresIfExists: ["preventOverflow"]
 };
 
 // node_modules/@popperjs/core/lib/utils/getVariation.js
 function getVariation(placement) {
-  return placement.split("-")[1];
+    return placement.split("-")[1];
 }
 
 // node_modules/@popperjs/core/lib/modifiers/computeStyles.js
 var unsetSides = {
-  top: "auto",
-  right: "auto",
-  bottom: "auto",
-  left: "auto"
+    top: "auto",
+    right: "auto",
+    bottom: "auto",
+    left: "auto"
 };
+
 function roundOffsetsByDPR(_ref, win) {
-  var x = _ref.x, y = _ref.y;
-  var dpr = win.devicePixelRatio || 1;
-  return {
-    x: round(x * dpr) / dpr || 0,
-    y: round(y * dpr) / dpr || 0
-  };
+    var x = _ref.x, y = _ref.y;
+    var dpr = win.devicePixelRatio || 1;
+    return {
+        x: round(x * dpr) / dpr || 0,
+        y: round(y * dpr) / dpr || 0
+    };
 }
+
 function mapToStyles(_ref2) {
-  var _Object$assign2;
-  var popper2 = _ref2.popper, popperRect = _ref2.popperRect, placement = _ref2.placement, variation = _ref2.variation, offsets = _ref2.offsets, position = _ref2.position, gpuAcceleration = _ref2.gpuAcceleration, adaptive = _ref2.adaptive, roundOffsets = _ref2.roundOffsets, isFixed = _ref2.isFixed;
-  var _offsets$x = offsets.x, x = _offsets$x === void 0 ? 0 : _offsets$x, _offsets$y = offsets.y, y = _offsets$y === void 0 ? 0 : _offsets$y;
-  var _ref3 = typeof roundOffsets === "function" ? roundOffsets({
-    x,
-    y
-  }) : {
-    x,
-    y
-  };
-  x = _ref3.x;
-  y = _ref3.y;
-  var hasX = offsets.hasOwnProperty("x");
-  var hasY = offsets.hasOwnProperty("y");
-  var sideX = left;
-  var sideY = top;
-  var win = window;
-  if (adaptive) {
-    var offsetParent = getOffsetParent(popper2);
-    var heightProp = "clientHeight";
-    var widthProp = "clientWidth";
-    if (offsetParent === getWindow(popper2)) {
-      offsetParent = getDocumentElement(popper2);
-      if (getComputedStyle(offsetParent).position !== "static" && position === "absolute") {
-        heightProp = "scrollHeight";
-        widthProp = "scrollWidth";
-      }
+    var _Object$assign2;
+    var popper2 = _ref2.popper, popperRect = _ref2.popperRect, placement = _ref2.placement, variation = _ref2.variation,
+        offsets = _ref2.offsets, position = _ref2.position, gpuAcceleration = _ref2.gpuAcceleration,
+        adaptive = _ref2.adaptive, roundOffsets = _ref2.roundOffsets, isFixed = _ref2.isFixed;
+    var _offsets$x = offsets.x, x = _offsets$x === void 0 ? 0 : _offsets$x, _offsets$y = offsets.y,
+        y = _offsets$y === void 0 ? 0 : _offsets$y;
+    var _ref3 = typeof roundOffsets === "function" ? roundOffsets({
+        x,
+        y
+    }) : {
+        x,
+        y
+    };
+    x = _ref3.x;
+    y = _ref3.y;
+    var hasX = offsets.hasOwnProperty("x");
+    var hasY = offsets.hasOwnProperty("y");
+    var sideX = left;
+    var sideY = top;
+    var win = window;
+    if (adaptive) {
+        var offsetParent = getOffsetParent(popper2);
+        var heightProp = "clientHeight";
+        var widthProp = "clientWidth";
+        if (offsetParent === getWindow(popper2)) {
+            offsetParent = getDocumentElement(popper2);
+            if (getComputedStyle(offsetParent).position !== "static" && position === "absolute") {
+                heightProp = "scrollHeight";
+                widthProp = "scrollWidth";
+            }
+        }
+        offsetParent = offsetParent;
+        if (placement === top || (placement === left || placement === right) && variation === end) {
+            sideY = bottom;
+            var offsetY = isFixed && offsetParent === win && win.visualViewport ? win.visualViewport.height : offsetParent[heightProp];
+            y -= offsetY - popperRect.height;
+            y *= gpuAcceleration ? 1 : -1;
+        }
+        if (placement === left || (placement === top || placement === bottom) && variation === end) {
+            sideX = right;
+            var offsetX = isFixed && offsetParent === win && win.visualViewport ? win.visualViewport.width : offsetParent[widthProp];
+            x -= offsetX - popperRect.width;
+            x *= gpuAcceleration ? 1 : -1;
+        }
     }
-    offsetParent = offsetParent;
-    if (placement === top || (placement === left || placement === right) && variation === end) {
-      sideY = bottom;
-      var offsetY = isFixed && offsetParent === win && win.visualViewport ? win.visualViewport.height : offsetParent[heightProp];
-      y -= offsetY - popperRect.height;
-      y *= gpuAcceleration ? 1 : -1;
+    var commonStyles = Object.assign({
+        position
+    }, adaptive && unsetSides);
+    var _ref4 = roundOffsets === true ? roundOffsetsByDPR({
+        x,
+        y
+    }, getWindow(popper2)) : {
+        x,
+        y
+    };
+    x = _ref4.x;
+    y = _ref4.y;
+    if (gpuAcceleration) {
+        var _Object$assign;
+        return Object.assign({}, commonStyles, (_Object$assign = {}, _Object$assign[sideY] = hasY ? "0" : "", _Object$assign[sideX] = hasX ? "0" : "", _Object$assign.transform = (win.devicePixelRatio || 1) <= 1 ? "translate(" + x + "px, " + y + "px)" : "translate3d(" + x + "px, " + y + "px, 0)", _Object$assign));
     }
-    if (placement === left || (placement === top || placement === bottom) && variation === end) {
-      sideX = right;
-      var offsetX = isFixed && offsetParent === win && win.visualViewport ? win.visualViewport.width : offsetParent[widthProp];
-      x -= offsetX - popperRect.width;
-      x *= gpuAcceleration ? 1 : -1;
-    }
-  }
-  var commonStyles = Object.assign({
-    position
-  }, adaptive && unsetSides);
-  var _ref4 = roundOffsets === true ? roundOffsetsByDPR({
-    x,
-    y
-  }, getWindow(popper2)) : {
-    x,
-    y
-  };
-  x = _ref4.x;
-  y = _ref4.y;
-  if (gpuAcceleration) {
-    var _Object$assign;
-    return Object.assign({}, commonStyles, (_Object$assign = {}, _Object$assign[sideY] = hasY ? "0" : "", _Object$assign[sideX] = hasX ? "0" : "", _Object$assign.transform = (win.devicePixelRatio || 1) <= 1 ? "translate(" + x + "px, " + y + "px)" : "translate3d(" + x + "px, " + y + "px, 0)", _Object$assign));
-  }
-  return Object.assign({}, commonStyles, (_Object$assign2 = {}, _Object$assign2[sideY] = hasY ? y + "px" : "", _Object$assign2[sideX] = hasX ? x + "px" : "", _Object$assign2.transform = "", _Object$assign2));
+    return Object.assign({}, commonStyles, (_Object$assign2 = {}, _Object$assign2[sideY] = hasY ? y + "px" : "", _Object$assign2[sideX] = hasX ? x + "px" : "", _Object$assign2.transform = "", _Object$assign2));
 }
+
 function computeStyles(_ref5) {
-  var state = _ref5.state, options = _ref5.options;
-  var _options$gpuAccelerat = options.gpuAcceleration, gpuAcceleration = _options$gpuAccelerat === void 0 ? true : _options$gpuAccelerat, _options$adaptive = options.adaptive, adaptive = _options$adaptive === void 0 ? true : _options$adaptive, _options$roundOffsets = options.roundOffsets, roundOffsets = _options$roundOffsets === void 0 ? true : _options$roundOffsets;
-  var commonStyles = {
-    placement: getBasePlacement(state.placement),
-    variation: getVariation(state.placement),
-    popper: state.elements.popper,
-    popperRect: state.rects.popper,
-    gpuAcceleration,
-    isFixed: state.options.strategy === "fixed"
-  };
-  if (state.modifiersData.popperOffsets != null) {
-    state.styles.popper = Object.assign({}, state.styles.popper, mapToStyles(Object.assign({}, commonStyles, {
-      offsets: state.modifiersData.popperOffsets,
-      position: state.options.strategy,
-      adaptive,
-      roundOffsets
-    })));
-  }
-  if (state.modifiersData.arrow != null) {
-    state.styles.arrow = Object.assign({}, state.styles.arrow, mapToStyles(Object.assign({}, commonStyles, {
-      offsets: state.modifiersData.arrow,
-      position: "absolute",
-      adaptive: false,
-      roundOffsets
-    })));
-  }
-  state.attributes.popper = Object.assign({}, state.attributes.popper, {
-    "data-popper-placement": state.placement
-  });
+    var state = _ref5.state, options = _ref5.options;
+    var _options$gpuAccelerat = options.gpuAcceleration,
+        gpuAcceleration = _options$gpuAccelerat === void 0 ? true : _options$gpuAccelerat,
+        _options$adaptive = options.adaptive, adaptive = _options$adaptive === void 0 ? true : _options$adaptive,
+        _options$roundOffsets = options.roundOffsets,
+        roundOffsets = _options$roundOffsets === void 0 ? true : _options$roundOffsets;
+    var commonStyles = {
+        placement: getBasePlacement(state.placement),
+        variation: getVariation(state.placement),
+        popper: state.elements.popper,
+        popperRect: state.rects.popper,
+        gpuAcceleration,
+        isFixed: state.options.strategy === "fixed"
+    };
+    if (state.modifiersData.popperOffsets != null) {
+        state.styles.popper = Object.assign({}, state.styles.popper, mapToStyles(Object.assign({}, commonStyles, {
+            offsets: state.modifiersData.popperOffsets,
+            position: state.options.strategy,
+            adaptive,
+            roundOffsets
+        })));
+    }
+    if (state.modifiersData.arrow != null) {
+        state.styles.arrow = Object.assign({}, state.styles.arrow, mapToStyles(Object.assign({}, commonStyles, {
+            offsets: state.modifiersData.arrow,
+            position: "absolute",
+            adaptive: false,
+            roundOffsets
+        })));
+    }
+    state.attributes.popper = Object.assign({}, state.attributes.popper, {
+        "data-popper-placement": state.placement
+    });
 }
+
 var computeStyles_default = {
-  name: "computeStyles",
-  enabled: true,
-  phase: "beforeWrite",
-  fn: computeStyles,
-  data: {}
+    name: "computeStyles",
+    enabled: true,
+    phase: "beforeWrite",
+    fn: computeStyles,
+    data: {}
 };
 
 // node_modules/@popperjs/core/lib/modifiers/eventListeners.js
 var passive = {
-  passive: true
+    passive: true
 };
+
 function effect3(_ref) {
-  var state = _ref.state, instance = _ref.instance, options = _ref.options;
-  var _options$scroll = options.scroll, scroll = _options$scroll === void 0 ? true : _options$scroll, _options$resize = options.resize, resize = _options$resize === void 0 ? true : _options$resize;
-  var window2 = getWindow(state.elements.popper);
-  var scrollParents = [].concat(state.scrollParents.reference, state.scrollParents.popper);
-  if (scroll) {
-    scrollParents.forEach(function(scrollParent) {
-      scrollParent.addEventListener("scroll", instance.update, passive);
-    });
-  }
-  if (resize) {
-    window2.addEventListener("resize", instance.update, passive);
-  }
-  return function() {
+    var state = _ref.state, instance = _ref.instance, options = _ref.options;
+    var _options$scroll = options.scroll, scroll = _options$scroll === void 0 ? true : _options$scroll,
+        _options$resize = options.resize, resize = _options$resize === void 0 ? true : _options$resize;
+    var window2 = getWindow(state.elements.popper);
+    var scrollParents = [].concat(state.scrollParents.reference, state.scrollParents.popper);
     if (scroll) {
-      scrollParents.forEach(function(scrollParent) {
-        scrollParent.removeEventListener("scroll", instance.update, passive);
-      });
+        scrollParents.forEach(function (scrollParent) {
+            scrollParent.addEventListener("scroll", instance.update, passive);
+        });
     }
     if (resize) {
-      window2.removeEventListener("resize", instance.update, passive);
+        window2.addEventListener("resize", instance.update, passive);
     }
-  };
+    return function () {
+        if (scroll) {
+            scrollParents.forEach(function (scrollParent) {
+                scrollParent.removeEventListener("scroll", instance.update, passive);
+            });
+        }
+        if (resize) {
+            window2.removeEventListener("resize", instance.update, passive);
+        }
+    };
 }
+
 var eventListeners_default = {
-  name: "eventListeners",
-  enabled: true,
-  phase: "write",
-  fn: function fn() {
-  },
-  effect: effect3,
-  data: {}
+    name: "eventListeners",
+    enabled: true,
+    phase: "write",
+    fn: function fn() {
+    },
+    effect: effect3,
+    data: {}
 };
 
 // node_modules/@popperjs/core/lib/utils/getOppositePlacement.js
 var hash = {
-  left: "right",
-  right: "left",
-  bottom: "top",
-  top: "bottom"
+    left: "right",
+    right: "left",
+    bottom: "top",
+    top: "bottom"
 };
+
 function getOppositePlacement(placement) {
-  return placement.replace(/left|right|bottom|top/g, function(matched) {
-    return hash[matched];
-  });
+    return placement.replace(/left|right|bottom|top/g, function (matched) {
+        return hash[matched];
+    });
 }
 
 // node_modules/@popperjs/core/lib/utils/getOppositeVariationPlacement.js
 var hash2 = {
-  start: "end",
-  end: "start"
+    start: "end",
+    end: "start"
 };
+
 function getOppositeVariationPlacement(placement) {
-  return placement.replace(/start|end/g, function(matched) {
-    return hash2[matched];
-  });
+    return placement.replace(/start|end/g, function (matched) {
+        return hash2[matched];
+    });
 }
 
 // node_modules/@popperjs/core/lib/dom-utils/getWindowScroll.js
 function getWindowScroll(node) {
-  var win = getWindow(node);
-  var scrollLeft = win.pageXOffset;
-  var scrollTop = win.pageYOffset;
-  return {
-    scrollLeft,
-    scrollTop
-  };
+    var win = getWindow(node);
+    var scrollLeft = win.pageXOffset;
+    var scrollTop = win.pageYOffset;
+    return {
+        scrollLeft,
+        scrollTop
+    };
 }
 
 // node_modules/@popperjs/core/lib/dom-utils/getWindowScrollBarX.js
 function getWindowScrollBarX(element) {
-  return getBoundingClientRect(getDocumentElement(element)).left + getWindowScroll(element).scrollLeft;
+    return getBoundingClientRect(getDocumentElement(element)).left + getWindowScroll(element).scrollLeft;
 }
 
 // node_modules/@popperjs/core/lib/dom-utils/getViewportRect.js
 function getViewportRect(element, strategy) {
-  var win = getWindow(element);
-  var html = getDocumentElement(element);
-  var visualViewport = win.visualViewport;
-  var width = html.clientWidth;
-  var height = html.clientHeight;
-  var x = 0;
-  var y = 0;
-  if (visualViewport) {
-    width = visualViewport.width;
-    height = visualViewport.height;
-    var layoutViewport = isLayoutViewport();
-    if (layoutViewport || !layoutViewport && strategy === "fixed") {
-      x = visualViewport.offsetLeft;
-      y = visualViewport.offsetTop;
+    var win = getWindow(element);
+    var html = getDocumentElement(element);
+    var visualViewport = win.visualViewport;
+    var width = html.clientWidth;
+    var height = html.clientHeight;
+    var x = 0;
+    var y = 0;
+    if (visualViewport) {
+        width = visualViewport.width;
+        height = visualViewport.height;
+        var layoutViewport = isLayoutViewport();
+        if (layoutViewport || !layoutViewport && strategy === "fixed") {
+            x = visualViewport.offsetLeft;
+            y = visualViewport.offsetTop;
+        }
     }
-  }
-  return {
-    width,
-    height,
-    x: x + getWindowScrollBarX(element),
-    y
-  };
+    return {
+        width,
+        height,
+        x: x + getWindowScrollBarX(element),
+        y
+    };
 }
 
 // node_modules/@popperjs/core/lib/dom-utils/getDocumentRect.js
 function getDocumentRect(element) {
-  var _element$ownerDocumen;
-  var html = getDocumentElement(element);
-  var winScroll = getWindowScroll(element);
-  var body = (_element$ownerDocumen = element.ownerDocument) == null ? void 0 : _element$ownerDocumen.body;
-  var width = max(html.scrollWidth, html.clientWidth, body ? body.scrollWidth : 0, body ? body.clientWidth : 0);
-  var height = max(html.scrollHeight, html.clientHeight, body ? body.scrollHeight : 0, body ? body.clientHeight : 0);
-  var x = -winScroll.scrollLeft + getWindowScrollBarX(element);
-  var y = -winScroll.scrollTop;
-  if (getComputedStyle(body || html).direction === "rtl") {
-    x += max(html.clientWidth, body ? body.clientWidth : 0) - width;
-  }
-  return {
-    width,
-    height,
-    x,
-    y
-  };
+    var _element$ownerDocumen;
+    var html = getDocumentElement(element);
+    var winScroll = getWindowScroll(element);
+    var body = (_element$ownerDocumen = element.ownerDocument) == null ? void 0 : _element$ownerDocumen.body;
+    var width = max(html.scrollWidth, html.clientWidth, body ? body.scrollWidth : 0, body ? body.clientWidth : 0);
+    var height = max(html.scrollHeight, html.clientHeight, body ? body.scrollHeight : 0, body ? body.clientHeight : 0);
+    var x = -winScroll.scrollLeft + getWindowScrollBarX(element);
+    var y = -winScroll.scrollTop;
+    if (getComputedStyle(body || html).direction === "rtl") {
+        x += max(html.clientWidth, body ? body.clientWidth : 0) - width;
+    }
+    return {
+        width,
+        height,
+        x,
+        y
+    };
 }
 
 // node_modules/@popperjs/core/lib/dom-utils/isScrollParent.js
 function isScrollParent(element) {
-  var _getComputedStyle = getComputedStyle(element), overflow = _getComputedStyle.overflow, overflowX = _getComputedStyle.overflowX, overflowY = _getComputedStyle.overflowY;
-  return /auto|scroll|overlay|hidden/.test(overflow + overflowY + overflowX);
+    var _getComputedStyle = getComputedStyle(element), overflow = _getComputedStyle.overflow,
+        overflowX = _getComputedStyle.overflowX, overflowY = _getComputedStyle.overflowY;
+    return /auto|scroll|overlay|hidden/.test(overflow + overflowY + overflowX);
 }
 
 // node_modules/@popperjs/core/lib/dom-utils/getScrollParent.js
 function getScrollParent(node) {
-  if (["html", "body", "#document"].indexOf(getNodeName(node)) >= 0) {
-    return node.ownerDocument.body;
-  }
-  if (isHTMLElement(node) && isScrollParent(node)) {
-    return node;
-  }
-  return getScrollParent(getParentNode(node));
+    if (["html", "body", "#document"].indexOf(getNodeName(node)) >= 0) {
+        return node.ownerDocument.body;
+    }
+    if (isHTMLElement(node) && isScrollParent(node)) {
+        return node;
+    }
+    return getScrollParent(getParentNode(node));
 }
 
 // node_modules/@popperjs/core/lib/dom-utils/listScrollParents.js
 function listScrollParents(element, list) {
-  var _element$ownerDocumen;
-  if (list === void 0) {
-    list = [];
-  }
-  var scrollParent = getScrollParent(element);
-  var isBody = scrollParent === ((_element$ownerDocumen = element.ownerDocument) == null ? void 0 : _element$ownerDocumen.body);
-  var win = getWindow(scrollParent);
-  var target = isBody ? [win].concat(win.visualViewport || [], isScrollParent(scrollParent) ? scrollParent : []) : scrollParent;
-  var updatedList = list.concat(target);
-  return isBody ? updatedList : updatedList.concat(listScrollParents(getParentNode(target)));
+    var _element$ownerDocumen;
+    if (list === void 0) {
+        list = [];
+    }
+    var scrollParent = getScrollParent(element);
+    var isBody = scrollParent === ((_element$ownerDocumen = element.ownerDocument) == null ? void 0 : _element$ownerDocumen.body);
+    var win = getWindow(scrollParent);
+    var target = isBody ? [win].concat(win.visualViewport || [], isScrollParent(scrollParent) ? scrollParent : []) : scrollParent;
+    var updatedList = list.concat(target);
+    return isBody ? updatedList : updatedList.concat(listScrollParents(getParentNode(target)));
 }
 
 // node_modules/@popperjs/core/lib/utils/rectToClientRect.js
 function rectToClientRect(rect) {
-  return Object.assign({}, rect, {
-    left: rect.x,
-    top: rect.y,
-    right: rect.x + rect.width,
-    bottom: rect.y + rect.height
-  });
+    return Object.assign({}, rect, {
+        left: rect.x,
+        top: rect.y,
+        right: rect.x + rect.width,
+        bottom: rect.y + rect.height
+    });
 }
 
 // node_modules/@popperjs/core/lib/dom-utils/getClippingRect.js
 function getInnerBoundingClientRect(element, strategy) {
-  var rect = getBoundingClientRect(element, false, strategy === "fixed");
-  rect.top = rect.top + element.clientTop;
-  rect.left = rect.left + element.clientLeft;
-  rect.bottom = rect.top + element.clientHeight;
-  rect.right = rect.left + element.clientWidth;
-  rect.width = element.clientWidth;
-  rect.height = element.clientHeight;
-  rect.x = rect.left;
-  rect.y = rect.top;
-  return rect;
+    var rect = getBoundingClientRect(element, false, strategy === "fixed");
+    rect.top = rect.top + element.clientTop;
+    rect.left = rect.left + element.clientLeft;
+    rect.bottom = rect.top + element.clientHeight;
+    rect.right = rect.left + element.clientWidth;
+    rect.width = element.clientWidth;
+    rect.height = element.clientHeight;
+    rect.x = rect.left;
+    rect.y = rect.top;
+    return rect;
 }
+
 function getClientRectFromMixedType(element, clippingParent, strategy) {
-  return clippingParent === viewport ? rectToClientRect(getViewportRect(element, strategy)) : isElement(clippingParent) ? getInnerBoundingClientRect(clippingParent, strategy) : rectToClientRect(getDocumentRect(getDocumentElement(element)));
+    return clippingParent === viewport ? rectToClientRect(getViewportRect(element, strategy)) : isElement(clippingParent) ? getInnerBoundingClientRect(clippingParent, strategy) : rectToClientRect(getDocumentRect(getDocumentElement(element)));
 }
+
 function getClippingParents(element) {
-  var clippingParents2 = listScrollParents(getParentNode(element));
-  var canEscapeClipping = ["absolute", "fixed"].indexOf(getComputedStyle(element).position) >= 0;
-  var clipperElement = canEscapeClipping && isHTMLElement(element) ? getOffsetParent(element) : element;
-  if (!isElement(clipperElement)) {
-    return [];
-  }
-  return clippingParents2.filter(function(clippingParent) {
-    return isElement(clippingParent) && contains(clippingParent, clipperElement) && getNodeName(clippingParent) !== "body";
-  });
+    var clippingParents2 = listScrollParents(getParentNode(element));
+    var canEscapeClipping = ["absolute", "fixed"].indexOf(getComputedStyle(element).position) >= 0;
+    var clipperElement = canEscapeClipping && isHTMLElement(element) ? getOffsetParent(element) : element;
+    if (!isElement(clipperElement)) {
+        return [];
+    }
+    return clippingParents2.filter(function (clippingParent) {
+        return isElement(clippingParent) && contains(clippingParent, clipperElement) && getNodeName(clippingParent) !== "body";
+    });
 }
+
 function getClippingRect(element, boundary, rootBoundary, strategy) {
-  var mainClippingParents = boundary === "clippingParents" ? getClippingParents(element) : [].concat(boundary);
-  var clippingParents2 = [].concat(mainClippingParents, [rootBoundary]);
-  var firstClippingParent = clippingParents2[0];
-  var clippingRect = clippingParents2.reduce(function(accRect, clippingParent) {
-    var rect = getClientRectFromMixedType(element, clippingParent, strategy);
-    accRect.top = max(rect.top, accRect.top);
-    accRect.right = min(rect.right, accRect.right);
-    accRect.bottom = min(rect.bottom, accRect.bottom);
-    accRect.left = max(rect.left, accRect.left);
-    return accRect;
-  }, getClientRectFromMixedType(element, firstClippingParent, strategy));
-  clippingRect.width = clippingRect.right - clippingRect.left;
-  clippingRect.height = clippingRect.bottom - clippingRect.top;
-  clippingRect.x = clippingRect.left;
-  clippingRect.y = clippingRect.top;
-  return clippingRect;
+    var mainClippingParents = boundary === "clippingParents" ? getClippingParents(element) : [].concat(boundary);
+    var clippingParents2 = [].concat(mainClippingParents, [rootBoundary]);
+    var firstClippingParent = clippingParents2[0];
+    var clippingRect = clippingParents2.reduce(function (accRect, clippingParent) {
+        var rect = getClientRectFromMixedType(element, clippingParent, strategy);
+        accRect.top = max(rect.top, accRect.top);
+        accRect.right = min(rect.right, accRect.right);
+        accRect.bottom = min(rect.bottom, accRect.bottom);
+        accRect.left = max(rect.left, accRect.left);
+        return accRect;
+    }, getClientRectFromMixedType(element, firstClippingParent, strategy));
+    clippingRect.width = clippingRect.right - clippingRect.left;
+    clippingRect.height = clippingRect.bottom - clippingRect.top;
+    clippingRect.x = clippingRect.left;
+    clippingRect.y = clippingRect.top;
+    return clippingRect;
 }
 
 // node_modules/@popperjs/core/lib/utils/computeOffsets.js
 function computeOffsets(_ref) {
-  var reference2 = _ref.reference, element = _ref.element, placement = _ref.placement;
-  var basePlacement = placement ? getBasePlacement(placement) : null;
-  var variation = placement ? getVariation(placement) : null;
-  var commonX = reference2.x + reference2.width / 2 - element.width / 2;
-  var commonY = reference2.y + reference2.height / 2 - element.height / 2;
-  var offsets;
-  switch (basePlacement) {
-    case top:
-      offsets = {
-        x: commonX,
-        y: reference2.y - element.height
-      };
-      break;
-    case bottom:
-      offsets = {
-        x: commonX,
-        y: reference2.y + reference2.height
-      };
-      break;
-    case right:
-      offsets = {
-        x: reference2.x + reference2.width,
-        y: commonY
-      };
-      break;
-    case left:
-      offsets = {
-        x: reference2.x - element.width,
-        y: commonY
-      };
-      break;
-    default:
-      offsets = {
-        x: reference2.x,
-        y: reference2.y
-      };
-  }
-  var mainAxis = basePlacement ? getMainAxisFromPlacement(basePlacement) : null;
-  if (mainAxis != null) {
-    var len = mainAxis === "y" ? "height" : "width";
-    switch (variation) {
-      case start:
-        offsets[mainAxis] = offsets[mainAxis] - (reference2[len] / 2 - element[len] / 2);
-        break;
-      case end:
-        offsets[mainAxis] = offsets[mainAxis] + (reference2[len] / 2 - element[len] / 2);
-        break;
-      default:
+    var reference2 = _ref.reference, element = _ref.element, placement = _ref.placement;
+    var basePlacement = placement ? getBasePlacement(placement) : null;
+    var variation = placement ? getVariation(placement) : null;
+    var commonX = reference2.x + reference2.width / 2 - element.width / 2;
+    var commonY = reference2.y + reference2.height / 2 - element.height / 2;
+    var offsets;
+    switch (basePlacement) {
+        case top:
+            offsets = {
+                x: commonX,
+                y: reference2.y - element.height
+            };
+            break;
+        case bottom:
+            offsets = {
+                x: commonX,
+                y: reference2.y + reference2.height
+            };
+            break;
+        case right:
+            offsets = {
+                x: reference2.x + reference2.width,
+                y: commonY
+            };
+            break;
+        case left:
+            offsets = {
+                x: reference2.x - element.width,
+                y: commonY
+            };
+            break;
+        default:
+            offsets = {
+                x: reference2.x,
+                y: reference2.y
+            };
     }
-  }
-  return offsets;
+    var mainAxis = basePlacement ? getMainAxisFromPlacement(basePlacement) : null;
+    if (mainAxis != null) {
+        var len = mainAxis === "y" ? "height" : "width";
+        switch (variation) {
+            case start:
+                offsets[mainAxis] = offsets[mainAxis] - (reference2[len] / 2 - element[len] / 2);
+                break;
+            case end:
+                offsets[mainAxis] = offsets[mainAxis] + (reference2[len] / 2 - element[len] / 2);
+                break;
+            default:
+        }
+    }
+    return offsets;
 }
 
 // node_modules/@popperjs/core/lib/utils/detectOverflow.js
 function detectOverflow(state, options) {
-  if (options === void 0) {
-    options = {};
-  }
-  var _options = options, _options$placement = _options.placement, placement = _options$placement === void 0 ? state.placement : _options$placement, _options$strategy = _options.strategy, strategy = _options$strategy === void 0 ? state.strategy : _options$strategy, _options$boundary = _options.boundary, boundary = _options$boundary === void 0 ? clippingParents : _options$boundary, _options$rootBoundary = _options.rootBoundary, rootBoundary = _options$rootBoundary === void 0 ? viewport : _options$rootBoundary, _options$elementConte = _options.elementContext, elementContext = _options$elementConte === void 0 ? popper : _options$elementConte, _options$altBoundary = _options.altBoundary, altBoundary = _options$altBoundary === void 0 ? false : _options$altBoundary, _options$padding = _options.padding, padding = _options$padding === void 0 ? 0 : _options$padding;
-  var paddingObject = mergePaddingObject(typeof padding !== "number" ? padding : expandToHashMap(padding, basePlacements));
-  var altContext = elementContext === popper ? reference : popper;
-  var popperRect = state.rects.popper;
-  var element = state.elements[altBoundary ? altContext : elementContext];
-  var clippingClientRect = getClippingRect(isElement(element) ? element : element.contextElement || getDocumentElement(state.elements.popper), boundary, rootBoundary, strategy);
-  var referenceClientRect = getBoundingClientRect(state.elements.reference);
-  var popperOffsets2 = computeOffsets({
-    reference: referenceClientRect,
-    element: popperRect,
-    strategy: "absolute",
-    placement
-  });
-  var popperClientRect = rectToClientRect(Object.assign({}, popperRect, popperOffsets2));
-  var elementClientRect = elementContext === popper ? popperClientRect : referenceClientRect;
-  var overflowOffsets = {
-    top: clippingClientRect.top - elementClientRect.top + paddingObject.top,
-    bottom: elementClientRect.bottom - clippingClientRect.bottom + paddingObject.bottom,
-    left: clippingClientRect.left - elementClientRect.left + paddingObject.left,
-    right: elementClientRect.right - clippingClientRect.right + paddingObject.right
-  };
-  var offsetData = state.modifiersData.offset;
-  if (elementContext === popper && offsetData) {
-    var offset2 = offsetData[placement];
-    Object.keys(overflowOffsets).forEach(function(key) {
-      var multiply = [right, bottom].indexOf(key) >= 0 ? 1 : -1;
-      var axis = [top, bottom].indexOf(key) >= 0 ? "y" : "x";
-      overflowOffsets[key] += offset2[axis] * multiply;
+    if (options === void 0) {
+        options = {};
+    }
+    var _options = options, _options$placement = _options.placement,
+        placement = _options$placement === void 0 ? state.placement : _options$placement,
+        _options$strategy = _options.strategy,
+        strategy = _options$strategy === void 0 ? state.strategy : _options$strategy,
+        _options$boundary = _options.boundary,
+        boundary = _options$boundary === void 0 ? clippingParents : _options$boundary,
+        _options$rootBoundary = _options.rootBoundary,
+        rootBoundary = _options$rootBoundary === void 0 ? viewport : _options$rootBoundary,
+        _options$elementConte = _options.elementContext,
+        elementContext = _options$elementConte === void 0 ? popper : _options$elementConte,
+        _options$altBoundary = _options.altBoundary,
+        altBoundary = _options$altBoundary === void 0 ? false : _options$altBoundary,
+        _options$padding = _options.padding, padding = _options$padding === void 0 ? 0 : _options$padding;
+    var paddingObject = mergePaddingObject(typeof padding !== "number" ? padding : expandToHashMap(padding, basePlacements));
+    var altContext = elementContext === popper ? reference : popper;
+    var popperRect = state.rects.popper;
+    var element = state.elements[altBoundary ? altContext : elementContext];
+    var clippingClientRect = getClippingRect(isElement(element) ? element : element.contextElement || getDocumentElement(state.elements.popper), boundary, rootBoundary, strategy);
+    var referenceClientRect = getBoundingClientRect(state.elements.reference);
+    var popperOffsets2 = computeOffsets({
+        reference: referenceClientRect,
+        element: popperRect,
+        strategy: "absolute",
+        placement
     });
-  }
-  return overflowOffsets;
+    var popperClientRect = rectToClientRect(Object.assign({}, popperRect, popperOffsets2));
+    var elementClientRect = elementContext === popper ? popperClientRect : referenceClientRect;
+    var overflowOffsets = {
+        top: clippingClientRect.top - elementClientRect.top + paddingObject.top,
+        bottom: elementClientRect.bottom - clippingClientRect.bottom + paddingObject.bottom,
+        left: clippingClientRect.left - elementClientRect.left + paddingObject.left,
+        right: elementClientRect.right - clippingClientRect.right + paddingObject.right
+    };
+    var offsetData = state.modifiersData.offset;
+    if (elementContext === popper && offsetData) {
+        var offset2 = offsetData[placement];
+        Object.keys(overflowOffsets).forEach(function (key) {
+            var multiply = [right, bottom].indexOf(key) >= 0 ? 1 : -1;
+            var axis = [top, bottom].indexOf(key) >= 0 ? "y" : "x";
+            overflowOffsets[key] += offset2[axis] * multiply;
+        });
+    }
+    return overflowOffsets;
 }
 
 // node_modules/@popperjs/core/lib/utils/computeAutoPlacement.js
 function computeAutoPlacement(state, options) {
-  if (options === void 0) {
-    options = {};
-  }
-  var _options = options, placement = _options.placement, boundary = _options.boundary, rootBoundary = _options.rootBoundary, padding = _options.padding, flipVariations = _options.flipVariations, _options$allowedAutoP = _options.allowedAutoPlacements, allowedAutoPlacements = _options$allowedAutoP === void 0 ? placements : _options$allowedAutoP;
-  var variation = getVariation(placement);
-  var placements2 = variation ? flipVariations ? variationPlacements : variationPlacements.filter(function(placement2) {
-    return getVariation(placement2) === variation;
-  }) : basePlacements;
-  var allowedPlacements = placements2.filter(function(placement2) {
-    return allowedAutoPlacements.indexOf(placement2) >= 0;
-  });
-  if (allowedPlacements.length === 0) {
-    allowedPlacements = placements2;
-  }
-  var overflows = allowedPlacements.reduce(function(acc, placement2) {
-    acc[placement2] = detectOverflow(state, {
-      placement: placement2,
-      boundary,
-      rootBoundary,
-      padding
-    })[getBasePlacement(placement2)];
-    return acc;
-  }, {});
-  return Object.keys(overflows).sort(function(a, b) {
-    return overflows[a] - overflows[b];
-  });
+    if (options === void 0) {
+        options = {};
+    }
+    var _options = options, placement = _options.placement, boundary = _options.boundary,
+        rootBoundary = _options.rootBoundary, padding = _options.padding, flipVariations = _options.flipVariations,
+        _options$allowedAutoP = _options.allowedAutoPlacements,
+        allowedAutoPlacements = _options$allowedAutoP === void 0 ? placements : _options$allowedAutoP;
+    var variation = getVariation(placement);
+    var placements2 = variation ? flipVariations ? variationPlacements : variationPlacements.filter(function (placement2) {
+        return getVariation(placement2) === variation;
+    }) : basePlacements;
+    var allowedPlacements = placements2.filter(function (placement2) {
+        return allowedAutoPlacements.indexOf(placement2) >= 0;
+    });
+    if (allowedPlacements.length === 0) {
+        allowedPlacements = placements2;
+    }
+    var overflows = allowedPlacements.reduce(function (acc, placement2) {
+        acc[placement2] = detectOverflow(state, {
+            placement: placement2,
+            boundary,
+            rootBoundary,
+            padding
+        })[getBasePlacement(placement2)];
+        return acc;
+    }, {});
+    return Object.keys(overflows).sort(function (a, b) {
+        return overflows[a] - overflows[b];
+    });
 }
 
 // node_modules/@popperjs/core/lib/modifiers/flip.js
 function getExpandedFallbackPlacements(placement) {
-  if (getBasePlacement(placement) === auto) {
-    return [];
-  }
-  var oppositePlacement = getOppositePlacement(placement);
-  return [getOppositeVariationPlacement(placement), oppositePlacement, getOppositeVariationPlacement(oppositePlacement)];
+    if (getBasePlacement(placement) === auto) {
+        return [];
+    }
+    var oppositePlacement = getOppositePlacement(placement);
+    return [getOppositeVariationPlacement(placement), oppositePlacement, getOppositeVariationPlacement(oppositePlacement)];
 }
+
 function flip(_ref) {
-  var state = _ref.state, options = _ref.options, name = _ref.name;
-  if (state.modifiersData[name]._skip) {
-    return;
-  }
-  var _options$mainAxis = options.mainAxis, checkMainAxis = _options$mainAxis === void 0 ? true : _options$mainAxis, _options$altAxis = options.altAxis, checkAltAxis = _options$altAxis === void 0 ? true : _options$altAxis, specifiedFallbackPlacements = options.fallbackPlacements, padding = options.padding, boundary = options.boundary, rootBoundary = options.rootBoundary, altBoundary = options.altBoundary, _options$flipVariatio = options.flipVariations, flipVariations = _options$flipVariatio === void 0 ? true : _options$flipVariatio, allowedAutoPlacements = options.allowedAutoPlacements;
-  var preferredPlacement = state.options.placement;
-  var basePlacement = getBasePlacement(preferredPlacement);
-  var isBasePlacement = basePlacement === preferredPlacement;
-  var fallbackPlacements = specifiedFallbackPlacements || (isBasePlacement || !flipVariations ? [getOppositePlacement(preferredPlacement)] : getExpandedFallbackPlacements(preferredPlacement));
-  var placements2 = [preferredPlacement].concat(fallbackPlacements).reduce(function(acc, placement2) {
-    return acc.concat(getBasePlacement(placement2) === auto ? computeAutoPlacement(state, {
-      placement: placement2,
-      boundary,
-      rootBoundary,
-      padding,
-      flipVariations,
-      allowedAutoPlacements
-    }) : placement2);
-  }, []);
-  var referenceRect = state.rects.reference;
-  var popperRect = state.rects.popper;
-  var checksMap = new Map();
-  var makeFallbackChecks = true;
-  var firstFittingPlacement = placements2[0];
-  for (var i = 0; i < placements2.length; i++) {
-    var placement = placements2[i];
-    var _basePlacement = getBasePlacement(placement);
-    var isStartVariation = getVariation(placement) === start;
-    var isVertical = [top, bottom].indexOf(_basePlacement) >= 0;
-    var len = isVertical ? "width" : "height";
-    var overflow = detectOverflow(state, {
-      placement,
-      boundary,
-      rootBoundary,
-      altBoundary,
-      padding
-    });
-    var mainVariationSide = isVertical ? isStartVariation ? right : left : isStartVariation ? bottom : top;
-    if (referenceRect[len] > popperRect[len]) {
-      mainVariationSide = getOppositePlacement(mainVariationSide);
+    var state = _ref.state, options = _ref.options, name = _ref.name;
+    if (state.modifiersData[name]._skip) {
+        return;
     }
-    var altVariationSide = getOppositePlacement(mainVariationSide);
-    var checks = [];
-    if (checkMainAxis) {
-      checks.push(overflow[_basePlacement] <= 0);
-    }
-    if (checkAltAxis) {
-      checks.push(overflow[mainVariationSide] <= 0, overflow[altVariationSide] <= 0);
-    }
-    if (checks.every(function(check) {
-      return check;
-    })) {
-      firstFittingPlacement = placement;
-      makeFallbackChecks = false;
-      break;
-    }
-    checksMap.set(placement, checks);
-  }
-  if (makeFallbackChecks) {
-    var numberOfChecks = flipVariations ? 3 : 1;
-    var _loop = function _loop2(_i2) {
-      var fittingPlacement = placements2.find(function(placement2) {
-        var checks2 = checksMap.get(placement2);
-        if (checks2) {
-          return checks2.slice(0, _i2).every(function(check) {
-            return check;
-          });
+    var _options$mainAxis = options.mainAxis, checkMainAxis = _options$mainAxis === void 0 ? true : _options$mainAxis,
+        _options$altAxis = options.altAxis, checkAltAxis = _options$altAxis === void 0 ? true : _options$altAxis,
+        specifiedFallbackPlacements = options.fallbackPlacements, padding = options.padding,
+        boundary = options.boundary, rootBoundary = options.rootBoundary, altBoundary = options.altBoundary,
+        _options$flipVariatio = options.flipVariations,
+        flipVariations = _options$flipVariatio === void 0 ? true : _options$flipVariatio,
+        allowedAutoPlacements = options.allowedAutoPlacements;
+    var preferredPlacement = state.options.placement;
+    var basePlacement = getBasePlacement(preferredPlacement);
+    var isBasePlacement = basePlacement === preferredPlacement;
+    var fallbackPlacements = specifiedFallbackPlacements || (isBasePlacement || !flipVariations ? [getOppositePlacement(preferredPlacement)] : getExpandedFallbackPlacements(preferredPlacement));
+    var placements2 = [preferredPlacement].concat(fallbackPlacements).reduce(function (acc, placement2) {
+        return acc.concat(getBasePlacement(placement2) === auto ? computeAutoPlacement(state, {
+            placement: placement2,
+            boundary,
+            rootBoundary,
+            padding,
+            flipVariations,
+            allowedAutoPlacements
+        }) : placement2);
+    }, []);
+    var referenceRect = state.rects.reference;
+    var popperRect = state.rects.popper;
+    var checksMap = new Map();
+    var makeFallbackChecks = true;
+    var firstFittingPlacement = placements2[0];
+    for (var i = 0; i < placements2.length; i++) {
+        var placement = placements2[i];
+        var _basePlacement = getBasePlacement(placement);
+        var isStartVariation = getVariation(placement) === start;
+        var isVertical = [top, bottom].indexOf(_basePlacement) >= 0;
+        var len = isVertical ? "width" : "height";
+        var overflow = detectOverflow(state, {
+            placement,
+            boundary,
+            rootBoundary,
+            altBoundary,
+            padding
+        });
+        var mainVariationSide = isVertical ? isStartVariation ? right : left : isStartVariation ? bottom : top;
+        if (referenceRect[len] > popperRect[len]) {
+            mainVariationSide = getOppositePlacement(mainVariationSide);
         }
-      });
-      if (fittingPlacement) {
-        firstFittingPlacement = fittingPlacement;
-        return "break";
-      }
-    };
-    for (var _i = numberOfChecks; _i > 0; _i--) {
-      var _ret = _loop(_i);
-      if (_ret === "break")
-        break;
+        var altVariationSide = getOppositePlacement(mainVariationSide);
+        var checks = [];
+        if (checkMainAxis) {
+            checks.push(overflow[_basePlacement] <= 0);
+        }
+        if (checkAltAxis) {
+            checks.push(overflow[mainVariationSide] <= 0, overflow[altVariationSide] <= 0);
+        }
+        if (checks.every(function (check) {
+            return check;
+        })) {
+            firstFittingPlacement = placement;
+            makeFallbackChecks = false;
+            break;
+        }
+        checksMap.set(placement, checks);
     }
-  }
-  if (state.placement !== firstFittingPlacement) {
-    state.modifiersData[name]._skip = true;
-    state.placement = firstFittingPlacement;
-    state.reset = true;
-  }
+    if (makeFallbackChecks) {
+        var numberOfChecks = flipVariations ? 3 : 1;
+        var _loop = function _loop2(_i2) {
+            var fittingPlacement = placements2.find(function (placement2) {
+                var checks2 = checksMap.get(placement2);
+                if (checks2) {
+                    return checks2.slice(0, _i2).every(function (check) {
+                        return check;
+                    });
+                }
+            });
+            if (fittingPlacement) {
+                firstFittingPlacement = fittingPlacement;
+                return "break";
+            }
+        };
+        for (var _i = numberOfChecks; _i > 0; _i--) {
+            var _ret = _loop(_i);
+            if (_ret === "break")
+                break;
+        }
+    }
+    if (state.placement !== firstFittingPlacement) {
+        state.modifiersData[name]._skip = true;
+        state.placement = firstFittingPlacement;
+        state.reset = true;
+    }
 }
+
 var flip_default = {
-  name: "flip",
-  enabled: true,
-  phase: "main",
-  fn: flip,
-  requiresIfExists: ["offset"],
-  data: {
-    _skip: false
-  }
+    name: "flip",
+    enabled: true,
+    phase: "main",
+    fn: flip,
+    requiresIfExists: ["offset"],
+    data: {
+        _skip: false
+    }
 };
 
 // node_modules/@popperjs/core/lib/modifiers/hide.js
 function getSideOffsets(overflow, rect, preventedOffsets) {
-  if (preventedOffsets === void 0) {
-    preventedOffsets = {
-      x: 0,
-      y: 0
+    if (preventedOffsets === void 0) {
+        preventedOffsets = {
+            x: 0,
+            y: 0
+        };
+    }
+    return {
+        top: overflow.top - rect.height - preventedOffsets.y,
+        right: overflow.right - rect.width + preventedOffsets.x,
+        bottom: overflow.bottom - rect.height + preventedOffsets.y,
+        left: overflow.left - rect.width - preventedOffsets.x
     };
-  }
-  return {
-    top: overflow.top - rect.height - preventedOffsets.y,
-    right: overflow.right - rect.width + preventedOffsets.x,
-    bottom: overflow.bottom - rect.height + preventedOffsets.y,
-    left: overflow.left - rect.width - preventedOffsets.x
-  };
 }
+
 function isAnySideFullyClipped(overflow) {
-  return [top, right, bottom, left].some(function(side) {
-    return overflow[side] >= 0;
-  });
+    return [top, right, bottom, left].some(function (side) {
+        return overflow[side] >= 0;
+    });
 }
+
 function hide(_ref) {
-  var state = _ref.state, name = _ref.name;
-  var referenceRect = state.rects.reference;
-  var popperRect = state.rects.popper;
-  var preventedOffsets = state.modifiersData.preventOverflow;
-  var referenceOverflow = detectOverflow(state, {
-    elementContext: "reference"
-  });
-  var popperAltOverflow = detectOverflow(state, {
-    altBoundary: true
-  });
-  var referenceClippingOffsets = getSideOffsets(referenceOverflow, referenceRect);
-  var popperEscapeOffsets = getSideOffsets(popperAltOverflow, popperRect, preventedOffsets);
-  var isReferenceHidden = isAnySideFullyClipped(referenceClippingOffsets);
-  var hasPopperEscaped = isAnySideFullyClipped(popperEscapeOffsets);
-  state.modifiersData[name] = {
-    referenceClippingOffsets,
-    popperEscapeOffsets,
-    isReferenceHidden,
-    hasPopperEscaped
-  };
-  state.attributes.popper = Object.assign({}, state.attributes.popper, {
-    "data-popper-reference-hidden": isReferenceHidden,
-    "data-popper-escaped": hasPopperEscaped
-  });
+    var state = _ref.state, name = _ref.name;
+    var referenceRect = state.rects.reference;
+    var popperRect = state.rects.popper;
+    var preventedOffsets = state.modifiersData.preventOverflow;
+    var referenceOverflow = detectOverflow(state, {
+        elementContext: "reference"
+    });
+    var popperAltOverflow = detectOverflow(state, {
+        altBoundary: true
+    });
+    var referenceClippingOffsets = getSideOffsets(referenceOverflow, referenceRect);
+    var popperEscapeOffsets = getSideOffsets(popperAltOverflow, popperRect, preventedOffsets);
+    var isReferenceHidden = isAnySideFullyClipped(referenceClippingOffsets);
+    var hasPopperEscaped = isAnySideFullyClipped(popperEscapeOffsets);
+    state.modifiersData[name] = {
+        referenceClippingOffsets,
+        popperEscapeOffsets,
+        isReferenceHidden,
+        hasPopperEscaped
+    };
+    state.attributes.popper = Object.assign({}, state.attributes.popper, {
+        "data-popper-reference-hidden": isReferenceHidden,
+        "data-popper-escaped": hasPopperEscaped
+    });
 }
+
 var hide_default = {
-  name: "hide",
-  enabled: true,
-  phase: "main",
-  requiresIfExists: ["preventOverflow"],
-  fn: hide
+    name: "hide",
+    enabled: true,
+    phase: "main",
+    requiresIfExists: ["preventOverflow"],
+    fn: hide
 };
 
 // node_modules/@popperjs/core/lib/modifiers/offset.js
 function distanceAndSkiddingToXY(placement, rects, offset2) {
-  var basePlacement = getBasePlacement(placement);
-  var invertDistance = [left, top].indexOf(basePlacement) >= 0 ? -1 : 1;
-  var _ref = typeof offset2 === "function" ? offset2(Object.assign({}, rects, {
-    placement
-  })) : offset2, skidding = _ref[0], distance = _ref[1];
-  skidding = skidding || 0;
-  distance = (distance || 0) * invertDistance;
-  return [left, right].indexOf(basePlacement) >= 0 ? {
-    x: distance,
-    y: skidding
-  } : {
-    x: skidding,
-    y: distance
-  };
+    var basePlacement = getBasePlacement(placement);
+    var invertDistance = [left, top].indexOf(basePlacement) >= 0 ? -1 : 1;
+    var _ref = typeof offset2 === "function" ? offset2(Object.assign({}, rects, {
+        placement
+    })) : offset2, skidding = _ref[0], distance = _ref[1];
+    skidding = skidding || 0;
+    distance = (distance || 0) * invertDistance;
+    return [left, right].indexOf(basePlacement) >= 0 ? {
+        x: distance,
+        y: skidding
+    } : {
+        x: skidding,
+        y: distance
+    };
 }
+
 function offset(_ref2) {
-  var state = _ref2.state, options = _ref2.options, name = _ref2.name;
-  var _options$offset = options.offset, offset2 = _options$offset === void 0 ? [0, 0] : _options$offset;
-  var data = placements.reduce(function(acc, placement) {
-    acc[placement] = distanceAndSkiddingToXY(placement, state.rects, offset2);
-    return acc;
-  }, {});
-  var _data$state$placement = data[state.placement], x = _data$state$placement.x, y = _data$state$placement.y;
-  if (state.modifiersData.popperOffsets != null) {
-    state.modifiersData.popperOffsets.x += x;
-    state.modifiersData.popperOffsets.y += y;
-  }
-  state.modifiersData[name] = data;
+    var state = _ref2.state, options = _ref2.options, name = _ref2.name;
+    var _options$offset = options.offset, offset2 = _options$offset === void 0 ? [0, 0] : _options$offset;
+    var data = placements.reduce(function (acc, placement) {
+        acc[placement] = distanceAndSkiddingToXY(placement, state.rects, offset2);
+        return acc;
+    }, {});
+    var _data$state$placement = data[state.placement], x = _data$state$placement.x, y = _data$state$placement.y;
+    if (state.modifiersData.popperOffsets != null) {
+        state.modifiersData.popperOffsets.x += x;
+        state.modifiersData.popperOffsets.y += y;
+    }
+    state.modifiersData[name] = data;
 }
+
 var offset_default = {
-  name: "offset",
-  enabled: true,
-  phase: "main",
-  requires: ["popperOffsets"],
-  fn: offset
+    name: "offset",
+    enabled: true,
+    phase: "main",
+    requires: ["popperOffsets"],
+    fn: offset
 };
 
 // node_modules/@popperjs/core/lib/modifiers/popperOffsets.js
 function popperOffsets(_ref) {
-  var state = _ref.state, name = _ref.name;
-  state.modifiersData[name] = computeOffsets({
-    reference: state.rects.reference,
-    element: state.rects.popper,
-    strategy: "absolute",
-    placement: state.placement
-  });
+    var state = _ref.state, name = _ref.name;
+    state.modifiersData[name] = computeOffsets({
+        reference: state.rects.reference,
+        element: state.rects.popper,
+        strategy: "absolute",
+        placement: state.placement
+    });
 }
+
 var popperOffsets_default = {
-  name: "popperOffsets",
-  enabled: true,
-  phase: "read",
-  fn: popperOffsets,
-  data: {}
+    name: "popperOffsets",
+    enabled: true,
+    phase: "read",
+    fn: popperOffsets,
+    data: {}
 };
 
 // node_modules/@popperjs/core/lib/utils/getAltAxis.js
 function getAltAxis(axis) {
-  return axis === "x" ? "y" : "x";
+    return axis === "x" ? "y" : "x";
 }
 
 // node_modules/@popperjs/core/lib/modifiers/preventOverflow.js
 function preventOverflow(_ref) {
-  var state = _ref.state, options = _ref.options, name = _ref.name;
-  var _options$mainAxis = options.mainAxis, checkMainAxis = _options$mainAxis === void 0 ? true : _options$mainAxis, _options$altAxis = options.altAxis, checkAltAxis = _options$altAxis === void 0 ? false : _options$altAxis, boundary = options.boundary, rootBoundary = options.rootBoundary, altBoundary = options.altBoundary, padding = options.padding, _options$tether = options.tether, tether = _options$tether === void 0 ? true : _options$tether, _options$tetherOffset = options.tetherOffset, tetherOffset = _options$tetherOffset === void 0 ? 0 : _options$tetherOffset;
-  var overflow = detectOverflow(state, {
-    boundary,
-    rootBoundary,
-    padding,
-    altBoundary
-  });
-  var basePlacement = getBasePlacement(state.placement);
-  var variation = getVariation(state.placement);
-  var isBasePlacement = !variation;
-  var mainAxis = getMainAxisFromPlacement(basePlacement);
-  var altAxis = getAltAxis(mainAxis);
-  var popperOffsets2 = state.modifiersData.popperOffsets;
-  var referenceRect = state.rects.reference;
-  var popperRect = state.rects.popper;
-  var tetherOffsetValue = typeof tetherOffset === "function" ? tetherOffset(Object.assign({}, state.rects, {
-    placement: state.placement
-  })) : tetherOffset;
-  var normalizedTetherOffsetValue = typeof tetherOffsetValue === "number" ? {
-    mainAxis: tetherOffsetValue,
-    altAxis: tetherOffsetValue
-  } : Object.assign({
-    mainAxis: 0,
-    altAxis: 0
-  }, tetherOffsetValue);
-  var offsetModifierState = state.modifiersData.offset ? state.modifiersData.offset[state.placement] : null;
-  var data = {
-    x: 0,
-    y: 0
-  };
-  if (!popperOffsets2) {
-    return;
-  }
-  if (checkMainAxis) {
-    var _offsetModifierState$;
-    var mainSide = mainAxis === "y" ? top : left;
-    var altSide = mainAxis === "y" ? bottom : right;
-    var len = mainAxis === "y" ? "height" : "width";
-    var offset2 = popperOffsets2[mainAxis];
-    var min2 = offset2 + overflow[mainSide];
-    var max2 = offset2 - overflow[altSide];
-    var additive = tether ? -popperRect[len] / 2 : 0;
-    var minLen = variation === start ? referenceRect[len] : popperRect[len];
-    var maxLen = variation === start ? -popperRect[len] : -referenceRect[len];
-    var arrowElement = state.elements.arrow;
-    var arrowRect = tether && arrowElement ? getLayoutRect(arrowElement) : {
-      width: 0,
-      height: 0
+    var state = _ref.state, options = _ref.options, name = _ref.name;
+    var _options$mainAxis = options.mainAxis, checkMainAxis = _options$mainAxis === void 0 ? true : _options$mainAxis,
+        _options$altAxis = options.altAxis, checkAltAxis = _options$altAxis === void 0 ? false : _options$altAxis,
+        boundary = options.boundary, rootBoundary = options.rootBoundary, altBoundary = options.altBoundary,
+        padding = options.padding, _options$tether = options.tether,
+        tether = _options$tether === void 0 ? true : _options$tether, _options$tetherOffset = options.tetherOffset,
+        tetherOffset = _options$tetherOffset === void 0 ? 0 : _options$tetherOffset;
+    var overflow = detectOverflow(state, {
+        boundary,
+        rootBoundary,
+        padding,
+        altBoundary
+    });
+    var basePlacement = getBasePlacement(state.placement);
+    var variation = getVariation(state.placement);
+    var isBasePlacement = !variation;
+    var mainAxis = getMainAxisFromPlacement(basePlacement);
+    var altAxis = getAltAxis(mainAxis);
+    var popperOffsets2 = state.modifiersData.popperOffsets;
+    var referenceRect = state.rects.reference;
+    var popperRect = state.rects.popper;
+    var tetherOffsetValue = typeof tetherOffset === "function" ? tetherOffset(Object.assign({}, state.rects, {
+        placement: state.placement
+    })) : tetherOffset;
+    var normalizedTetherOffsetValue = typeof tetherOffsetValue === "number" ? {
+        mainAxis: tetherOffsetValue,
+        altAxis: tetherOffsetValue
+    } : Object.assign({
+        mainAxis: 0,
+        altAxis: 0
+    }, tetherOffsetValue);
+    var offsetModifierState = state.modifiersData.offset ? state.modifiersData.offset[state.placement] : null;
+    var data = {
+        x: 0,
+        y: 0
     };
-    var arrowPaddingObject = state.modifiersData["arrow#persistent"] ? state.modifiersData["arrow#persistent"].padding : getFreshSideObject();
-    var arrowPaddingMin = arrowPaddingObject[mainSide];
-    var arrowPaddingMax = arrowPaddingObject[altSide];
-    var arrowLen = within(0, referenceRect[len], arrowRect[len]);
-    var minOffset = isBasePlacement ? referenceRect[len] / 2 - additive - arrowLen - arrowPaddingMin - normalizedTetherOffsetValue.mainAxis : minLen - arrowLen - arrowPaddingMin - normalizedTetherOffsetValue.mainAxis;
-    var maxOffset = isBasePlacement ? -referenceRect[len] / 2 + additive + arrowLen + arrowPaddingMax + normalizedTetherOffsetValue.mainAxis : maxLen + arrowLen + arrowPaddingMax + normalizedTetherOffsetValue.mainAxis;
-    var arrowOffsetParent = state.elements.arrow && getOffsetParent(state.elements.arrow);
-    var clientOffset = arrowOffsetParent ? mainAxis === "y" ? arrowOffsetParent.clientTop || 0 : arrowOffsetParent.clientLeft || 0 : 0;
-    var offsetModifierValue = (_offsetModifierState$ = offsetModifierState == null ? void 0 : offsetModifierState[mainAxis]) != null ? _offsetModifierState$ : 0;
-    var tetherMin = offset2 + minOffset - offsetModifierValue - clientOffset;
-    var tetherMax = offset2 + maxOffset - offsetModifierValue;
-    var preventedOffset = within(tether ? min(min2, tetherMin) : min2, offset2, tether ? max(max2, tetherMax) : max2);
-    popperOffsets2[mainAxis] = preventedOffset;
-    data[mainAxis] = preventedOffset - offset2;
-  }
-  if (checkAltAxis) {
-    var _offsetModifierState$2;
-    var _mainSide = mainAxis === "x" ? top : left;
-    var _altSide = mainAxis === "x" ? bottom : right;
-    var _offset = popperOffsets2[altAxis];
-    var _len = altAxis === "y" ? "height" : "width";
-    var _min = _offset + overflow[_mainSide];
-    var _max = _offset - overflow[_altSide];
-    var isOriginSide = [top, left].indexOf(basePlacement) !== -1;
-    var _offsetModifierValue = (_offsetModifierState$2 = offsetModifierState == null ? void 0 : offsetModifierState[altAxis]) != null ? _offsetModifierState$2 : 0;
-    var _tetherMin = isOriginSide ? _min : _offset - referenceRect[_len] - popperRect[_len] - _offsetModifierValue + normalizedTetherOffsetValue.altAxis;
-    var _tetherMax = isOriginSide ? _offset + referenceRect[_len] + popperRect[_len] - _offsetModifierValue - normalizedTetherOffsetValue.altAxis : _max;
-    var _preventedOffset = tether && isOriginSide ? withinMaxClamp(_tetherMin, _offset, _tetherMax) : within(tether ? _tetherMin : _min, _offset, tether ? _tetherMax : _max);
-    popperOffsets2[altAxis] = _preventedOffset;
-    data[altAxis] = _preventedOffset - _offset;
-  }
-  state.modifiersData[name] = data;
+    if (!popperOffsets2) {
+        return;
+    }
+    if (checkMainAxis) {
+        var _offsetModifierState$;
+        var mainSide = mainAxis === "y" ? top : left;
+        var altSide = mainAxis === "y" ? bottom : right;
+        var len = mainAxis === "y" ? "height" : "width";
+        var offset2 = popperOffsets2[mainAxis];
+        var min2 = offset2 + overflow[mainSide];
+        var max2 = offset2 - overflow[altSide];
+        var additive = tether ? -popperRect[len] / 2 : 0;
+        var minLen = variation === start ? referenceRect[len] : popperRect[len];
+        var maxLen = variation === start ? -popperRect[len] : -referenceRect[len];
+        var arrowElement = state.elements.arrow;
+        var arrowRect = tether && arrowElement ? getLayoutRect(arrowElement) : {
+            width: 0,
+            height: 0
+        };
+        var arrowPaddingObject = state.modifiersData["arrow#persistent"] ? state.modifiersData["arrow#persistent"].padding : getFreshSideObject();
+        var arrowPaddingMin = arrowPaddingObject[mainSide];
+        var arrowPaddingMax = arrowPaddingObject[altSide];
+        var arrowLen = within(0, referenceRect[len], arrowRect[len]);
+        var minOffset = isBasePlacement ? referenceRect[len] / 2 - additive - arrowLen - arrowPaddingMin - normalizedTetherOffsetValue.mainAxis : minLen - arrowLen - arrowPaddingMin - normalizedTetherOffsetValue.mainAxis;
+        var maxOffset = isBasePlacement ? -referenceRect[len] / 2 + additive + arrowLen + arrowPaddingMax + normalizedTetherOffsetValue.mainAxis : maxLen + arrowLen + arrowPaddingMax + normalizedTetherOffsetValue.mainAxis;
+        var arrowOffsetParent = state.elements.arrow && getOffsetParent(state.elements.arrow);
+        var clientOffset = arrowOffsetParent ? mainAxis === "y" ? arrowOffsetParent.clientTop || 0 : arrowOffsetParent.clientLeft || 0 : 0;
+        var offsetModifierValue = (_offsetModifierState$ = offsetModifierState == null ? void 0 : offsetModifierState[mainAxis]) != null ? _offsetModifierState$ : 0;
+        var tetherMin = offset2 + minOffset - offsetModifierValue - clientOffset;
+        var tetherMax = offset2 + maxOffset - offsetModifierValue;
+        var preventedOffset = within(tether ? min(min2, tetherMin) : min2, offset2, tether ? max(max2, tetherMax) : max2);
+        popperOffsets2[mainAxis] = preventedOffset;
+        data[mainAxis] = preventedOffset - offset2;
+    }
+    if (checkAltAxis) {
+        var _offsetModifierState$2;
+        var _mainSide = mainAxis === "x" ? top : left;
+        var _altSide = mainAxis === "x" ? bottom : right;
+        var _offset = popperOffsets2[altAxis];
+        var _len = altAxis === "y" ? "height" : "width";
+        var _min = _offset + overflow[_mainSide];
+        var _max = _offset - overflow[_altSide];
+        var isOriginSide = [top, left].indexOf(basePlacement) !== -1;
+        var _offsetModifierValue = (_offsetModifierState$2 = offsetModifierState == null ? void 0 : offsetModifierState[altAxis]) != null ? _offsetModifierState$2 : 0;
+        var _tetherMin = isOriginSide ? _min : _offset - referenceRect[_len] - popperRect[_len] - _offsetModifierValue + normalizedTetherOffsetValue.altAxis;
+        var _tetherMax = isOriginSide ? _offset + referenceRect[_len] + popperRect[_len] - _offsetModifierValue - normalizedTetherOffsetValue.altAxis : _max;
+        var _preventedOffset = tether && isOriginSide ? withinMaxClamp(_tetherMin, _offset, _tetherMax) : within(tether ? _tetherMin : _min, _offset, tether ? _tetherMax : _max);
+        popperOffsets2[altAxis] = _preventedOffset;
+        data[altAxis] = _preventedOffset - _offset;
+    }
+    state.modifiersData[name] = data;
 }
+
 var preventOverflow_default = {
-  name: "preventOverflow",
-  enabled: true,
-  phase: "main",
-  fn: preventOverflow,
-  requiresIfExists: ["offset"]
+    name: "preventOverflow",
+    enabled: true,
+    phase: "main",
+    fn: preventOverflow,
+    requiresIfExists: ["offset"]
 };
 
 // node_modules/@popperjs/core/lib/dom-utils/getHTMLElementScroll.js
 function getHTMLElementScroll(element) {
-  return {
-    scrollLeft: element.scrollLeft,
-    scrollTop: element.scrollTop
-  };
+    return {
+        scrollLeft: element.scrollLeft,
+        scrollTop: element.scrollTop
+    };
 }
 
 // node_modules/@popperjs/core/lib/dom-utils/getNodeScroll.js
 function getNodeScroll(node) {
-  if (node === getWindow(node) || !isHTMLElement(node)) {
-    return getWindowScroll(node);
-  } else {
-    return getHTMLElementScroll(node);
-  }
+    if (node === getWindow(node) || !isHTMLElement(node)) {
+        return getWindowScroll(node);
+    } else {
+        return getHTMLElementScroll(node);
+    }
 }
 
 // node_modules/@popperjs/core/lib/dom-utils/getCompositeRect.js
 function isElementScaled(element) {
-  var rect = element.getBoundingClientRect();
-  var scaleX = round(rect.width) / element.offsetWidth || 1;
-  var scaleY = round(rect.height) / element.offsetHeight || 1;
-  return scaleX !== 1 || scaleY !== 1;
+    var rect = element.getBoundingClientRect();
+    var scaleX = round(rect.width) / element.offsetWidth || 1;
+    var scaleY = round(rect.height) / element.offsetHeight || 1;
+    return scaleX !== 1 || scaleY !== 1;
 }
+
 function getCompositeRect(elementOrVirtualElement, offsetParent, isFixed) {
-  if (isFixed === void 0) {
-    isFixed = false;
-  }
-  var isOffsetParentAnElement = isHTMLElement(offsetParent);
-  var offsetParentIsScaled = isHTMLElement(offsetParent) && isElementScaled(offsetParent);
-  var documentElement = getDocumentElement(offsetParent);
-  var rect = getBoundingClientRect(elementOrVirtualElement, offsetParentIsScaled, isFixed);
-  var scroll = {
-    scrollLeft: 0,
-    scrollTop: 0
-  };
-  var offsets = {
-    x: 0,
-    y: 0
-  };
-  if (isOffsetParentAnElement || !isOffsetParentAnElement && !isFixed) {
-    if (getNodeName(offsetParent) !== "body" || isScrollParent(documentElement)) {
-      scroll = getNodeScroll(offsetParent);
+    if (isFixed === void 0) {
+        isFixed = false;
     }
-    if (isHTMLElement(offsetParent)) {
-      offsets = getBoundingClientRect(offsetParent, true);
-      offsets.x += offsetParent.clientLeft;
-      offsets.y += offsetParent.clientTop;
-    } else if (documentElement) {
-      offsets.x = getWindowScrollBarX(documentElement);
+    var isOffsetParentAnElement = isHTMLElement(offsetParent);
+    var offsetParentIsScaled = isHTMLElement(offsetParent) && isElementScaled(offsetParent);
+    var documentElement = getDocumentElement(offsetParent);
+    var rect = getBoundingClientRect(elementOrVirtualElement, offsetParentIsScaled, isFixed);
+    var scroll = {
+        scrollLeft: 0,
+        scrollTop: 0
+    };
+    var offsets = {
+        x: 0,
+        y: 0
+    };
+    if (isOffsetParentAnElement || !isOffsetParentAnElement && !isFixed) {
+        if (getNodeName(offsetParent) !== "body" || isScrollParent(documentElement)) {
+            scroll = getNodeScroll(offsetParent);
+        }
+        if (isHTMLElement(offsetParent)) {
+            offsets = getBoundingClientRect(offsetParent, true);
+            offsets.x += offsetParent.clientLeft;
+            offsets.y += offsetParent.clientTop;
+        } else if (documentElement) {
+            offsets.x = getWindowScrollBarX(documentElement);
+        }
     }
-  }
-  return {
-    x: rect.left + scroll.scrollLeft - offsets.x,
-    y: rect.top + scroll.scrollTop - offsets.y,
-    width: rect.width,
-    height: rect.height
-  };
+    return {
+        x: rect.left + scroll.scrollLeft - offsets.x,
+        y: rect.top + scroll.scrollTop - offsets.y,
+        width: rect.width,
+        height: rect.height
+    };
 }
 
 // node_modules/@popperjs/core/lib/utils/orderModifiers.js
 function order(modifiers) {
-  var map = new Map();
-  var visited = new Set();
-  var result = [];
-  modifiers.forEach(function(modifier) {
-    map.set(modifier.name, modifier);
-  });
-  function sort(modifier) {
-    visited.add(modifier.name);
-    var requires = [].concat(modifier.requires || [], modifier.requiresIfExists || []);
-    requires.forEach(function(dep) {
-      if (!visited.has(dep)) {
-        var depModifier = map.get(dep);
-        if (depModifier) {
-          sort(depModifier);
-        }
-      }
+    var map = new Map();
+    var visited = new Set();
+    var result = [];
+    modifiers.forEach(function (modifier) {
+        map.set(modifier.name, modifier);
     });
-    result.push(modifier);
-  }
-  modifiers.forEach(function(modifier) {
-    if (!visited.has(modifier.name)) {
-      sort(modifier);
+
+    function sort(modifier) {
+        visited.add(modifier.name);
+        var requires = [].concat(modifier.requires || [], modifier.requiresIfExists || []);
+        requires.forEach(function (dep) {
+            if (!visited.has(dep)) {
+                var depModifier = map.get(dep);
+                if (depModifier) {
+                    sort(depModifier);
+                }
+            }
+        });
+        result.push(modifier);
     }
-  });
-  return result;
+
+    modifiers.forEach(function (modifier) {
+        if (!visited.has(modifier.name)) {
+            sort(modifier);
+        }
+    });
+    return result;
 }
+
 function orderModifiers(modifiers) {
-  var orderedModifiers = order(modifiers);
-  return modifierPhases.reduce(function(acc, phase) {
-    return acc.concat(orderedModifiers.filter(function(modifier) {
-      return modifier.phase === phase;
-    }));
-  }, []);
+    var orderedModifiers = order(modifiers);
+    return modifierPhases.reduce(function (acc, phase) {
+        return acc.concat(orderedModifiers.filter(function (modifier) {
+            return modifier.phase === phase;
+        }));
+    }, []);
 }
 
 // node_modules/@popperjs/core/lib/utils/debounce.js
 function debounce(fn2) {
-  var pending;
-  return function() {
-    if (!pending) {
-      pending = new Promise(function(resolve) {
-        Promise.resolve().then(function() {
-          pending = void 0;
-          resolve(fn2());
-        });
-      });
-    }
-    return pending;
-  };
+    var pending;
+    return function () {
+        if (!pending) {
+            pending = new Promise(function (resolve) {
+                Promise.resolve().then(function () {
+                    pending = void 0;
+                    resolve(fn2());
+                });
+            });
+        }
+        return pending;
+    };
 }
 
 // node_modules/@popperjs/core/lib/utils/mergeByName.js
 function mergeByName(modifiers) {
-  var merged = modifiers.reduce(function(merged2, current) {
-    var existing = merged2[current.name];
-    merged2[current.name] = existing ? Object.assign({}, existing, current, {
-      options: Object.assign({}, existing.options, current.options),
-      data: Object.assign({}, existing.data, current.data)
-    }) : current;
-    return merged2;
-  }, {});
-  return Object.keys(merged).map(function(key) {
-    return merged[key];
-  });
+    var merged = modifiers.reduce(function (merged2, current) {
+        var existing = merged2[current.name];
+        merged2[current.name] = existing ? Object.assign({}, existing, current, {
+            options: Object.assign({}, existing.options, current.options),
+            data: Object.assign({}, existing.data, current.data)
+        }) : current;
+        return merged2;
+    }, {});
+    return Object.keys(merged).map(function (key) {
+        return merged[key];
+    });
 }
 
 // node_modules/@popperjs/core/lib/createPopper.js
 var DEFAULT_OPTIONS = {
-  placement: "bottom",
-  modifiers: [],
-  strategy: "absolute"
+    placement: "bottom",
+    modifiers: [],
+    strategy: "absolute"
 };
+
 function areValidElements() {
-  for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-    args[_key] = arguments[_key];
-  }
-  return !args.some(function(element) {
-    return !(element && typeof element.getBoundingClientRect === "function");
-  });
-}
-function popperGenerator(generatorOptions) {
-  if (generatorOptions === void 0) {
-    generatorOptions = {};
-  }
-  var _generatorOptions = generatorOptions, _generatorOptions$def = _generatorOptions.defaultModifiers, defaultModifiers2 = _generatorOptions$def === void 0 ? [] : _generatorOptions$def, _generatorOptions$def2 = _generatorOptions.defaultOptions, defaultOptions = _generatorOptions$def2 === void 0 ? DEFAULT_OPTIONS : _generatorOptions$def2;
-  return function createPopper2(reference2, popper2, options) {
-    if (options === void 0) {
-      options = defaultOptions;
+    for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
     }
-    var state = {
-      placement: "bottom",
-      orderedModifiers: [],
-      options: Object.assign({}, DEFAULT_OPTIONS, defaultOptions),
-      modifiersData: {},
-      elements: {
-        reference: reference2,
-        popper: popper2
-      },
-      attributes: {},
-      styles: {}
-    };
-    var effectCleanupFns = [];
-    var isDestroyed = false;
-    var instance = {
-      state,
-      setOptions: function setOptions(setOptionsAction) {
-        var options2 = typeof setOptionsAction === "function" ? setOptionsAction(state.options) : setOptionsAction;
-        cleanupModifierEffects();
-        state.options = Object.assign({}, defaultOptions, state.options, options2);
-        state.scrollParents = {
-          reference: isElement(reference2) ? listScrollParents(reference2) : reference2.contextElement ? listScrollParents(reference2.contextElement) : [],
-          popper: listScrollParents(popper2)
-        };
-        var orderedModifiers = orderModifiers(mergeByName([].concat(defaultModifiers2, state.options.modifiers)));
-        state.orderedModifiers = orderedModifiers.filter(function(m) {
-          return m.enabled;
-        });
-        runModifierEffects();
-        return instance.update();
-      },
-      forceUpdate: function forceUpdate() {
-        if (isDestroyed) {
-          return;
-        }
-        var _state$elements = state.elements, reference3 = _state$elements.reference, popper3 = _state$elements.popper;
-        if (!areValidElements(reference3, popper3)) {
-          return;
-        }
-        state.rects = {
-          reference: getCompositeRect(reference3, getOffsetParent(popper3), state.options.strategy === "fixed"),
-          popper: getLayoutRect(popper3)
-        };
-        state.reset = false;
-        state.placement = state.options.placement;
-        state.orderedModifiers.forEach(function(modifier) {
-          return state.modifiersData[modifier.name] = Object.assign({}, modifier.data);
-        });
-        for (var index = 0; index < state.orderedModifiers.length; index++) {
-          if (state.reset === true) {
-            state.reset = false;
-            index = -1;
-            continue;
-          }
-          var _state$orderedModifie = state.orderedModifiers[index], fn2 = _state$orderedModifie.fn, _state$orderedModifie2 = _state$orderedModifie.options, _options = _state$orderedModifie2 === void 0 ? {} : _state$orderedModifie2, name = _state$orderedModifie.name;
-          if (typeof fn2 === "function") {
-            state = fn2({
-              state,
-              options: _options,
-              name,
-              instance
-            }) || state;
-          }
-        }
-      },
-      update: debounce(function() {
-        return new Promise(function(resolve) {
-          instance.forceUpdate();
-          resolve(state);
-        });
-      }),
-      destroy: function destroy() {
-        cleanupModifierEffects();
-        isDestroyed = true;
-      }
-    };
-    if (!areValidElements(reference2, popper2)) {
-      return instance;
-    }
-    instance.setOptions(options).then(function(state2) {
-      if (!isDestroyed && options.onFirstUpdate) {
-        options.onFirstUpdate(state2);
-      }
+    return !args.some(function (element) {
+        return !(element && typeof element.getBoundingClientRect === "function");
     });
-    function runModifierEffects() {
-      state.orderedModifiers.forEach(function(_ref) {
-        var name = _ref.name, _ref$options = _ref.options, options2 = _ref$options === void 0 ? {} : _ref$options, effect4 = _ref.effect;
-        if (typeof effect4 === "function") {
-          var cleanupFn = effect4({
-            state,
-            name,
-            instance,
-            options: options2
-          });
-          var noopFn = function noopFn2() {
-          };
-          effectCleanupFns.push(cleanupFn || noopFn);
+}
+
+function popperGenerator(generatorOptions) {
+    if (generatorOptions === void 0) {
+        generatorOptions = {};
+    }
+    var _generatorOptions = generatorOptions, _generatorOptions$def = _generatorOptions.defaultModifiers,
+        defaultModifiers2 = _generatorOptions$def === void 0 ? [] : _generatorOptions$def,
+        _generatorOptions$def2 = _generatorOptions.defaultOptions,
+        defaultOptions = _generatorOptions$def2 === void 0 ? DEFAULT_OPTIONS : _generatorOptions$def2;
+    return function createPopper2(reference2, popper2, options) {
+        if (options === void 0) {
+            options = defaultOptions;
         }
-      });
-    }
-    function cleanupModifierEffects() {
-      effectCleanupFns.forEach(function(fn2) {
-        return fn2();
-      });
-      effectCleanupFns = [];
-    }
-    return instance;
-  };
+        var state = {
+            placement: "bottom",
+            orderedModifiers: [],
+            options: Object.assign({}, DEFAULT_OPTIONS, defaultOptions),
+            modifiersData: {},
+            elements: {
+                reference: reference2,
+                popper: popper2
+            },
+            attributes: {},
+            styles: {}
+        };
+        var effectCleanupFns = [];
+        var isDestroyed = false;
+        var instance = {
+            state,
+            setOptions: function setOptions(setOptionsAction) {
+                var options2 = typeof setOptionsAction === "function" ? setOptionsAction(state.options) : setOptionsAction;
+                cleanupModifierEffects();
+                state.options = Object.assign({}, defaultOptions, state.options, options2);
+                state.scrollParents = {
+                    reference: isElement(reference2) ? listScrollParents(reference2) : reference2.contextElement ? listScrollParents(reference2.contextElement) : [],
+                    popper: listScrollParents(popper2)
+                };
+                var orderedModifiers = orderModifiers(mergeByName([].concat(defaultModifiers2, state.options.modifiers)));
+                state.orderedModifiers = orderedModifiers.filter(function (m) {
+                    return m.enabled;
+                });
+                runModifierEffects();
+                return instance.update();
+            },
+            forceUpdate: function forceUpdate() {
+                if (isDestroyed) {
+                    return;
+                }
+                var _state$elements = state.elements, reference3 = _state$elements.reference,
+                    popper3 = _state$elements.popper;
+                if (!areValidElements(reference3, popper3)) {
+                    return;
+                }
+                state.rects = {
+                    reference: getCompositeRect(reference3, getOffsetParent(popper3), state.options.strategy === "fixed"),
+                    popper: getLayoutRect(popper3)
+                };
+                state.reset = false;
+                state.placement = state.options.placement;
+                state.orderedModifiers.forEach(function (modifier) {
+                    return state.modifiersData[modifier.name] = Object.assign({}, modifier.data);
+                });
+                for (var index = 0; index < state.orderedModifiers.length; index++) {
+                    if (state.reset === true) {
+                        state.reset = false;
+                        index = -1;
+                        continue;
+                    }
+                    var _state$orderedModifie = state.orderedModifiers[index], fn2 = _state$orderedModifie.fn,
+                        _state$orderedModifie2 = _state$orderedModifie.options,
+                        _options = _state$orderedModifie2 === void 0 ? {} : _state$orderedModifie2,
+                        name = _state$orderedModifie.name;
+                    if (typeof fn2 === "function") {
+                        state = fn2({
+                            state,
+                            options: _options,
+                            name,
+                            instance
+                        }) || state;
+                    }
+                }
+            },
+            update: debounce(function () {
+                return new Promise(function (resolve) {
+                    instance.forceUpdate();
+                    resolve(state);
+                });
+            }),
+            destroy: function destroy() {
+                cleanupModifierEffects();
+                isDestroyed = true;
+            }
+        };
+        if (!areValidElements(reference2, popper2)) {
+            return instance;
+        }
+        instance.setOptions(options).then(function (state2) {
+            if (!isDestroyed && options.onFirstUpdate) {
+                options.onFirstUpdate(state2);
+            }
+        });
+
+        function runModifierEffects() {
+            state.orderedModifiers.forEach(function (_ref) {
+                var name = _ref.name, _ref$options = _ref.options,
+                    options2 = _ref$options === void 0 ? {} : _ref$options, effect4 = _ref.effect;
+                if (typeof effect4 === "function") {
+                    var cleanupFn = effect4({
+                        state,
+                        name,
+                        instance,
+                        options: options2
+                    });
+                    var noopFn = function noopFn2() {
+                    };
+                    effectCleanupFns.push(cleanupFn || noopFn);
+                }
+            });
+        }
+
+        function cleanupModifierEffects() {
+            effectCleanupFns.forEach(function (fn2) {
+                return fn2();
+            });
+            effectCleanupFns = [];
+        }
+
+        return instance;
+    };
 }
 
 // node_modules/@popperjs/core/lib/popper.js
 var defaultModifiers = [eventListeners_default, popperOffsets_default, computeStyles_default, applyStyles_default, offset_default, flip_default, preventOverflow_default, arrow_default, hide_default];
 var createPopper = /* @__PURE__ */ popperGenerator({
-  defaultModifiers
+    defaultModifiers
 });
 
 // src/settings/suggesters/suggest.ts
 var wrapAround = (value, size) => {
-  return (value % size + size) % size;
+    return (value % size + size) % size;
 };
 var Suggest = class {
-  constructor(owner, containerEl, scope) {
-    this.owner = owner;
-    this.containerEl = containerEl;
-    containerEl.on("click", ".suggestion-item", this.onSuggestionClick.bind(this));
-    containerEl.on("mousemove", ".suggestion-item", this.onSuggestionMouseover.bind(this));
-    scope.register([], "ArrowUp", (event) => {
-      if (!event.isComposing) {
-        this.setSelectedItem(this.selectedItem - 1, true);
-        return false;
-      }
-    });
-    scope.register([], "ArrowDown", (event) => {
-      if (!event.isComposing) {
-        this.setSelectedItem(this.selectedItem + 1, true);
-        return false;
-      }
-    });
-    scope.register([], "Enter", (event) => {
-      if (!event.isComposing) {
+    constructor(owner, containerEl, scope) {
+        this.owner = owner;
+        this.containerEl = containerEl;
+        containerEl.on("click", ".suggestion-item", this.onSuggestionClick.bind(this));
+        containerEl.on("mousemove", ".suggestion-item", this.onSuggestionMouseover.bind(this));
+        scope.register([], "ArrowUp", (event) => {
+            if (!event.isComposing) {
+                this.setSelectedItem(this.selectedItem - 1, true);
+                return false;
+            }
+        });
+        scope.register([], "ArrowDown", (event) => {
+            if (!event.isComposing) {
+                this.setSelectedItem(this.selectedItem + 1, true);
+                return false;
+            }
+        });
+        scope.register([], "Enter", (event) => {
+            if (!event.isComposing) {
+                this.useSelectedItem(event);
+                return false;
+            }
+        });
+    }
+
+    onSuggestionClick(event, el) {
+        event.preventDefault();
+        const item = this.suggestions.indexOf(el);
+        this.setSelectedItem(item, false);
         this.useSelectedItem(event);
-        return false;
-      }
-    });
-  }
-  onSuggestionClick(event, el) {
-    event.preventDefault();
-    const item = this.suggestions.indexOf(el);
-    this.setSelectedItem(item, false);
-    this.useSelectedItem(event);
-  }
-  onSuggestionMouseover(_event, el) {
-    const item = this.suggestions.indexOf(el);
-    this.setSelectedItem(item, false);
-  }
-  setSuggestions(values) {
-    this.containerEl.empty();
-    const suggestionEls = [];
-    values.forEach((value) => {
-      const suggestionEl = this.containerEl.createDiv("suggestion-item");
-      this.owner.renderSuggestion(value, suggestionEl);
-      suggestionEls.push(suggestionEl);
-    });
-    this.values = values;
-    this.suggestions = suggestionEls;
-    this.setSelectedItem(0, false);
-  }
-  useSelectedItem(event) {
-    const currentValue = this.values[this.selectedItem];
-    if (currentValue) {
-      this.owner.selectSuggestion(currentValue, event);
     }
-  }
-  setSelectedItem(selectedIndex, scrollIntoView) {
-    const normalizedIndex = wrapAround(selectedIndex, this.suggestions.length);
-    const prevSelectedSuggestion = this.suggestions[this.selectedItem];
-    const selectedSuggestion = this.suggestions[normalizedIndex];
-    prevSelectedSuggestion?.removeClass("is-selected");
-    selectedSuggestion?.addClass("is-selected");
-    this.selectedItem = normalizedIndex;
-    if (scrollIntoView) {
-      selectedSuggestion.scrollIntoView(false);
+
+    onSuggestionMouseover(_event, el) {
+        const item = this.suggestions.indexOf(el);
+        this.setSelectedItem(item, false);
     }
-  }
+
+    setSuggestions(values) {
+        this.containerEl.empty();
+        const suggestionEls = [];
+        values.forEach((value) => {
+            const suggestionEl = this.containerEl.createDiv("suggestion-item");
+            this.owner.renderSuggestion(value, suggestionEl);
+            suggestionEls.push(suggestionEl);
+        });
+        this.values = values;
+        this.suggestions = suggestionEls;
+        this.setSelectedItem(0, false);
+    }
+
+    useSelectedItem(event) {
+        const currentValue = this.values[this.selectedItem];
+        if (currentValue) {
+            this.owner.selectSuggestion(currentValue, event);
+        }
+    }
+
+    setSelectedItem(selectedIndex, scrollIntoView) {
+        const normalizedIndex = wrapAround(selectedIndex, this.suggestions.length);
+        const prevSelectedSuggestion = this.suggestions[this.selectedItem];
+        const selectedSuggestion = this.suggestions[normalizedIndex];
+        prevSelectedSuggestion?.removeClass("is-selected");
+        selectedSuggestion?.addClass("is-selected");
+        this.selectedItem = normalizedIndex;
+        if (scrollIntoView) {
+            selectedSuggestion.scrollIntoView(false);
+        }
+    }
 };
 var TextInputSuggest = class {
-  constructor(inputEl) {
-    this.inputEl = inputEl;
-    this.scope = new import_obsidian2.Scope();
-    this.suggestEl = createDiv("suggestion-container");
-    const suggestion = this.suggestEl.createDiv("suggestion");
-    this.suggest = new Suggest(this, suggestion, this.scope);
-    this.scope.register([], "Escape", this.close.bind(this));
-    this.inputEl.addEventListener("input", this.onInputChanged.bind(this));
-    this.inputEl.addEventListener("focus", this.onInputChanged.bind(this));
-    this.inputEl.addEventListener("blur", this.close.bind(this));
-    this.suggestEl.on("mousedown", ".suggestion-container", (event) => {
-      event.preventDefault();
-    });
-  }
-  onInputChanged() {
-    const inputStr = this.inputEl.value;
-    const suggestions = this.getSuggestions(inputStr);
-    if (!suggestions) {
-      this.close();
-      return;
+    constructor(inputEl) {
+        this.inputEl = inputEl;
+        this.scope = new import_obsidian2.Scope();
+        this.suggestEl = createDiv("suggestion-container");
+        const suggestion = this.suggestEl.createDiv("suggestion");
+        this.suggest = new Suggest(this, suggestion, this.scope);
+        this.scope.register([], "Escape", this.close.bind(this));
+        this.inputEl.addEventListener("input", this.onInputChanged.bind(this));
+        this.inputEl.addEventListener("focus", this.onInputChanged.bind(this));
+        this.inputEl.addEventListener("blur", this.close.bind(this));
+        this.suggestEl.on("mousedown", ".suggestion-container", (event) => {
+            event.preventDefault();
+        });
     }
-    if (suggestions.length > 0) {
-      this.suggest.setSuggestions(suggestions);
-      this.open(app.dom.appContainerEl, this.inputEl);
-    } else {
-      this.close();
-    }
-  }
-  open(container, inputEl) {
-    app.keymap.pushScope(this.scope);
-    container.appendChild(this.suggestEl);
-    this.popper = createPopper(inputEl, this.suggestEl, {
-      placement: "bottom-start",
-      modifiers: [
-        {
-          name: "sameWidth",
-          enabled: true,
-          fn: ({ state, instance }) => {
-            const targetWidth = `${state.rects.reference.width}px`;
-            if (state.styles.popper.width === targetWidth) {
-              return;
-            }
-            state.styles.popper.width = targetWidth;
-            instance.update();
-          },
-          phase: "beforeWrite",
-          requires: ["computeStyles"]
+
+    onInputChanged() {
+        const inputStr = this.inputEl.value;
+        const suggestions = this.getSuggestions(inputStr);
+        if (!suggestions) {
+            this.close();
+            return;
         }
-      ]
-    });
-  }
-  close() {
-    app.keymap.popScope(this.scope);
-    this.suggest.setSuggestions([]);
-    if (this.popper)
-      this.popper.destroy();
-    this.suggestEl.detach();
-  }
+        if (suggestions.length > 0) {
+            this.suggest.setSuggestions(suggestions);
+            this.open(app.dom.appContainerEl, this.inputEl);
+        } else {
+            this.close();
+        }
+    }
+
+    open(container, inputEl) {
+        app.keymap.pushScope(this.scope);
+        container.appendChild(this.suggestEl);
+        this.popper = createPopper(inputEl, this.suggestEl, {
+            placement: "bottom-start",
+            modifiers: [
+                {
+                    name: "sameWidth",
+                    enabled: true,
+                    fn: ({state, instance}) => {
+                        const targetWidth = `${state.rects.reference.width}px`;
+                        if (state.styles.popper.width === targetWidth) {
+                            return;
+                        }
+                        state.styles.popper.width = targetWidth;
+                        instance.update();
+                    },
+                    phase: "beforeWrite",
+                    requires: ["computeStyles"]
+                }
+            ]
+        });
+    }
+
+    close() {
+        app.keymap.popScope(this.scope);
+        this.suggest.setSuggestions([]);
+        if (this.popper)
+            this.popper.destroy();
+        this.suggestEl.detach();
+    }
 };
 
 // src/settings/suggesters/FolderSuggester.ts
 var FolderSuggest = class extends TextInputSuggest {
-  getSuggestions(inputStr) {
-    const abstractFiles = app.vault.getAllLoadedFiles();
-    const folders = [];
-    const lowerCaseInputStr = inputStr.toLowerCase();
-    abstractFiles.forEach((folder) => {
-      if (folder instanceof import_obsidian3.TFolder && folder.path.toLowerCase().contains(lowerCaseInputStr)) {
-        folders.push(folder);
-      }
-    });
-    return folders;
-  }
-  renderSuggestion(file, el) {
-    el.setText(file.path);
-  }
-  selectSuggestion(file) {
-    this.inputEl.value = file.path;
-    this.inputEl.trigger("input");
-    this.close();
-  }
+    getSuggestions(inputStr) {
+        const abstractFiles = app.vault.getAllLoadedFiles();
+        const folders = [];
+        const lowerCaseInputStr = inputStr.toLowerCase();
+        abstractFiles.forEach((folder) => {
+            if (folder instanceof import_obsidian3.TFolder && folder.path.toLowerCase().contains(lowerCaseInputStr)) {
+                folders.push(folder);
+            }
+        });
+        return folders;
+    }
+
+    renderSuggestion(file, el) {
+        el.setText(file.path);
+    }
+
+    selectSuggestion(file) {
+        this.inputEl.value = file.path;
+        this.inputEl.trigger("input");
+        this.close();
+    }
 };
 
 // src/settings/suggesters/FileSuggester.ts
@@ -1688,606 +1791,640 @@ var import_obsidian5 = __toModule(require("obsidian"));
 
 // src/utils/Utils.ts
 var import_obsidian4 = __toModule(require("obsidian"));
+
 function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
 function escape_RegExp(str) {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
+
 function generate_dynamic_command_regex() {
-  return /(<%(?:-|_)?\s*[*~]{0,1})\+((?:.|\s)*?%>)/g;
+    return /(<%(?:-|_)?\s*[*~]{0,1})\+((?:.|\s)*?%>)/g;
 }
+
 function resolve_tfolder(folder_str) {
-  folder_str = (0, import_obsidian4.normalizePath)(folder_str);
-  const folder = app.vault.getAbstractFileByPath(folder_str);
-  if (!folder) {
-    throw new TemplaterError(`Folder "${folder_str}" doesn't exist`);
-  }
-  if (!(folder instanceof import_obsidian4.TFolder)) {
-    throw new TemplaterError(`${folder_str} is a file, not a folder`);
-  }
-  return folder;
-}
-function resolve_tfile(file_str) {
-  file_str = (0, import_obsidian4.normalizePath)(file_str);
-  const file = app.vault.getAbstractFileByPath(file_str);
-  if (!file) {
-    throw new TemplaterError(`File "${file_str}" doesn't exist`);
-  }
-  if (!(file instanceof import_obsidian4.TFile)) {
-    throw new TemplaterError(`${file_str} is a folder, not a file`);
-  }
-  return file;
-}
-function get_tfiles_from_folder(folder_str) {
-  const folder = resolve_tfolder(folder_str);
-  const files = [];
-  import_obsidian4.Vault.recurseChildren(folder, (file) => {
-    if (file instanceof import_obsidian4.TFile) {
-      files.push(file);
+    folder_str = (0, import_obsidian4.normalizePath)(folder_str);
+    const folder = app.vault.getAbstractFileByPath(folder_str);
+    if (!folder) {
+        throw new TemplaterError(`Folder "${folder_str}" doesn't exist`);
     }
-  });
-  files.sort((a, b) => {
-    return a.basename.localeCompare(b.basename);
-  });
-  return files;
+    if (!(folder instanceof import_obsidian4.TFolder)) {
+        throw new TemplaterError(`${folder_str} is a file, not a folder`);
+    }
+    return folder;
 }
+
+function resolve_tfile(file_str) {
+    file_str = (0, import_obsidian4.normalizePath)(file_str);
+    const file = app.vault.getAbstractFileByPath(file_str);
+    if (!file) {
+        throw new TemplaterError(`File "${file_str}" doesn't exist`);
+    }
+    if (!(file instanceof import_obsidian4.TFile)) {
+        throw new TemplaterError(`${file_str} is a folder, not a file`);
+    }
+    return file;
+}
+
+function get_tfiles_from_folder(folder_str) {
+    const folder = resolve_tfolder(folder_str);
+    const files = [];
+    import_obsidian4.Vault.recurseChildren(folder, (file) => {
+        if (file instanceof import_obsidian4.TFile) {
+            files.push(file);
+        }
+    });
+    files.sort((a, b) => {
+        return a.basename.localeCompare(b.basename);
+    });
+    return files;
+}
+
 function arraymove(arr, fromIndex, toIndex) {
-  if (toIndex < 0 || toIndex === arr.length) {
-    return;
-  }
-  const element = arr[fromIndex];
-  arr[fromIndex] = arr[toIndex];
-  arr[toIndex] = element;
+    if (toIndex < 0 || toIndex === arr.length) {
+        return;
+    }
+    const element = arr[fromIndex];
+    arr[fromIndex] = arr[toIndex];
+    arr[toIndex] = element;
 }
+
 function get_active_file(app2) {
-  return app2.workspace.activeEditor?.file ?? app2.workspace.getActiveFile();
+    return app2.workspace.activeEditor?.file ?? app2.workspace.getActiveFile();
 }
+
 function get_folder_path_from_file_path(path) {
-  const path_separator = path.lastIndexOf("/");
-  if (path_separator !== -1)
-    return path.slice(0, path_separator);
-  return "";
+    const path_separator = path.lastIndexOf("/");
+    if (path_separator !== -1)
+        return path.slice(0, path_separator);
+    return "";
 }
 
 // src/settings/suggesters/FileSuggester.ts
 var FileSuggestMode;
-(function(FileSuggestMode2) {
-  FileSuggestMode2[FileSuggestMode2["TemplateFiles"] = 0] = "TemplateFiles";
-  FileSuggestMode2[FileSuggestMode2["ScriptFiles"] = 1] = "ScriptFiles";
+(function (FileSuggestMode2) {
+    FileSuggestMode2[FileSuggestMode2["TemplateFiles"] = 0] = "TemplateFiles";
+    FileSuggestMode2[FileSuggestMode2["ScriptFiles"] = 1] = "ScriptFiles";
 })(FileSuggestMode || (FileSuggestMode = {}));
 var FileSuggest = class extends TextInputSuggest {
-  constructor(inputEl, plugin, mode) {
-    super(inputEl);
-    this.inputEl = inputEl;
-    this.plugin = plugin;
-    this.mode = mode;
-  }
-  get_folder(mode) {
-    switch (mode) {
-      case 0:
-        return this.plugin.settings.templates_folder;
-      case 1:
-        return this.plugin.settings.user_scripts_folder;
+    constructor(inputEl, plugin, mode) {
+        super(inputEl);
+        this.inputEl = inputEl;
+        this.plugin = plugin;
+        this.mode = mode;
     }
-  }
-  get_error_msg(mode) {
-    switch (mode) {
-      case 0:
-        return `Templates folder doesn't exist`;
-      case 1:
-        return `User Scripts folder doesn't exist`;
+
+    get_folder(mode) {
+        switch (mode) {
+            case 0:
+                return this.plugin.settings.templates_folder;
+            case 1:
+                return this.plugin.settings.user_scripts_folder;
+        }
     }
-  }
-  getSuggestions(input_str) {
-    const all_files = errorWrapperSync(() => get_tfiles_from_folder(this.get_folder(this.mode)), this.get_error_msg(this.mode));
-    if (!all_files) {
-      return [];
+
+    get_error_msg(mode) {
+        switch (mode) {
+            case 0:
+                return `Templates folder doesn't exist`;
+            case 1:
+                return `User Scripts folder doesn't exist`;
+        }
     }
-    const files = [];
-    const lower_input_str = input_str.toLowerCase();
-    all_files.forEach((file) => {
-      if (file instanceof import_obsidian5.TFile && file.extension === "md" && file.path.toLowerCase().contains(lower_input_str)) {
-        files.push(file);
-      }
-    });
-    return files;
-  }
-  renderSuggestion(file, el) {
-    el.setText(file.path);
-  }
-  selectSuggestion(file) {
-    this.inputEl.value = file.path;
-    this.inputEl.trigger("input");
-    this.close();
-  }
+
+    getSuggestions(input_str) {
+        const all_files = errorWrapperSync(() => get_tfiles_from_folder(this.get_folder(this.mode)), this.get_error_msg(this.mode));
+        if (!all_files) {
+            return [];
+        }
+        const files = [];
+        const lower_input_str = input_str.toLowerCase();
+        all_files.forEach((file) => {
+            if (file instanceof import_obsidian5.TFile && file.extension === "md" && file.path.toLowerCase().contains(lower_input_str)) {
+                files.push(file);
+            }
+        });
+        return files;
+    }
+
+    renderSuggestion(file, el) {
+        el.setText(file.path);
+    }
+
+    selectSuggestion(file) {
+        this.inputEl.value = file.path;
+        this.inputEl.trigger("input");
+        this.close();
+    }
 };
 
 // src/settings/Settings.ts
 var DEFAULT_SETTINGS = {
-  command_timeout: 5,
-  templates_folder: "",
-  templates_pairs: [["", ""]],
-  trigger_on_file_creation: false,
-  auto_jump_to_cursor: false,
-  enable_system_commands: false,
-  shell_path: "",
-  user_scripts_folder: "",
-  enable_folder_templates: true,
-  folder_templates: [{ folder: "", template: "" }],
-  syntax_highlighting: true,
-  syntax_highlighting_mobile: false,
-  enabled_templates_hotkeys: [""],
-  startup_templates: [""],
-  enable_ribbon_icon: true
+    command_timeout: 5,
+    templates_folder: "",
+    templates_pairs: [["", ""]],
+    trigger_on_file_creation: false,
+    auto_jump_to_cursor: false,
+    enable_system_commands: false,
+    shell_path: "",
+    user_scripts_folder: "",
+    enable_folder_templates: true,
+    folder_templates: [{folder: "", template: ""}],
+    syntax_highlighting: true,
+    syntax_highlighting_mobile: false,
+    enabled_templates_hotkeys: [""],
+    startup_templates: [""],
+    enable_ribbon_icon: true
 };
 var TemplaterSettingTab = class extends import_obsidian6.PluginSettingTab {
-  constructor(plugin) {
-    super(app, plugin);
-    this.plugin = plugin;
-  }
-  display() {
-    this.containerEl.empty();
-    this.add_general_setting_header();
-    this.add_template_folder_setting();
-    this.add_internal_functions_setting();
-    this.add_syntax_highlighting_settings();
-    this.add_auto_jump_to_cursor();
-    this.add_trigger_on_new_file_creation_setting();
-    this.add_ribbon_icon_setting();
-    this.add_templates_hotkeys_setting();
-    if (this.plugin.settings.trigger_on_file_creation) {
-      this.add_folder_templates_setting();
+    constructor(plugin) {
+        super(app, plugin);
+        this.plugin = plugin;
     }
-    this.add_startup_templates_setting();
-    this.add_user_script_functions_setting();
-    this.add_user_system_command_functions_setting();
-    this.add_donating_setting();
-  }
-  add_general_setting_header() {
-    this.containerEl.createEl("h2", { text: "General Settings" });
-  }
-  add_template_folder_setting() {
-    new import_obsidian6.Setting(this.containerEl).setName("Template folder location").setDesc("Files in this folder will be available as templates.").addSearch((cb) => {
-      new FolderSuggest(cb.inputEl);
-      cb.setPlaceholder("Example: folder1/folder2").setValue(this.plugin.settings.templates_folder).onChange((new_folder) => {
-        this.plugin.settings.templates_folder = new_folder;
-        this.plugin.save_settings();
-      });
-      cb.containerEl.addClass("templater_search");
-    });
-  }
-  add_internal_functions_setting() {
-    const desc = document.createDocumentFragment();
-    desc.append("Templater provides multiples predefined variables / functions that you can use.", desc.createEl("br"), "Check the ", desc.createEl("a", {
-      href: "https://silentvoid13.github.io/Templater/",
-      text: "documentation"
-    }), " to get a list of all the available internal variables / functions.");
-    new import_obsidian6.Setting(this.containerEl).setName("Internal Variables and Functions").setDesc(desc);
-  }
-  add_syntax_highlighting_settings() {
-    const desktopDesc = document.createDocumentFragment();
-    desktopDesc.append("Adds syntax highlighting for Templater commands in edit mode.");
-    const mobileDesc = document.createDocumentFragment();
-    mobileDesc.append("Adds syntax highlighting for Templater commands in edit mode on mobile. Use with caution: this may break live preview on mobile platforms.");
-    new import_obsidian6.Setting(this.containerEl).setName("Syntax Highlighting on Desktop").setDesc(desktopDesc).addToggle((toggle) => {
-      toggle.setValue(this.plugin.settings.syntax_highlighting).onChange((syntax_highlighting) => {
-        this.plugin.settings.syntax_highlighting = syntax_highlighting;
-        this.plugin.save_settings();
-        this.plugin.event_handler.update_syntax_highlighting();
-      });
-    });
-    new import_obsidian6.Setting(this.containerEl).setName("Syntax Highlighting on Mobile").setDesc(mobileDesc).addToggle((toggle) => {
-      toggle.setValue(this.plugin.settings.syntax_highlighting_mobile).onChange((syntax_highlighting_mobile) => {
-        this.plugin.settings.syntax_highlighting_mobile = syntax_highlighting_mobile;
-        this.plugin.save_settings();
-        this.plugin.event_handler.update_syntax_highlighting();
-      });
-    });
-  }
-  add_auto_jump_to_cursor() {
-    const desc = document.createDocumentFragment();
-    desc.append("Automatically triggers ", desc.createEl("code", { text: "tp.file.cursor" }), " after inserting a template.", desc.createEl("br"), "You can also set a hotkey to manually trigger ", desc.createEl("code", { text: "tp.file.cursor" }), ".");
-    new import_obsidian6.Setting(this.containerEl).setName("Automatic jump to cursor").setDesc(desc).addToggle((toggle) => {
-      toggle.setValue(this.plugin.settings.auto_jump_to_cursor).onChange((auto_jump_to_cursor) => {
-        this.plugin.settings.auto_jump_to_cursor = auto_jump_to_cursor;
-        this.plugin.save_settings();
-      });
-    });
-  }
-  add_trigger_on_new_file_creation_setting() {
-    const desc = document.createDocumentFragment();
-    desc.append("Templater will listen for the new file creation event, and replace every command it finds in the new file's content.", desc.createEl("br"), "This makes Templater compatible with other plugins like the Daily note core plugin, Calendar plugin, Review plugin, Note refactor plugin, ...", desc.createEl("br"), desc.createEl("b", {
-      text: "Warning: "
-    }), "This can be dangerous if you create new files with unknown / unsafe content on creation. Make sure that every new file's content is safe on creation.");
-    new import_obsidian6.Setting(this.containerEl).setName("Trigger Templater on new file creation").setDesc(desc).addToggle((toggle) => {
-      toggle.setValue(this.plugin.settings.trigger_on_file_creation).onChange((trigger_on_file_creation) => {
-        this.plugin.settings.trigger_on_file_creation = trigger_on_file_creation;
-        this.plugin.save_settings();
-        this.plugin.event_handler.update_trigger_file_on_creation();
-        this.display();
-      });
-    });
-  }
-  add_ribbon_icon_setting() {
-    const desc = document.createDocumentFragment();
-    desc.append("Show Templater icon in sidebar ribbon, allowing you to quickly use templates anywhere.");
-    new import_obsidian6.Setting(this.containerEl).setName("Show icon in sidebar").setDesc(desc).addToggle((toggle) => {
-      toggle.setValue(this.plugin.settings.enable_ribbon_icon).onChange((enable_ribbon_icon) => {
-        this.plugin.settings.enable_ribbon_icon = enable_ribbon_icon;
-        this.plugin.save_settings();
-        if (this.plugin.settings.enable_ribbon_icon) {
-          this.plugin.addRibbonIcon("templater-icon", "Templater", async () => {
-            this.plugin.fuzzy_suggester.insert_template();
-          }).setAttribute("id", "rb-templater-icon");
+
+    display() {
+        this.containerEl.empty();
+        this.add_general_setting_header();
+        this.add_template_folder_setting();
+        this.add_internal_functions_setting();
+        this.add_syntax_highlighting_settings();
+        this.add_auto_jump_to_cursor();
+        this.add_trigger_on_new_file_creation_setting();
+        this.add_ribbon_icon_setting();
+        this.add_templates_hotkeys_setting();
+        if (this.plugin.settings.trigger_on_file_creation) {
+            this.add_folder_templates_setting();
+        }
+        this.add_startup_templates_setting();
+        this.add_user_script_functions_setting();
+        this.add_user_system_command_functions_setting();
+        this.add_donating_setting();
+    }
+
+    add_general_setting_header() {
+        this.containerEl.createEl("h2", {text: "General Settings"});
+    }
+
+    add_template_folder_setting() {
+        new import_obsidian6.Setting(this.containerEl).setName("Template folder location").setDesc("Files in this folder will be available as templates.").addSearch((cb) => {
+            new FolderSuggest(cb.inputEl);
+            cb.setPlaceholder("Example: folder1/folder2").setValue(this.plugin.settings.templates_folder).onChange((new_folder) => {
+                this.plugin.settings.templates_folder = new_folder;
+                this.plugin.save_settings();
+            });
+            cb.containerEl.addClass("templater_search");
+        });
+    }
+
+    add_internal_functions_setting() {
+        const desc = document.createDocumentFragment();
+        desc.append("Templater provides multiples predefined variables / functions that you can use.", desc.createEl("br"), "Check the ", desc.createEl("a", {
+            href: "https://silentvoid13.github.io/Templater/",
+            text: "documentation"
+        }), " to get a list of all the available internal variables / functions.");
+        new import_obsidian6.Setting(this.containerEl).setName("Internal Variables and Functions").setDesc(desc);
+    }
+
+    add_syntax_highlighting_settings() {
+        const desktopDesc = document.createDocumentFragment();
+        desktopDesc.append("Adds syntax highlighting for Templater commands in edit mode.");
+        const mobileDesc = document.createDocumentFragment();
+        mobileDesc.append("Adds syntax highlighting for Templater commands in edit mode on mobile. Use with caution: this may break live preview on mobile platforms.");
+        new import_obsidian6.Setting(this.containerEl).setName("Syntax Highlighting on Desktop").setDesc(desktopDesc).addToggle((toggle) => {
+            toggle.setValue(this.plugin.settings.syntax_highlighting).onChange((syntax_highlighting) => {
+                this.plugin.settings.syntax_highlighting = syntax_highlighting;
+                this.plugin.save_settings();
+                this.plugin.event_handler.update_syntax_highlighting();
+            });
+        });
+        new import_obsidian6.Setting(this.containerEl).setName("Syntax Highlighting on Mobile").setDesc(mobileDesc).addToggle((toggle) => {
+            toggle.setValue(this.plugin.settings.syntax_highlighting_mobile).onChange((syntax_highlighting_mobile) => {
+                this.plugin.settings.syntax_highlighting_mobile = syntax_highlighting_mobile;
+                this.plugin.save_settings();
+                this.plugin.event_handler.update_syntax_highlighting();
+            });
+        });
+    }
+
+    add_auto_jump_to_cursor() {
+        const desc = document.createDocumentFragment();
+        desc.append("Automatically triggers ", desc.createEl("code", {text: "tp.file.cursor"}), " after inserting a template.", desc.createEl("br"), "You can also set a hotkey to manually trigger ", desc.createEl("code", {text: "tp.file.cursor"}), ".");
+        new import_obsidian6.Setting(this.containerEl).setName("Automatic jump to cursor").setDesc(desc).addToggle((toggle) => {
+            toggle.setValue(this.plugin.settings.auto_jump_to_cursor).onChange((auto_jump_to_cursor) => {
+                this.plugin.settings.auto_jump_to_cursor = auto_jump_to_cursor;
+                this.plugin.save_settings();
+            });
+        });
+    }
+
+    add_trigger_on_new_file_creation_setting() {
+        const desc = document.createDocumentFragment();
+        desc.append("Templater will listen for the new file creation event, and replace every command it finds in the new file's content.", desc.createEl("br"), "This makes Templater compatible with other plugins like the Daily note core plugin, Calendar plugin, Review plugin, Note refactor plugin, ...", desc.createEl("br"), desc.createEl("b", {
+            text: "Warning: "
+        }), "This can be dangerous if you create new files with unknown / unsafe content on creation. Make sure that every new file's content is safe on creation.");
+        new import_obsidian6.Setting(this.containerEl).setName("Trigger Templater on new file creation").setDesc(desc).addToggle((toggle) => {
+            toggle.setValue(this.plugin.settings.trigger_on_file_creation).onChange((trigger_on_file_creation) => {
+                this.plugin.settings.trigger_on_file_creation = trigger_on_file_creation;
+                this.plugin.save_settings();
+                this.plugin.event_handler.update_trigger_file_on_creation();
+                this.display();
+            });
+        });
+    }
+
+    add_ribbon_icon_setting() {
+        const desc = document.createDocumentFragment();
+        desc.append("Show Templater icon in sidebar ribbon, allowing you to quickly use templates anywhere.");
+        new import_obsidian6.Setting(this.containerEl).setName("Show icon in sidebar").setDesc(desc).addToggle((toggle) => {
+            toggle.setValue(this.plugin.settings.enable_ribbon_icon).onChange((enable_ribbon_icon) => {
+                this.plugin.settings.enable_ribbon_icon = enable_ribbon_icon;
+                this.plugin.save_settings();
+                if (this.plugin.settings.enable_ribbon_icon) {
+                    this.plugin.addRibbonIcon("templater-icon", "Templater", async () => {
+                        this.plugin.fuzzy_suggester.insert_template();
+                    }).setAttribute("id", "rb-templater-icon");
+                } else {
+                    document.getElementById("rb-templater-icon")?.remove();
+                }
+            });
+        });
+    }
+
+    add_templates_hotkeys_setting() {
+        this.containerEl.createEl("h2", {text: "Template Hotkeys"});
+        const desc = document.createDocumentFragment();
+        desc.append("Template Hotkeys allows you to bind a template to a hotkey.");
+        new import_obsidian6.Setting(this.containerEl).setDesc(desc);
+        this.plugin.settings.enabled_templates_hotkeys.forEach((template, index) => {
+            const s = new import_obsidian6.Setting(this.containerEl).addSearch((cb) => {
+                new FileSuggest(cb.inputEl, this.plugin, FileSuggestMode.TemplateFiles);
+                cb.setPlaceholder("Example: folder1/template_file").setValue(template).onChange((new_template) => {
+                    if (new_template && this.plugin.settings.enabled_templates_hotkeys.contains(new_template)) {
+                        log_error(new TemplaterError("This template is already bound to a hotkey"));
+                        return;
+                    }
+                    this.plugin.command_handler.add_template_hotkey(this.plugin.settings.enabled_templates_hotkeys[index], new_template);
+                    this.plugin.settings.enabled_templates_hotkeys[index] = new_template;
+                    this.plugin.save_settings();
+                });
+                cb.containerEl.addClass("templater_search");
+            }).addExtraButton((cb) => {
+                cb.setIcon("any-key").setTooltip("Configure Hotkey").onClick(() => {
+                    app.setting.openTabById("hotkeys");
+                    const tab = app.setting.activeTab;
+                    tab.searchInputEl.value = "Templater: Insert";
+                    tab.updateHotkeyVisibility();
+                });
+            }).addExtraButton((cb) => {
+                cb.setIcon("up-chevron-glyph").setTooltip("Move up").onClick(() => {
+                    arraymove(this.plugin.settings.enabled_templates_hotkeys, index, index - 1);
+                    this.plugin.save_settings();
+                    this.display();
+                });
+            }).addExtraButton((cb) => {
+                cb.setIcon("down-chevron-glyph").setTooltip("Move down").onClick(() => {
+                    arraymove(this.plugin.settings.enabled_templates_hotkeys, index, index + 1);
+                    this.plugin.save_settings();
+                    this.display();
+                });
+            }).addExtraButton((cb) => {
+                cb.setIcon("cross").setTooltip("Delete").onClick(() => {
+                    this.plugin.command_handler.remove_template_hotkey(this.plugin.settings.enabled_templates_hotkeys[index]);
+                    this.plugin.settings.enabled_templates_hotkeys.splice(index, 1);
+                    this.plugin.save_settings();
+                    this.display();
+                });
+            });
+            s.infoEl.remove();
+        });
+        new import_obsidian6.Setting(this.containerEl).addButton((cb) => {
+            cb.setButtonText("Add new hotkey for template").setCta().onClick(() => {
+                this.plugin.settings.enabled_templates_hotkeys.push("");
+                this.plugin.save_settings();
+                this.display();
+            });
+        });
+    }
+
+    add_folder_templates_setting() {
+        this.containerEl.createEl("h2", {text: "Folder Templates"});
+        const descHeading = document.createDocumentFragment();
+        descHeading.append("Folder Templates are triggered when a new ", descHeading.createEl("strong", {text: "empty "}), "file is created in a given folder.", descHeading.createEl("br"), "Templater will fill the empty file with the specified template.", descHeading.createEl("br"), "The deepest match is used. A global default template would be defined on the root ", descHeading.createEl("code", {text: "/"}), ".");
+        new import_obsidian6.Setting(this.containerEl).setDesc(descHeading);
+        const descUseNewFileTemplate = document.createDocumentFragment();
+        descUseNewFileTemplate.append("When enabled Templater will make use of the folder templates defined below.");
+        new import_obsidian6.Setting(this.containerEl).setName("Enable Folder Templates").setDesc(descUseNewFileTemplate).addToggle((toggle) => {
+            toggle.setValue(this.plugin.settings.enable_folder_templates).onChange((use_new_file_templates) => {
+                this.plugin.settings.enable_folder_templates = use_new_file_templates;
+                this.plugin.save_settings();
+                this.display();
+            });
+        });
+        if (!this.plugin.settings.enable_folder_templates) {
+            return;
+        }
+        new import_obsidian6.Setting(this.containerEl).setName("Add New").setDesc("Add new folder template").addButton((button) => {
+            button.setTooltip("Add additional folder template").setButtonText("+").setCta().onClick(() => {
+                this.plugin.settings.folder_templates.push({
+                    folder: "",
+                    template: ""
+                });
+                this.plugin.save_settings();
+                this.display();
+            });
+        });
+        this.plugin.settings.folder_templates.forEach((folder_template, index) => {
+            const s = new import_obsidian6.Setting(this.containerEl).addSearch((cb) => {
+                new FolderSuggest(cb.inputEl);
+                cb.setPlaceholder("Folder").setValue(folder_template.folder).onChange((new_folder) => {
+                    if (new_folder && this.plugin.settings.folder_templates.some((e) => e.folder == new_folder)) {
+                        log_error(new TemplaterError("This folder already has a template associated with it"));
+                        return;
+                    }
+                    this.plugin.settings.folder_templates[index].folder = new_folder;
+                    this.plugin.save_settings();
+                });
+                cb.containerEl.addClass("templater_search");
+            }).addSearch((cb) => {
+                new FileSuggest(cb.inputEl, this.plugin, FileSuggestMode.TemplateFiles);
+                cb.setPlaceholder("Template").setValue(folder_template.template).onChange((new_template) => {
+                    this.plugin.settings.folder_templates[index].template = new_template;
+                    this.plugin.save_settings();
+                });
+                cb.containerEl.addClass("templater_search");
+            }).addExtraButton((cb) => {
+                cb.setIcon("up-chevron-glyph").setTooltip("Move up").onClick(() => {
+                    arraymove(this.plugin.settings.folder_templates, index, index - 1);
+                    this.plugin.save_settings();
+                    this.display();
+                });
+            }).addExtraButton((cb) => {
+                cb.setIcon("down-chevron-glyph").setTooltip("Move down").onClick(() => {
+                    arraymove(this.plugin.settings.folder_templates, index, index + 1);
+                    this.plugin.save_settings();
+                    this.display();
+                });
+            }).addExtraButton((cb) => {
+                cb.setIcon("cross").setTooltip("Delete").onClick(() => {
+                    this.plugin.settings.folder_templates.splice(index, 1);
+                    this.plugin.save_settings();
+                    this.display();
+                });
+            });
+            s.infoEl.remove();
+        });
+    }
+
+    add_startup_templates_setting() {
+        this.containerEl.createEl("h2", {text: "Startup Templates"});
+        const desc = document.createDocumentFragment();
+        desc.append("Startup Templates are templates that will get executed once when Templater starts.", desc.createEl("br"), "These templates won't output anything.", desc.createEl("br"), "This can be useful to set up templates adding hooks to obsidian events for example.");
+        new import_obsidian6.Setting(this.containerEl).setDesc(desc);
+        this.plugin.settings.startup_templates.forEach((template, index) => {
+            const s = new import_obsidian6.Setting(this.containerEl).addSearch((cb) => {
+                new FileSuggest(cb.inputEl, this.plugin, FileSuggestMode.TemplateFiles);
+                cb.setPlaceholder("Example: folder1/template_file").setValue(template).onChange((new_template) => {
+                    if (new_template && this.plugin.settings.startup_templates.contains(new_template)) {
+                        log_error(new TemplaterError("This startup template already exist"));
+                        return;
+                    }
+                    this.plugin.settings.startup_templates[index] = new_template;
+                    this.plugin.save_settings();
+                });
+                cb.containerEl.addClass("templater_search");
+            }).addExtraButton((cb) => {
+                cb.setIcon("cross").setTooltip("Delete").onClick(() => {
+                    this.plugin.settings.startup_templates.splice(index, 1);
+                    this.plugin.save_settings();
+                    this.display();
+                });
+            });
+            s.infoEl.remove();
+        });
+        new import_obsidian6.Setting(this.containerEl).addButton((cb) => {
+            cb.setButtonText("Add new startup template").setCta().onClick(() => {
+                this.plugin.settings.startup_templates.push("");
+                this.plugin.save_settings();
+                this.display();
+            });
+        });
+    }
+
+    add_user_script_functions_setting() {
+        this.containerEl.createEl("h2", {text: "User Script Functions"});
+        let desc = document.createDocumentFragment();
+        desc.append("All JavaScript files in this folder will be loaded as CommonJS modules, to import custom user functions.", desc.createEl("br"), "The folder needs to be accessible from the vault.", desc.createEl("br"), "Check the ", desc.createEl("a", {
+            href: "https://silentvoid13.github.io/Templater/",
+            text: "documentation"
+        }), " for more information.");
+        new import_obsidian6.Setting(this.containerEl).setName("Script files folder location").setDesc(desc).addSearch((cb) => {
+            new FolderSuggest(cb.inputEl);
+            cb.setPlaceholder("Example: folder1/folder2").setValue(this.plugin.settings.user_scripts_folder).onChange((new_folder) => {
+                this.plugin.settings.user_scripts_folder = new_folder;
+                this.plugin.save_settings();
+            });
+            cb.containerEl.addClass("templater_search");
+        });
+        desc = document.createDocumentFragment();
+        let name;
+        if (!this.plugin.settings.user_scripts_folder) {
+            name = "No User Scripts folder set";
         } else {
-          document.getElementById("rb-templater-icon")?.remove();
+            const files = errorWrapperSync(() => get_tfiles_from_folder(this.plugin.settings.user_scripts_folder), `User Scripts folder doesn't exist`);
+            if (!files || files.length === 0) {
+                name = "No User Scripts detected";
+            } else {
+                let count = 0;
+                for (const file of files) {
+                    if (file.extension === "js") {
+                        count++;
+                        desc.append(desc.createEl("li", {
+                            text: `tp.user.${file.basename}`
+                        }));
+                    }
+                }
+                name = `Detected ${count} User Script(s)`;
+            }
         }
-      });
-    });
-  }
-  add_templates_hotkeys_setting() {
-    this.containerEl.createEl("h2", { text: "Template Hotkeys" });
-    const desc = document.createDocumentFragment();
-    desc.append("Template Hotkeys allows you to bind a template to a hotkey.");
-    new import_obsidian6.Setting(this.containerEl).setDesc(desc);
-    this.plugin.settings.enabled_templates_hotkeys.forEach((template, index) => {
-      const s = new import_obsidian6.Setting(this.containerEl).addSearch((cb) => {
-        new FileSuggest(cb.inputEl, this.plugin, FileSuggestMode.TemplateFiles);
-        cb.setPlaceholder("Example: folder1/template_file").setValue(template).onChange((new_template) => {
-          if (new_template && this.plugin.settings.enabled_templates_hotkeys.contains(new_template)) {
-            log_error(new TemplaterError("This template is already bound to a hotkey"));
-            return;
-          }
-          this.plugin.command_handler.add_template_hotkey(this.plugin.settings.enabled_templates_hotkeys[index], new_template);
-          this.plugin.settings.enabled_templates_hotkeys[index] = new_template;
-          this.plugin.save_settings();
+        new import_obsidian6.Setting(this.containerEl).setName(name).setDesc(desc).addExtraButton((extra) => {
+            extra.setIcon("sync").setTooltip("Refresh").onClick(() => {
+                this.display();
+            });
         });
-        cb.containerEl.addClass("templater_search");
-      }).addExtraButton((cb) => {
-        cb.setIcon("any-key").setTooltip("Configure Hotkey").onClick(() => {
-          app.setting.openTabById("hotkeys");
-          const tab = app.setting.activeTab;
-          tab.searchInputEl.value = "Templater: Insert";
-          tab.updateHotkeyVisibility();
-        });
-      }).addExtraButton((cb) => {
-        cb.setIcon("up-chevron-glyph").setTooltip("Move up").onClick(() => {
-          arraymove(this.plugin.settings.enabled_templates_hotkeys, index, index - 1);
-          this.plugin.save_settings();
-          this.display();
-        });
-      }).addExtraButton((cb) => {
-        cb.setIcon("down-chevron-glyph").setTooltip("Move down").onClick(() => {
-          arraymove(this.plugin.settings.enabled_templates_hotkeys, index, index + 1);
-          this.plugin.save_settings();
-          this.display();
-        });
-      }).addExtraButton((cb) => {
-        cb.setIcon("cross").setTooltip("Delete").onClick(() => {
-          this.plugin.command_handler.remove_template_hotkey(this.plugin.settings.enabled_templates_hotkeys[index]);
-          this.plugin.settings.enabled_templates_hotkeys.splice(index, 1);
-          this.plugin.save_settings();
-          this.display();
-        });
-      });
-      s.infoEl.remove();
-    });
-    new import_obsidian6.Setting(this.containerEl).addButton((cb) => {
-      cb.setButtonText("Add new hotkey for template").setCta().onClick(() => {
-        this.plugin.settings.enabled_templates_hotkeys.push("");
-        this.plugin.save_settings();
-        this.display();
-      });
-    });
-  }
-  add_folder_templates_setting() {
-    this.containerEl.createEl("h2", { text: "Folder Templates" });
-    const descHeading = document.createDocumentFragment();
-    descHeading.append("Folder Templates are triggered when a new ", descHeading.createEl("strong", { text: "empty " }), "file is created in a given folder.", descHeading.createEl("br"), "Templater will fill the empty file with the specified template.", descHeading.createEl("br"), "The deepest match is used. A global default template would be defined on the root ", descHeading.createEl("code", { text: "/" }), ".");
-    new import_obsidian6.Setting(this.containerEl).setDesc(descHeading);
-    const descUseNewFileTemplate = document.createDocumentFragment();
-    descUseNewFileTemplate.append("When enabled Templater will make use of the folder templates defined below.");
-    new import_obsidian6.Setting(this.containerEl).setName("Enable Folder Templates").setDesc(descUseNewFileTemplate).addToggle((toggle) => {
-      toggle.setValue(this.plugin.settings.enable_folder_templates).onChange((use_new_file_templates) => {
-        this.plugin.settings.enable_folder_templates = use_new_file_templates;
-        this.plugin.save_settings();
-        this.display();
-      });
-    });
-    if (!this.plugin.settings.enable_folder_templates) {
-      return;
     }
-    new import_obsidian6.Setting(this.containerEl).setName("Add New").setDesc("Add new folder template").addButton((button) => {
-      button.setTooltip("Add additional folder template").setButtonText("+").setCta().onClick(() => {
-        this.plugin.settings.folder_templates.push({
-          folder: "",
-          template: ""
+
+    add_user_system_command_functions_setting() {
+        let desc = document.createDocumentFragment();
+        desc.append("Allows you to create user functions linked to system commands.", desc.createEl("br"), desc.createEl("b", {
+            text: "Warning: "
+        }), "It can be dangerous to execute arbitrary system commands from untrusted sources. Only run system commands that you understand, from trusted sources.");
+        this.containerEl.createEl("h2", {
+            text: "User System Command Functions"
         });
-        this.plugin.save_settings();
-        this.display();
-      });
-    });
-    this.plugin.settings.folder_templates.forEach((folder_template, index) => {
-      const s = new import_obsidian6.Setting(this.containerEl).addSearch((cb) => {
-        new FolderSuggest(cb.inputEl);
-        cb.setPlaceholder("Folder").setValue(folder_template.folder).onChange((new_folder) => {
-          if (new_folder && this.plugin.settings.folder_templates.some((e) => e.folder == new_folder)) {
-            log_error(new TemplaterError("This folder already has a template associated with it"));
-            return;
-          }
-          this.plugin.settings.folder_templates[index].folder = new_folder;
-          this.plugin.save_settings();
+        new import_obsidian6.Setting(this.containerEl).setName("Enable User System Command Functions").setDesc(desc).addToggle((toggle) => {
+            toggle.setValue(this.plugin.settings.enable_system_commands).onChange((enable_system_commands) => {
+                this.plugin.settings.enable_system_commands = enable_system_commands;
+                this.plugin.save_settings();
+                this.display();
+            });
         });
-        cb.containerEl.addClass("templater_search");
-      }).addSearch((cb) => {
-        new FileSuggest(cb.inputEl, this.plugin, FileSuggestMode.TemplateFiles);
-        cb.setPlaceholder("Template").setValue(folder_template.template).onChange((new_template) => {
-          this.plugin.settings.folder_templates[index].template = new_template;
-          this.plugin.save_settings();
-        });
-        cb.containerEl.addClass("templater_search");
-      }).addExtraButton((cb) => {
-        cb.setIcon("up-chevron-glyph").setTooltip("Move up").onClick(() => {
-          arraymove(this.plugin.settings.folder_templates, index, index - 1);
-          this.plugin.save_settings();
-          this.display();
-        });
-      }).addExtraButton((cb) => {
-        cb.setIcon("down-chevron-glyph").setTooltip("Move down").onClick(() => {
-          arraymove(this.plugin.settings.folder_templates, index, index + 1);
-          this.plugin.save_settings();
-          this.display();
-        });
-      }).addExtraButton((cb) => {
-        cb.setIcon("cross").setTooltip("Delete").onClick(() => {
-          this.plugin.settings.folder_templates.splice(index, 1);
-          this.plugin.save_settings();
-          this.display();
-        });
-      });
-      s.infoEl.remove();
-    });
-  }
-  add_startup_templates_setting() {
-    this.containerEl.createEl("h2", { text: "Startup Templates" });
-    const desc = document.createDocumentFragment();
-    desc.append("Startup Templates are templates that will get executed once when Templater starts.", desc.createEl("br"), "These templates won't output anything.", desc.createEl("br"), "This can be useful to set up templates adding hooks to obsidian events for example.");
-    new import_obsidian6.Setting(this.containerEl).setDesc(desc);
-    this.plugin.settings.startup_templates.forEach((template, index) => {
-      const s = new import_obsidian6.Setting(this.containerEl).addSearch((cb) => {
-        new FileSuggest(cb.inputEl, this.plugin, FileSuggestMode.TemplateFiles);
-        cb.setPlaceholder("Example: folder1/template_file").setValue(template).onChange((new_template) => {
-          if (new_template && this.plugin.settings.startup_templates.contains(new_template)) {
-            log_error(new TemplaterError("This startup template already exist"));
-            return;
-          }
-          this.plugin.settings.startup_templates[index] = new_template;
-          this.plugin.save_settings();
-        });
-        cb.containerEl.addClass("templater_search");
-      }).addExtraButton((cb) => {
-        cb.setIcon("cross").setTooltip("Delete").onClick(() => {
-          this.plugin.settings.startup_templates.splice(index, 1);
-          this.plugin.save_settings();
-          this.display();
-        });
-      });
-      s.infoEl.remove();
-    });
-    new import_obsidian6.Setting(this.containerEl).addButton((cb) => {
-      cb.setButtonText("Add new startup template").setCta().onClick(() => {
-        this.plugin.settings.startup_templates.push("");
-        this.plugin.save_settings();
-        this.display();
-      });
-    });
-  }
-  add_user_script_functions_setting() {
-    this.containerEl.createEl("h2", { text: "User Script Functions" });
-    let desc = document.createDocumentFragment();
-    desc.append("All JavaScript files in this folder will be loaded as CommonJS modules, to import custom user functions.", desc.createEl("br"), "The folder needs to be accessible from the vault.", desc.createEl("br"), "Check the ", desc.createEl("a", {
-      href: "https://silentvoid13.github.io/Templater/",
-      text: "documentation"
-    }), " for more information.");
-    new import_obsidian6.Setting(this.containerEl).setName("Script files folder location").setDesc(desc).addSearch((cb) => {
-      new FolderSuggest(cb.inputEl);
-      cb.setPlaceholder("Example: folder1/folder2").setValue(this.plugin.settings.user_scripts_folder).onChange((new_folder) => {
-        this.plugin.settings.user_scripts_folder = new_folder;
-        this.plugin.save_settings();
-      });
-      cb.containerEl.addClass("templater_search");
-    });
-    desc = document.createDocumentFragment();
-    let name;
-    if (!this.plugin.settings.user_scripts_folder) {
-      name = "No User Scripts folder set";
-    } else {
-      const files = errorWrapperSync(() => get_tfiles_from_folder(this.plugin.settings.user_scripts_folder), `User Scripts folder doesn't exist`);
-      if (!files || files.length === 0) {
-        name = "No User Scripts detected";
-      } else {
-        let count = 0;
-        for (const file of files) {
-          if (file.extension === "js") {
-            count++;
-            desc.append(desc.createEl("li", {
-              text: `tp.user.${file.basename}`
-            }));
-          }
+        if (this.plugin.settings.enable_system_commands) {
+            new import_obsidian6.Setting(this.containerEl).setName("Timeout").setDesc("Maximum timeout in seconds for a system command.").addText((text) => {
+                text.setPlaceholder("Timeout").setValue(this.plugin.settings.command_timeout.toString()).onChange((new_value) => {
+                    const new_timeout = Number(new_value);
+                    if (isNaN(new_timeout)) {
+                        log_error(new TemplaterError("Timeout must be a number"));
+                        return;
+                    }
+                    this.plugin.settings.command_timeout = new_timeout;
+                    this.plugin.save_settings();
+                });
+            });
+            desc = document.createDocumentFragment();
+            desc.append("Full path to the shell binary to execute the command with.", desc.createEl("br"), "This setting is optional and will default to the system's default shell if not specified.", desc.createEl("br"), "You can use forward slashes ('/') as path separators on all platforms if in doubt.");
+            new import_obsidian6.Setting(this.containerEl).setName("Shell binary location").setDesc(desc).addText((text) => {
+                text.setPlaceholder("Example: /bin/bash, ...").setValue(this.plugin.settings.shell_path).onChange((shell_path) => {
+                    this.plugin.settings.shell_path = shell_path;
+                    this.plugin.save_settings();
+                });
+            });
+            let i = 1;
+            this.plugin.settings.templates_pairs.forEach((template_pair) => {
+                const div2 = this.containerEl.createEl("div");
+                div2.addClass("templater_div");
+                const title = this.containerEl.createEl("h4", {
+                    text: "User Function n\xB0" + i
+                });
+                title.addClass("templater_title");
+                const setting2 = new import_obsidian6.Setting(this.containerEl).addExtraButton((extra) => {
+                    extra.setIcon("cross").setTooltip("Delete").onClick(() => {
+                        const index = this.plugin.settings.templates_pairs.indexOf(template_pair);
+                        if (index > -1) {
+                            this.plugin.settings.templates_pairs.splice(index, 1);
+                            this.plugin.save_settings();
+                            this.display();
+                        }
+                    });
+                }).addText((text) => {
+                    const t = text.setPlaceholder("Function name").setValue(template_pair[0]).onChange((new_value) => {
+                        const index = this.plugin.settings.templates_pairs.indexOf(template_pair);
+                        if (index > -1) {
+                            this.plugin.settings.templates_pairs[index][0] = new_value;
+                            this.plugin.save_settings();
+                        }
+                    });
+                    t.inputEl.addClass("templater_template");
+                    return t;
+                }).addTextArea((text) => {
+                    const t = text.setPlaceholder("System Command").setValue(template_pair[1]).onChange((new_cmd) => {
+                        const index = this.plugin.settings.templates_pairs.indexOf(template_pair);
+                        if (index > -1) {
+                            this.plugin.settings.templates_pairs[index][1] = new_cmd;
+                            this.plugin.save_settings();
+                        }
+                    });
+                    t.inputEl.setAttr("rows", 2);
+                    t.inputEl.addClass("templater_cmd");
+                    return t;
+                });
+                setting2.infoEl.remove();
+                div2.appendChild(title);
+                div2.appendChild(this.containerEl.lastChild);
+                i += 1;
+            });
+            const div = this.containerEl.createEl("div");
+            div.addClass("templater_div2");
+            const setting = new import_obsidian6.Setting(this.containerEl).addButton((button) => {
+                button.setButtonText("Add New User Function").setCta().onClick(() => {
+                    this.plugin.settings.templates_pairs.push(["", ""]);
+                    this.plugin.save_settings();
+                    this.display();
+                });
+            });
+            setting.infoEl.remove();
+            div.appendChild(this.containerEl.lastChild);
         }
-        name = `Detected ${count} User Script(s)`;
-      }
     }
-    new import_obsidian6.Setting(this.containerEl).setName(name).setDesc(desc).addExtraButton((extra) => {
-      extra.setIcon("sync").setTooltip("Refresh").onClick(() => {
-        this.display();
-      });
-    });
-  }
-  add_user_system_command_functions_setting() {
-    let desc = document.createDocumentFragment();
-    desc.append("Allows you to create user functions linked to system commands.", desc.createEl("br"), desc.createEl("b", {
-      text: "Warning: "
-    }), "It can be dangerous to execute arbitrary system commands from untrusted sources. Only run system commands that you understand, from trusted sources.");
-    this.containerEl.createEl("h2", {
-      text: "User System Command Functions"
-    });
-    new import_obsidian6.Setting(this.containerEl).setName("Enable User System Command Functions").setDesc(desc).addToggle((toggle) => {
-      toggle.setValue(this.plugin.settings.enable_system_commands).onChange((enable_system_commands) => {
-        this.plugin.settings.enable_system_commands = enable_system_commands;
-        this.plugin.save_settings();
-        this.display();
-      });
-    });
-    if (this.plugin.settings.enable_system_commands) {
-      new import_obsidian6.Setting(this.containerEl).setName("Timeout").setDesc("Maximum timeout in seconds for a system command.").addText((text) => {
-        text.setPlaceholder("Timeout").setValue(this.plugin.settings.command_timeout.toString()).onChange((new_value) => {
-          const new_timeout = Number(new_value);
-          if (isNaN(new_timeout)) {
-            log_error(new TemplaterError("Timeout must be a number"));
-            return;
-          }
-          this.plugin.settings.command_timeout = new_timeout;
-          this.plugin.save_settings();
-        });
-      });
-      desc = document.createDocumentFragment();
-      desc.append("Full path to the shell binary to execute the command with.", desc.createEl("br"), "This setting is optional and will default to the system's default shell if not specified.", desc.createEl("br"), "You can use forward slashes ('/') as path separators on all platforms if in doubt.");
-      new import_obsidian6.Setting(this.containerEl).setName("Shell binary location").setDesc(desc).addText((text) => {
-        text.setPlaceholder("Example: /bin/bash, ...").setValue(this.plugin.settings.shell_path).onChange((shell_path) => {
-          this.plugin.settings.shell_path = shell_path;
-          this.plugin.save_settings();
-        });
-      });
-      let i = 1;
-      this.plugin.settings.templates_pairs.forEach((template_pair) => {
-        const div2 = this.containerEl.createEl("div");
-        div2.addClass("templater_div");
-        const title = this.containerEl.createEl("h4", {
-          text: "User Function n\xB0" + i
-        });
-        title.addClass("templater_title");
-        const setting2 = new import_obsidian6.Setting(this.containerEl).addExtraButton((extra) => {
-          extra.setIcon("cross").setTooltip("Delete").onClick(() => {
-            const index = this.plugin.settings.templates_pairs.indexOf(template_pair);
-            if (index > -1) {
-              this.plugin.settings.templates_pairs.splice(index, 1);
-              this.plugin.save_settings();
-              this.display();
-            }
-          });
-        }).addText((text) => {
-          const t = text.setPlaceholder("Function name").setValue(template_pair[0]).onChange((new_value) => {
-            const index = this.plugin.settings.templates_pairs.indexOf(template_pair);
-            if (index > -1) {
-              this.plugin.settings.templates_pairs[index][0] = new_value;
-              this.plugin.save_settings();
-            }
-          });
-          t.inputEl.addClass("templater_template");
-          return t;
-        }).addTextArea((text) => {
-          const t = text.setPlaceholder("System Command").setValue(template_pair[1]).onChange((new_cmd) => {
-            const index = this.plugin.settings.templates_pairs.indexOf(template_pair);
-            if (index > -1) {
-              this.plugin.settings.templates_pairs[index][1] = new_cmd;
-              this.plugin.save_settings();
-            }
-          });
-          t.inputEl.setAttr("rows", 2);
-          t.inputEl.addClass("templater_cmd");
-          return t;
-        });
-        setting2.infoEl.remove();
-        div2.appendChild(title);
-        div2.appendChild(this.containerEl.lastChild);
-        i += 1;
-      });
-      const div = this.containerEl.createEl("div");
-      div.addClass("templater_div2");
-      const setting = new import_obsidian6.Setting(this.containerEl).addButton((button) => {
-        button.setButtonText("Add New User Function").setCta().onClick(() => {
-          this.plugin.settings.templates_pairs.push(["", ""]);
-          this.plugin.save_settings();
-          this.display();
-        });
-      });
-      setting.infoEl.remove();
-      div.appendChild(this.containerEl.lastChild);
+
+    add_donating_setting() {
+        const s = new import_obsidian6.Setting(this.containerEl).setName("Donate").setDesc("If you like this Plugin, consider donating to support continued development.");
+        const a1 = document.createElement("a");
+        a1.setAttribute("href", "https://github.com/sponsors/silentvoid13");
+        a1.addClass("templater_donating");
+        const img1 = document.createElement("img");
+        img1.src = "https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86";
+        a1.appendChild(img1);
+        const a2 = document.createElement("a");
+        a2.setAttribute("href", "https://www.paypal.com/donate?hosted_button_id=U2SRGAFYXT32Q");
+        a2.addClass("templater_donating");
+        const img2 = document.createElement("img");
+        img2.src = "https://img.shields.io/badge/paypal-silentvoid13-yellow?style=social&logo=paypal";
+        a2.appendChild(img2);
+        s.settingEl.appendChild(a1);
+        s.settingEl.appendChild(a2);
     }
-  }
-  add_donating_setting() {
-    const s = new import_obsidian6.Setting(this.containerEl).setName("Donate").setDesc("If you like this Plugin, consider donating to support continued development.");
-    const a1 = document.createElement("a");
-    a1.setAttribute("href", "https://github.com/sponsors/silentvoid13");
-    a1.addClass("templater_donating");
-    const img1 = document.createElement("img");
-    img1.src = "https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86";
-    a1.appendChild(img1);
-    const a2 = document.createElement("a");
-    a2.setAttribute("href", "https://www.paypal.com/donate?hosted_button_id=U2SRGAFYXT32Q");
-    a2.addClass("templater_donating");
-    const img2 = document.createElement("img");
-    img2.src = "https://img.shields.io/badge/paypal-silentvoid13-yellow?style=social&logo=paypal";
-    a2.appendChild(img2);
-    s.settingEl.appendChild(a1);
-    s.settingEl.appendChild(a2);
-  }
 };
 
 // src/handlers/FuzzySuggester.ts
 var import_obsidian7 = __toModule(require("obsidian"));
 var OpenMode;
-(function(OpenMode2) {
-  OpenMode2[OpenMode2["InsertTemplate"] = 0] = "InsertTemplate";
-  OpenMode2[OpenMode2["CreateNoteTemplate"] = 1] = "CreateNoteTemplate";
+(function (OpenMode2) {
+    OpenMode2[OpenMode2["InsertTemplate"] = 0] = "InsertTemplate";
+    OpenMode2[OpenMode2["CreateNoteTemplate"] = 1] = "CreateNoteTemplate";
 })(OpenMode || (OpenMode = {}));
 var FuzzySuggester = class extends import_obsidian7.FuzzySuggestModal {
-  constructor(plugin) {
-    super(app);
-    this.plugin = plugin;
-    this.setPlaceholder("Type name of a template...");
-  }
-  getItems() {
-    if (!this.plugin.settings.templates_folder) {
-      return app.vault.getMarkdownFiles();
+    constructor(plugin) {
+        super(app);
+        this.plugin = plugin;
+        this.setPlaceholder("Type name of a template...");
     }
-    const files = errorWrapperSync(() => get_tfiles_from_folder(this.plugin.settings.templates_folder), `Couldn't retrieve template files from templates folder ${this.plugin.settings.templates_folder}`);
-    if (!files) {
-      return [];
+
+    getItems() {
+        if (!this.plugin.settings.templates_folder) {
+            return app.vault.getMarkdownFiles();
+        }
+        const files = errorWrapperSync(() => get_tfiles_from_folder(this.plugin.settings.templates_folder), `Couldn't retrieve template files from templates folder ${this.plugin.settings.templates_folder}`);
+        if (!files) {
+            return [];
+        }
+        return files;
     }
-    return files;
-  }
-  getItemText(item) {
-    return item.basename;
-  }
-  onChooseItem(item) {
-    switch (this.open_mode) {
-      case 0:
-        this.plugin.templater.append_template_to_active_file(item);
-        break;
-      case 1:
-        this.plugin.templater.create_new_note_from_template(item, this.creation_folder);
-        break;
+
+    getItemText(item) {
+        return item.basename;
     }
-  }
-  start() {
-    try {
-      this.open();
-    } catch (e) {
-      log_error(e);
+
+    onChooseItem(item) {
+        switch (this.open_mode) {
+            case 0:
+                this.plugin.templater.append_template_to_active_file(item);
+                break;
+            case 1:
+                this.plugin.templater.create_new_note_from_template(item, this.creation_folder);
+                break;
+        }
     }
-  }
-  insert_template() {
-    this.open_mode = 0;
-    this.start();
-  }
-  create_new_note_from_template(folder) {
-    this.creation_folder = folder;
-    this.open_mode = 1;
-    this.start();
-  }
+
+    start() {
+        try {
+            this.open();
+        } catch (e) {
+            log_error(e);
+        }
+    }
+
+    insert_template() {
+        this.open_mode = 0;
+        this.start();
+    }
+
+    create_new_note_from_template(folder) {
+        this.creation_folder = folder;
+        this.open_mode = 1;
+        this.start();
+    }
 };
 
 // src/utils/Constants.ts
@@ -2299,609 +2436,676 @@ var import_obsidian12 = __toModule(require("obsidian"));
 
 // src/core/functions/internal_functions/InternalModule.ts
 var InternalModule = class {
-  constructor(plugin) {
-    this.plugin = plugin;
-    this.static_functions = new Map();
-    this.dynamic_functions = new Map();
-  }
-  getName() {
-    return this.name;
-  }
-  async init() {
-    await this.create_static_templates();
-    this.static_object = Object.fromEntries(this.static_functions);
-  }
-  async generate_object(new_config) {
-    this.config = new_config;
-    await this.create_dynamic_templates();
-    return {
-      ...this.static_object,
-      ...Object.fromEntries(this.dynamic_functions)
-    };
-  }
+    constructor(plugin) {
+        this.plugin = plugin;
+        this.static_functions = new Map();
+        this.dynamic_functions = new Map();
+    }
+
+    getName() {
+        return this.name;
+    }
+
+    async init() {
+        await this.create_static_templates();
+        this.static_object = Object.fromEntries(this.static_functions);
+    }
+
+    async generate_object(new_config) {
+        this.config = new_config;
+        await this.create_dynamic_templates();
+        return {
+            ...this.static_object,
+            ...Object.fromEntries(this.dynamic_functions)
+        };
+    }
 };
 
 // src/core/functions/internal_functions/date/InternalModuleDate.ts
 var InternalModuleDate = class extends InternalModule {
-  constructor() {
-    super(...arguments);
-    this.name = "date";
-  }
-  async create_static_templates() {
-    this.static_functions.set("now", this.generate_now());
-    this.static_functions.set("tomorrow", this.generate_tomorrow());
-    this.static_functions.set("weekday", this.generate_weekday());
-    this.static_functions.set("yesterday", this.generate_yesterday());
-  }
-  async create_dynamic_templates() {
-  }
-  async teardown() {
-  }
-  generate_now() {
-    return (format = "YYYY-MM-DD", offset2, reference2, reference_format) => {
-      if (reference2 && !window.moment(reference2, reference_format).isValid()) {
-        throw new TemplaterError("Invalid reference date format, try specifying one with the argument 'reference_format'");
-      }
-      let duration;
-      if (typeof offset2 === "string") {
-        duration = window.moment.duration(offset2);
-      } else if (typeof offset2 === "number") {
-        duration = window.moment.duration(offset2, "days");
-      }
-      return window.moment(reference2, reference_format).add(duration).format(format);
-    };
-  }
-  generate_tomorrow() {
-    return (format = "YYYY-MM-DD") => {
-      return window.moment().add(1, "days").format(format);
-    };
-  }
-  generate_weekday() {
-    return (format = "YYYY-MM-DD", weekday, reference2, reference_format) => {
-      if (reference2 && !window.moment(reference2, reference_format).isValid()) {
-        throw new TemplaterError("Invalid reference date format, try specifying one with the argument 'reference_format'");
-      }
-      return window.moment(reference2, reference_format).weekday(weekday).format(format);
-    };
-  }
-  generate_yesterday() {
-    return (format = "YYYY-MM-DD") => {
-      return window.moment().add(-1, "days").format(format);
-    };
-  }
+    constructor() {
+        super(...arguments);
+        this.name = "date";
+    }
+
+    async create_static_templates() {
+        this.static_functions.set("now", this.generate_now());
+        this.static_functions.set("tomorrow", this.generate_tomorrow());
+        this.static_functions.set("weekday", this.generate_weekday());
+        this.static_functions.set("yesterday", this.generate_yesterday());
+    }
+
+    async create_dynamic_templates() {
+    }
+
+    async teardown() {
+    }
+
+    generate_now() {
+        return (format = "YYYY-MM-DD", offset2, reference2, reference_format) => {
+            if (reference2 && !window.moment(reference2, reference_format).isValid()) {
+                throw new TemplaterError("Invalid reference date format, try specifying one with the argument 'reference_format'");
+            }
+            let duration;
+            if (typeof offset2 === "string") {
+                duration = window.moment.duration(offset2);
+            } else if (typeof offset2 === "number") {
+                duration = window.moment.duration(offset2, "days");
+            }
+            return window.moment(reference2, reference_format).add(duration).format(format);
+        };
+    }
+
+    generate_tomorrow() {
+        return (format = "YYYY-MM-DD") => {
+            return window.moment().add(1, "days").format(format);
+        };
+    }
+
+    generate_weekday() {
+        return (format = "YYYY-MM-DD", weekday, reference2, reference_format) => {
+            if (reference2 && !window.moment(reference2, reference_format).isValid()) {
+                throw new TemplaterError("Invalid reference date format, try specifying one with the argument 'reference_format'");
+            }
+            return window.moment(reference2, reference_format).weekday(weekday).format(format);
+        };
+    }
+
+    generate_yesterday() {
+        return (format = "YYYY-MM-DD") => {
+            return window.moment().add(-1, "days").format(format);
+        };
+    }
 };
 
 // src/core/functions/internal_functions/file/InternalModuleFile.ts
 var import_obsidian8 = __toModule(require("obsidian"));
 var DEPTH_LIMIT = 10;
 var InternalModuleFile = class extends InternalModule {
-  constructor() {
-    super(...arguments);
-    this.name = "file";
-    this.include_depth = 0;
-    this.create_new_depth = 0;
-    this.linkpath_regex = new RegExp("^\\[\\[(.*)\\]\\]$");
-  }
-  async create_static_templates() {
-    this.static_functions.set("creation_date", this.generate_creation_date());
-    this.static_functions.set("create_new", this.generate_create_new());
-    this.static_functions.set("cursor", this.generate_cursor());
-    this.static_functions.set("cursor_append", this.generate_cursor_append());
-    this.static_functions.set("exists", this.generate_exists());
-    this.static_functions.set("find_tfile", this.generate_find_tfile());
-    this.static_functions.set("folder", this.generate_folder());
-    this.static_functions.set("include", this.generate_include());
-    this.static_functions.set("last_modified_date", this.generate_last_modified_date());
-    this.static_functions.set("move", this.generate_move());
-    this.static_functions.set("path", this.generate_path());
-    this.static_functions.set("rename", this.generate_rename());
-    this.static_functions.set("selection", this.generate_selection());
-  }
-  async create_dynamic_templates() {
-    this.dynamic_functions.set("content", await this.generate_content());
-    this.dynamic_functions.set("tags", this.generate_tags());
-    this.dynamic_functions.set("title", this.generate_title());
-  }
-  async teardown() {
-  }
-  async generate_content() {
-    return await app.vault.read(this.config.target_file);
-  }
-  generate_create_new() {
-    return async (template, filename, open_new = false, folder) => {
-      this.create_new_depth += 1;
-      if (this.create_new_depth > DEPTH_LIMIT) {
+    constructor() {
+        super(...arguments);
+        this.name = "file";
+        this.include_depth = 0;
         this.create_new_depth = 0;
-        throw new TemplaterError("Reached create_new depth limit (max = 10)");
-      }
-      const new_file = await this.plugin.templater.create_new_note_from_template(template, folder, filename, open_new);
-      this.create_new_depth -= 1;
-      return new_file;
-    };
-  }
-  generate_creation_date() {
-    return (format = "YYYY-MM-DD HH:mm") => {
-      return window.moment(this.config.target_file.stat.ctime).format(format);
-    };
-  }
-  generate_cursor() {
-    return (order2) => {
-      return `<% tp.file.cursor(${order2 ?? ""}) %>`;
-    };
-  }
-  generate_cursor_append() {
-    return (content) => {
-      const active_editor = app.workspace.activeEditor;
-      if (!active_editor || !active_editor.editor) {
-        log_error(new TemplaterError("No active editor, can't append to cursor."));
-        return;
-      }
-      const editor = active_editor.editor;
-      const doc = editor.getDoc();
-      doc.replaceSelection(content);
-      return "";
-    };
-  }
-  generate_exists() {
-    return async (filepath) => {
-      const path = (0, import_obsidian8.normalizePath)(filepath);
-      return await app.vault.exists(path);
-    };
-  }
-  generate_find_tfile() {
-    return (filename) => {
-      const path = (0, import_obsidian8.normalizePath)(filename);
-      return app.metadataCache.getFirstLinkpathDest(path, "");
-    };
-  }
-  generate_folder() {
-    return (relative = false) => {
-      const parent = this.config.target_file.parent;
-      let folder;
-      if (relative) {
-        folder = parent.path;
-      } else {
-        folder = parent.name;
-      }
-      return folder;
-    };
-  }
-  generate_include() {
-    return async (include_link) => {
-      this.include_depth += 1;
-      if (this.include_depth > DEPTH_LIMIT) {
-        this.include_depth -= 1;
-        throw new TemplaterError("Reached inclusion depth limit (max = 10)");
-      }
-      let inc_file_content;
-      if (include_link instanceof import_obsidian8.TFile) {
-        inc_file_content = await app.vault.read(include_link);
-      } else {
-        let match;
-        if ((match = this.linkpath_regex.exec(include_link)) === null) {
-          this.include_depth -= 1;
-          throw new TemplaterError("Invalid file format, provide an obsidian link between quotes.");
-        }
-        const { path, subpath } = (0, import_obsidian8.parseLinktext)(match[1]);
-        const inc_file = app.metadataCache.getFirstLinkpathDest(path, "");
-        if (!inc_file) {
-          this.include_depth -= 1;
-          throw new TemplaterError(`File ${include_link} doesn't exist`);
-        }
-        inc_file_content = await app.vault.read(inc_file);
-        if (subpath) {
-          const cache = app.metadataCache.getFileCache(inc_file);
-          if (cache) {
-            const result = (0, import_obsidian8.resolveSubpath)(cache, subpath);
-            if (result) {
-              inc_file_content = inc_file_content.slice(result.start.offset, result.end?.offset);
-            }
-          }
-        }
-      }
-      try {
-        const parsed_content = await this.plugin.templater.parser.parse_commands(inc_file_content, this.plugin.templater.current_functions_object);
-        this.include_depth -= 1;
-        return parsed_content;
-      } catch (e) {
-        this.include_depth -= 1;
-        throw e;
-      }
-    };
-  }
-  generate_last_modified_date() {
-    return (format = "YYYY-MM-DD HH:mm") => {
-      return window.moment(this.config.target_file.stat.mtime).format(format);
-    };
-  }
-  generate_move() {
-    return async (path, file_to_move) => {
-      const file = file_to_move || this.config.target_file;
-      const new_path = (0, import_obsidian8.normalizePath)(`${path}.${file.extension}`);
-      const dirs = new_path.replace(/\\/g, "/").split("/");
-      dirs.pop();
-      if (dirs.length) {
-        const dir = dirs.join("/");
-        if (!window.app.vault.getAbstractFileByPath(dir)) {
-          await window.app.vault.createFolder(dir);
-        }
-      }
-      await app.fileManager.renameFile(file, new_path);
-      return "";
-    };
-  }
-  generate_path() {
-    return (relative = false) => {
-      let vault_path = "";
-      if (import_obsidian8.Platform.isMobileApp) {
-        const vault_adapter = app.vault.adapter.fs.uri;
-        const vault_base = app.vault.adapter.basePath;
-        vault_path = `${vault_adapter}/${vault_base}`;
-      } else {
-        if (app.vault.adapter instanceof import_obsidian8.FileSystemAdapter) {
-          vault_path = app.vault.adapter.getBasePath();
-        } else {
-          throw new TemplaterError("app.vault is not a FileSystemAdapter instance");
-        }
-      }
-      if (relative) {
-        return this.config.target_file.path;
-      } else {
-        return `${vault_path}/${this.config.target_file.path}`;
-      }
-    };
-  }
-  generate_rename() {
-    return async (new_title) => {
-      if (new_title.match(/[\\/:]+/g)) {
-        throw new TemplaterError("File name cannot contain any of these characters: \\ / :");
-      }
-      const new_path = (0, import_obsidian8.normalizePath)(`${this.config.target_file.parent.path}/${new_title}.${this.config.target_file.extension}`);
-      await app.fileManager.renameFile(this.config.target_file, new_path);
-      return "";
-    };
-  }
-  generate_selection() {
-    return () => {
-      const active_editor = app.workspace.activeEditor;
-      if (!active_editor || !active_editor.editor) {
-        throw new TemplaterError("Active editor is null, can't read selection.");
-      }
-      const editor = active_editor.editor;
-      return editor.getSelection();
-    };
-  }
-  generate_tags() {
-    const cache = app.metadataCache.getFileCache(this.config.target_file);
-    if (cache) {
-      return (0, import_obsidian8.getAllTags)(cache);
+        this.linkpath_regex = new RegExp("^\\[\\[(.*)\\]\\]$");
     }
-    return null;
-  }
-  generate_title() {
-    return this.config.target_file.basename;
-  }
+
+    async create_static_templates() {
+        this.static_functions.set("creation_date", this.generate_creation_date());
+        this.static_functions.set("create_new", this.generate_create_new());
+        this.static_functions.set("cursor", this.generate_cursor());
+        this.static_functions.set("cursor_append", this.generate_cursor_append());
+        this.static_functions.set("exists", this.generate_exists());
+        this.static_functions.set("find_tfile", this.generate_find_tfile());
+        this.static_functions.set("folder", this.generate_folder());
+        this.static_functions.set("include", this.generate_include());
+        this.static_functions.set("last_modified_date", this.generate_last_modified_date());
+        this.static_functions.set("move", this.generate_move());
+        this.static_functions.set("path", this.generate_path());
+        this.static_functions.set("rename", this.generate_rename());
+        this.static_functions.set("selection", this.generate_selection());
+    }
+
+    async create_dynamic_templates() {
+        this.dynamic_functions.set("content", await this.generate_content());
+        this.dynamic_functions.set("tags", this.generate_tags());
+        this.dynamic_functions.set("title", this.generate_title());
+    }
+
+    async teardown() {
+    }
+
+    async generate_content() {
+        return await app.vault.read(this.config.target_file);
+    }
+
+    generate_create_new() {
+        return async (template, filename, open_new = false, folder) => {
+            this.create_new_depth += 1;
+            if (this.create_new_depth > DEPTH_LIMIT) {
+                this.create_new_depth = 0;
+                throw new TemplaterError("Reached create_new depth limit (max = 10)");
+            }
+            const new_file = await this.plugin.templater.create_new_note_from_template(template, folder, filename, open_new);
+            this.create_new_depth -= 1;
+            return new_file;
+        };
+    }
+
+    generate_creation_date() {
+        return (format = "YYYY-MM-DD HH:mm") => {
+            return window.moment(this.config.target_file.stat.ctime).format(format);
+        };
+    }
+
+    generate_cursor() {
+        return (order2) => {
+            return `<% tp.file.cursor(${order2 ?? ""}) %>`;
+        };
+    }
+
+    generate_cursor_append() {
+        return (content) => {
+            const active_editor = app.workspace.activeEditor;
+            if (!active_editor || !active_editor.editor) {
+                log_error(new TemplaterError("No active editor, can't append to cursor."));
+                return;
+            }
+            const editor = active_editor.editor;
+            const doc = editor.getDoc();
+            doc.replaceSelection(content);
+            return "";
+        };
+    }
+
+    generate_exists() {
+        return async (filepath) => {
+            const path = (0, import_obsidian8.normalizePath)(filepath);
+            return await app.vault.exists(path);
+        };
+    }
+
+    generate_find_tfile() {
+        return (filename) => {
+            const path = (0, import_obsidian8.normalizePath)(filename);
+            return app.metadataCache.getFirstLinkpathDest(path, "");
+        };
+    }
+
+    generate_folder() {
+        return (relative = false) => {
+            const parent = this.config.target_file.parent;
+            let folder;
+            if (relative) {
+                folder = parent.path;
+            } else {
+                folder = parent.name;
+            }
+            return folder;
+        };
+    }
+
+    generate_include() {
+        return async (include_link) => {
+            this.include_depth += 1;
+            if (this.include_depth > DEPTH_LIMIT) {
+                this.include_depth -= 1;
+                throw new TemplaterError("Reached inclusion depth limit (max = 10)");
+            }
+            let inc_file_content;
+            if (include_link instanceof import_obsidian8.TFile) {
+                inc_file_content = await app.vault.read(include_link);
+            } else {
+                let match;
+                if ((match = this.linkpath_regex.exec(include_link)) === null) {
+                    this.include_depth -= 1;
+                    throw new TemplaterError("Invalid file format, provide an obsidian link between quotes.");
+                }
+                const {path, subpath} = (0, import_obsidian8.parseLinktext)(match[1]);
+                const inc_file = app.metadataCache.getFirstLinkpathDest(path, "");
+                if (!inc_file) {
+                    this.include_depth -= 1;
+                    throw new TemplaterError(`File ${include_link} doesn't exist`);
+                }
+                inc_file_content = await app.vault.read(inc_file);
+                if (subpath) {
+                    const cache = app.metadataCache.getFileCache(inc_file);
+                    if (cache) {
+                        const result = (0, import_obsidian8.resolveSubpath)(cache, subpath);
+                        if (result) {
+                            inc_file_content = inc_file_content.slice(result.start.offset, result.end?.offset);
+                        }
+                    }
+                }
+            }
+            try {
+                const parsed_content = await this.plugin.templater.parser.parse_commands(inc_file_content, this.plugin.templater.current_functions_object);
+                this.include_depth -= 1;
+                return parsed_content;
+            } catch (e) {
+                this.include_depth -= 1;
+                throw e;
+            }
+        };
+    }
+
+    generate_last_modified_date() {
+        return (format = "YYYY-MM-DD HH:mm") => {
+            return window.moment(this.config.target_file.stat.mtime).format(format);
+        };
+    }
+
+    generate_move() {
+        return async (path, file_to_move) => {
+            const file = file_to_move || this.config.target_file;
+            const new_path = (0, import_obsidian8.normalizePath)(`${path}.${file.extension}`);
+            const dirs = new_path.replace(/\\/g, "/").split("/");
+            dirs.pop();
+            if (dirs.length) {
+                const dir = dirs.join("/");
+                if (!window.app.vault.getAbstractFileByPath(dir)) {
+                    await window.app.vault.createFolder(dir);
+                }
+            }
+            await app.fileManager.renameFile(file, new_path);
+            return "";
+        };
+    }
+
+    generate_path() {
+        return (relative = false) => {
+            let vault_path = "";
+            if (import_obsidian8.Platform.isMobileApp) {
+                const vault_adapter = app.vault.adapter.fs.uri;
+                const vault_base = app.vault.adapter.basePath;
+                vault_path = `${vault_adapter}/${vault_base}`;
+            } else {
+                if (app.vault.adapter instanceof import_obsidian8.FileSystemAdapter) {
+                    vault_path = app.vault.adapter.getBasePath();
+                } else {
+                    throw new TemplaterError("app.vault is not a FileSystemAdapter instance");
+                }
+            }
+            if (relative) {
+                return this.config.target_file.path;
+            } else {
+                return `${vault_path}/${this.config.target_file.path}`;
+            }
+        };
+    }
+
+    generate_rename() {
+        return async (new_title) => {
+            if (new_title.match(/[\\/:]+/g)) {
+                throw new TemplaterError("File name cannot contain any of these characters: \\ / :");
+            }
+            const new_path = (0, import_obsidian8.normalizePath)(`${this.config.target_file.parent.path}/${new_title}.${this.config.target_file.extension}`);
+            await app.fileManager.renameFile(this.config.target_file, new_path);
+            return "";
+        };
+    }
+
+    generate_selection() {
+        return () => {
+            const active_editor = app.workspace.activeEditor;
+            if (!active_editor || !active_editor.editor) {
+                throw new TemplaterError("Active editor is null, can't read selection.");
+            }
+            const editor = active_editor.editor;
+            return editor.getSelection();
+        };
+    }
+
+    generate_tags() {
+        const cache = app.metadataCache.getFileCache(this.config.target_file);
+        if (cache) {
+            return (0, import_obsidian8.getAllTags)(cache);
+        }
+        return null;
+    }
+
+    generate_title() {
+        return this.config.target_file.basename;
+    }
 };
 
 // src/core/functions/internal_functions/web/InternalModuleWeb.ts
 var InternalModuleWeb = class extends InternalModule {
-  constructor() {
-    super(...arguments);
-    this.name = "web";
-  }
-  async create_static_templates() {
-    this.static_functions.set("daily_quote", this.generate_daily_quote());
-    this.static_functions.set("random_picture", this.generate_random_picture());
-  }
-  async create_dynamic_templates() {
-  }
-  async teardown() {
-  }
-  async getRequest(url) {
-    try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new TemplaterError("Error performing GET request");
-      }
-      return response;
-    } catch (error) {
-      throw new TemplaterError("Error performing GET request");
+    constructor() {
+        super(...arguments);
+        this.name = "web";
     }
-  }
-  generate_daily_quote() {
-    return async () => {
-      try {
-        const response = await this.getRequest("https://api.quotable.io/random");
-        const json = await response.json();
-        const author = json.author;
-        const quote = json.content;
-        const new_content = `> [!quote] ${quote}
+
+    async create_static_templates() {
+        this.static_functions.set("daily_quote", this.generate_daily_quote());
+        this.static_functions.set("random_picture", this.generate_random_picture());
+    }
+
+    async create_dynamic_templates() {
+    }
+
+    async teardown() {
+    }
+
+    async getRequest(url) {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new TemplaterError("Error performing GET request");
+            }
+            return response;
+        } catch (error) {
+            throw new TemplaterError("Error performing GET request");
+        }
+    }
+
+    generate_daily_quote() {
+        return async () => {
+            try {
+                const response = await this.getRequest("https://api.quotable.io/random");
+                const json = await response.json();
+                const author = json.author;
+                const quote = json.content;
+                const new_content = `> [!quote] ${quote}
 > \u2014 ${author}`;
-        return new_content;
-      } catch (error) {
-        new TemplaterError("Error generating daily quote");
-        return "Error generating daily quote";
-      }
-    };
-  }
-  generate_random_picture() {
-    return async (size, query, include_size = false) => {
-      try {
-        const response = await this.getRequest(`https://templater-unsplash.fly.dev/${query ? "?q=" + query : ""}`).then((res) => res.json());
-        let url = response.full;
-        if (size && !include_size) {
-          if (size.includes("x")) {
-            const [width, height] = size.split("x");
-            url = url.concat(`&w=${width}&h=${height}`);
-          } else {
-            url = url.concat(`&w=${size}`);
-          }
-        }
-        if (include_size) {
-          return `![photo by ${response.photog} on Unsplash|${size}](${url})`;
-        }
-        return `![photo by ${response.photog} on Unsplash](${url})`;
-      } catch (error) {
-        new TemplaterError("Error generating random picture");
-        return "Error generating random picture";
-      }
-    };
-  }
+                return new_content;
+            } catch (error) {
+                new TemplaterError("Error generating daily quote");
+                return "Error generating daily quote";
+            }
+        };
+    }
+
+    generate_random_picture() {
+        return async (size, query, include_size = false) => {
+            try {
+                const response = await this.getRequest(`https://templater-unsplash.fly.dev/${query ? "?q=" + query : ""}`).then((res) => res.json());
+                let url = response.full;
+                if (size && !include_size) {
+                    if (size.includes("x")) {
+                        const [width, height] = size.split("x");
+                        url = url.concat(`&w=${width}&h=${height}`);
+                    } else {
+                        url = url.concat(`&w=${size}`);
+                    }
+                }
+                if (include_size) {
+                    return `![photo by ${response.photog} on Unsplash|${size}](${url})`;
+                }
+                return `![photo by ${response.photog} on Unsplash](${url})`;
+            } catch (error) {
+                new TemplaterError("Error generating random picture");
+                return "Error generating random picture";
+            }
+        };
+    }
 };
 
 // src/core/functions/internal_functions/hooks/InternalModuleHooks.ts
 var InternalModuleHooks = class extends InternalModule {
-  constructor() {
-    super(...arguments);
-    this.name = "hooks";
-    this.event_refs = [];
-  }
-  async create_static_templates() {
-    this.static_functions.set("on_all_templates_executed", this.generate_on_all_templates_executed());
-  }
-  async create_dynamic_templates() {
-  }
-  async teardown() {
-    this.event_refs.forEach((eventRef) => {
-      eventRef.e.offref(eventRef);
-    });
-    this.event_refs = [];
-  }
-  generate_on_all_templates_executed() {
-    return (callback_function) => {
-      const event_ref = app.workspace.on("templater:all-templates-executed", async () => {
-        await delay(1);
-        callback_function();
-      });
-      if (event_ref) {
-        this.event_refs.push(event_ref);
-      }
-    };
-  }
+    constructor() {
+        super(...arguments);
+        this.name = "hooks";
+        this.event_refs = [];
+    }
+
+    async create_static_templates() {
+        this.static_functions.set("on_all_templates_executed", this.generate_on_all_templates_executed());
+    }
+
+    async create_dynamic_templates() {
+    }
+
+    async teardown() {
+        this.event_refs.forEach((eventRef) => {
+            eventRef.e.offref(eventRef);
+        });
+        this.event_refs = [];
+    }
+
+    generate_on_all_templates_executed() {
+        return (callback_function) => {
+            const event_ref = app.workspace.on("templater:all-templates-executed", async () => {
+                await delay(1);
+                callback_function();
+            });
+            if (event_ref) {
+                this.event_refs.push(event_ref);
+            }
+        };
+    }
 };
 
 // src/core/functions/internal_functions/frontmatter/InternalModuleFrontmatter.ts
 var InternalModuleFrontmatter = class extends InternalModule {
-  constructor() {
-    super(...arguments);
-    this.name = "frontmatter";
-  }
-  async create_static_templates() {
-  }
-  async create_dynamic_templates() {
-    const cache = app.metadataCache.getFileCache(this.config.target_file);
-    this.dynamic_functions = new Map(Object.entries(cache?.frontmatter || {}));
-  }
-  async teardown() {
-  }
+    constructor() {
+        super(...arguments);
+        this.name = "frontmatter";
+    }
+
+    async create_static_templates() {
+    }
+
+    async create_dynamic_templates() {
+        const cache = app.metadataCache.getFileCache(this.config.target_file);
+        this.dynamic_functions = new Map(Object.entries(cache?.frontmatter || {}));
+    }
+
+    async teardown() {
+    }
 };
 
 // src/core/functions/internal_functions/system/PromptModal.ts
 var import_obsidian9 = __toModule(require("obsidian"));
 var PromptModal = class extends import_obsidian9.Modal {
-  constructor(prompt_text, default_value, multi_line) {
-    super(app);
-    this.prompt_text = prompt_text;
-    this.default_value = default_value;
-    this.multi_line = multi_line;
-    this.submitted = false;
-  }
-  onOpen() {
-    this.titleEl.setText(this.prompt_text);
-    this.createForm();
-  }
-  onClose() {
-    this.contentEl.empty();
-    if (!this.submitted) {
-      this.reject(new TemplaterError("Cancelled prompt"));
+    constructor(prompt_text, default_value, multi_line) {
+        super(app);
+        this.prompt_text = prompt_text;
+        this.default_value = default_value;
+        this.multi_line = multi_line;
+        this.submitted = false;
     }
-  }
-  createForm() {
-    const div = this.contentEl.createDiv();
-    div.addClass("templater-prompt-div");
-    let textInput;
-    if (this.multi_line) {
-      textInput = new import_obsidian9.TextAreaComponent(div);
-      const buttonDiv = this.contentEl.createDiv();
-      buttonDiv.addClass("templater-button-div");
-      const submitButton = new import_obsidian9.ButtonComponent(buttonDiv);
-      submitButton.buttonEl.addClass("mod-cta");
-      submitButton.setButtonText("Submit").onClick((evt) => {
-        this.resolveAndClose(evt);
-      });
-    } else {
-      textInput = new import_obsidian9.TextComponent(div);
+
+    onOpen() {
+        this.titleEl.setText(this.prompt_text);
+        this.createForm();
     }
-    this.value = this.default_value ?? "";
-    textInput.inputEl.addClass("templater-prompt-input");
-    textInput.setPlaceholder("Type text here");
-    textInput.setValue(this.value);
-    textInput.onChange((value) => this.value = value);
-    textInput.inputEl.addEventListener("keydown", (evt) => this.enterCallback(evt));
-  }
-  enterCallback(evt) {
-    if (evt.isComposing || evt.keyCode === 229)
-      return;
-    if (this.multi_line) {
-      if (import_obsidian9.Platform.isDesktop && evt.key === "Enter" && !evt.shiftKey) {
-        this.resolveAndClose(evt);
-      }
-    } else {
-      if (evt.key === "Enter") {
-        this.resolveAndClose(evt);
-      }
+
+    onClose() {
+        this.contentEl.empty();
+        if (!this.submitted) {
+            this.reject(new TemplaterError("Cancelled prompt"));
+        }
     }
-  }
-  resolveAndClose(evt) {
-    this.submitted = true;
-    evt.preventDefault();
-    this.resolve(this.value);
-    this.close();
-  }
-  async openAndGetValue(resolve, reject) {
-    this.resolve = resolve;
-    this.reject = reject;
-    this.open();
-  }
+
+    createForm() {
+        const div = this.contentEl.createDiv();
+        div.addClass("templater-prompt-div");
+        let textInput;
+        if (this.multi_line) {
+            textInput = new import_obsidian9.TextAreaComponent(div);
+            const buttonDiv = this.contentEl.createDiv();
+            buttonDiv.addClass("templater-button-div");
+            const submitButton = new import_obsidian9.ButtonComponent(buttonDiv);
+            submitButton.buttonEl.addClass("mod-cta");
+            submitButton.setButtonText("Submit").onClick((evt) => {
+                this.resolveAndClose(evt);
+            });
+        } else {
+            textInput = new import_obsidian9.TextComponent(div);
+        }
+        this.value = this.default_value ?? "";
+        textInput.inputEl.addClass("templater-prompt-input");
+        textInput.setPlaceholder("Type text here");
+        textInput.setValue(this.value);
+        textInput.onChange((value) => this.value = value);
+        textInput.inputEl.addEventListener("keydown", (evt) => this.enterCallback(evt));
+    }
+
+    enterCallback(evt) {
+        if (evt.isComposing || evt.keyCode === 229)
+            return;
+        if (this.multi_line) {
+            if (import_obsidian9.Platform.isDesktop && evt.key === "Enter" && !evt.shiftKey) {
+                this.resolveAndClose(evt);
+            }
+        } else {
+            if (evt.key === "Enter") {
+                this.resolveAndClose(evt);
+            }
+        }
+    }
+
+    resolveAndClose(evt) {
+        this.submitted = true;
+        evt.preventDefault();
+        this.resolve(this.value);
+        this.close();
+    }
+
+    async openAndGetValue(resolve, reject) {
+        this.resolve = resolve;
+        this.reject = reject;
+        this.open();
+    }
 };
 
 // src/core/functions/internal_functions/system/SuggesterModal.ts
 var import_obsidian10 = __toModule(require("obsidian"));
 var SuggesterModal = class extends import_obsidian10.FuzzySuggestModal {
-  constructor(text_items, items, placeholder, limit) {
-    super(app);
-    this.text_items = text_items;
-    this.items = items;
-    this.submitted = false;
-    this.setPlaceholder(placeholder);
-    limit && (this.limit = limit);
-  }
-  getItems() {
-    return this.items;
-  }
-  onClose() {
-    if (!this.submitted) {
-      this.reject(new TemplaterError("Cancelled prompt"));
+    constructor(text_items, items, placeholder, limit) {
+        super(app);
+        this.text_items = text_items;
+        this.items = items;
+        this.submitted = false;
+        this.setPlaceholder(placeholder);
+        limit && (this.limit = limit);
     }
-  }
-  selectSuggestion(value, evt) {
-    this.submitted = true;
-    this.close();
-    this.onChooseSuggestion(value, evt);
-  }
-  getItemText(item) {
-    if (this.text_items instanceof Function) {
-      return this.text_items(item);
+
+    getItems() {
+        return this.items;
     }
-    return this.text_items[this.items.indexOf(item)] || "Undefined Text Item";
-  }
-  onChooseItem(item) {
-    this.resolve(item);
-  }
-  async openAndGetValue(resolve, reject) {
-    this.resolve = resolve;
-    this.reject = reject;
-    this.open();
-  }
+
+    onClose() {
+        if (!this.submitted) {
+            this.reject(new TemplaterError("Cancelled prompt"));
+        }
+    }
+
+    selectSuggestion(value, evt) {
+        this.submitted = true;
+        this.close();
+        this.onChooseSuggestion(value, evt);
+    }
+
+    getItemText(item) {
+        if (this.text_items instanceof Function) {
+            return this.text_items(item);
+        }
+        return this.text_items[this.items.indexOf(item)] || "Undefined Text Item";
+    }
+
+    onChooseItem(item) {
+        this.resolve(item);
+    }
+
+    async openAndGetValue(resolve, reject) {
+        this.resolve = resolve;
+        this.reject = reject;
+        this.open();
+    }
 };
 
 // src/core/functions/internal_functions/system/InternalModuleSystem.ts
 var InternalModuleSystem = class extends InternalModule {
-  constructor() {
-    super(...arguments);
-    this.name = "system";
-  }
-  async create_static_templates() {
-    this.static_functions.set("clipboard", this.generate_clipboard());
-    this.static_functions.set("prompt", this.generate_prompt());
-    this.static_functions.set("suggester", this.generate_suggester());
-  }
-  async create_dynamic_templates() {
-  }
-  async teardown() {
-  }
-  generate_clipboard() {
-    return async () => {
-      return await navigator.clipboard.readText();
-    };
-  }
-  generate_prompt() {
-    return async (prompt_text, default_value, throw_on_cancel = false, multi_line = false) => {
-      const prompt = new PromptModal(prompt_text, default_value, multi_line);
-      const promise = new Promise((resolve, reject) => prompt.openAndGetValue(resolve, reject));
-      try {
-        return await promise;
-      } catch (error) {
-        if (throw_on_cancel) {
-          throw error;
-        }
-        return null;
-      }
-    };
-  }
-  generate_suggester() {
-    return async (text_items, items, throw_on_cancel = false, placeholder = "", limit) => {
-      const suggester = new SuggesterModal(text_items, items, placeholder, limit);
-      const promise = new Promise((resolve, reject) => suggester.openAndGetValue(resolve, reject));
-      try {
-        return await promise;
-      } catch (error) {
-        if (throw_on_cancel) {
-          throw error;
-        }
-        return null;
-      }
-    };
-  }
+    constructor() {
+        super(...arguments);
+        this.name = "system";
+    }
+
+    async create_static_templates() {
+        this.static_functions.set("clipboard", this.generate_clipboard());
+        this.static_functions.set("prompt", this.generate_prompt());
+        this.static_functions.set("suggester", this.generate_suggester());
+    }
+
+    async create_dynamic_templates() {
+    }
+
+    async teardown() {
+    }
+
+    generate_clipboard() {
+        return async () => {
+            return await navigator.clipboard.readText();
+        };
+    }
+
+    generate_prompt() {
+        return async (prompt_text, default_value, throw_on_cancel = false, multi_line = false) => {
+            const prompt = new PromptModal(prompt_text, default_value, multi_line);
+            const promise = new Promise((resolve, reject) => prompt.openAndGetValue(resolve, reject));
+            try {
+                return await promise;
+            } catch (error) {
+                if (throw_on_cancel) {
+                    throw error;
+                }
+                return null;
+            }
+        };
+    }
+
+    generate_suggester() {
+        return async (text_items, items, throw_on_cancel = false, placeholder = "", limit) => {
+            const suggester = new SuggesterModal(text_items, items, placeholder, limit);
+            const promise = new Promise((resolve, reject) => suggester.openAndGetValue(resolve, reject));
+            try {
+                return await promise;
+            } catch (error) {
+                if (throw_on_cancel) {
+                    throw error;
+                }
+                return null;
+            }
+        };
+    }
 };
 
 // src/core/functions/internal_functions/config/InternalModuleConfig.ts
 var InternalModuleConfig = class extends InternalModule {
-  constructor() {
-    super(...arguments);
-    this.name = "config";
-  }
-  async create_static_templates() {
-  }
-  async create_dynamic_templates() {
-  }
-  async teardown() {
-  }
-  async generate_object(config) {
-    return config;
-  }
+    constructor() {
+        super(...arguments);
+        this.name = "config";
+    }
+
+    async create_static_templates() {
+    }
+
+    async create_dynamic_templates() {
+    }
+
+    async teardown() {
+    }
+
+    async generate_object(config) {
+        return config;
+    }
 };
 
 // src/core/functions/internal_functions/InternalFunctions.ts
 var InternalFunctions = class {
-  constructor(plugin) {
-    this.plugin = plugin;
-    this.modules_array = [];
-    this.modules_array.push(new InternalModuleDate(this.plugin));
-    this.modules_array.push(new InternalModuleFile(this.plugin));
-    this.modules_array.push(new InternalModuleWeb(this.plugin));
-    this.modules_array.push(new InternalModuleFrontmatter(this.plugin));
-    this.modules_array.push(new InternalModuleHooks(this.plugin));
-    this.modules_array.push(new InternalModuleSystem(this.plugin));
-    this.modules_array.push(new InternalModuleConfig(this.plugin));
-  }
-  async init() {
-    for (const mod of this.modules_array) {
-      await mod.init();
+    constructor(plugin) {
+        this.plugin = plugin;
+        this.modules_array = [];
+        this.modules_array.push(new InternalModuleDate(this.plugin));
+        this.modules_array.push(new InternalModuleFile(this.plugin));
+        this.modules_array.push(new InternalModuleWeb(this.plugin));
+        this.modules_array.push(new InternalModuleFrontmatter(this.plugin));
+        this.modules_array.push(new InternalModuleHooks(this.plugin));
+        this.modules_array.push(new InternalModuleSystem(this.plugin));
+        this.modules_array.push(new InternalModuleConfig(this.plugin));
     }
-  }
-  async teardown() {
-    for (const mod of this.modules_array) {
-      await mod.teardown();
+
+    async init() {
+        for (const mod of this.modules_array) {
+            await mod.init();
+        }
     }
-  }
-  async generate_object(config) {
-    const internal_functions_object = {};
-    for (const mod of this.modules_array) {
-      internal_functions_object[mod.getName()] = await mod.generate_object(config);
+
+    async teardown() {
+        for (const mod of this.modules_array) {
+            await mod.teardown();
+        }
     }
-    return internal_functions_object;
-  }
+
+    async generate_object(config) {
+        const internal_functions_object = {};
+        for (const mod of this.modules_array) {
+            internal_functions_object[mod.getName()] = await mod.generate_object(config);
+        }
+        return internal_functions_object;
+    }
 };
 
 // src/core/functions/user_functions/UserSystemFunctions.ts
@@ -2909,175 +3113,185 @@ var import_child_process = __toModule(require("child_process"));
 var import_util = __toModule(require("util"));
 var import_obsidian11 = __toModule(require("obsidian"));
 var UserSystemFunctions = class {
-  constructor(plugin) {
-    this.plugin = plugin;
-    if (import_obsidian11.Platform.isMobileApp || !(app.vault.adapter instanceof import_obsidian11.FileSystemAdapter)) {
-      this.cwd = "";
-    } else {
-      this.cwd = app.vault.adapter.getBasePath();
-      this.exec_promise = (0, import_util.promisify)(import_child_process.exec);
+    constructor(plugin) {
+        this.plugin = plugin;
+        if (import_obsidian11.Platform.isMobileApp || !(app.vault.adapter instanceof import_obsidian11.FileSystemAdapter)) {
+            this.cwd = "";
+        } else {
+            this.cwd = app.vault.adapter.getBasePath();
+            this.exec_promise = (0, import_util.promisify)(import_child_process.exec);
+        }
     }
-  }
-  async generate_system_functions(config) {
-    const user_system_functions = new Map();
-    const internal_functions_object = await this.plugin.templater.functions_generator.generate_object(config, FunctionsMode.INTERNAL);
-    for (const template_pair of this.plugin.settings.templates_pairs) {
-      const template = template_pair[0];
-      let cmd = template_pair[1];
-      if (!template || !cmd) {
-        continue;
-      }
-      if (import_obsidian11.Platform.isMobileApp) {
-        user_system_functions.set(template, () => {
-          return new Promise((resolve) => resolve(UNSUPPORTED_MOBILE_TEMPLATE));
-        });
-      } else {
-        cmd = await this.plugin.templater.parser.parse_commands(cmd, internal_functions_object);
-        user_system_functions.set(template, async (user_args) => {
-          const process_env = {
-            ...process.env,
-            ...user_args
-          };
-          const cmd_options = {
-            timeout: this.plugin.settings.command_timeout * 1e3,
-            cwd: this.cwd,
-            env: process_env,
-            ...this.plugin.settings.shell_path && {
-              shell: this.plugin.settings.shell_path
+
+    async generate_system_functions(config) {
+        const user_system_functions = new Map();
+        const internal_functions_object = await this.plugin.templater.functions_generator.generate_object(config, FunctionsMode.INTERNAL);
+        for (const template_pair of this.plugin.settings.templates_pairs) {
+            const template = template_pair[0];
+            let cmd = template_pair[1];
+            if (!template || !cmd) {
+                continue;
             }
-          };
-          try {
-            const { stdout } = await this.exec_promise(cmd, cmd_options);
-            return stdout.trimRight();
-          } catch (error) {
-            throw new TemplaterError(`Error with User Template ${template}`, error);
-          }
-        });
-      }
+            if (import_obsidian11.Platform.isMobileApp) {
+                user_system_functions.set(template, () => {
+                    return new Promise((resolve) => resolve(UNSUPPORTED_MOBILE_TEMPLATE));
+                });
+            } else {
+                cmd = await this.plugin.templater.parser.parse_commands(cmd, internal_functions_object);
+                user_system_functions.set(template, async (user_args) => {
+                    const process_env = {
+                        ...process.env,
+                        ...user_args
+                    };
+                    const cmd_options = {
+                        timeout: this.plugin.settings.command_timeout * 1e3,
+                        cwd: this.cwd,
+                        env: process_env,
+                        ...this.plugin.settings.shell_path && {
+                            shell: this.plugin.settings.shell_path
+                        }
+                    };
+                    try {
+                        const {stdout} = await this.exec_promise(cmd, cmd_options);
+                        return stdout.trimRight();
+                    } catch (error) {
+                        throw new TemplaterError(`Error with User Template ${template}`, error);
+                    }
+                });
+            }
+        }
+        return user_system_functions;
     }
-    return user_system_functions;
-  }
-  async generate_object(config) {
-    const user_system_functions = await this.generate_system_functions(config);
-    return Object.fromEntries(user_system_functions);
-  }
+
+    async generate_object(config) {
+        const user_system_functions = await this.generate_system_functions(config);
+        return Object.fromEntries(user_system_functions);
+    }
 };
 
 // src/core/functions/user_functions/UserScriptFunctions.ts
 var UserScriptFunctions = class {
-  constructor(plugin) {
-    this.plugin = plugin;
-  }
-  async generate_user_script_functions() {
-    const user_script_functions = new Map();
-    const files = errorWrapperSync(() => get_tfiles_from_folder(this.plugin.settings.user_scripts_folder), `Couldn't find user script folder "${this.plugin.settings.user_scripts_folder}"`);
-    if (!files) {
-      return new Map();
+    constructor(plugin) {
+        this.plugin = plugin;
     }
-    for (const file of files) {
-      if (file.extension.toLowerCase() === "js") {
-        await this.load_user_script_function(file, user_script_functions);
-      }
+
+    async generate_user_script_functions() {
+        const user_script_functions = new Map();
+        const files = errorWrapperSync(() => get_tfiles_from_folder(this.plugin.settings.user_scripts_folder), `Couldn't find user script folder "${this.plugin.settings.user_scripts_folder}"`);
+        if (!files) {
+            return new Map();
+        }
+        for (const file of files) {
+            if (file.extension.toLowerCase() === "js") {
+                await this.load_user_script_function(file, user_script_functions);
+            }
+        }
+        return user_script_functions;
     }
-    return user_script_functions;
-  }
-  async load_user_script_function(file, user_script_functions) {
-    const req = (s) => {
-      return window.require && window.require(s);
-    };
-    const exp = {};
-    const mod = {
-      exports: exp
-    };
-    const file_content = await app.vault.read(file);
-    try {
-      const wrapping_fn = window.eval("(function anonymous(require, module, exports){" + file_content + "\n})");
-      wrapping_fn(req, mod, exp);
-    } catch (err) {
-      throw new TemplaterError(`Failed to load user script at "${file.path}".`, err.message);
+
+    async load_user_script_function(file, user_script_functions) {
+        const req = (s) => {
+            return window.require && window.require(s);
+        };
+        const exp = {};
+        const mod = {
+            exports: exp
+        };
+        const file_content = await app.vault.read(file);
+        try {
+            const wrapping_fn = window.eval("(function anonymous(require, module, exports){" + file_content + "\n})");
+            wrapping_fn(req, mod, exp);
+        } catch (err) {
+            throw new TemplaterError(`Failed to load user script at "${file.path}".`, err.message);
+        }
+        const user_function = exp["default"] || mod.exports;
+        if (!user_function) {
+            throw new TemplaterError(`Failed to load user script at "${file.path}". No exports detected.`);
+        }
+        if (!(user_function instanceof Function)) {
+            throw new TemplaterError(`Failed to load user script at "${file.path}". Default export is not a function.`);
+        }
+        user_script_functions.set(`${file.basename}`, user_function);
     }
-    const user_function = exp["default"] || mod.exports;
-    if (!user_function) {
-      throw new TemplaterError(`Failed to load user script at "${file.path}". No exports detected.`);
+
+    async generate_object() {
+        const user_script_functions = await this.generate_user_script_functions();
+        return Object.fromEntries(user_script_functions);
     }
-    if (!(user_function instanceof Function)) {
-      throw new TemplaterError(`Failed to load user script at "${file.path}". Default export is not a function.`);
-    }
-    user_script_functions.set(`${file.basename}`, user_function);
-  }
-  async generate_object() {
-    const user_script_functions = await this.generate_user_script_functions();
-    return Object.fromEntries(user_script_functions);
-  }
 };
 
 // src/core/functions/user_functions/UserFunctions.ts
 var UserFunctions = class {
-  constructor(plugin) {
-    this.plugin = plugin;
-    this.user_system_functions = new UserSystemFunctions(plugin);
-    this.user_script_functions = new UserScriptFunctions(plugin);
-  }
-  async generate_object(config) {
-    let user_system_functions = {};
-    let user_script_functions = {};
-    if (this.plugin.settings.enable_system_commands) {
-      user_system_functions = await this.user_system_functions.generate_object(config);
+    constructor(plugin) {
+        this.plugin = plugin;
+        this.user_system_functions = new UserSystemFunctions(plugin);
+        this.user_script_functions = new UserScriptFunctions(plugin);
     }
-    if (this.plugin.settings.user_scripts_folder) {
-      user_script_functions = await this.user_script_functions.generate_object();
+
+    async generate_object(config) {
+        let user_system_functions = {};
+        let user_script_functions = {};
+        if (this.plugin.settings.enable_system_commands) {
+            user_system_functions = await this.user_system_functions.generate_object(config);
+        }
+        if (this.plugin.settings.user_scripts_folder) {
+            user_script_functions = await this.user_script_functions.generate_object();
+        }
+        return {
+            ...user_system_functions,
+            ...user_script_functions
+        };
     }
-    return {
-      ...user_system_functions,
-      ...user_script_functions
-    };
-  }
 };
 
 // src/core/functions/FunctionsGenerator.ts
 var obsidian_module = __toModule(require("obsidian"));
 var FunctionsMode;
-(function(FunctionsMode2) {
-  FunctionsMode2[FunctionsMode2["INTERNAL"] = 0] = "INTERNAL";
-  FunctionsMode2[FunctionsMode2["USER_INTERNAL"] = 1] = "USER_INTERNAL";
+(function (FunctionsMode2) {
+    FunctionsMode2[FunctionsMode2["INTERNAL"] = 0] = "INTERNAL";
+    FunctionsMode2[FunctionsMode2["USER_INTERNAL"] = 1] = "USER_INTERNAL";
 })(FunctionsMode || (FunctionsMode = {}));
 var FunctionsGenerator = class {
-  constructor(plugin) {
-    this.plugin = plugin;
-    this.internal_functions = new InternalFunctions(this.plugin);
-    this.user_functions = new UserFunctions(this.plugin);
-  }
-  async init() {
-    await this.internal_functions.init();
-  }
-  async teardown() {
-    await this.internal_functions.teardown();
-  }
-  additional_functions() {
-    return {
-      obsidian: obsidian_module
-    };
-  }
-  async generate_object(config, functions_mode = 1) {
-    const final_object = {};
-    const additional_functions_object = this.additional_functions();
-    const internal_functions_object = await this.internal_functions.generate_object(config);
-    let user_functions_object = {};
-    Object.assign(final_object, additional_functions_object);
-    switch (functions_mode) {
-      case 0:
-        Object.assign(final_object, internal_functions_object);
-        break;
-      case 1:
-        user_functions_object = await this.user_functions.generate_object(config);
-        Object.assign(final_object, {
-          ...internal_functions_object,
-          user: user_functions_object
-        });
-        break;
+    constructor(plugin) {
+        this.plugin = plugin;
+        this.internal_functions = new InternalFunctions(this.plugin);
+        this.user_functions = new UserFunctions(this.plugin);
     }
-    return final_object;
-  }
+
+    async init() {
+        await this.internal_functions.init();
+    }
+
+    async teardown() {
+        await this.internal_functions.teardown();
+    }
+
+    additional_functions() {
+        return {
+            obsidian: obsidian_module
+        };
+    }
+
+    async generate_object(config, functions_mode = 1) {
+        const final_object = {};
+        const additional_functions_object = this.additional_functions();
+        const internal_functions_object = await this.internal_functions.generate_object(config);
+        let user_functions_object = {};
+        Object.assign(final_object, additional_functions_object);
+        switch (functions_mode) {
+            case 0:
+                Object.assign(final_object, internal_functions_object);
+                break;
+            case 1:
+                user_functions_object = await this.user_functions.generate_object(config);
+                Object.assign(final_object, {
+                    ...internal_functions_object,
+                    user: user_functions_object
+                });
+                break;
+        }
+        return final_object;
+    }
 };
 
 // node_modules/@silentvoid13/rusty_engine/rusty_engine.js
@@ -3085,420 +3299,466 @@ var import_meta = {};
 var wasm;
 var heap = new Array(32).fill(void 0);
 heap.push(void 0, null, true, false);
+
 function getObject(idx) {
-  return heap[idx];
+    return heap[idx];
 }
+
 var heap_next = heap.length;
+
 function dropObject(idx) {
-  if (idx < 36)
-    return;
-  heap[idx] = heap_next;
-  heap_next = idx;
+    if (idx < 36)
+        return;
+    heap[idx] = heap_next;
+    heap_next = idx;
 }
+
 function takeObject(idx) {
-  const ret = getObject(idx);
-  dropObject(idx);
-  return ret;
+    const ret = getObject(idx);
+    dropObject(idx);
+    return ret;
 }
-var cachedTextDecoder = new TextDecoder("utf-8", { ignoreBOM: true, fatal: true });
+
+var cachedTextDecoder = new TextDecoder("utf-8", {ignoreBOM: true, fatal: true});
 cachedTextDecoder.decode();
 var cachedUint8Memory0 = new Uint8Array();
+
 function getUint8Memory0() {
-  if (cachedUint8Memory0.byteLength === 0) {
-    cachedUint8Memory0 = new Uint8Array(wasm.memory.buffer);
-  }
-  return cachedUint8Memory0;
+    if (cachedUint8Memory0.byteLength === 0) {
+        cachedUint8Memory0 = new Uint8Array(wasm.memory.buffer);
+    }
+    return cachedUint8Memory0;
 }
+
 function getStringFromWasm0(ptr, len) {
-  return cachedTextDecoder.decode(getUint8Memory0().subarray(ptr, ptr + len));
+    return cachedTextDecoder.decode(getUint8Memory0().subarray(ptr, ptr + len));
 }
+
 function addHeapObject(obj) {
-  if (heap_next === heap.length)
-    heap.push(heap.length + 1);
-  const idx = heap_next;
-  heap_next = heap[idx];
-  heap[idx] = obj;
-  return idx;
+    if (heap_next === heap.length)
+        heap.push(heap.length + 1);
+    const idx = heap_next;
+    heap_next = heap[idx];
+    heap[idx] = obj;
+    return idx;
 }
+
 var WASM_VECTOR_LEN = 0;
 var cachedTextEncoder = new TextEncoder("utf-8");
-var encodeString = typeof cachedTextEncoder.encodeInto === "function" ? function(arg, view) {
-  return cachedTextEncoder.encodeInto(arg, view);
-} : function(arg, view) {
-  const buf = cachedTextEncoder.encode(arg);
-  view.set(buf);
-  return {
-    read: arg.length,
-    written: buf.length
-  };
-};
-function passStringToWasm0(arg, malloc, realloc) {
-  if (realloc === void 0) {
+var encodeString = typeof cachedTextEncoder.encodeInto === "function" ? function (arg, view) {
+    return cachedTextEncoder.encodeInto(arg, view);
+} : function (arg, view) {
     const buf = cachedTextEncoder.encode(arg);
-    const ptr2 = malloc(buf.length);
-    getUint8Memory0().subarray(ptr2, ptr2 + buf.length).set(buf);
-    WASM_VECTOR_LEN = buf.length;
-    return ptr2;
-  }
-  let len = arg.length;
-  let ptr = malloc(len);
-  const mem = getUint8Memory0();
-  let offset2 = 0;
-  for (; offset2 < len; offset2++) {
-    const code = arg.charCodeAt(offset2);
-    if (code > 127)
-      break;
-    mem[ptr + offset2] = code;
-  }
-  if (offset2 !== len) {
-    if (offset2 !== 0) {
-      arg = arg.slice(offset2);
+    view.set(buf);
+    return {
+        read: arg.length,
+        written: buf.length
+    };
+};
+
+function passStringToWasm0(arg, malloc, realloc) {
+    if (realloc === void 0) {
+        const buf = cachedTextEncoder.encode(arg);
+        const ptr2 = malloc(buf.length);
+        getUint8Memory0().subarray(ptr2, ptr2 + buf.length).set(buf);
+        WASM_VECTOR_LEN = buf.length;
+        return ptr2;
     }
-    ptr = realloc(ptr, len, len = offset2 + arg.length * 3);
-    const view = getUint8Memory0().subarray(ptr + offset2, ptr + len);
-    const ret = encodeString(arg, view);
-    offset2 += ret.written;
-  }
-  WASM_VECTOR_LEN = offset2;
-  return ptr;
-}
-function isLikeNone(x) {
-  return x === void 0 || x === null;
-}
-var cachedInt32Memory0 = new Int32Array();
-function getInt32Memory0() {
-  if (cachedInt32Memory0.byteLength === 0) {
-    cachedInt32Memory0 = new Int32Array(wasm.memory.buffer);
-  }
-  return cachedInt32Memory0;
-}
-function debugString(val) {
-  const type = typeof val;
-  if (type == "number" || type == "boolean" || val == null) {
-    return `${val}`;
-  }
-  if (type == "string") {
-    return `"${val}"`;
-  }
-  if (type == "symbol") {
-    const description = val.description;
-    if (description == null) {
-      return "Symbol";
-    } else {
-      return `Symbol(${description})`;
+    let len = arg.length;
+    let ptr = malloc(len);
+    const mem = getUint8Memory0();
+    let offset2 = 0;
+    for (; offset2 < len; offset2++) {
+        const code = arg.charCodeAt(offset2);
+        if (code > 127)
+            break;
+        mem[ptr + offset2] = code;
     }
-  }
-  if (type == "function") {
-    const name = val.name;
-    if (typeof name == "string" && name.length > 0) {
-      return `Function(${name})`;
-    } else {
-      return "Function";
+    if (offset2 !== len) {
+        if (offset2 !== 0) {
+            arg = arg.slice(offset2);
+        }
+        ptr = realloc(ptr, len, len = offset2 + arg.length * 3);
+        const view = getUint8Memory0().subarray(ptr + offset2, ptr + len);
+        const ret = encodeString(arg, view);
+        offset2 += ret.written;
     }
-  }
-  if (Array.isArray(val)) {
-    const length = val.length;
-    let debug = "[";
-    if (length > 0) {
-      debug += debugString(val[0]);
-    }
-    for (let i = 1; i < length; i++) {
-      debug += ", " + debugString(val[i]);
-    }
-    debug += "]";
-    return debug;
-  }
-  const builtInMatches = /\[object ([^\]]+)\]/.exec(toString.call(val));
-  let className;
-  if (builtInMatches.length > 1) {
-    className = builtInMatches[1];
-  } else {
-    return toString.call(val);
-  }
-  if (className == "Object") {
-    try {
-      return "Object(" + JSON.stringify(val) + ")";
-    } catch (_) {
-      return "Object";
-    }
-  }
-  if (val instanceof Error) {
-    return `${val.name}: ${val.message}
-${val.stack}`;
-  }
-  return className;
-}
-function _assertClass(instance, klass) {
-  if (!(instance instanceof klass)) {
-    throw new Error(`expected instance of ${klass.name}`);
-  }
-  return instance.ptr;
-}
-var stack_pointer = 32;
-function addBorrowedObject(obj) {
-  if (stack_pointer == 1)
-    throw new Error("out of js stack");
-  heap[--stack_pointer] = obj;
-  return stack_pointer;
-}
-function handleError(f, args) {
-  try {
-    return f.apply(this, args);
-  } catch (e) {
-    wasm.__wbindgen_exn_store(addHeapObject(e));
-  }
-}
-var ParserConfig = class {
-  static __wrap(ptr) {
-    const obj = Object.create(ParserConfig.prototype);
-    obj.ptr = ptr;
-    return obj;
-  }
-  __destroy_into_raw() {
-    const ptr = this.ptr;
-    this.ptr = 0;
+    WASM_VECTOR_LEN = offset2;
     return ptr;
-  }
-  free() {
-    const ptr = this.__destroy_into_raw();
-    wasm.__wbg_parserconfig_free(ptr);
-  }
-  get interpolate() {
-    const ret = wasm.__wbg_get_parserconfig_interpolate(this.ptr);
-    return String.fromCodePoint(ret);
-  }
-  set interpolate(arg0) {
-    wasm.__wbg_set_parserconfig_interpolate(this.ptr, arg0.codePointAt(0));
-  }
-  get execution() {
-    const ret = wasm.__wbg_get_parserconfig_execution(this.ptr);
-    return String.fromCodePoint(ret);
-  }
-  set execution(arg0) {
-    wasm.__wbg_set_parserconfig_execution(this.ptr, arg0.codePointAt(0));
-  }
-  get single_whitespace() {
-    const ret = wasm.__wbg_get_parserconfig_single_whitespace(this.ptr);
-    return String.fromCodePoint(ret);
-  }
-  set single_whitespace(arg0) {
-    wasm.__wbg_set_parserconfig_single_whitespace(this.ptr, arg0.codePointAt(0));
-  }
-  get multiple_whitespace() {
-    const ret = wasm.__wbg_get_parserconfig_multiple_whitespace(this.ptr);
-    return String.fromCodePoint(ret);
-  }
-  set multiple_whitespace(arg0) {
-    wasm.__wbg_set_parserconfig_multiple_whitespace(this.ptr, arg0.codePointAt(0));
-  }
-  constructor(opt, clt, inte, ex, sw, mw, gv) {
-    const ptr0 = passStringToWasm0(opt, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len0 = WASM_VECTOR_LEN;
-    const ptr1 = passStringToWasm0(clt, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len1 = WASM_VECTOR_LEN;
-    const ptr2 = passStringToWasm0(gv, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len2 = WASM_VECTOR_LEN;
-    const ret = wasm.parserconfig_new(ptr0, len0, ptr1, len1, inte.codePointAt(0), ex.codePointAt(0), sw.codePointAt(0), mw.codePointAt(0), ptr2, len2);
-    return ParserConfig.__wrap(ret);
-  }
-  get opening_tag() {
-    try {
-      const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-      wasm.parserconfig_opening_tag(retptr, this.ptr);
-      var r0 = getInt32Memory0()[retptr / 4 + 0];
-      var r1 = getInt32Memory0()[retptr / 4 + 1];
-      return getStringFromWasm0(r0, r1);
-    } finally {
-      wasm.__wbindgen_add_to_stack_pointer(16);
-      wasm.__wbindgen_free(r0, r1);
+}
+
+function isLikeNone(x) {
+    return x === void 0 || x === null;
+}
+
+var cachedInt32Memory0 = new Int32Array();
+
+function getInt32Memory0() {
+    if (cachedInt32Memory0.byteLength === 0) {
+        cachedInt32Memory0 = new Int32Array(wasm.memory.buffer);
     }
-  }
-  set opening_tag(val) {
-    const ptr0 = passStringToWasm0(val, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len0 = WASM_VECTOR_LEN;
-    wasm.parserconfig_set_opening_tag(this.ptr, ptr0, len0);
-  }
-  get closing_tag() {
-    try {
-      const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-      wasm.parserconfig_closing_tag(retptr, this.ptr);
-      var r0 = getInt32Memory0()[retptr / 4 + 0];
-      var r1 = getInt32Memory0()[retptr / 4 + 1];
-      return getStringFromWasm0(r0, r1);
-    } finally {
-      wasm.__wbindgen_add_to_stack_pointer(16);
-      wasm.__wbindgen_free(r0, r1);
+    return cachedInt32Memory0;
+}
+
+function debugString(val) {
+    const type = typeof val;
+    if (type == "number" || type == "boolean" || val == null) {
+        return `${val}`;
     }
-  }
-  set closing_tag(val) {
-    const ptr0 = passStringToWasm0(val, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len0 = WASM_VECTOR_LEN;
-    wasm.parserconfig_set_closing_tag(this.ptr, ptr0, len0);
-  }
-  get global_var() {
-    try {
-      const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-      wasm.parserconfig_global_var(retptr, this.ptr);
-      var r0 = getInt32Memory0()[retptr / 4 + 0];
-      var r1 = getInt32Memory0()[retptr / 4 + 1];
-      return getStringFromWasm0(r0, r1);
-    } finally {
-      wasm.__wbindgen_add_to_stack_pointer(16);
-      wasm.__wbindgen_free(r0, r1);
+    if (type == "string") {
+        return `"${val}"`;
     }
-  }
-  set global_var(val) {
-    const ptr0 = passStringToWasm0(val, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len0 = WASM_VECTOR_LEN;
-    wasm.parserconfig_set_global_var(this.ptr, ptr0, len0);
-  }
+    if (type == "symbol") {
+        const description = val.description;
+        if (description == null) {
+            return "Symbol";
+        } else {
+            return `Symbol(${description})`;
+        }
+    }
+    if (type == "function") {
+        const name = val.name;
+        if (typeof name == "string" && name.length > 0) {
+            return `Function(${name})`;
+        } else {
+            return "Function";
+        }
+    }
+    if (Array.isArray(val)) {
+        const length = val.length;
+        let debug = "[";
+        if (length > 0) {
+            debug += debugString(val[0]);
+        }
+        for (let i = 1; i < length; i++) {
+            debug += ", " + debugString(val[i]);
+        }
+        debug += "]";
+        return debug;
+    }
+    const builtInMatches = /\[object ([^\]]+)\]/.exec(toString.call(val));
+    let className;
+    if (builtInMatches.length > 1) {
+        className = builtInMatches[1];
+    } else {
+        return toString.call(val);
+    }
+    if (className == "Object") {
+        try {
+            return "Object(" + JSON.stringify(val) + ")";
+        } catch (_) {
+            return "Object";
+        }
+    }
+    if (val instanceof Error) {
+        return `${val.name}: ${val.message}
+${val.stack}`;
+    }
+    return className;
+}
+
+function _assertClass(instance, klass) {
+    if (!(instance instanceof klass)) {
+        throw new Error(`expected instance of ${klass.name}`);
+    }
+    return instance.ptr;
+}
+
+var stack_pointer = 32;
+
+function addBorrowedObject(obj) {
+    if (stack_pointer == 1)
+        throw new Error("out of js stack");
+    heap[--stack_pointer] = obj;
+    return stack_pointer;
+}
+
+function handleError(f, args) {
+    try {
+        return f.apply(this, args);
+    } catch (e) {
+        wasm.__wbindgen_exn_store(addHeapObject(e));
+    }
+}
+
+var ParserConfig = class {
+    constructor(opt, clt, inte, ex, sw, mw, gv) {
+        const ptr0 = passStringToWasm0(opt, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passStringToWasm0(clt, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len1 = WASM_VECTOR_LEN;
+        const ptr2 = passStringToWasm0(gv, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len2 = WASM_VECTOR_LEN;
+        const ret = wasm.parserconfig_new(ptr0, len0, ptr1, len1, inte.codePointAt(0), ex.codePointAt(0), sw.codePointAt(0), mw.codePointAt(0), ptr2, len2);
+        return ParserConfig.__wrap(ret);
+    }
+
+    get interpolate() {
+        const ret = wasm.__wbg_get_parserconfig_interpolate(this.ptr);
+        return String.fromCodePoint(ret);
+    }
+
+    set interpolate(arg0) {
+        wasm.__wbg_set_parserconfig_interpolate(this.ptr, arg0.codePointAt(0));
+    }
+
+    get execution() {
+        const ret = wasm.__wbg_get_parserconfig_execution(this.ptr);
+        return String.fromCodePoint(ret);
+    }
+
+    set execution(arg0) {
+        wasm.__wbg_set_parserconfig_execution(this.ptr, arg0.codePointAt(0));
+    }
+
+    get single_whitespace() {
+        const ret = wasm.__wbg_get_parserconfig_single_whitespace(this.ptr);
+        return String.fromCodePoint(ret);
+    }
+
+    set single_whitespace(arg0) {
+        wasm.__wbg_set_parserconfig_single_whitespace(this.ptr, arg0.codePointAt(0));
+    }
+
+    get multiple_whitespace() {
+        const ret = wasm.__wbg_get_parserconfig_multiple_whitespace(this.ptr);
+        return String.fromCodePoint(ret);
+    }
+
+    set multiple_whitespace(arg0) {
+        wasm.__wbg_set_parserconfig_multiple_whitespace(this.ptr, arg0.codePointAt(0));
+    }
+
+    get opening_tag() {
+        try {
+            const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+            wasm.parserconfig_opening_tag(retptr, this.ptr);
+            var r0 = getInt32Memory0()[retptr / 4 + 0];
+            var r1 = getInt32Memory0()[retptr / 4 + 1];
+            return getStringFromWasm0(r0, r1);
+        } finally {
+            wasm.__wbindgen_add_to_stack_pointer(16);
+            wasm.__wbindgen_free(r0, r1);
+        }
+    }
+
+    set opening_tag(val) {
+        const ptr0 = passStringToWasm0(val, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        wasm.parserconfig_set_opening_tag(this.ptr, ptr0, len0);
+    }
+
+    get closing_tag() {
+        try {
+            const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+            wasm.parserconfig_closing_tag(retptr, this.ptr);
+            var r0 = getInt32Memory0()[retptr / 4 + 0];
+            var r1 = getInt32Memory0()[retptr / 4 + 1];
+            return getStringFromWasm0(r0, r1);
+        } finally {
+            wasm.__wbindgen_add_to_stack_pointer(16);
+            wasm.__wbindgen_free(r0, r1);
+        }
+    }
+
+    set closing_tag(val) {
+        const ptr0 = passStringToWasm0(val, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        wasm.parserconfig_set_closing_tag(this.ptr, ptr0, len0);
+    }
+
+    get global_var() {
+        try {
+            const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+            wasm.parserconfig_global_var(retptr, this.ptr);
+            var r0 = getInt32Memory0()[retptr / 4 + 0];
+            var r1 = getInt32Memory0()[retptr / 4 + 1];
+            return getStringFromWasm0(r0, r1);
+        } finally {
+            wasm.__wbindgen_add_to_stack_pointer(16);
+            wasm.__wbindgen_free(r0, r1);
+        }
+    }
+
+    set global_var(val) {
+        const ptr0 = passStringToWasm0(val, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        wasm.parserconfig_set_global_var(this.ptr, ptr0, len0);
+    }
+
+    static __wrap(ptr) {
+        const obj = Object.create(ParserConfig.prototype);
+        obj.ptr = ptr;
+        return obj;
+    }
+
+    __destroy_into_raw() {
+        const ptr = this.ptr;
+        this.ptr = 0;
+        return ptr;
+    }
+
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_parserconfig_free(ptr);
+    }
 };
 var Renderer = class {
-  static __wrap(ptr) {
-    const obj = Object.create(Renderer.prototype);
-    obj.ptr = ptr;
-    return obj;
-  }
-  __destroy_into_raw() {
-    const ptr = this.ptr;
-    this.ptr = 0;
-    return ptr;
-  }
-  free() {
-    const ptr = this.__destroy_into_raw();
-    wasm.__wbg_renderer_free(ptr);
-  }
-  constructor(config) {
-    _assertClass(config, ParserConfig);
-    var ptr0 = config.ptr;
-    config.ptr = 0;
-    const ret = wasm.renderer_new(ptr0);
-    return Renderer.__wrap(ret);
-  }
-  render_content(content, context) {
-    try {
-      const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-      const ptr0 = passStringToWasm0(content, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-      const len0 = WASM_VECTOR_LEN;
-      wasm.renderer_render_content(retptr, this.ptr, ptr0, len0, addBorrowedObject(context));
-      var r0 = getInt32Memory0()[retptr / 4 + 0];
-      var r1 = getInt32Memory0()[retptr / 4 + 1];
-      var r2 = getInt32Memory0()[retptr / 4 + 2];
-      if (r2) {
-        throw takeObject(r1);
-      }
-      return takeObject(r0);
-    } finally {
-      wasm.__wbindgen_add_to_stack_pointer(16);
-      heap[stack_pointer++] = void 0;
+    constructor(config) {
+        _assertClass(config, ParserConfig);
+        var ptr0 = config.ptr;
+        config.ptr = 0;
+        const ret = wasm.renderer_new(ptr0);
+        return Renderer.__wrap(ret);
     }
-  }
-};
-async function load(module2, imports) {
-  if (typeof Response === "function" && module2 instanceof Response) {
-    if (typeof WebAssembly.instantiateStreaming === "function") {
-      try {
-        return await WebAssembly.instantiateStreaming(module2, imports);
-      } catch (e) {
-        if (module2.headers.get("Content-Type") != "application/wasm") {
-          console.warn("`WebAssembly.instantiateStreaming` failed because your server does not serve wasm with `application/wasm` MIME type. Falling back to `WebAssembly.instantiate` which is slower. Original error:\n", e);
-        } else {
-          throw e;
+
+    static __wrap(ptr) {
+        const obj = Object.create(Renderer.prototype);
+        obj.ptr = ptr;
+        return obj;
+    }
+
+    __destroy_into_raw() {
+        const ptr = this.ptr;
+        this.ptr = 0;
+        return ptr;
+    }
+
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_renderer_free(ptr);
+    }
+
+    render_content(content, context) {
+        try {
+            const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+            const ptr0 = passStringToWasm0(content, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+            const len0 = WASM_VECTOR_LEN;
+            wasm.renderer_render_content(retptr, this.ptr, ptr0, len0, addBorrowedObject(context));
+            var r0 = getInt32Memory0()[retptr / 4 + 0];
+            var r1 = getInt32Memory0()[retptr / 4 + 1];
+            var r2 = getInt32Memory0()[retptr / 4 + 2];
+            if (r2) {
+                throw takeObject(r1);
+            }
+            return takeObject(r0);
+        } finally {
+            wasm.__wbindgen_add_to_stack_pointer(16);
+            heap[stack_pointer++] = void 0;
         }
-      }
     }
-    const bytes = await module2.arrayBuffer();
-    return await WebAssembly.instantiate(bytes, imports);
-  } else {
-    const instance = await WebAssembly.instantiate(module2, imports);
-    if (instance instanceof WebAssembly.Instance) {
-      return { instance, module: module2 };
+};
+
+async function load(module2, imports) {
+    if (typeof Response === "function" && module2 instanceof Response) {
+        if (typeof WebAssembly.instantiateStreaming === "function") {
+            try {
+                return await WebAssembly.instantiateStreaming(module2, imports);
+            } catch (e) {
+                if (module2.headers.get("Content-Type") != "application/wasm") {
+                    console.warn("`WebAssembly.instantiateStreaming` failed because your server does not serve wasm with `application/wasm` MIME type. Falling back to `WebAssembly.instantiate` which is slower. Original error:\n", e);
+                } else {
+                    throw e;
+                }
+            }
+        }
+        const bytes = await module2.arrayBuffer();
+        return await WebAssembly.instantiate(bytes, imports);
     } else {
-      return instance;
+        const instance = await WebAssembly.instantiate(module2, imports);
+        if (instance instanceof WebAssembly.Instance) {
+            return {instance, module: module2};
+        } else {
+            return instance;
+        }
     }
-  }
 }
+
 function getImports() {
-  const imports = {};
-  imports.wbg = {};
-  imports.wbg.__wbindgen_object_drop_ref = function(arg0) {
-    takeObject(arg0);
-  };
-  imports.wbg.__wbindgen_string_new = function(arg0, arg1) {
-    const ret = getStringFromWasm0(arg0, arg1);
-    return addHeapObject(ret);
-  };
-  imports.wbg.__wbindgen_string_get = function(arg0, arg1) {
-    const obj = getObject(arg1);
-    const ret = typeof obj === "string" ? obj : void 0;
-    var ptr0 = isLikeNone(ret) ? 0 : passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    var len0 = WASM_VECTOR_LEN;
-    getInt32Memory0()[arg0 / 4 + 1] = len0;
-    getInt32Memory0()[arg0 / 4 + 0] = ptr0;
-  };
-  imports.wbg.__wbg_call_97ae9d8645dc388b = function() {
-    return handleError(function(arg0, arg1) {
-      const ret = getObject(arg0).call(getObject(arg1));
-      return addHeapObject(ret);
-    }, arguments);
-  };
-  imports.wbg.__wbg_new_8d2af00bc1e329ee = function(arg0, arg1) {
-    const ret = new Error(getStringFromWasm0(arg0, arg1));
-    return addHeapObject(ret);
-  };
-  imports.wbg.__wbg_message_fe2af63ccc8985bc = function(arg0) {
-    const ret = getObject(arg0).message;
-    return addHeapObject(ret);
-  };
-  imports.wbg.__wbg_newwithargs_8fe23e3842840c8e = function(arg0, arg1, arg2, arg3) {
-    const ret = new Function(getStringFromWasm0(arg0, arg1), getStringFromWasm0(arg2, arg3));
-    return addHeapObject(ret);
-  };
-  imports.wbg.__wbg_call_168da88779e35f61 = function() {
-    return handleError(function(arg0, arg1, arg2) {
-      const ret = getObject(arg0).call(getObject(arg1), getObject(arg2));
-      return addHeapObject(ret);
-    }, arguments);
-  };
-  imports.wbg.__wbg_call_3999bee59e9f7719 = function() {
-    return handleError(function(arg0, arg1, arg2, arg3) {
-      const ret = getObject(arg0).call(getObject(arg1), getObject(arg2), getObject(arg3));
-      return addHeapObject(ret);
-    }, arguments);
-  };
-  imports.wbg.__wbindgen_debug_string = function(arg0, arg1) {
-    const ret = debugString(getObject(arg1));
-    const ptr0 = passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len0 = WASM_VECTOR_LEN;
-    getInt32Memory0()[arg0 / 4 + 1] = len0;
-    getInt32Memory0()[arg0 / 4 + 0] = ptr0;
-  };
-  imports.wbg.__wbindgen_throw = function(arg0, arg1) {
-    throw new Error(getStringFromWasm0(arg0, arg1));
-  };
-  return imports;
+    const imports = {};
+    imports.wbg = {};
+    imports.wbg.__wbindgen_object_drop_ref = function (arg0) {
+        takeObject(arg0);
+    };
+    imports.wbg.__wbindgen_string_new = function (arg0, arg1) {
+        const ret = getStringFromWasm0(arg0, arg1);
+        return addHeapObject(ret);
+    };
+    imports.wbg.__wbindgen_string_get = function (arg0, arg1) {
+        const obj = getObject(arg1);
+        const ret = typeof obj === "string" ? obj : void 0;
+        var ptr0 = isLikeNone(ret) ? 0 : passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        var len0 = WASM_VECTOR_LEN;
+        getInt32Memory0()[arg0 / 4 + 1] = len0;
+        getInt32Memory0()[arg0 / 4 + 0] = ptr0;
+    };
+    imports.wbg.__wbg_call_97ae9d8645dc388b = function () {
+        return handleError(function (arg0, arg1) {
+            const ret = getObject(arg0).call(getObject(arg1));
+            return addHeapObject(ret);
+        }, arguments);
+    };
+    imports.wbg.__wbg_new_8d2af00bc1e329ee = function (arg0, arg1) {
+        const ret = new Error(getStringFromWasm0(arg0, arg1));
+        return addHeapObject(ret);
+    };
+    imports.wbg.__wbg_message_fe2af63ccc8985bc = function (arg0) {
+        const ret = getObject(arg0).message;
+        return addHeapObject(ret);
+    };
+    imports.wbg.__wbg_newwithargs_8fe23e3842840c8e = function (arg0, arg1, arg2, arg3) {
+        const ret = new Function(getStringFromWasm0(arg0, arg1), getStringFromWasm0(arg2, arg3));
+        return addHeapObject(ret);
+    };
+    imports.wbg.__wbg_call_168da88779e35f61 = function () {
+        return handleError(function (arg0, arg1, arg2) {
+            const ret = getObject(arg0).call(getObject(arg1), getObject(arg2));
+            return addHeapObject(ret);
+        }, arguments);
+    };
+    imports.wbg.__wbg_call_3999bee59e9f7719 = function () {
+        return handleError(function (arg0, arg1, arg2, arg3) {
+            const ret = getObject(arg0).call(getObject(arg1), getObject(arg2), getObject(arg3));
+            return addHeapObject(ret);
+        }, arguments);
+    };
+    imports.wbg.__wbindgen_debug_string = function (arg0, arg1) {
+        const ret = debugString(getObject(arg1));
+        const ptr0 = passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        getInt32Memory0()[arg0 / 4 + 1] = len0;
+        getInt32Memory0()[arg0 / 4 + 0] = ptr0;
+    };
+    imports.wbg.__wbindgen_throw = function (arg0, arg1) {
+        throw new Error(getStringFromWasm0(arg0, arg1));
+    };
+    return imports;
 }
+
 function initMemory(imports, maybe_memory) {
 }
+
 function finalizeInit(instance, module2) {
-  wasm = instance.exports;
-  init.__wbindgen_wasm_module = module2;
-  cachedInt32Memory0 = new Int32Array();
-  cachedUint8Memory0 = new Uint8Array();
-  return wasm;
+    wasm = instance.exports;
+    init.__wbindgen_wasm_module = module2;
+    cachedInt32Memory0 = new Int32Array();
+    cachedUint8Memory0 = new Uint8Array();
+    return wasm;
 }
+
 async function init(input) {
-  if (typeof input === "undefined") {
-    input = new URL("rusty_engine_bg.wasm", import_meta.url);
-  }
-  const imports = getImports();
-  if (typeof input === "string" || typeof Request === "function" && input instanceof Request || typeof URL === "function" && input instanceof URL) {
-    input = fetch(input);
-  }
-  initMemory(imports);
-  const { instance, module: module2 } = await load(await input, imports);
-  return finalizeInit(instance, module2);
+    if (typeof input === "undefined") {
+        input = new URL("rusty_engine_bg.wasm", import_meta.url);
+    }
+    const imports = getImports();
+    if (typeof input === "string" || typeof Request === "function" && input instanceof Request || typeof URL === "function" && input instanceof URL) {
+        input = fetch(input);
+    }
+    initMemory(imports);
+    const {instance, module: module2} = await load(await input, imports);
+    return finalizeInit(instance, module2);
 }
+
 var rusty_engine_default = init;
 
 // wasm-embed:/home/runner/work/Templater/Templater/node_modules/@silentvoid13/rusty_engine/rusty_engine_bg.wasm
@@ -3506,448 +3766,472 @@ var rusty_engine_bg_default = __toBinary("AGFzbQEAAAABvwEaYAJ/fwBgAn9/AX9gAX8Bf2
 
 // src/core/parser/Parser.ts
 var Parser = class {
-  async init() {
-    await rusty_engine_default(rusty_engine_bg_default);
-    const config = new ParserConfig("<%", "%>", "\0", "*", "-", "_", "tR");
-    this.renderer = new Renderer(config);
-  }
-  async parse_commands(content, context) {
-    return this.renderer.render_content(content, context);
-  }
+    async init() {
+        await rusty_engine_default(rusty_engine_bg_default);
+        const config = new ParserConfig("<%", "%>", "\0", "*", "-", "_", "tR");
+        this.renderer = new Renderer(config);
+    }
+
+    async parse_commands(content, context) {
+        return this.renderer.render_content(content, context);
+    }
 };
 
 // src/core/Templater.ts
 var RunMode;
-(function(RunMode2) {
-  RunMode2[RunMode2["CreateNewFromTemplate"] = 0] = "CreateNewFromTemplate";
-  RunMode2[RunMode2["AppendActiveFile"] = 1] = "AppendActiveFile";
-  RunMode2[RunMode2["OverwriteFile"] = 2] = "OverwriteFile";
-  RunMode2[RunMode2["OverwriteActiveFile"] = 3] = "OverwriteActiveFile";
-  RunMode2[RunMode2["DynamicProcessor"] = 4] = "DynamicProcessor";
-  RunMode2[RunMode2["StartupTemplate"] = 5] = "StartupTemplate";
+(function (RunMode2) {
+    RunMode2[RunMode2["CreateNewFromTemplate"] = 0] = "CreateNewFromTemplate";
+    RunMode2[RunMode2["AppendActiveFile"] = 1] = "AppendActiveFile";
+    RunMode2[RunMode2["OverwriteFile"] = 2] = "OverwriteFile";
+    RunMode2[RunMode2["OverwriteActiveFile"] = 3] = "OverwriteActiveFile";
+    RunMode2[RunMode2["DynamicProcessor"] = 4] = "DynamicProcessor";
+    RunMode2[RunMode2["StartupTemplate"] = 5] = "StartupTemplate";
 })(RunMode || (RunMode = {}));
 var Templater = class {
-  constructor(plugin) {
-    this.plugin = plugin;
-    this.functions_generator = new FunctionsGenerator(this.plugin);
-    this.parser = new Parser();
-  }
-  async setup() {
-    this.templater_task_counter = 0;
-    await this.parser.init();
-    await this.functions_generator.init();
-    this.plugin.registerMarkdownPostProcessor((el, ctx) => this.process_dynamic_templates(el, ctx));
-  }
-  create_running_config(template_file, target_file, run_mode) {
-    const active_file = get_active_file(app);
-    return {
-      template_file,
-      target_file,
-      run_mode,
-      active_file
-    };
-  }
-  async read_and_parse_template(config) {
-    const template_content = await app.vault.read(config.template_file);
-    return this.parse_template(config, template_content);
-  }
-  async parse_template(config, template_content) {
-    const functions_object = await this.functions_generator.generate_object(config, FunctionsMode.USER_INTERNAL);
-    this.current_functions_object = functions_object;
-    const content = await this.parser.parse_commands(template_content, functions_object);
-    return content;
-  }
-  start_templater_task() {
-    this.templater_task_counter++;
-  }
-  async end_templater_task() {
-    this.templater_task_counter--;
-    if (this.templater_task_counter === 0) {
-      app.workspace.trigger("templater:all-templates-executed");
-      await this.functions_generator.teardown();
+    constructor(plugin) {
+        this.plugin = plugin;
+        this.functions_generator = new FunctionsGenerator(this.plugin);
+        this.parser = new Parser();
     }
-  }
-  async create_new_note_from_template(template, folder, filename, open_new_note = true) {
-    this.start_templater_task();
-    if (!folder) {
-      const new_file_location = app.vault.getConfig("newFileLocation");
-      switch (new_file_location) {
-        case "current": {
-          const active_file = get_active_file(app);
-          if (active_file) {
-            folder = active_file.parent;
-          }
-          break;
-        }
-        case "folder":
-          folder = app.fileManager.getNewFileParent("");
-          break;
-        case "root":
-          folder = app.vault.getRoot();
-          break;
-        default:
-          break;
-      }
-    }
-    const extension = template instanceof import_obsidian12.TFile ? template.extension || "md" : "md";
-    const created_note = await errorWrapper(async () => {
-      const path = app.vault.getAvailablePath((0, import_obsidian12.normalizePath)(`${folder?.path ?? ""}/${filename || "Untitled"}`), extension);
-      const folder_path = get_folder_path_from_file_path(path);
-      if (folder_path && !app.vault.getAbstractFileByPathInsensitive(folder_path)) {
-        await app.vault.createFolder(folder_path);
-      }
-      return app.vault.create(path, "");
-    }, `Couldn't create ${extension} file.`);
-    if (created_note == null) {
-      await this.end_templater_task();
-      return;
-    }
-    let running_config;
-    let output_content;
-    if (template instanceof import_obsidian12.TFile) {
-      running_config = this.create_running_config(template, created_note, 0);
-      output_content = await errorWrapper(async () => this.read_and_parse_template(running_config), "Template parsing error, aborting.");
-    } else {
-      running_config = this.create_running_config(void 0, created_note, 0);
-      output_content = await errorWrapper(async () => this.parse_template(running_config, template), "Template parsing error, aborting.");
-    }
-    if (output_content == null) {
-      await app.vault.delete(created_note);
-      await this.end_templater_task();
-      return;
-    }
-    await app.vault.modify(created_note, output_content);
-    app.workspace.trigger("templater:new-note-from-template", {
-      file: created_note,
-      content: output_content
-    });
-    if (open_new_note) {
-      const active_leaf = app.workspace.getLeaf(false);
-      if (!active_leaf) {
-        log_error(new TemplaterError("No active leaf"));
-        return;
-      }
-      await active_leaf.openFile(created_note, {
-        state: { mode: "source" }
-      });
-      await this.plugin.editor_handler.jump_to_next_cursor_location(created_note, true);
-      active_leaf.setEphemeralState({
-        rename: "all"
-      });
-    }
-    await this.end_templater_task();
-    return created_note;
-  }
-  async append_template_to_active_file(template_file) {
-    this.start_templater_task();
-    const active_view = app.workspace.getActiveViewOfType(import_obsidian12.MarkdownView);
-    const active_editor = app.workspace.activeEditor;
-    if (!active_editor || !active_editor.file || !active_editor.editor) {
-      log_error(new TemplaterError("No active editor, can't append templates."));
-      await this.end_templater_task();
-      return;
-    }
-    const running_config = this.create_running_config(template_file, active_editor.file, 1);
-    const output_content = await errorWrapper(async () => this.read_and_parse_template(running_config), "Template parsing error, aborting.");
-    if (output_content == null) {
-      await this.end_templater_task();
-      return;
-    }
-    const editor = active_editor.editor;
-    const doc = editor.getDoc();
-    const oldSelections = doc.listSelections();
-    doc.replaceSelection(output_content);
-    app.workspace.trigger("templater:template-appended", {
-      view: active_view,
-      editor: active_editor,
-      content: output_content,
-      oldSelections,
-      newSelections: doc.listSelections()
-    });
-    await this.plugin.editor_handler.jump_to_next_cursor_location(active_editor.file, true);
-    await this.end_templater_task();
-  }
-  async write_template_to_file(template_file, file) {
-    this.start_templater_task();
-    const active_editor = app.workspace.activeEditor;
-    const active_file = get_active_file(app);
-    const running_config = this.create_running_config(template_file, file, 2);
-    const output_content = await errorWrapper(async () => this.read_and_parse_template(running_config), "Template parsing error, aborting.");
-    if (output_content == null) {
-      return;
-    }
-    await app.vault.modify(file, output_content);
-    if (active_file?.path === file.path && active_editor && active_editor.editor) {
-      const editor = active_editor.editor;
-      editor.setSelection({ line: 0, ch: 0 }, { line: 0, ch: 0 });
-    }
-    app.workspace.trigger("templater:new-note-from-template", {
-      file,
-      content: output_content
-    });
-    await this.plugin.editor_handler.jump_to_next_cursor_location(file, true);
-    await this.end_templater_task();
-  }
-  overwrite_active_file_commands() {
-    const active_editor = app.workspace.activeEditor;
-    if (!active_editor || !active_editor.file) {
-      log_error(new TemplaterError("Active editor is null, can't overwrite content"));
-      return;
-    }
-    this.overwrite_file_commands(active_editor.file, true);
-  }
-  async overwrite_file_commands(file, active_file = false) {
-    this.start_templater_task();
-    const running_config = this.create_running_config(file, file, active_file ? 3 : 2);
-    const output_content = await errorWrapper(async () => this.read_and_parse_template(running_config), "Template parsing error, aborting.");
-    if (output_content == null) {
-      await this.end_templater_task();
-      return;
-    }
-    await app.vault.modify(file, output_content);
-    app.workspace.trigger("templater:overwrite-file", {
-      file,
-      content: output_content
-    });
-    await this.plugin.editor_handler.jump_to_next_cursor_location(file, true);
-    await this.end_templater_task();
-  }
-  async process_dynamic_templates(el, ctx) {
-    const dynamic_command_regex = generate_dynamic_command_regex();
-    const walker = document.createNodeIterator(el, NodeFilter.SHOW_TEXT);
-    let node;
-    let pass = false;
-    let functions_object;
-    while (node = walker.nextNode()) {
-      let content = node.nodeValue;
-      if (content !== null) {
-        let match = dynamic_command_regex.exec(content);
-        if (match !== null) {
-          const file = app.metadataCache.getFirstLinkpathDest("", ctx.sourcePath);
-          if (!file || !(file instanceof import_obsidian12.TFile)) {
+
+    static async on_file_creation(templater, file) {
+        if (!(file instanceof import_obsidian12.TFile) || file.extension !== "md") {
             return;
-          }
-          if (!pass) {
-            pass = true;
-            const config = this.create_running_config(file, file, 4);
-            functions_object = await this.functions_generator.generate_object(config, FunctionsMode.USER_INTERNAL);
-            this.current_functions_object = functions_object;
-          }
         }
-        while (match != null) {
-          const complete_command = match[1] + match[2];
-          const command_output = await errorWrapper(async () => {
-            return await this.parser.parse_commands(complete_command, functions_object);
-          }, `Command Parsing error in dynamic command '${complete_command}'`);
-          if (command_output == null) {
+        const template_folder = (0, import_obsidian12.normalizePath)(templater.plugin.settings.templates_folder);
+        if (file.path.includes(template_folder) && template_folder !== "/") {
             return;
-          }
-          const start2 = dynamic_command_regex.lastIndex - match[0].length;
-          const end2 = dynamic_command_regex.lastIndex;
-          content = content.substring(0, start2) + command_output + content.substring(end2);
-          dynamic_command_regex.lastIndex += command_output.length - match[0].length;
-          match = dynamic_command_regex.exec(content);
         }
-        node.nodeValue = content;
-      }
+        await delay(300);
+        if (file.stat.size == 0 && templater.plugin.settings.enable_folder_templates) {
+            const folder_template_match = templater.get_new_file_template_for_folder(file.parent);
+            if (!folder_template_match) {
+                return;
+            }
+            const template_file = await errorWrapper(async () => {
+                return resolve_tfile(folder_template_match);
+            }, `Couldn't find template ${folder_template_match}`);
+            if (template_file == null) {
+                return;
+            }
+            await templater.write_template_to_file(template_file, file);
+        } else {
+            if (file.stat.size <= 1e5) {
+                await templater.overwrite_file_commands(file);
+            } else {
+                console.log(`Templater skipped parsing ${file.path} because file size exceeds 10000`);
+            }
+        }
     }
-  }
-  get_new_file_template_for_folder(folder) {
-    do {
-      const match = this.plugin.settings.folder_templates.find((e) => e.folder == folder.path);
-      if (match && match.template) {
-        return match.template;
-      }
-      folder = folder.parent;
-    } while (folder);
-  }
-  static async on_file_creation(templater, file) {
-    if (!(file instanceof import_obsidian12.TFile) || file.extension !== "md") {
-      return;
+
+    async setup() {
+        this.templater_task_counter = 0;
+        await this.parser.init();
+        await this.functions_generator.init();
+        this.plugin.registerMarkdownPostProcessor((el, ctx) => this.process_dynamic_templates(el, ctx));
     }
-    const template_folder = (0, import_obsidian12.normalizePath)(templater.plugin.settings.templates_folder);
-    if (file.path.includes(template_folder) && template_folder !== "/") {
-      return;
+
+    create_running_config(template_file, target_file, run_mode) {
+        const active_file = get_active_file(app);
+        return {
+            template_file,
+            target_file,
+            run_mode,
+            active_file
+        };
     }
-    await delay(300);
-    if (file.stat.size == 0 && templater.plugin.settings.enable_folder_templates) {
-      const folder_template_match = templater.get_new_file_template_for_folder(file.parent);
-      if (!folder_template_match) {
-        return;
-      }
-      const template_file = await errorWrapper(async () => {
-        return resolve_tfile(folder_template_match);
-      }, `Couldn't find template ${folder_template_match}`);
-      if (template_file == null) {
-        return;
-      }
-      await templater.write_template_to_file(template_file, file);
-    } else {
-      if (file.stat.size <= 1e5) {
-        await templater.overwrite_file_commands(file);
-      } else {
-        console.log(`Templater skipped parsing ${file.path} because file size exceeds 10000`);
-      }
+
+    async read_and_parse_template(config) {
+        const template_content = await app.vault.read(config.template_file);
+        return this.parse_template(config, template_content);
     }
-  }
-  async execute_startup_scripts() {
-    for (const template of this.plugin.settings.startup_templates) {
-      if (!template) {
-        continue;
-      }
-      const file = errorWrapperSync(() => resolve_tfile(template), `Couldn't find startup template "${template}"`);
-      if (!file) {
-        continue;
-      }
-      this.start_templater_task();
-      const running_config = this.create_running_config(file, file, 5);
-      await errorWrapper(async () => this.read_and_parse_template(running_config), `Startup Template parsing error, aborting.`);
-      await this.end_templater_task();
+
+    async parse_template(config, template_content) {
+        const functions_object = await this.functions_generator.generate_object(config, FunctionsMode.USER_INTERNAL);
+        this.current_functions_object = functions_object;
+        const content = await this.parser.parse_commands(template_content, functions_object);
+        return content;
     }
-  }
+
+    start_templater_task() {
+        this.templater_task_counter++;
+    }
+
+    async end_templater_task() {
+        this.templater_task_counter--;
+        if (this.templater_task_counter === 0) {
+            app.workspace.trigger("templater:all-templates-executed");
+            await this.functions_generator.teardown();
+        }
+    }
+
+    async create_new_note_from_template(template, folder, filename, open_new_note = true) {
+        this.start_templater_task();
+        if (!folder) {
+            const new_file_location = app.vault.getConfig("newFileLocation");
+            switch (new_file_location) {
+                case "current": {
+                    const active_file = get_active_file(app);
+                    if (active_file) {
+                        folder = active_file.parent;
+                    }
+                    break;
+                }
+                case "folder":
+                    folder = app.fileManager.getNewFileParent("");
+                    break;
+                case "root":
+                    folder = app.vault.getRoot();
+                    break;
+                default:
+                    break;
+            }
+        }
+        const extension = template instanceof import_obsidian12.TFile ? template.extension || "md" : "md";
+        const created_note = await errorWrapper(async () => {
+            const path = app.vault.getAvailablePath((0, import_obsidian12.normalizePath)(`${folder?.path ?? ""}/${filename || "Untitled"}`), extension);
+            const folder_path = get_folder_path_from_file_path(path);
+            if (folder_path && !app.vault.getAbstractFileByPathInsensitive(folder_path)) {
+                await app.vault.createFolder(folder_path);
+            }
+            return app.vault.create(path, "");
+        }, `Couldn't create ${extension} file.`);
+        if (created_note == null) {
+            await this.end_templater_task();
+            return;
+        }
+        let running_config;
+        let output_content;
+        if (template instanceof import_obsidian12.TFile) {
+            running_config = this.create_running_config(template, created_note, 0);
+            output_content = await errorWrapper(async () => this.read_and_parse_template(running_config), "Template parsing error, aborting.");
+        } else {
+            running_config = this.create_running_config(void 0, created_note, 0);
+            output_content = await errorWrapper(async () => this.parse_template(running_config, template), "Template parsing error, aborting.");
+        }
+        if (output_content == null) {
+            await app.vault.delete(created_note);
+            await this.end_templater_task();
+            return;
+        }
+        await app.vault.modify(created_note, output_content);
+        app.workspace.trigger("templater:new-note-from-template", {
+            file: created_note,
+            content: output_content
+        });
+        if (open_new_note) {
+            const active_leaf = app.workspace.getLeaf(false);
+            if (!active_leaf) {
+                log_error(new TemplaterError("No active leaf"));
+                return;
+            }
+            await active_leaf.openFile(created_note, {
+                state: {mode: "source"}
+            });
+            await this.plugin.editor_handler.jump_to_next_cursor_location(created_note, true);
+            active_leaf.setEphemeralState({
+                rename: "all"
+            });
+        }
+        await this.end_templater_task();
+        return created_note;
+    }
+
+    async append_template_to_active_file(template_file) {
+        this.start_templater_task();
+        const active_view = app.workspace.getActiveViewOfType(import_obsidian12.MarkdownView);
+        const active_editor = app.workspace.activeEditor;
+        if (!active_editor || !active_editor.file || !active_editor.editor) {
+            log_error(new TemplaterError("No active editor, can't append templates."));
+            await this.end_templater_task();
+            return;
+        }
+        const running_config = this.create_running_config(template_file, active_editor.file, 1);
+        const output_content = await errorWrapper(async () => this.read_and_parse_template(running_config), "Template parsing error, aborting.");
+        if (output_content == null) {
+            await this.end_templater_task();
+            return;
+        }
+        const editor = active_editor.editor;
+        const doc = editor.getDoc();
+        const oldSelections = doc.listSelections();
+        doc.replaceSelection(output_content);
+        app.workspace.trigger("templater:template-appended", {
+            view: active_view,
+            editor: active_editor,
+            content: output_content,
+            oldSelections,
+            newSelections: doc.listSelections()
+        });
+        await this.plugin.editor_handler.jump_to_next_cursor_location(active_editor.file, true);
+        await this.end_templater_task();
+    }
+
+    async write_template_to_file(template_file, file) {
+        this.start_templater_task();
+        const active_editor = app.workspace.activeEditor;
+        const active_file = get_active_file(app);
+        const running_config = this.create_running_config(template_file, file, 2);
+        const output_content = await errorWrapper(async () => this.read_and_parse_template(running_config), "Template parsing error, aborting.");
+        if (output_content == null) {
+            return;
+        }
+        await app.vault.modify(file, output_content);
+        if (active_file?.path === file.path && active_editor && active_editor.editor) {
+            const editor = active_editor.editor;
+            editor.setSelection({line: 0, ch: 0}, {line: 0, ch: 0});
+        }
+        app.workspace.trigger("templater:new-note-from-template", {
+            file,
+            content: output_content
+        });
+        await this.plugin.editor_handler.jump_to_next_cursor_location(file, true);
+        await this.end_templater_task();
+    }
+
+    overwrite_active_file_commands() {
+        const active_editor = app.workspace.activeEditor;
+        if (!active_editor || !active_editor.file) {
+            log_error(new TemplaterError("Active editor is null, can't overwrite content"));
+            return;
+        }
+        this.overwrite_file_commands(active_editor.file, true);
+    }
+
+    async overwrite_file_commands(file, active_file = false) {
+        this.start_templater_task();
+        const running_config = this.create_running_config(file, file, active_file ? 3 : 2);
+        const output_content = await errorWrapper(async () => this.read_and_parse_template(running_config), "Template parsing error, aborting.");
+        if (output_content == null) {
+            await this.end_templater_task();
+            return;
+        }
+        await app.vault.modify(file, output_content);
+        app.workspace.trigger("templater:overwrite-file", {
+            file,
+            content: output_content
+        });
+        await this.plugin.editor_handler.jump_to_next_cursor_location(file, true);
+        await this.end_templater_task();
+    }
+
+    async process_dynamic_templates(el, ctx) {
+        const dynamic_command_regex = generate_dynamic_command_regex();
+        const walker = document.createNodeIterator(el, NodeFilter.SHOW_TEXT);
+        let node;
+        let pass = false;
+        let functions_object;
+        while (node = walker.nextNode()) {
+            let content = node.nodeValue;
+            if (content !== null) {
+                let match = dynamic_command_regex.exec(content);
+                if (match !== null) {
+                    const file = app.metadataCache.getFirstLinkpathDest("", ctx.sourcePath);
+                    if (!file || !(file instanceof import_obsidian12.TFile)) {
+                        return;
+                    }
+                    if (!pass) {
+                        pass = true;
+                        const config = this.create_running_config(file, file, 4);
+                        functions_object = await this.functions_generator.generate_object(config, FunctionsMode.USER_INTERNAL);
+                        this.current_functions_object = functions_object;
+                    }
+                }
+                while (match != null) {
+                    const complete_command = match[1] + match[2];
+                    const command_output = await errorWrapper(async () => {
+                        return await this.parser.parse_commands(complete_command, functions_object);
+                    }, `Command Parsing error in dynamic command '${complete_command}'`);
+                    if (command_output == null) {
+                        return;
+                    }
+                    const start2 = dynamic_command_regex.lastIndex - match[0].length;
+                    const end2 = dynamic_command_regex.lastIndex;
+                    content = content.substring(0, start2) + command_output + content.substring(end2);
+                    dynamic_command_regex.lastIndex += command_output.length - match[0].length;
+                    match = dynamic_command_regex.exec(content);
+                }
+                node.nodeValue = content;
+            }
+        }
+    }
+
+    get_new_file_template_for_folder(folder) {
+        do {
+            const match = this.plugin.settings.folder_templates.find((e) => e.folder == folder.path);
+            if (match && match.template) {
+                return match.template;
+            }
+            folder = folder.parent;
+        } while (folder);
+    }
+
+    async execute_startup_scripts() {
+        for (const template of this.plugin.settings.startup_templates) {
+            if (!template) {
+                continue;
+            }
+            const file = errorWrapperSync(() => resolve_tfile(template), `Couldn't find startup template "${template}"`);
+            if (!file) {
+                continue;
+            }
+            this.start_templater_task();
+            const running_config = this.create_running_config(file, file, 5);
+            await errorWrapper(async () => this.read_and_parse_template(running_config), `Startup Template parsing error, aborting.`);
+            await this.end_templater_task();
+        }
+    }
 };
 
 // src/handlers/EventHandler.ts
 var import_obsidian13 = __toModule(require("obsidian"));
 var EventHandler = class {
-  constructor(plugin, templater, settings) {
-    this.plugin = plugin;
-    this.templater = templater;
-    this.settings = settings;
-  }
-  setup() {
-    this.plugin.app.workspace.onLayoutReady(() => {
-      this.update_trigger_file_on_creation();
-    });
-    this.update_syntax_highlighting();
-    this.update_file_menu();
-  }
-  update_syntax_highlighting() {
-    const desktopShouldHighlight = this.plugin.editor_handler.desktopShouldHighlight();
-    const mobileShouldHighlight = this.plugin.editor_handler.mobileShouldHighlight();
-    if (desktopShouldHighlight || mobileShouldHighlight) {
-      this.plugin.editor_handler.enable_highlighter();
-    } else {
-      this.plugin.editor_handler.disable_highlighter();
+    constructor(plugin, templater, settings) {
+        this.plugin = plugin;
+        this.templater = templater;
+        this.settings = settings;
     }
-  }
-  update_trigger_file_on_creation() {
-    if (this.settings.trigger_on_file_creation) {
-      this.trigger_on_file_creation_event = this.plugin.app.vault.on("create", (file) => Templater.on_file_creation(this.templater, file));
-      this.plugin.registerEvent(this.trigger_on_file_creation_event);
-    } else {
-      if (this.trigger_on_file_creation_event) {
-        this.plugin.app.vault.offref(this.trigger_on_file_creation_event);
-        this.trigger_on_file_creation_event = void 0;
-      }
-    }
-  }
-  update_file_menu() {
-    this.plugin.registerEvent(this.plugin.app.workspace.on("file-menu", (menu, file) => {
-      if (file instanceof import_obsidian13.TFolder) {
-        menu.addItem((item) => {
-          item.setTitle("Create new note from template").setIcon("templater-icon").onClick(() => {
-            this.plugin.fuzzy_suggester.create_new_note_from_template(file);
-          });
+
+    setup() {
+        this.plugin.app.workspace.onLayoutReady(() => {
+            this.update_trigger_file_on_creation();
         });
-      }
-    }));
-  }
+        this.update_syntax_highlighting();
+        this.update_file_menu();
+    }
+
+    update_syntax_highlighting() {
+        const desktopShouldHighlight = this.plugin.editor_handler.desktopShouldHighlight();
+        const mobileShouldHighlight = this.plugin.editor_handler.mobileShouldHighlight();
+        if (desktopShouldHighlight || mobileShouldHighlight) {
+            this.plugin.editor_handler.enable_highlighter();
+        } else {
+            this.plugin.editor_handler.disable_highlighter();
+        }
+    }
+
+    update_trigger_file_on_creation() {
+        if (this.settings.trigger_on_file_creation) {
+            this.trigger_on_file_creation_event = this.plugin.app.vault.on("create", (file) => Templater.on_file_creation(this.templater, file));
+            this.plugin.registerEvent(this.trigger_on_file_creation_event);
+        } else {
+            if (this.trigger_on_file_creation_event) {
+                this.plugin.app.vault.offref(this.trigger_on_file_creation_event);
+                this.trigger_on_file_creation_event = void 0;
+            }
+        }
+    }
+
+    update_file_menu() {
+        this.plugin.registerEvent(this.plugin.app.workspace.on("file-menu", (menu, file) => {
+            if (file instanceof import_obsidian13.TFolder) {
+                menu.addItem((item) => {
+                    item.setTitle("Create new note from template").setIcon("templater-icon").onClick(() => {
+                        this.plugin.fuzzy_suggester.create_new_note_from_template(file);
+                    });
+                });
+            }
+        }));
+    }
 };
 
 // src/handlers/CommandHandler.ts
 var CommandHandler = class {
-  constructor(plugin) {
-    this.plugin = plugin;
-  }
-  setup() {
-    this.plugin.addCommand({
-      id: "insert-templater",
-      name: "Open Insert Template modal",
-      icon: "templater-icon",
-      hotkeys: [
-        {
-          modifiers: ["Alt"],
-          key: "e"
-        }
-      ],
-      callback: () => {
-        this.plugin.fuzzy_suggester.insert_template();
-      }
-    });
-    this.plugin.addCommand({
-      id: "replace-in-file-templater",
-      name: "Replace templates in the active file",
-      icon: "templater-icon",
-      hotkeys: [
-        {
-          modifiers: ["Alt"],
-          key: "r"
-        }
-      ],
-      callback: () => {
-        this.plugin.templater.overwrite_active_file_commands();
-      }
-    });
-    this.plugin.addCommand({
-      id: "jump-to-next-cursor-location",
-      name: "Jump to next cursor location",
-      icon: "text-cursor",
-      hotkeys: [
-        {
-          modifiers: ["Alt"],
-          key: "Tab"
-        }
-      ],
-      callback: () => {
-        this.plugin.editor_handler.jump_to_next_cursor_location();
-      }
-    });
-    this.plugin.addCommand({
-      id: "create-new-note-from-template",
-      name: "Create new note from template",
-      icon: "templater-icon",
-      hotkeys: [
-        {
-          modifiers: ["Alt"],
-          key: "n"
-        }
-      ],
-      callback: () => {
-        this.plugin.fuzzy_suggester.create_new_note_from_template();
-      }
-    });
-    this.register_templates_hotkeys();
-  }
-  register_templates_hotkeys() {
-    this.plugin.settings.enabled_templates_hotkeys.forEach((template) => {
-      if (template) {
-        this.add_template_hotkey(null, template);
-      }
-    });
-  }
-  add_template_hotkey(old_template, new_template) {
-    this.remove_template_hotkey(old_template);
-    if (new_template) {
-      this.plugin.addCommand({
-        id: new_template,
-        name: `Insert ${new_template}`,
-        icon: "templater-icon",
-        callback: () => {
-          const template = errorWrapperSync(() => resolve_tfile(new_template), `Couldn't find the template file associated with this hotkey`);
-          if (!template) {
-            return;
-          }
-          this.plugin.templater.append_template_to_active_file(template);
-        }
-      });
+    constructor(plugin) {
+        this.plugin = plugin;
     }
-  }
-  remove_template_hotkey(template) {
-    if (template) {
-      app.commands.removeCommand(`${this.plugin.manifest.id}:${template}`);
+
+    setup() {
+        this.plugin.addCommand({
+            id: "insert-templater",
+            name: "Open Insert Template modal",
+            icon: "templater-icon",
+            hotkeys: [
+                {
+                    modifiers: ["Alt"],
+                    key: "e"
+                }
+            ],
+            callback: () => {
+                this.plugin.fuzzy_suggester.insert_template();
+            }
+        });
+        this.plugin.addCommand({
+            id: "replace-in-file-templater",
+            name: "Replace templates in the active file",
+            icon: "templater-icon",
+            hotkeys: [
+                {
+                    modifiers: ["Alt"],
+                    key: "r"
+                }
+            ],
+            callback: () => {
+                this.plugin.templater.overwrite_active_file_commands();
+            }
+        });
+        this.plugin.addCommand({
+            id: "jump-to-next-cursor-location",
+            name: "Jump to next cursor location",
+            icon: "text-cursor",
+            hotkeys: [
+                {
+                    modifiers: ["Alt"],
+                    key: "Tab"
+                }
+            ],
+            callback: () => {
+                this.plugin.editor_handler.jump_to_next_cursor_location();
+            }
+        });
+        this.plugin.addCommand({
+            id: "create-new-note-from-template",
+            name: "Create new note from template",
+            icon: "templater-icon",
+            hotkeys: [
+                {
+                    modifiers: ["Alt"],
+                    key: "n"
+                }
+            ],
+            callback: () => {
+                this.plugin.fuzzy_suggester.create_new_note_from_template();
+            }
+        });
+        this.register_templates_hotkeys();
     }
-  }
+
+    register_templates_hotkeys() {
+        this.plugin.settings.enabled_templates_hotkeys.forEach((template) => {
+            if (template) {
+                this.add_template_hotkey(null, template);
+            }
+        });
+    }
+
+    add_template_hotkey(old_template, new_template) {
+        this.remove_template_hotkey(old_template);
+        if (new_template) {
+            this.plugin.addCommand({
+                id: new_template,
+                name: `Insert ${new_template}`,
+                icon: "templater-icon",
+                callback: () => {
+                    const template = errorWrapperSync(() => resolve_tfile(new_template), `Couldn't find the template file associated with this hotkey`);
+                    if (!template) {
+                        return;
+                    }
+                    this.plugin.templater.append_template_to_active_file(template);
+                }
+            });
+        }
+    }
+
+    remove_template_hotkey(template) {
+        if (template) {
+            app.commands.removeCommand(`${this.plugin.manifest.id}:${template}`);
+        }
+    }
 };
 
 // src/editor/Editor.ts
@@ -3956,1506 +4240,2100 @@ var import_obsidian16 = __toModule(require("obsidian"));
 // src/editor/CursorJumper.ts
 var import_obsidian14 = __toModule(require("obsidian"));
 var CursorJumper = class {
-  constructor() {
-  }
-  async jump_to_next_cursor_location() {
-    const active_editor = app.workspace.activeEditor;
-    if (!active_editor || !active_editor.editor) {
-      return;
+    constructor() {
     }
-    const content = active_editor.editor.getValue();
-    const { new_content, positions } = this.replace_and_get_cursor_positions(content);
-    if (positions) {
-      const fold_info = active_editor instanceof import_obsidian14.MarkdownView ? active_editor.currentMode.getFoldInfo() : null;
-      active_editor.editor.setValue(new_content);
-      if (fold_info && Array.isArray(fold_info.folds)) {
-        positions.forEach((position) => {
-          fold_info.folds = fold_info.folds.filter((fold) => fold.from > position.line || fold.to < position.line);
-        });
-        if (active_editor instanceof import_obsidian14.MarkdownView) {
-          active_editor.currentMode.applyFoldInfo(fold_info);
+
+    async jump_to_next_cursor_location() {
+        const active_editor = app.workspace.activeEditor;
+        if (!active_editor || !active_editor.editor) {
+            return;
         }
-      }
-      this.set_cursor_location(positions);
+        const content = active_editor.editor.getValue();
+        const {new_content, positions} = this.replace_and_get_cursor_positions(content);
+        if (positions) {
+            const fold_info = active_editor instanceof import_obsidian14.MarkdownView ? active_editor.currentMode.getFoldInfo() : null;
+            active_editor.editor.setValue(new_content);
+            if (fold_info && Array.isArray(fold_info.folds)) {
+                positions.forEach((position) => {
+                    fold_info.folds = fold_info.folds.filter((fold) => fold.from > position.line || fold.to < position.line);
+                });
+                if (active_editor instanceof import_obsidian14.MarkdownView) {
+                    active_editor.currentMode.applyFoldInfo(fold_info);
+                }
+            }
+            this.set_cursor_location(positions);
+        }
+        if (app.vault.getConfig("vimMode")) {
+            const cm = active_editor.editor.cm.cm;
+            window.CodeMirrorAdapter.Vim.handleKey(cm, "i", "mapping");
+        }
     }
-    if (app.vault.getConfig("vimMode")) {
-      const cm = active_editor.editor.cm.cm;
-      window.CodeMirrorAdapter.Vim.handleKey(cm, "i", "mapping");
+
+    get_editor_position_from_index(content, index) {
+        const substr = content.slice(0, index);
+        let l = 0;
+        let offset2 = -1;
+        let r = -1;
+        for (; (r = substr.indexOf("\n", r + 1)) !== -1; l++, offset2 = r)
+            ;
+        offset2 += 1;
+        const ch = content.slice(offset2, index).length;
+        return {line: l, ch};
     }
-  }
-  get_editor_position_from_index(content, index) {
-    const substr = content.slice(0, index);
-    let l = 0;
-    let offset2 = -1;
-    let r = -1;
-    for (; (r = substr.indexOf("\n", r + 1)) !== -1; l++, offset2 = r)
-      ;
-    offset2 += 1;
-    const ch = content.slice(offset2, index).length;
-    return { line: l, ch };
-  }
-  replace_and_get_cursor_positions(content) {
-    let cursor_matches = [];
-    let match;
-    const cursor_regex = new RegExp("<%\\s*tp.file.cursor\\((?<order>[0-9]*)\\)\\s*%>", "g");
-    while ((match = cursor_regex.exec(content)) != null) {
-      cursor_matches.push(match);
+
+    replace_and_get_cursor_positions(content) {
+        let cursor_matches = [];
+        let match;
+        const cursor_regex = new RegExp("<%\\s*tp.file.cursor\\((?<order>[0-9]*)\\)\\s*%>", "g");
+        while ((match = cursor_regex.exec(content)) != null) {
+            cursor_matches.push(match);
+        }
+        if (cursor_matches.length === 0) {
+            return {};
+        }
+        cursor_matches.sort((m1, m2) => {
+            return Number(m1.groups && m1.groups["order"]) - Number(m2.groups && m2.groups["order"]);
+        });
+        const match_str = cursor_matches[0][0];
+        cursor_matches = cursor_matches.filter((m) => {
+            return m[0] === match_str;
+        });
+        const positions = [];
+        let index_offset = 0;
+        for (const match2 of cursor_matches) {
+            const index = match2.index - index_offset;
+            positions.push(this.get_editor_position_from_index(content, index));
+            content = content.replace(new RegExp(escape_RegExp(match2[0])), "");
+            index_offset += match2[0].length;
+            if (match2[1] === "") {
+                break;
+            }
+        }
+        return {new_content: content, positions};
     }
-    if (cursor_matches.length === 0) {
-      return {};
+
+    set_cursor_location(positions) {
+        const active_editor = app.workspace.activeEditor;
+        if (!active_editor || !active_editor.editor) {
+            return;
+        }
+        const editor = active_editor.editor;
+        const selections = [];
+        for (const pos of positions) {
+            selections.push({from: pos});
+        }
+        const transaction = {
+            selections
+        };
+        editor.transaction(transaction);
     }
-    cursor_matches.sort((m1, m2) => {
-      return Number(m1.groups && m1.groups["order"]) - Number(m2.groups && m2.groups["order"]);
-    });
-    const match_str = cursor_matches[0][0];
-    cursor_matches = cursor_matches.filter((m) => {
-      return m[0] === match_str;
-    });
-    const positions = [];
-    let index_offset = 0;
-    for (const match2 of cursor_matches) {
-      const index = match2.index - index_offset;
-      positions.push(this.get_editor_position_from_index(content, index));
-      content = content.replace(new RegExp(escape_RegExp(match2[0])), "");
-      index_offset += match2[0].length;
-      if (match2[1] === "") {
-        break;
-      }
-    }
-    return { new_content: content, positions };
-  }
-  set_cursor_location(positions) {
-    const active_editor = app.workspace.activeEditor;
-    if (!active_editor || !active_editor.editor) {
-      return;
-    }
-    const editor = active_editor.editor;
-    const selections = [];
-    for (const pos of positions) {
-      selections.push({ from: pos });
-    }
-    const transaction = {
-      selections
-    };
-    editor.transaction(transaction);
-  }
 };
 
 // src/editor/Autocomplete.ts
 var import_obsidian15 = __toModule(require("obsidian"));
 
 // toml:/home/runner/work/Templater/Templater/docs/documentation.toml
-var tp = { config: { name: "config", description: "This module exposes Templater's running configuration.\n\nThis is mostly useful when writing scripts requiring some context information.\n", functions: { template_file: { name: "template_file", description: "The `TFile` object representing the template file.", definition: "tp.config.template_file" }, target_file: { name: "target_file", description: "The `TFile` object representing the target file where the template will be inserted.", definition: "tp.config.target_file" }, run_mode: { name: "run_mode", description: "The `RunMode`, representing the way Templater was launched (Create new from template, Append to active file, ...).", definition: "tp.config.run_mode" }, active_file: { name: "active_file", description: "The active file (if existing) when launching Templater.", definition: "tp.config.active_file?" } } }, date: { name: "date", description: "This module contains every internal function related to dates.", functions: { now: { name: "now", description: "Retrieves the date.", definition: 'tp.date.now(format: string = "YYYY-MM-DD", offset?: number\u23AEstring, reference?: string, reference_format?: string)', args: [{ name: "format", description: 'The format for the date. Defaults to `"YYYY-MM-DD"`. Refer to [format reference](https://momentjs.com/docs/#/displaying/format/).' }, { name: "offset", description: "Duration to offset the date from. If a number is provided, duration will be added to the date in days. You can also specify the offset as a string using the ISO 8601 format." }, { name: "reference", description: "The date referential, e.g. set this to the note's title." }, { name: "reference_format", description: "The format for the reference date. Refer to [format reference](https://momentjs.com/docs/#/displaying/format/)." }], examples: [{ name: "Date now", example: "<% tp.date.now() %>" }, { name: "Date now with format", example: '<% tp.date.now("Do MMMM YYYY") %>' }, { name: "Last week", example: '<% tp.date.now("YYYY-MM-DD", -7) %>' }, { name: "Next week", example: '<% tp.date.now("YYYY-MM-DD", 7) %>' }, { name: "Last month", example: '<% tp.date.now("YYYY-MM-DD", "P-1M") %>' }, { name: "Next year", example: '<% tp.date.now("YYYY-MM-DD", "P1Y") %>' }, { name: "File's title date + 1 day (tomorrow)", example: '<% tp.date.now("YYYY-MM-DD", 1, tp.file.title, "YYYY-MM-DD") %>' }, { name: "File's title date - 1 day (yesterday)", example: '<% tp.date.now("YYYY-MM-DD", -1, tp.file.title, "YYYY-MM-DD") %>' }] }, tomorrow: { name: "tomorrow", description: "Retrieves tomorrow's date.", definition: 'tp.date.tomorrow(format: string = "YYYY-MM-DD")', args: [{ name: "format", description: 'The format for the date. Defaults to `"YYYY-MM-DD"`. Refer to [format reference](https://momentjs.com/docs/#/displaying/format/).' }], examples: [{ name: "Date tomorrow", example: "<% tp.date.tomorrow() %>" }, { name: "Date tomorrow with format", example: '<% tp.date.tomorrow("Do MMMM YYYY") %>' }] }, yesterday: { name: "yesterday", description: "Retrieves yesterday's date.", definition: 'tp.date.yesterday(format: string = "YYYY-MM-DD")', args: [{ name: "format", description: 'The format for the date. Defaults to `"YYYY-MM-DD"`. Refer to [format reference](https://momentjs.com/docs/#/displaying/format/).' }], examples: [{ name: "Date yesterday", example: "<% tp.date.yesterday() %>" }, { name: "Date yesterday with format", example: '<% tp.date.yesterday("Do MMMM YYYY") %>' }] }, weekday: { name: "weekday", description: "", definition: 'tp.date.weekday(format: string = "YYYY-MM-DD", weekday: number, reference?: string, reference_format?: string)', args: [{ name: "format", description: 'The format for the date. Defaults to `"YYYY-MM-DD"`. Refer to [format reference](https://momentjs.com/docs/#/displaying/format/).' }, { name: "weekday", description: "Week day number. If the locale assigns Monday as the first day of the week, `0` will be Monday, `-7` will be last week's day." }, { name: "reference", description: "The date referential, e.g. set this to the note's title." }, { name: "reference_format", description: "The format for the reference date. Refer to [format reference](https://momentjs.com/docs/#/displaying/format/)." }], examples: [{ name: "This week's Monday", example: '<% tp.date.weekday("YYYY-MM-DD", 0) %>' }, { name: "Next Monday", example: '<% tp.date.weekday("YYYY-MM-DD", 7) %>' }, { name: "File's title Monday", example: '<% tp.date.weekday("YYYY-MM-DD", 0, tp.file.title, "YYYY-MM-DD") %>' }, { name: "File's title previous Monday", example: '<% tp.date.weekday("YYYY-MM-DD", -7, tp.file.title, "YYYY-MM-DD") %>' }] } }, momentjs: { examples: [{ name: "Date now", example: '<% moment(tp.file.title, "YYYY-MM-DD").format("YYYY-MM-DD") %>' }, { name: "Get start of month from note title", example: '<% moment(tp.file.title, "YYYY-MM-DD").startOf("month").format("YYYY-MM-DD") %>' }, { name: "Get end of month from note title", example: '<% moment(tp.file.title, "YYYY-MM-DD").endOf("month").format("YYYY-MM-DD") %>' }] } }, file: { name: "file", description: "This module contains every internal function related to files.", functions: { content: { name: "content", description: "The string contents of the file at the time that Templater was executed. Manipulating this string will *not* update the current file.", definition: "tp.file.content", examples: [{ name: "Retrieve file content", example: "<% tp.file.content %>" }] }, create_new: { name: "create_new", description: "Creates a new file using a specified template or with a specified content.", definition: "tp.file.create_new(template: TFile \u23AE string, filename?: string, open_new: boolean = false, folder?: TFolder)", args: [{ name: "template", description: "Either the template used for the new file content, or the file content as a string. If it is the template to use, you retrieve it with `tp.file.find_tfile(TEMPLATENAME)`." }, { name: "filename", description: 'The filename of the new file, defaults to "Untitled".' }, { name: "open_new", description: "Whether to open or not the newly created file. Warning: if you use this option, since commands are executed asynchronously, the file can be opened first and then other commands are appended to that new file and not the previous file." }, { name: "folder", description: 'The folder to put the new file in, defaults to Obsidian\'s default location. If you want the file to appear in a different folder, specify it with `app.vault.getAbstractFileByPath("FOLDERNAME")`.' }], examples: [{ name: "File creation", example: '<%* await tp.file.create_new("MyFileContent", "MyFilename") %>' }, { name: "File creation with template", example: '<%* await tp.file.create_new(tp.file.find_tfile("MyTemplate"), "MyFilename") %>' }, { name: "File creation and open created note", example: '<%* await tp.file.create_new("MyFileContent", "MyFilename", true) %>' }, { name: "File creation in current folder", example: '<%* await tp.file.create_new("MyFileContent", "MyFilename", false, tp.file.folder()) %>' }, { name: "File creation in specified folder", example: '<%* await tp.file.create_new("MyFileContent", "MyFilename", false, app.vault.getAbstractFileByPath("MyFolder")) %>' }, { name: "File creation and append link to current note", example: '[[<% (await tp.file.create_new("MyFileContent", "MyFilename")).basename %>]]' }] }, creation_date: { name: "creation_date", description: "Retrieves the file's creation date.", definition: 'tp.file.creation_date(format: string = "YYYY-MM-DD HH:mm")', args: [{ name: "format", description: 'The format for the date. Defaults to `"YYYY-MM-DD HH:mm"`. Refer to [format reference](https://momentjs.com/docs/#/displaying/format/).' }], examples: [{ name: "File creation date", example: "<% tp.file.creation_date() %>" }, { name: "File creation date with format", example: '<% tp.file.creation_date("dddd Do MMMM YYYY HH:mm") %>' }] }, cursor: { name: "cursor", description: "Sets the cursor to this location after the template has been inserted. \n\nYou can navigate between the different cursors using the configured hotkey in Obsidian settings.\n", definition: "tp.file.cursor(order?: number)", args: [{ name: "order", description: "The order of the different cursors jump, e.g. it will jump from 1 to 2 to 3, and so on.\nIf you specify multiple tp.file.cursor with the same order, the editor will switch to multi-cursor.\n" }], examples: [{ name: "File cursor", example: "<% tp.file.cursor() %>" }, { name: "File multi-cursor", example: "<% tp.file.cursor(1) %>Content<% tp.file.cursor(1) %>" }] }, cursor_append: { name: "cursor_append", description: "Appends some content after the active cursor in the file.", definition: "tp.file.cursor_append(content: string)", args: [{ name: "content", description: "The content to append after the active cursor." }], examples: [{ name: "File cursor append", example: '<% tp.file.cursor_append("Some text") %>' }] }, exists: { name: "exists", description: "Check to see if a file exists by it's file path. The full path to the file, relative to the Vault and containing the extension, must be provided.", definition: "tp.file.exists(filepath: string)", args: [{ name: "filepath", description: "The full file path of the file we want to check existence for." }], examples: [{ name: "File existence", example: '<% await tp.file.exists("MyFolder/MyFile.md") %>' }, { name: "File existence of current file", example: '<% await tp.file.exists(tp.file.folder(true) + "/" + tp.file.title + ".md") %>' }] }, find_tfile: { name: "find_tfile", description: "Search for a file and returns its `TFile` instance.", definition: "tp.file.find_tfile(filename: string)", args: [{ name: "filename", description: "The filename we want to search and resolve as a `TFile`." }], examples: [{ name: "File find TFile", example: '<% tp.file.find_tfile("MyFile").basename %>' }] }, folder: { name: "folder", description: "Retrieves the file's folder name.", definition: "tp.file.folder(relative: boolean = false)", args: [{ name: "relative", description: "If set to `true`, appends the vault relative path to the folder name. If `false`, only retrieves name of folder. Defaults to `false`." }], examples: [{ name: "File folder (Folder)", example: "<% tp.file.folder() %>" }, { name: "File folder with relative path (Path/To/Folder)", example: "<% tp.file.folder(true) %>" }] }, include: { name: "include", description: "Includes the file's link content. Templates in the included content will be resolved.", definition: "tp.file.include(include_link: string \u23AE TFile)", args: [{ name: "include_link", description: 'The link to the file to include, e.g. `"[[MyFile]]"`, or a TFile object. Also supports sections or blocks inclusions.' }], examples: [{ name: "File include", example: '<% tp.file.include("[[Template1]]") %>' }, { name: "File include TFile", example: '<% tp.file.include(tp.file.find_tfile("MyFile")) %>' }, { name: "File include section", example: '<% tp.file.include("[[MyFile#Section1]]") %>' }, { name: "File include block", example: '<% tp.file.include("[[MyFile#^block1]]") %>' }] }, last_modified_date: { name: "last_modified_date", description: "Retrieves the file's last modification date.", definition: 'tp.file.last_modified_date(format: string = "YYYY-MM-DD HH:mm")', args: [{ name: "format", description: 'The format for the date. Defaults to `"YYYY-MM-DD HH:mm"`. Refer to [format reference](https://momentjs.com/docs/#/displaying/format/).' }], examples: [{ name: "File last modified date", example: "<% tp.file.last_modified_date() %>" }, { name: "File last modified date with format", example: '<% tp.file.last_modified_date("dddd Do MMMM YYYY HH:mm") %>' }] }, move: { name: "move", description: "Moves the file to the desired vault location.", definition: "tp.file.move(new_path: string, file_to_move?: TFile)", args: [{ name: "new_path", description: 'The new vault relative path of the file, without the file extension. Note: the new path needs to include the folder and the filename, e.g. `"/Notes/MyNote"`.' }, { name: "file_to_move", description: "The file to move, defaults to the current file." }], examples: [{ name: "File move", example: '<% await tp.file.move("/A/B/" + tp.file.title) %>' }, { name: "File move and rename", example: '<% await tp.file.move("/A/B/NewTitle") %>' }] }, path: { name: "path", description: "Retrieves the file's absolute path on the system.", definition: "tp.file.path(relative: boolean = false)", args: [{ name: "relative", description: "If set to `true`, only retrieves the vault's relative path." }], examples: [{ name: "File path", example: "<% tp.file.path() %>" }, { name: "File relative path (relative to vault root)", example: "<% tp.file.path(true) %>" }] }, rename: { name: "rename", description: "Renames the file (keeps the same file extension).", definition: "tp.file.rename(new_title: string)", args: [{ name: "new_title", description: "The new file title." }], examples: [{ name: "File rename", example: '<% await tp.file.rename("MyNewName") %>' }, { name: "File append a 2 to the file name", example: '<% await tp.file.rename(tp.file.title + "2") %>' }] }, selection: { name: "selection", description: "Retrieves the active file's text selection.", definition: "tp.file.selection()", examples: [{ name: "File selection", example: "<% tp.file.selection() %>" }] }, tags: { name: "tags", description: "Retrieves the file's tags (array of string).", definition: "tp.file.tags", examples: [{ name: "File tags", example: "<% tp.file.tags %>" }] }, title: { name: "title", definition: "tp.file.title", description: "Retrieves the file's title.", examples: [{ name: "File title", example: "<% tp.file.title %>" }, { name: "Strip the Zettelkasten ID of title (if space separated)", example: '<% tp.file.title.split(" ")[1] %>' }] } } }, frontmatter: { name: "frontmatter", description: "This modules exposes all the frontmatter variables of a file as variables." }, hooks: { name: "hooks", description: "This module exposes hooks that allow you to execute code when a Templater event occurs.", functions: { on_all_templates_executed: { name: "on_all_templates_executed", description: "Hooks into when all actively running templates have finished executing. Most of the time this will be a single template, unless you are using `tp.file.include` or `tp.file.create_new`.\n\nMultiple invokations of this method will have their callback functions run in parallel.", definition: "tp.hooks.on_all_templates_executed(callback_function: () => any)", args: [{ name: "callback_function", description: "Callback function that will be executed when all actively running templates have finished executing." }] } } }, obsidian: { name: "obsidian", description: "This module exposes all the functions and classes from the Obsidian API." }, system: { name: "system", description: "This module contains system related functions.", functions: { clipboard: { name: "clipboard", description: "Retrieves the clipboard's content.", definition: "tp.system.clipboard()", examples: [{ name: "Clipboard", example: "<% tp.system.clipboard() %>" }] }, prompt: { name: "prompt", description: "Spawns a prompt modal and returns the user's input.", definition: "tp.system.prompt(prompt_text?: string, default_value?: string, throw_on_cancel: boolean = false, multiline?: boolean = false)", args: [{ name: "prompt_text", description: "Text placed above the input field." }, { name: "default_value", description: "A default value for the input field." }, { name: "throw_on_cancel", description: "Throws an error if the prompt is canceled, instead of returning a `null` value." }, { name: "multiline", description: "If set to `true`, the input field will be a multiline textarea. Defaults to `false`." }], examples: [{ name: "Prompt", example: '<% tp.system.prompt("Please enter a value") %>' }, { name: "Prompt with default value", example: '<% tp.system.prompt("What is your mood today?", "happy") %>' }, { name: "Multiline prompt", example: '<% tp.system.prompt("What is your mood today?", null, false, true) %>' }] }, suggester: { name: "suggester", description: "Spawns a suggester prompt and returns the user's chosen item.", definition: 'tp.system.suggester(text_items: string[] \u23AE ((item: T) => string), items: T[], throw_on_cancel: boolean = false, placeholder: string = "", limit?: number = undefined)', args: [{ name: "text_items", description: "Array of strings representing the text that will be displayed for each item in the suggester prompt. This can also be a function that maps an item to its text representation." }, { name: "items", description: "Array containing the values of each item in the correct order." }, { name: "throw_on_cancel", description: "Throws an error if the prompt is canceled, instead of returning a `null` value." }, { name: "placeholder", description: "Placeholder string of the prompt." }, { name: "limit", description: "Limit the number of items rendered at once (useful to improve performance when displaying large lists)." }], examples: [{ name: "Suggester", example: '<% tp.system.suggester(["Happy", "Sad", "Confused"], ["Happy", "Sad", "Confused"]) %>' }, { name: "Suggester with mapping function (same as above example)", example: '<% tp.system.suggester((item) => item, ["Happy", "Sad", "Confused"]) %>' }, { name: "Suggester for files", example: "[[<% (await tp.system.suggester((item) => item.basename, app.vault.getMarkdownFiles())).basename %>]]" }, { name: "Suggester for tags", example: '<% tp.system.suggester(item => item, Object.keys(app.metadataCache.getTags()).map(x => x.replace("#", ""))) %>' }] } } }, web: { name: "web", description: "This modules contains every internal function related to the web (making web requests).", functions: { daily_quote: { name: "daily_quote", description: "Retrieves and parses the daily quote from the API `https://api.quotable.io` as a callout.", definition: "tp.web.daily_quote()", examples: [{ name: "Daily quote", example: "<% tp.web.daily_quote() %>" }] }, random_picture: { name: "random_picture", description: "Gets a random image from `https://unsplash.com/`.", definition: "tp.web.random_picture(size?: string, query?: string, include_size?: boolean)", args: [{ name: "size", description: "Image size in the format `<width>x<height>`." }, { name: "query", description: "Limits selection to photos matching a search term. Multiple search terms can be passed separated by a comma." }, { name: "include_size", description: "Optional argument to include the specified size in the image link markdown. Defaults to false." }], examples: [{ name: "Random picture", example: "<% tp.web.random_picture() %>" }, { name: "Random picture with size", example: '<% tp.web.random_picture("200x200") %>' }, { name: "Random picture with size and query", example: '<% tp.web.random_picture("200x200", "landscape,water") %>' }] } } } };
-var documentation_default = { tp };
+var tp = {
+    config: {
+        name: "config",
+        description: "This module exposes Templater's running configuration.\n\nThis is mostly useful when writing scripts requiring some context information.\n",
+        functions: {
+            template_file: {
+                name: "template_file",
+                description: "The `TFile` object representing the template file.",
+                definition: "tp.config.template_file"
+            },
+            target_file: {
+                name: "target_file",
+                description: "The `TFile` object representing the target file where the template will be inserted.",
+                definition: "tp.config.target_file"
+            },
+            run_mode: {
+                name: "run_mode",
+                description: "The `RunMode`, representing the way Templater was launched (Create new from template, Append to active file, ...).",
+                definition: "tp.config.run_mode"
+            },
+            active_file: {
+                name: "active_file",
+                description: "The active file (if existing) when launching Templater.",
+                definition: "tp.config.active_file?"
+            }
+        }
+    },
+    date: {
+        name: "date",
+        description: "This module contains every internal function related to dates.",
+        functions: {
+            now: {
+                name: "now",
+                description: "Retrieves the date.",
+                definition: 'tp.date.now(format: string = "YYYY-MM-DD", offset?: number\u23AEstring, reference?: string, reference_format?: string)',
+                args: [{
+                    name: "format",
+                    description: 'The format for the date. Defaults to `"YYYY-MM-DD"`. Refer to [format reference](https://momentjs.com/docs/#/displaying/format/).'
+                }, {
+                    name: "offset",
+                    description: "Duration to offset the date from. If a number is provided, duration will be added to the date in days. You can also specify the offset as a string using the ISO 8601 format."
+                }, {
+                    name: "reference",
+                    description: "The date referential, e.g. set this to the note's title."
+                }, {
+                    name: "reference_format",
+                    description: "The format for the reference date. Refer to [format reference](https://momentjs.com/docs/#/displaying/format/)."
+                }],
+                examples: [{name: "Date now", example: "<% tp.date.now() %>"}, {
+                    name: "Date now with format",
+                    example: '<% tp.date.now("Do MMMM YYYY") %>'
+                }, {name: "Last week", example: '<% tp.date.now("YYYY-MM-DD", -7) %>'}, {
+                    name: "Next week",
+                    example: '<% tp.date.now("YYYY-MM-DD", 7) %>'
+                }, {name: "Last month", example: '<% tp.date.now("YYYY-MM-DD", "P-1M") %>'}, {
+                    name: "Next year",
+                    example: '<% tp.date.now("YYYY-MM-DD", "P1Y") %>'
+                }, {
+                    name: "File's title date + 1 day (tomorrow)",
+                    example: '<% tp.date.now("YYYY-MM-DD", 1, tp.file.title, "YYYY-MM-DD") %>'
+                }, {
+                    name: "File's title date - 1 day (yesterday)",
+                    example: '<% tp.date.now("YYYY-MM-DD", -1, tp.file.title, "YYYY-MM-DD") %>'
+                }]
+            },
+            tomorrow: {
+                name: "tomorrow",
+                description: "Retrieves tomorrow's date.",
+                definition: 'tp.date.tomorrow(format: string = "YYYY-MM-DD")',
+                args: [{
+                    name: "format",
+                    description: 'The format for the date. Defaults to `"YYYY-MM-DD"`. Refer to [format reference](https://momentjs.com/docs/#/displaying/format/).'
+                }],
+                examples: [{
+                    name: "Date tomorrow",
+                    example: "<% tp.date.tomorrow() %>"
+                }, {name: "Date tomorrow with format", example: '<% tp.date.tomorrow("Do MMMM YYYY") %>'}]
+            },
+            yesterday: {
+                name: "yesterday",
+                description: "Retrieves yesterday's date.",
+                definition: 'tp.date.yesterday(format: string = "YYYY-MM-DD")',
+                args: [{
+                    name: "format",
+                    description: 'The format for the date. Defaults to `"YYYY-MM-DD"`. Refer to [format reference](https://momentjs.com/docs/#/displaying/format/).'
+                }],
+                examples: [{
+                    name: "Date yesterday",
+                    example: "<% tp.date.yesterday() %>"
+                }, {name: "Date yesterday with format", example: '<% tp.date.yesterday("Do MMMM YYYY") %>'}]
+            },
+            weekday: {
+                name: "weekday",
+                description: "",
+                definition: 'tp.date.weekday(format: string = "YYYY-MM-DD", weekday: number, reference?: string, reference_format?: string)',
+                args: [{
+                    name: "format",
+                    description: 'The format for the date. Defaults to `"YYYY-MM-DD"`. Refer to [format reference](https://momentjs.com/docs/#/displaying/format/).'
+                }, {
+                    name: "weekday",
+                    description: "Week day number. If the locale assigns Monday as the first day of the week, `0` will be Monday, `-7` will be last week's day."
+                }, {
+                    name: "reference",
+                    description: "The date referential, e.g. set this to the note's title."
+                }, {
+                    name: "reference_format",
+                    description: "The format for the reference date. Refer to [format reference](https://momentjs.com/docs/#/displaying/format/)."
+                }],
+                examples: [{
+                    name: "This week's Monday",
+                    example: '<% tp.date.weekday("YYYY-MM-DD", 0) %>'
+                }, {
+                    name: "Next Monday",
+                    example: '<% tp.date.weekday("YYYY-MM-DD", 7) %>'
+                }, {
+                    name: "File's title Monday",
+                    example: '<% tp.date.weekday("YYYY-MM-DD", 0, tp.file.title, "YYYY-MM-DD") %>'
+                }, {
+                    name: "File's title previous Monday",
+                    example: '<% tp.date.weekday("YYYY-MM-DD", -7, tp.file.title, "YYYY-MM-DD") %>'
+                }]
+            }
+        },
+        momentjs: {
+            examples: [{
+                name: "Date now",
+                example: '<% moment(tp.file.title, "YYYY-MM-DD").format("YYYY-MM-DD") %>'
+            }, {
+                name: "Get start of month from note title",
+                example: '<% moment(tp.file.title, "YYYY-MM-DD").startOf("month").format("YYYY-MM-DD") %>'
+            }, {
+                name: "Get end of month from note title",
+                example: '<% moment(tp.file.title, "YYYY-MM-DD").endOf("month").format("YYYY-MM-DD") %>'
+            }]
+        }
+    },
+    file: {
+        name: "file", description: "This module contains every internal function related to files.", functions: {
+            content: {
+                name: "content",
+                description: "The string contents of the file at the time that Templater was executed. Manipulating this string will *not* update the current file.",
+                definition: "tp.file.content",
+                examples: [{name: "Retrieve file content", example: "<% tp.file.content %>"}]
+            },
+            create_new: {
+                name: "create_new",
+                description: "Creates a new file using a specified template or with a specified content.",
+                definition: "tp.file.create_new(template: TFile \u23AE string, filename?: string, open_new: boolean = false, folder?: TFolder)",
+                args: [{
+                    name: "template",
+                    description: "Either the template used for the new file content, or the file content as a string. If it is the template to use, you retrieve it with `tp.file.find_tfile(TEMPLATENAME)`."
+                }, {
+                    name: "filename",
+                    description: 'The filename of the new file, defaults to "Untitled".'
+                }, {
+                    name: "open_new",
+                    description: "Whether to open or not the newly created file. Warning: if you use this option, since commands are executed asynchronously, the file can be opened first and then other commands are appended to that new file and not the previous file."
+                }, {
+                    name: "folder",
+                    description: 'The folder to put the new file in, defaults to Obsidian\'s default location. If you want the file to appear in a different folder, specify it with `app.vault.getAbstractFileByPath("FOLDERNAME")`.'
+                }],
+                examples: [{
+                    name: "File creation",
+                    example: '<%* await tp.file.create_new("MyFileContent", "MyFilename") %>'
+                }, {
+                    name: "File creation with template",
+                    example: '<%* await tp.file.create_new(tp.file.find_tfile("MyTemplate"), "MyFilename") %>'
+                }, {
+                    name: "File creation and open created note",
+                    example: '<%* await tp.file.create_new("MyFileContent", "MyFilename", true) %>'
+                }, {
+                    name: "File creation in current folder",
+                    example: '<%* await tp.file.create_new("MyFileContent", "MyFilename", false, tp.file.folder()) %>'
+                }, {
+                    name: "File creation in specified folder",
+                    example: '<%* await tp.file.create_new("MyFileContent", "MyFilename", false, app.vault.getAbstractFileByPath("MyFolder")) %>'
+                }, {
+                    name: "File creation and append link to current note",
+                    example: '[[<% (await tp.file.create_new("MyFileContent", "MyFilename")).basename %>]]'
+                }]
+            },
+            creation_date: {
+                name: "creation_date",
+                description: "Retrieves the file's creation date.",
+                definition: 'tp.file.creation_date(format: string = "YYYY-MM-DD HH:mm")',
+                args: [{
+                    name: "format",
+                    description: 'The format for the date. Defaults to `"YYYY-MM-DD HH:mm"`. Refer to [format reference](https://momentjs.com/docs/#/displaying/format/).'
+                }],
+                examples: [{
+                    name: "File creation date",
+                    example: "<% tp.file.creation_date() %>"
+                }, {
+                    name: "File creation date with format",
+                    example: '<% tp.file.creation_date("dddd Do MMMM YYYY HH:mm") %>'
+                }]
+            },
+            cursor: {
+                name: "cursor",
+                description: "Sets the cursor to this location after the template has been inserted. \n\nYou can navigate between the different cursors using the configured hotkey in Obsidian settings.\n",
+                definition: "tp.file.cursor(order?: number)",
+                args: [{
+                    name: "order",
+                    description: "The order of the different cursors jump, e.g. it will jump from 1 to 2 to 3, and so on.\nIf you specify multiple tp.file.cursor with the same order, the editor will switch to multi-cursor.\n"
+                }],
+                examples: [{name: "File cursor", example: "<% tp.file.cursor() %>"}, {
+                    name: "File multi-cursor",
+                    example: "<% tp.file.cursor(1) %>Content<% tp.file.cursor(1) %>"
+                }]
+            },
+            cursor_append: {
+                name: "cursor_append",
+                description: "Appends some content after the active cursor in the file.",
+                definition: "tp.file.cursor_append(content: string)",
+                args: [{name: "content", description: "The content to append after the active cursor."}],
+                examples: [{name: "File cursor append", example: '<% tp.file.cursor_append("Some text") %>'}]
+            },
+            exists: {
+                name: "exists",
+                description: "Check to see if a file exists by it's file path. The full path to the file, relative to the Vault and containing the extension, must be provided.",
+                definition: "tp.file.exists(filepath: string)",
+                args: [{
+                    name: "filepath",
+                    description: "The full file path of the file we want to check existence for."
+                }],
+                examples: [{
+                    name: "File existence",
+                    example: '<% await tp.file.exists("MyFolder/MyFile.md") %>'
+                }, {
+                    name: "File existence of current file",
+                    example: '<% await tp.file.exists(tp.file.folder(true) + "/" + tp.file.title + ".md") %>'
+                }]
+            },
+            find_tfile: {
+                name: "find_tfile",
+                description: "Search for a file and returns its `TFile` instance.",
+                definition: "tp.file.find_tfile(filename: string)",
+                args: [{name: "filename", description: "The filename we want to search and resolve as a `TFile`."}],
+                examples: [{name: "File find TFile", example: '<% tp.file.find_tfile("MyFile").basename %>'}]
+            },
+            folder: {
+                name: "folder",
+                description: "Retrieves the file's folder name.",
+                definition: "tp.file.folder(relative: boolean = false)",
+                args: [{
+                    name: "relative",
+                    description: "If set to `true`, appends the vault relative path to the folder name. If `false`, only retrieves name of folder. Defaults to `false`."
+                }],
+                examples: [{
+                    name: "File folder (Folder)",
+                    example: "<% tp.file.folder() %>"
+                }, {name: "File folder with relative path (Path/To/Folder)", example: "<% tp.file.folder(true) %>"}]
+            },
+            include: {
+                name: "include",
+                description: "Includes the file's link content. Templates in the included content will be resolved.",
+                definition: "tp.file.include(include_link: string \u23AE TFile)",
+                args: [{
+                    name: "include_link",
+                    description: 'The link to the file to include, e.g. `"[[MyFile]]"`, or a TFile object. Also supports sections or blocks inclusions.'
+                }],
+                examples: [{
+                    name: "File include",
+                    example: '<% tp.file.include("[[Template1]]") %>'
+                }, {
+                    name: "File include TFile",
+                    example: '<% tp.file.include(tp.file.find_tfile("MyFile")) %>'
+                }, {
+                    name: "File include section",
+                    example: '<% tp.file.include("[[MyFile#Section1]]") %>'
+                }, {name: "File include block", example: '<% tp.file.include("[[MyFile#^block1]]") %>'}]
+            },
+            last_modified_date: {
+                name: "last_modified_date",
+                description: "Retrieves the file's last modification date.",
+                definition: 'tp.file.last_modified_date(format: string = "YYYY-MM-DD HH:mm")',
+                args: [{
+                    name: "format",
+                    description: 'The format for the date. Defaults to `"YYYY-MM-DD HH:mm"`. Refer to [format reference](https://momentjs.com/docs/#/displaying/format/).'
+                }],
+                examples: [{
+                    name: "File last modified date",
+                    example: "<% tp.file.last_modified_date() %>"
+                }, {
+                    name: "File last modified date with format",
+                    example: '<% tp.file.last_modified_date("dddd Do MMMM YYYY HH:mm") %>'
+                }]
+            },
+            move: {
+                name: "move",
+                description: "Moves the file to the desired vault location.",
+                definition: "tp.file.move(new_path: string, file_to_move?: TFile)",
+                args: [{
+                    name: "new_path",
+                    description: 'The new vault relative path of the file, without the file extension. Note: the new path needs to include the folder and the filename, e.g. `"/Notes/MyNote"`.'
+                }, {name: "file_to_move", description: "The file to move, defaults to the current file."}],
+                examples: [{
+                    name: "File move",
+                    example: '<% await tp.file.move("/A/B/" + tp.file.title) %>'
+                }, {name: "File move and rename", example: '<% await tp.file.move("/A/B/NewTitle") %>'}]
+            },
+            path: {
+                name: "path",
+                description: "Retrieves the file's absolute path on the system.",
+                definition: "tp.file.path(relative: boolean = false)",
+                args: [{name: "relative", description: "If set to `true`, only retrieves the vault's relative path."}],
+                examples: [{
+                    name: "File path",
+                    example: "<% tp.file.path() %>"
+                }, {name: "File relative path (relative to vault root)", example: "<% tp.file.path(true) %>"}]
+            },
+            rename: {
+                name: "rename",
+                description: "Renames the file (keeps the same file extension).",
+                definition: "tp.file.rename(new_title: string)",
+                args: [{name: "new_title", description: "The new file title."}],
+                examples: [{
+                    name: "File rename",
+                    example: '<% await tp.file.rename("MyNewName") %>'
+                }, {
+                    name: "File append a 2 to the file name",
+                    example: '<% await tp.file.rename(tp.file.title + "2") %>'
+                }]
+            },
+            selection: {
+                name: "selection",
+                description: "Retrieves the active file's text selection.",
+                definition: "tp.file.selection()",
+                examples: [{name: "File selection", example: "<% tp.file.selection() %>"}]
+            },
+            tags: {
+                name: "tags",
+                description: "Retrieves the file's tags (array of string).",
+                definition: "tp.file.tags",
+                examples: [{name: "File tags", example: "<% tp.file.tags %>"}]
+            },
+            title: {
+                name: "title",
+                definition: "tp.file.title",
+                description: "Retrieves the file's title.",
+                examples: [{
+                    name: "File title",
+                    example: "<% tp.file.title %>"
+                }, {
+                    name: "Strip the Zettelkasten ID of title (if space separated)",
+                    example: '<% tp.file.title.split(" ")[1] %>'
+                }]
+            }
+        }
+    },
+    frontmatter: {
+        name: "frontmatter",
+        description: "This modules exposes all the frontmatter variables of a file as variables."
+    },
+    hooks: {
+        name: "hooks",
+        description: "This module exposes hooks that allow you to execute code when a Templater event occurs.",
+        functions: {
+            on_all_templates_executed: {
+                name: "on_all_templates_executed",
+                description: "Hooks into when all actively running templates have finished executing. Most of the time this will be a single template, unless you are using `tp.file.include` or `tp.file.create_new`.\n\nMultiple invokations of this method will have their callback functions run in parallel.",
+                definition: "tp.hooks.on_all_templates_executed(callback_function: () => any)",
+                args: [{
+                    name: "callback_function",
+                    description: "Callback function that will be executed when all actively running templates have finished executing."
+                }]
+            }
+        }
+    },
+    obsidian: {
+        name: "obsidian",
+        description: "This module exposes all the functions and classes from the Obsidian API."
+    },
+    system: {
+        name: "system", description: "This module contains system related functions.", functions: {
+            clipboard: {
+                name: "clipboard",
+                description: "Retrieves the clipboard's content.",
+                definition: "tp.system.clipboard()",
+                examples: [{name: "Clipboard", example: "<% tp.system.clipboard() %>"}]
+            },
+            prompt: {
+                name: "prompt",
+                description: "Spawns a prompt modal and returns the user's input.",
+                definition: "tp.system.prompt(prompt_text?: string, default_value?: string, throw_on_cancel: boolean = false, multiline?: boolean = false)",
+                args: [{name: "prompt_text", description: "Text placed above the input field."}, {
+                    name: "default_value",
+                    description: "A default value for the input field."
+                }, {
+                    name: "throw_on_cancel",
+                    description: "Throws an error if the prompt is canceled, instead of returning a `null` value."
+                }, {
+                    name: "multiline",
+                    description: "If set to `true`, the input field will be a multiline textarea. Defaults to `false`."
+                }],
+                examples: [{
+                    name: "Prompt",
+                    example: '<% tp.system.prompt("Please enter a value") %>'
+                }, {
+                    name: "Prompt with default value",
+                    example: '<% tp.system.prompt("What is your mood today?", "happy") %>'
+                }, {
+                    name: "Multiline prompt",
+                    example: '<% tp.system.prompt("What is your mood today?", null, false, true) %>'
+                }]
+            },
+            suggester: {
+                name: "suggester",
+                description: "Spawns a suggester prompt and returns the user's chosen item.",
+                definition: 'tp.system.suggester(text_items: string[] \u23AE ((item: T) => string), items: T[], throw_on_cancel: boolean = false, placeholder: string = "", limit?: number = undefined)',
+                args: [{
+                    name: "text_items",
+                    description: "Array of strings representing the text that will be displayed for each item in the suggester prompt. This can also be a function that maps an item to its text representation."
+                }, {
+                    name: "items",
+                    description: "Array containing the values of each item in the correct order."
+                }, {
+                    name: "throw_on_cancel",
+                    description: "Throws an error if the prompt is canceled, instead of returning a `null` value."
+                }, {name: "placeholder", description: "Placeholder string of the prompt."}, {
+                    name: "limit",
+                    description: "Limit the number of items rendered at once (useful to improve performance when displaying large lists)."
+                }],
+                examples: [{
+                    name: "Suggester",
+                    example: '<% tp.system.suggester(["Happy", "Sad", "Confused"], ["Happy", "Sad", "Confused"]) %>'
+                }, {
+                    name: "Suggester with mapping function (same as above example)",
+                    example: '<% tp.system.suggester((item) => item, ["Happy", "Sad", "Confused"]) %>'
+                }, {
+                    name: "Suggester for files",
+                    example: "[[<% (await tp.system.suggester((item) => item.basename, app.vault.getMarkdownFiles())).basename %>]]"
+                }, {
+                    name: "Suggester for tags",
+                    example: '<% tp.system.suggester(item => item, Object.keys(app.metadataCache.getTags()).map(x => x.replace("#", ""))) %>'
+                }]
+            }
+        }
+    },
+    web: {
+        name: "web",
+        description: "This modules contains every internal function related to the web (making web requests).",
+        functions: {
+            daily_quote: {
+                name: "daily_quote",
+                description: "Retrieves and parses the daily quote from the API `https://api.quotable.io` as a callout.",
+                definition: "tp.web.daily_quote()",
+                examples: [{name: "Daily quote", example: "<% tp.web.daily_quote() %>"}]
+            },
+            random_picture: {
+                name: "random_picture",
+                description: "Gets a random image from `https://unsplash.com/`.",
+                definition: "tp.web.random_picture(size?: string, query?: string, include_size?: boolean)",
+                args: [{name: "size", description: "Image size in the format `<width>x<height>`."}, {
+                    name: "query",
+                    description: "Limits selection to photos matching a search term. Multiple search terms can be passed separated by a comma."
+                }, {
+                    name: "include_size",
+                    description: "Optional argument to include the specified size in the image link markdown. Defaults to false."
+                }],
+                examples: [{
+                    name: "Random picture",
+                    example: "<% tp.web.random_picture() %>"
+                }, {
+                    name: "Random picture with size",
+                    example: '<% tp.web.random_picture("200x200") %>'
+                }, {
+                    name: "Random picture with size and query",
+                    example: '<% tp.web.random_picture("200x200", "landscape,water") %>'
+                }]
+            }
+        }
+    }
+};
+var documentation_default = {tp};
 
 // src/editor/TpDocumentation.ts
 var module_names = [
-  "config",
-  "date",
-  "file",
-  "frontmatter",
-  "hooks",
-  "obsidian",
-  "system",
-  "user",
-  "web"
+    "config",
+    "date",
+    "file",
+    "frontmatter",
+    "hooks",
+    "obsidian",
+    "system",
+    "user",
+    "web"
 ];
 var module_names_checker = new Set(module_names);
+
 function is_module_name(x) {
-  return typeof x === "string" && module_names_checker.has(x);
+    return typeof x === "string" && module_names_checker.has(x);
 }
+
 function is_function_documentation(x) {
-  if (x.definition) {
-    return true;
-  }
-  return false;
+    if (x.definition) {
+        return true;
+    }
+    return false;
 }
+
 var Documentation = class {
-  constructor(settings) {
-    this.settings = settings;
-    this.documentation = documentation_default;
-  }
-  get_all_modules_documentation() {
-    return Object.values(this.documentation.tp);
-  }
-  get_all_functions_documentation(module_name) {
-    if (module_name === "user") {
-      if (!this.settings || !this.settings.user_scripts_folder)
-        return;
-      const files = errorWrapperSync(() => get_tfiles_from_folder(this.settings.user_scripts_folder), `User Scripts folder doesn't exist`);
-      if (!files || files.length === 0)
-        return;
-      return files.reduce((processedFiles, file) => {
-        if (file.extension !== "js")
-          return processedFiles;
-        return [
-          ...processedFiles,
-          {
-            name: file.basename,
-            definition: "",
-            description: "",
-            example: ""
-          }
-        ];
-      }, []);
+    constructor(settings) {
+        this.settings = settings;
+        this.documentation = documentation_default;
     }
-    if (!this.documentation.tp[module_name].functions) {
-      return;
+
+    get_all_modules_documentation() {
+        return Object.values(this.documentation.tp);
     }
-    return Object.values(this.documentation.tp[module_name].functions);
-  }
-  get_module_documentation(module_name) {
-    return this.documentation.tp[module_name];
-  }
-  get_function_documentation(module_name, function_name) {
-    return this.documentation.tp[module_name].functions[function_name];
-  }
-  get_argument_documentation(module_name, function_name, argument_name) {
-    const function_doc = this.get_function_documentation(module_name, function_name);
-    if (!function_doc || !function_doc.args) {
-      return null;
+
+    get_all_functions_documentation(module_name) {
+        if (module_name === "user") {
+            if (!this.settings || !this.settings.user_scripts_folder)
+                return;
+            const files = errorWrapperSync(() => get_tfiles_from_folder(this.settings.user_scripts_folder), `User Scripts folder doesn't exist`);
+            if (!files || files.length === 0)
+                return;
+            return files.reduce((processedFiles, file) => {
+                if (file.extension !== "js")
+                    return processedFiles;
+                return [
+                    ...processedFiles,
+                    {
+                        name: file.basename,
+                        definition: "",
+                        description: "",
+                        example: ""
+                    }
+                ];
+            }, []);
+        }
+        if (!this.documentation.tp[module_name].functions) {
+            return;
+        }
+        return Object.values(this.documentation.tp[module_name].functions);
     }
-    return function_doc.args[argument_name];
-  }
+
+    get_module_documentation(module_name) {
+        return this.documentation.tp[module_name];
+    }
+
+    get_function_documentation(module_name, function_name) {
+        return this.documentation.tp[module_name].functions[function_name];
+    }
+
+    get_argument_documentation(module_name, function_name, argument_name) {
+        const function_doc = this.get_function_documentation(module_name, function_name);
+        if (!function_doc || !function_doc.args) {
+            return null;
+        }
+        return function_doc.args[argument_name];
+    }
 };
 
 // src/editor/Autocomplete.ts
 var Autocomplete = class extends import_obsidian15.EditorSuggest {
-  constructor(settings) {
-    super(app);
-    this.tp_keyword_regex = /tp\.(?<module>[a-z]*)?(?<fn_trigger>\.(?<fn>[a-z_]*)?)?$/;
-    this.documentation = new Documentation(settings);
-  }
-  onTrigger(cursor, editor, _file) {
-    const range = editor.getRange({ line: cursor.line, ch: 0 }, { line: cursor.line, ch: cursor.ch });
-    const match = this.tp_keyword_regex.exec(range);
-    if (!match) {
-      return null;
+    constructor(settings) {
+        super(app);
+        this.tp_keyword_regex = /tp\.(?<module>[a-z]*)?(?<fn_trigger>\.(?<fn>[a-z_]*)?)?$/;
+        this.documentation = new Documentation(settings);
     }
-    let query;
-    const module_name = match.groups && match.groups["module"] || "";
-    this.module_name = module_name;
-    if (match.groups && match.groups["fn_trigger"]) {
-      if (module_name == "" || !is_module_name(module_name)) {
-        return null;
-      }
-      this.function_trigger = true;
-      this.function_name = match.groups["fn"] || "";
-      query = this.function_name;
-    } else {
-      this.function_trigger = false;
-      query = this.module_name;
+
+    onTrigger(cursor, editor, _file) {
+        const range = editor.getRange({line: cursor.line, ch: 0}, {line: cursor.line, ch: cursor.ch});
+        const match = this.tp_keyword_regex.exec(range);
+        if (!match) {
+            return null;
+        }
+        let query;
+        const module_name = match.groups && match.groups["module"] || "";
+        this.module_name = module_name;
+        if (match.groups && match.groups["fn_trigger"]) {
+            if (module_name == "" || !is_module_name(module_name)) {
+                return null;
+            }
+            this.function_trigger = true;
+            this.function_name = match.groups["fn"] || "";
+            query = this.function_name;
+        } else {
+            this.function_trigger = false;
+            query = this.module_name;
+        }
+        const trigger_info = {
+            start: {line: cursor.line, ch: cursor.ch - query.length},
+            end: {line: cursor.line, ch: cursor.ch},
+            query
+        };
+        this.latest_trigger_info = trigger_info;
+        return trigger_info;
     }
-    const trigger_info = {
-      start: { line: cursor.line, ch: cursor.ch - query.length },
-      end: { line: cursor.line, ch: cursor.ch },
-      query
-    };
-    this.latest_trigger_info = trigger_info;
-    return trigger_info;
-  }
-  getSuggestions(context) {
-    let suggestions;
-    if (this.module_name && this.function_trigger) {
-      suggestions = this.documentation.get_all_functions_documentation(this.module_name);
-    } else {
-      suggestions = this.documentation.get_all_modules_documentation();
+
+    getSuggestions(context) {
+        let suggestions;
+        if (this.module_name && this.function_trigger) {
+            suggestions = this.documentation.get_all_functions_documentation(this.module_name);
+        } else {
+            suggestions = this.documentation.get_all_modules_documentation();
+        }
+        if (!suggestions) {
+            return [];
+        }
+        return suggestions.filter((s) => s.name.startsWith(context.query));
     }
-    if (!suggestions) {
-      return [];
+
+    renderSuggestion(value, el) {
+        el.createEl("b", {text: value.name});
+        el.createEl("br");
+        if (this.function_trigger && is_function_documentation(value)) {
+            el.createEl("code", {text: value.definition});
+        }
+        if (value.description) {
+            el.createEl("div", {text: value.description});
+        }
     }
-    return suggestions.filter((s) => s.name.startsWith(context.query));
-  }
-  renderSuggestion(value, el) {
-    el.createEl("b", { text: value.name });
-    el.createEl("br");
-    if (this.function_trigger && is_function_documentation(value)) {
-      el.createEl("code", { text: value.definition });
+
+    selectSuggestion(value, _evt) {
+        const active_editor = app.workspace.activeEditor;
+        if (!active_editor || !active_editor.editor) {
+            return;
+        }
+        active_editor.editor.replaceRange(value.name, this.latest_trigger_info.start, this.latest_trigger_info.end);
+        if (this.latest_trigger_info.start.ch == this.latest_trigger_info.end.ch) {
+            const cursor_pos = this.latest_trigger_info.end;
+            cursor_pos.ch += value.name.length;
+            active_editor.editor.setCursor(cursor_pos);
+        }
     }
-    if (value.description) {
-      el.createEl("div", { text: value.description });
-    }
-  }
-  selectSuggestion(value, _evt) {
-    const active_editor = app.workspace.activeEditor;
-    if (!active_editor || !active_editor.editor) {
-      return;
-    }
-    active_editor.editor.replaceRange(value.name, this.latest_trigger_info.start, this.latest_trigger_info.end);
-    if (this.latest_trigger_info.start.ch == this.latest_trigger_info.end.ch) {
-      const cursor_pos = this.latest_trigger_info.end;
-      cursor_pos.ch += value.name.length;
-      active_editor.editor.setCursor(cursor_pos);
-    }
-  }
 };
 
 // src/editor/mode/javascript.js
-(function(mod) {
-  mod(window.CodeMirror);
-})(function(CodeMirror) {
-  "use strict";
-  CodeMirror.defineMode("javascript", function(config, parserConfig) {
-    var indentUnit = config.indentUnit;
-    var statementIndent = parserConfig.statementIndent;
-    var jsonldMode = parserConfig.jsonld;
-    var jsonMode = parserConfig.json || jsonldMode;
-    var trackScope = parserConfig.trackScope !== false;
-    var isTS = parserConfig.typescript;
-    var wordRE = parserConfig.wordCharacters || /[\w$\xa1-\uffff]/;
-    var keywords = function() {
-      function kw(type2) {
-        return { type: type2, style: "keyword" };
-      }
-      var A = kw("keyword a"), B = kw("keyword b"), C = kw("keyword c"), D = kw("keyword d");
-      var operator = kw("operator"), atom = { type: "atom", style: "atom" };
-      return {
-        if: kw("if"),
-        while: A,
-        with: A,
-        else: B,
-        do: B,
-        try: B,
-        finally: B,
-        return: D,
-        break: D,
-        continue: D,
-        new: kw("new"),
-        delete: C,
-        void: C,
-        throw: C,
-        debugger: kw("debugger"),
-        var: kw("var"),
-        const: kw("var"),
-        let: kw("var"),
-        function: kw("function"),
-        catch: kw("catch"),
-        for: kw("for"),
-        switch: kw("switch"),
-        case: kw("case"),
-        default: kw("default"),
-        in: operator,
-        typeof: operator,
-        instanceof: operator,
-        true: atom,
-        false: atom,
-        null: atom,
-        undefined: atom,
-        NaN: atom,
-        Infinity: atom,
-        this: kw("this"),
-        class: kw("class"),
-        super: kw("atom"),
-        yield: C,
-        export: kw("export"),
-        import: kw("import"),
-        extends: C,
-        await: C
-      };
-    }();
-    var isOperatorChar = /[+\-*&%=<>!?|~^@]/;
-    var isJsonldKeyword = /^@(context|id|value|language|type|container|list|set|reverse|index|base|vocab|graph)"/;
-    function readRegexp(stream) {
-      var escaped = false, next, inSet = false;
-      while ((next = stream.next()) != null) {
-        if (!escaped) {
-          if (next == "/" && !inSet)
-            return;
-          if (next == "[")
-            inSet = true;
-          else if (inSet && next == "]")
-            inSet = false;
-        }
-        escaped = !escaped && next == "\\";
-      }
-    }
-    var type, content;
-    function ret(tp2, style, cont2) {
-      type = tp2;
-      content = cont2;
-      return style;
-    }
-    function tokenBase(stream, state) {
-      var ch = stream.next();
-      if (ch == '"' || ch == "'") {
-        state.tokenize = tokenString(ch);
-        return state.tokenize(stream, state);
-      } else if (ch == "." && stream.match(/^\d[\d_]*(?:[eE][+\-]?[\d_]+)?/)) {
-        return ret("number", "number");
-      } else if (ch == "." && stream.match("..")) {
-        return ret("spread", "meta");
-      } else if (/[\[\]{}\(\),;\:\.]/.test(ch)) {
-        return ret(ch);
-      } else if (ch == "=" && stream.eat(">")) {
-        return ret("=>", "operator");
-      } else if (ch == "0" && stream.match(/^(?:x[\dA-Fa-f_]+|o[0-7_]+|b[01_]+)n?/)) {
-        return ret("number", "number");
-      } else if (/\d/.test(ch)) {
-        stream.match(/^[\d_]*(?:n|(?:\.[\d_]*)?(?:[eE][+\-]?[\d_]+)?)?/);
-        return ret("number", "number");
-      } else if (ch == "/") {
-        if (stream.eat("*")) {
-          state.tokenize = tokenComment;
-          return tokenComment(stream, state);
-        } else if (stream.eat("/")) {
-          stream.skipToEnd();
-          return ret("comment", "comment");
-        } else if (expressionAllowed(stream, state, 1)) {
-          readRegexp(stream);
-          stream.match(/^\b(([gimyus])(?![gimyus]*\2))+\b/);
-          return ret("regexp", "string-2");
-        } else {
-          stream.eat("=");
-          return ret("operator", "operator", stream.current());
-        }
-      } else if (ch == "`") {
-        state.tokenize = tokenQuasi;
-        return tokenQuasi(stream, state);
-      } else if (ch == "#" && stream.peek() == "!") {
-        stream.skipToEnd();
-        return ret("meta", "meta");
-      } else if (ch == "#" && stream.eatWhile(wordRE)) {
-        return ret("variable", "property");
-      } else if (ch == "<" && stream.match("!--") || ch == "-" && stream.match("->") && !/\S/.test(stream.string.slice(0, stream.start))) {
-        stream.skipToEnd();
-        return ret("comment", "comment");
-      } else if (isOperatorChar.test(ch)) {
-        if (ch != ">" || !state.lexical || state.lexical.type != ">") {
-          if (stream.eat("=")) {
-            if (ch == "!" || ch == "=")
-              stream.eat("=");
-          } else if (/[<>*+\-|&?]/.test(ch)) {
-            stream.eat(ch);
-            if (ch == ">")
-              stream.eat(ch);
-          }
-        }
-        if (ch == "?" && stream.eat("."))
-          return ret(".");
-        return ret("operator", "operator", stream.current());
-      } else if (wordRE.test(ch)) {
-        stream.eatWhile(wordRE);
-        var word = stream.current();
-        if (state.lastType != ".") {
-          if (keywords.propertyIsEnumerable(word)) {
-            var kw = keywords[word];
-            return ret(kw.type, kw.style, word);
-          }
-          if (word == "async" && stream.match(/^(\s|\/\*([^*]|\*(?!\/))*?\*\/)*[\[\(\w]/, false))
-            return ret("async", "keyword", word);
-        }
-        return ret("variable", "variable", word);
-      }
-    }
-    function tokenString(quote) {
-      return function(stream, state) {
-        var escaped = false, next;
-        if (jsonldMode && stream.peek() == "@" && stream.match(isJsonldKeyword)) {
-          state.tokenize = tokenBase;
-          return ret("jsonld-keyword", "meta");
-        }
-        while ((next = stream.next()) != null) {
-          if (next == quote && !escaped)
-            break;
-          escaped = !escaped && next == "\\";
-        }
-        if (!escaped)
-          state.tokenize = tokenBase;
-        return ret("string", "string");
-      };
-    }
-    function tokenComment(stream, state) {
-      var maybeEnd = false, ch;
-      while (ch = stream.next()) {
-        if (ch == "/" && maybeEnd) {
-          state.tokenize = tokenBase;
-          break;
-        }
-        maybeEnd = ch == "*";
-      }
-      return ret("comment", "comment");
-    }
-    function tokenQuasi(stream, state) {
-      var escaped = false, next;
-      while ((next = stream.next()) != null) {
-        if (!escaped && (next == "`" || next == "$" && stream.eat("{"))) {
-          state.tokenize = tokenBase;
-          break;
-        }
-        escaped = !escaped && next == "\\";
-      }
-      return ret("quasi", "string-2", stream.current());
-    }
-    var brackets = "([{}])";
-    function findFatArrow(stream, state) {
-      if (state.fatArrowAt)
-        state.fatArrowAt = null;
-      var arrow2 = stream.string.indexOf("=>", stream.start);
-      if (arrow2 < 0)
-        return;
-      if (isTS) {
-        var m = /:\s*(?:\w+(?:<[^>]*>|\[\])?|\{[^}]*\})\s*$/.exec(stream.string.slice(stream.start, arrow2));
-        if (m)
-          arrow2 = m.index;
-      }
-      var depth = 0, sawSomething = false;
-      for (var pos = arrow2 - 1; pos >= 0; --pos) {
-        var ch = stream.string.charAt(pos);
-        var bracket = brackets.indexOf(ch);
-        if (bracket >= 0 && bracket < 3) {
-          if (!depth) {
-            ++pos;
-            break;
-          }
-          if (--depth == 0) {
-            if (ch == "(")
-              sawSomething = true;
-            break;
-          }
-        } else if (bracket >= 3 && bracket < 6) {
-          ++depth;
-        } else if (wordRE.test(ch)) {
-          sawSomething = true;
-        } else if (/["'\/`]/.test(ch)) {
-          for (; ; --pos) {
-            if (pos == 0)
-              return;
-            var next = stream.string.charAt(pos - 1);
-            if (next == ch && stream.string.charAt(pos - 2) != "\\") {
-              pos--;
-              break;
+(function (mod) {
+    mod(window.CodeMirror);
+})(function (CodeMirror) {
+    "use strict";
+    CodeMirror.defineMode("javascript", function (config, parserConfig) {
+        var indentUnit = config.indentUnit;
+        var statementIndent = parserConfig.statementIndent;
+        var jsonldMode = parserConfig.jsonld;
+        var jsonMode = parserConfig.json || jsonldMode;
+        var trackScope = parserConfig.trackScope !== false;
+        var isTS = parserConfig.typescript;
+        var wordRE = parserConfig.wordCharacters || /[\w$\xa1-\uffff]/;
+        var keywords = function () {
+            function kw(type2) {
+                return {type: type2, style: "keyword"};
             }
-          }
-        } else if (sawSomething && !depth) {
-          ++pos;
-          break;
+
+            var A = kw("keyword a"), B = kw("keyword b"), C = kw("keyword c"), D = kw("keyword d");
+            var operator = kw("operator"), atom = {type: "atom", style: "atom"};
+            return {
+                if: kw("if"),
+                while: A,
+                with: A,
+                else: B,
+                do: B,
+                try: B,
+                finally: B,
+                return: D,
+                break: D,
+                continue: D,
+                new: kw("new"),
+                delete: C,
+                void: C,
+                throw: C,
+                debugger: kw("debugger"),
+                var: kw("var"),
+                const: kw("var"),
+                let: kw("var"),
+                function: kw("function"),
+                catch: kw("catch"),
+                for: kw("for"),
+                switch: kw("switch"),
+                case: kw("case"),
+                default: kw("default"),
+                in: operator,
+                typeof: operator,
+                instanceof: operator,
+                true: atom,
+                false: atom,
+                null: atom,
+                undefined: atom,
+                NaN: atom,
+                Infinity: atom,
+                this: kw("this"),
+                class: kw("class"),
+                super: kw("atom"),
+                yield: C,
+                export: kw("export"),
+                import: kw("import"),
+                extends: C,
+                await: C
+            };
+        }();
+        var isOperatorChar = /[+\-*&%=<>!?|~^@]/;
+        var isJsonldKeyword = /^@(context|id|value|language|type|container|list|set|reverse|index|base|vocab|graph)"/;
+
+        function readRegexp(stream) {
+            var escaped = false, next, inSet = false;
+            while ((next = stream.next()) != null) {
+                if (!escaped) {
+                    if (next == "/" && !inSet)
+                        return;
+                    if (next == "[")
+                        inSet = true;
+                    else if (inSet && next == "]")
+                        inSet = false;
+                }
+                escaped = !escaped && next == "\\";
+            }
         }
-      }
-      if (sawSomething && !depth)
-        state.fatArrowAt = pos;
-    }
-    var atomicTypes = {
-      atom: true,
-      number: true,
-      variable: true,
-      string: true,
-      regexp: true,
-      this: true,
-      import: true,
-      "jsonld-keyword": true
-    };
-    function JSLexical(indented, column, type2, align, prev, info) {
-      this.indented = indented;
-      this.column = column;
-      this.type = type2;
-      this.prev = prev;
-      this.info = info;
-      if (align != null)
-        this.align = align;
-    }
-    function inScope(state, varname) {
-      if (!trackScope)
-        return false;
-      for (var v = state.localVars; v; v = v.next)
-        if (v.name == varname)
-          return true;
-      for (var cx2 = state.context; cx2; cx2 = cx2.prev) {
-        for (var v = cx2.vars; v; v = v.next)
-          if (v.name == varname)
-            return true;
-      }
-    }
-    function parseJS(state, style, type2, content2, stream) {
-      var cc = state.cc;
-      cx.state = state;
-      cx.stream = stream;
-      cx.marked = null, cx.cc = cc;
-      cx.style = style;
-      if (!state.lexical.hasOwnProperty("align"))
-        state.lexical.align = true;
-      while (true) {
-        var combinator = cc.length ? cc.pop() : jsonMode ? expression : statement;
-        if (combinator(type2, content2)) {
-          while (cc.length && cc[cc.length - 1].lex)
-            cc.pop()();
-          if (cx.marked)
-            return cx.marked;
-          if (type2 == "variable" && inScope(state, content2))
-            return "variable-2";
-          return style;
+
+        var type, content;
+
+        function ret(tp2, style, cont2) {
+            type = tp2;
+            content = cont2;
+            return style;
         }
-      }
-    }
-    var cx = { state: null, column: null, marked: null, cc: null };
-    function pass() {
-      for (var i = arguments.length - 1; i >= 0; i--)
-        cx.cc.push(arguments[i]);
-    }
-    function cont() {
-      pass.apply(null, arguments);
-      return true;
-    }
-    function inList(name, list) {
-      for (var v = list; v; v = v.next)
-        if (v.name == name)
-          return true;
-      return false;
-    }
-    function register(varname) {
-      var state = cx.state;
-      cx.marked = "def";
-      if (!trackScope)
-        return;
-      if (state.context) {
-        if (state.lexical.info == "var" && state.context && state.context.block) {
-          var newContext = registerVarScoped(varname, state.context);
-          if (newContext != null) {
-            state.context = newContext;
-            return;
-          }
-        } else if (!inList(varname, state.localVars)) {
-          state.localVars = new Var(varname, state.localVars);
-          return;
+
+        function tokenBase(stream, state) {
+            var ch = stream.next();
+            if (ch == '"' || ch == "'") {
+                state.tokenize = tokenString(ch);
+                return state.tokenize(stream, state);
+            } else if (ch == "." && stream.match(/^\d[\d_]*(?:[eE][+\-]?[\d_]+)?/)) {
+                return ret("number", "number");
+            } else if (ch == "." && stream.match("..")) {
+                return ret("spread", "meta");
+            } else if (/[\[\]{}\(\),;\:\.]/.test(ch)) {
+                return ret(ch);
+            } else if (ch == "=" && stream.eat(">")) {
+                return ret("=>", "operator");
+            } else if (ch == "0" && stream.match(/^(?:x[\dA-Fa-f_]+|o[0-7_]+|b[01_]+)n?/)) {
+                return ret("number", "number");
+            } else if (/\d/.test(ch)) {
+                stream.match(/^[\d_]*(?:n|(?:\.[\d_]*)?(?:[eE][+\-]?[\d_]+)?)?/);
+                return ret("number", "number");
+            } else if (ch == "/") {
+                if (stream.eat("*")) {
+                    state.tokenize = tokenComment;
+                    return tokenComment(stream, state);
+                } else if (stream.eat("/")) {
+                    stream.skipToEnd();
+                    return ret("comment", "comment");
+                } else if (expressionAllowed(stream, state, 1)) {
+                    readRegexp(stream);
+                    stream.match(/^\b(([gimyus])(?![gimyus]*\2))+\b/);
+                    return ret("regexp", "string-2");
+                } else {
+                    stream.eat("=");
+                    return ret("operator", "operator", stream.current());
+                }
+            } else if (ch == "`") {
+                state.tokenize = tokenQuasi;
+                return tokenQuasi(stream, state);
+            } else if (ch == "#" && stream.peek() == "!") {
+                stream.skipToEnd();
+                return ret("meta", "meta");
+            } else if (ch == "#" && stream.eatWhile(wordRE)) {
+                return ret("variable", "property");
+            } else if (ch == "<" && stream.match("!--") || ch == "-" && stream.match("->") && !/\S/.test(stream.string.slice(0, stream.start))) {
+                stream.skipToEnd();
+                return ret("comment", "comment");
+            } else if (isOperatorChar.test(ch)) {
+                if (ch != ">" || !state.lexical || state.lexical.type != ">") {
+                    if (stream.eat("=")) {
+                        if (ch == "!" || ch == "=")
+                            stream.eat("=");
+                    } else if (/[<>*+\-|&?]/.test(ch)) {
+                        stream.eat(ch);
+                        if (ch == ">")
+                            stream.eat(ch);
+                    }
+                }
+                if (ch == "?" && stream.eat("."))
+                    return ret(".");
+                return ret("operator", "operator", stream.current());
+            } else if (wordRE.test(ch)) {
+                stream.eatWhile(wordRE);
+                var word = stream.current();
+                if (state.lastType != ".") {
+                    if (keywords.propertyIsEnumerable(word)) {
+                        var kw = keywords[word];
+                        return ret(kw.type, kw.style, word);
+                    }
+                    if (word == "async" && stream.match(/^(\s|\/\*([^*]|\*(?!\/))*?\*\/)*[\[\(\w]/, false))
+                        return ret("async", "keyword", word);
+                }
+                return ret("variable", "variable", word);
+            }
         }
-      }
-      if (parserConfig.globalVars && !inList(varname, state.globalVars))
-        state.globalVars = new Var(varname, state.globalVars);
-    }
-    function registerVarScoped(varname, context) {
-      if (!context) {
-        return null;
-      } else if (context.block) {
-        var inner = registerVarScoped(varname, context.prev);
-        if (!inner)
-          return null;
-        if (inner == context.prev)
-          return context;
-        return new Context(inner, context.vars, true);
-      } else if (inList(varname, context.vars)) {
-        return context;
-      } else {
-        return new Context(context.prev, new Var(varname, context.vars), false);
-      }
-    }
-    function isModifier(name) {
-      return name == "public" || name == "private" || name == "protected" || name == "abstract" || name == "readonly";
-    }
-    function Context(prev, vars, block2) {
-      this.prev = prev;
-      this.vars = vars;
-      this.block = block2;
-    }
-    function Var(name, next) {
-      this.name = name;
-      this.next = next;
-    }
-    var defaultVars = new Var("this", new Var("arguments", null));
-    function pushcontext() {
-      cx.state.context = new Context(cx.state.context, cx.state.localVars, false);
-      cx.state.localVars = defaultVars;
-    }
-    function pushblockcontext() {
-      cx.state.context = new Context(cx.state.context, cx.state.localVars, true);
-      cx.state.localVars = null;
-    }
-    function popcontext() {
-      cx.state.localVars = cx.state.context.vars;
-      cx.state.context = cx.state.context.prev;
-    }
-    popcontext.lex = true;
-    function pushlex(type2, info) {
-      var result = function() {
-        var state = cx.state, indent = state.indented;
-        if (state.lexical.type == "stat")
-          indent = state.lexical.indented;
-        else
-          for (var outer = state.lexical; outer && outer.type == ")" && outer.align; outer = outer.prev)
-            indent = outer.indented;
-        state.lexical = new JSLexical(indent, cx.stream.column(), type2, null, state.lexical, info);
-      };
-      result.lex = true;
-      return result;
-    }
-    function poplex() {
-      var state = cx.state;
-      if (state.lexical.prev) {
-        if (state.lexical.type == ")")
-          state.indented = state.lexical.indented;
-        state.lexical = state.lexical.prev;
-      }
-    }
-    poplex.lex = true;
-    function expect(wanted) {
-      function exp(type2) {
-        if (type2 == wanted)
-          return cont();
-        else if (wanted == ";" || type2 == "}" || type2 == ")" || type2 == "]")
-          return pass();
-        else
-          return cont(exp);
-      }
-      return exp;
-    }
-    function statement(type2, value) {
-      if (type2 == "var")
-        return cont(pushlex("vardef", value), vardef, expect(";"), poplex);
-      if (type2 == "keyword a")
-        return cont(pushlex("form"), parenExpr, statement, poplex);
-      if (type2 == "keyword b")
-        return cont(pushlex("form"), statement, poplex);
-      if (type2 == "keyword d")
-        return cx.stream.match(/^\s*$/, false) ? cont() : cont(pushlex("stat"), maybeexpression, expect(";"), poplex);
-      if (type2 == "debugger")
-        return cont(expect(";"));
-      if (type2 == "{")
-        return cont(pushlex("}"), pushblockcontext, block, poplex, popcontext);
-      if (type2 == ";")
-        return cont();
-      if (type2 == "if") {
-        if (cx.state.lexical.info == "else" && cx.state.cc[cx.state.cc.length - 1] == poplex)
-          cx.state.cc.pop()();
-        return cont(pushlex("form"), parenExpr, statement, poplex, maybeelse);
-      }
-      if (type2 == "function")
-        return cont(functiondef);
-      if (type2 == "for")
-        return cont(pushlex("form"), pushblockcontext, forspec, statement, popcontext, poplex);
-      if (type2 == "class" || isTS && value == "interface") {
-        cx.marked = "keyword";
-        return cont(pushlex("form", type2 == "class" ? type2 : value), className, poplex);
-      }
-      if (type2 == "variable") {
-        if (isTS && value == "declare") {
-          cx.marked = "keyword";
-          return cont(statement);
-        } else if (isTS && (value == "module" || value == "enum" || value == "type") && cx.stream.match(/^\s*\w/, false)) {
-          cx.marked = "keyword";
-          if (value == "enum")
-            return cont(enumdef);
-          else if (value == "type")
-            return cont(typename, expect("operator"), typeexpr, expect(";"));
-          else
-            return cont(pushlex("form"), pattern, expect("{"), pushlex("}"), block, poplex, poplex);
-        } else if (isTS && value == "namespace") {
-          cx.marked = "keyword";
-          return cont(pushlex("form"), expression, statement, poplex);
-        } else if (isTS && value == "abstract") {
-          cx.marked = "keyword";
-          return cont(statement);
-        } else {
-          return cont(pushlex("stat"), maybelabel);
+
+        function tokenString(quote) {
+            return function (stream, state) {
+                var escaped = false, next;
+                if (jsonldMode && stream.peek() == "@" && stream.match(isJsonldKeyword)) {
+                    state.tokenize = tokenBase;
+                    return ret("jsonld-keyword", "meta");
+                }
+                while ((next = stream.next()) != null) {
+                    if (next == quote && !escaped)
+                        break;
+                    escaped = !escaped && next == "\\";
+                }
+                if (!escaped)
+                    state.tokenize = tokenBase;
+                return ret("string", "string");
+            };
         }
-      }
-      if (type2 == "switch")
-        return cont(pushlex("form"), parenExpr, expect("{"), pushlex("}", "switch"), pushblockcontext, block, poplex, poplex, popcontext);
-      if (type2 == "case")
-        return cont(expression, expect(":"));
-      if (type2 == "default")
-        return cont(expect(":"));
-      if (type2 == "catch")
-        return cont(pushlex("form"), pushcontext, maybeCatchBinding, statement, poplex, popcontext);
-      if (type2 == "export")
-        return cont(pushlex("stat"), afterExport, poplex);
-      if (type2 == "import")
-        return cont(pushlex("stat"), afterImport, poplex);
-      if (type2 == "async")
-        return cont(statement);
-      if (value == "@")
-        return cont(expression, statement);
-      return pass(pushlex("stat"), expression, expect(";"), poplex);
-    }
-    function maybeCatchBinding(type2) {
-      if (type2 == "(")
-        return cont(funarg, expect(")"));
-    }
-    function expression(type2, value) {
-      return expressionInner(type2, value, false);
-    }
-    function expressionNoComma(type2, value) {
-      return expressionInner(type2, value, true);
-    }
-    function parenExpr(type2) {
-      if (type2 != "(")
-        return pass();
-      return cont(pushlex(")"), maybeexpression, expect(")"), poplex);
-    }
-    function expressionInner(type2, value, noComma) {
-      if (cx.state.fatArrowAt == cx.stream.start) {
-        var body = noComma ? arrowBodyNoComma : arrowBody;
-        if (type2 == "(")
-          return cont(pushcontext, pushlex(")"), commasep(funarg, ")"), poplex, expect("=>"), body, popcontext);
-        else if (type2 == "variable")
-          return pass(pushcontext, pattern, expect("=>"), body, popcontext);
-      }
-      var maybeop = noComma ? maybeoperatorNoComma : maybeoperatorComma;
-      if (atomicTypes.hasOwnProperty(type2))
-        return cont(maybeop);
-      if (type2 == "function")
-        return cont(functiondef, maybeop);
-      if (type2 == "class" || isTS && value == "interface") {
-        cx.marked = "keyword";
-        return cont(pushlex("form"), classExpression, poplex);
-      }
-      if (type2 == "keyword c" || type2 == "async")
-        return cont(noComma ? expressionNoComma : expression);
-      if (type2 == "(")
-        return cont(pushlex(")"), maybeexpression, expect(")"), poplex, maybeop);
-      if (type2 == "operator" || type2 == "spread")
-        return cont(noComma ? expressionNoComma : expression);
-      if (type2 == "[")
-        return cont(pushlex("]"), arrayLiteral, poplex, maybeop);
-      if (type2 == "{")
-        return contCommasep(objprop, "}", null, maybeop);
-      if (type2 == "quasi")
-        return pass(quasi, maybeop);
-      if (type2 == "new")
-        return cont(maybeTarget(noComma));
-      return cont();
-    }
-    function maybeexpression(type2) {
-      if (type2.match(/[;\}\)\],]/))
-        return pass();
-      return pass(expression);
-    }
-    function maybeoperatorComma(type2, value) {
-      if (type2 == ",")
-        return cont(maybeexpression);
-      return maybeoperatorNoComma(type2, value, false);
-    }
-    function maybeoperatorNoComma(type2, value, noComma) {
-      var me = noComma == false ? maybeoperatorComma : maybeoperatorNoComma;
-      var expr = noComma == false ? expression : expressionNoComma;
-      if (type2 == "=>")
-        return cont(pushcontext, noComma ? arrowBodyNoComma : arrowBody, popcontext);
-      if (type2 == "operator") {
-        if (/\+\+|--/.test(value) || isTS && value == "!")
-          return cont(me);
-        if (isTS && value == "<" && cx.stream.match(/^([^<>]|<[^<>]*>)*>\s*\(/, false))
-          return cont(pushlex(">"), commasep(typeexpr, ">"), poplex, me);
-        if (value == "?")
-          return cont(expression, expect(":"), expr);
-        return cont(expr);
-      }
-      if (type2 == "quasi") {
-        return pass(quasi, me);
-      }
-      if (type2 == ";")
-        return;
-      if (type2 == "(")
-        return contCommasep(expressionNoComma, ")", "call", me);
-      if (type2 == ".")
-        return cont(property, me);
-      if (type2 == "[")
-        return cont(pushlex("]"), maybeexpression, expect("]"), poplex, me);
-      if (isTS && value == "as") {
-        cx.marked = "keyword";
-        return cont(typeexpr, me);
-      }
-      if (type2 == "regexp") {
-        cx.state.lastType = cx.marked = "operator";
-        cx.stream.backUp(cx.stream.pos - cx.stream.start - 1);
-        return cont(expr);
-      }
-    }
-    function quasi(type2, value) {
-      if (type2 != "quasi")
-        return pass();
-      if (value.slice(value.length - 2) != "${")
-        return cont(quasi);
-      return cont(maybeexpression, continueQuasi);
-    }
-    function continueQuasi(type2) {
-      if (type2 == "}") {
-        cx.marked = "string-2";
-        cx.state.tokenize = tokenQuasi;
-        return cont(quasi);
-      }
-    }
-    function arrowBody(type2) {
-      findFatArrow(cx.stream, cx.state);
-      return pass(type2 == "{" ? statement : expression);
-    }
-    function arrowBodyNoComma(type2) {
-      findFatArrow(cx.stream, cx.state);
-      return pass(type2 == "{" ? statement : expressionNoComma);
-    }
-    function maybeTarget(noComma) {
-      return function(type2) {
-        if (type2 == ".")
-          return cont(noComma ? targetNoComma : target);
-        else if (type2 == "variable" && isTS)
-          return cont(maybeTypeArgs, noComma ? maybeoperatorNoComma : maybeoperatorComma);
-        else
-          return pass(noComma ? expressionNoComma : expression);
-      };
-    }
-    function target(_, value) {
-      if (value == "target") {
-        cx.marked = "keyword";
-        return cont(maybeoperatorComma);
-      }
-    }
-    function targetNoComma(_, value) {
-      if (value == "target") {
-        cx.marked = "keyword";
-        return cont(maybeoperatorNoComma);
-      }
-    }
-    function maybelabel(type2) {
-      if (type2 == ":")
-        return cont(poplex, statement);
-      return pass(maybeoperatorComma, expect(";"), poplex);
-    }
-    function property(type2) {
-      if (type2 == "variable") {
-        cx.marked = "property";
-        return cont();
-      }
-    }
-    function objprop(type2, value) {
-      if (type2 == "async") {
-        cx.marked = "property";
-        return cont(objprop);
-      } else if (type2 == "variable" || cx.style == "keyword") {
-        cx.marked = "property";
-        if (value == "get" || value == "set")
-          return cont(getterSetter);
-        var m;
-        if (isTS && cx.state.fatArrowAt == cx.stream.start && (m = cx.stream.match(/^\s*:\s*/, false)))
-          cx.state.fatArrowAt = cx.stream.pos + m[0].length;
-        return cont(afterprop);
-      } else if (type2 == "number" || type2 == "string") {
-        cx.marked = jsonldMode ? "property" : cx.style + " property";
-        return cont(afterprop);
-      } else if (type2 == "jsonld-keyword") {
-        return cont(afterprop);
-      } else if (isTS && isModifier(value)) {
-        cx.marked = "keyword";
-        return cont(objprop);
-      } else if (type2 == "[") {
-        return cont(expression, maybetype, expect("]"), afterprop);
-      } else if (type2 == "spread") {
-        return cont(expressionNoComma, afterprop);
-      } else if (value == "*") {
-        cx.marked = "keyword";
-        return cont(objprop);
-      } else if (type2 == ":") {
-        return pass(afterprop);
-      }
-    }
-    function getterSetter(type2) {
-      if (type2 != "variable")
-        return pass(afterprop);
-      cx.marked = "property";
-      return cont(functiondef);
-    }
-    function afterprop(type2) {
-      if (type2 == ":")
-        return cont(expressionNoComma);
-      if (type2 == "(")
-        return pass(functiondef);
-    }
-    function commasep(what, end2, sep) {
-      function proceed(type2, value) {
-        if (sep ? sep.indexOf(type2) > -1 : type2 == ",") {
-          var lex = cx.state.lexical;
-          if (lex.info == "call")
-            lex.pos = (lex.pos || 0) + 1;
-          return cont(function(type3, value2) {
-            if (type3 == end2 || value2 == end2)
-              return pass();
-            return pass(what);
-          }, proceed);
+
+        function tokenComment(stream, state) {
+            var maybeEnd = false, ch;
+            while (ch = stream.next()) {
+                if (ch == "/" && maybeEnd) {
+                    state.tokenize = tokenBase;
+                    break;
+                }
+                maybeEnd = ch == "*";
+            }
+            return ret("comment", "comment");
         }
-        if (type2 == end2 || value == end2)
-          return cont();
-        if (sep && sep.indexOf(";") > -1)
-          return pass(what);
-        return cont(expect(end2));
-      }
-      return function(type2, value) {
-        if (type2 == end2 || value == end2)
-          return cont();
-        return pass(what, proceed);
-      };
-    }
-    function contCommasep(what, end2, info) {
-      for (var i = 3; i < arguments.length; i++)
-        cx.cc.push(arguments[i]);
-      return cont(pushlex(end2, info), commasep(what, end2), poplex);
-    }
-    function block(type2) {
-      if (type2 == "}")
-        return cont();
-      return pass(statement, block);
-    }
-    function maybetype(type2, value) {
-      if (isTS) {
-        if (type2 == ":")
-          return cont(typeexpr);
-        if (value == "?")
-          return cont(maybetype);
-      }
-    }
-    function maybetypeOrIn(type2, value) {
-      if (isTS && (type2 == ":" || value == "in"))
-        return cont(typeexpr);
-    }
-    function mayberettype(type2) {
-      if (isTS && type2 == ":") {
-        if (cx.stream.match(/^\s*\w+\s+is\b/, false))
-          return cont(expression, isKW, typeexpr);
-        else
-          return cont(typeexpr);
-      }
-    }
-    function isKW(_, value) {
-      if (value == "is") {
-        cx.marked = "keyword";
-        return cont();
-      }
-    }
-    function typeexpr(type2, value) {
-      if (value == "keyof" || value == "typeof" || value == "infer" || value == "readonly") {
-        cx.marked = "keyword";
-        return cont(value == "typeof" ? expressionNoComma : typeexpr);
-      }
-      if (type2 == "variable" || value == "void") {
-        cx.marked = "type";
-        return cont(afterType);
-      }
-      if (value == "|" || value == "&")
-        return cont(typeexpr);
-      if (type2 == "string" || type2 == "number" || type2 == "atom")
-        return cont(afterType);
-      if (type2 == "[")
-        return cont(pushlex("]"), commasep(typeexpr, "]", ","), poplex, afterType);
-      if (type2 == "{")
-        return cont(pushlex("}"), typeprops, poplex, afterType);
-      if (type2 == "(")
-        return cont(commasep(typearg, ")"), maybeReturnType, afterType);
-      if (type2 == "<")
-        return cont(commasep(typeexpr, ">"), typeexpr);
-      if (type2 == "quasi") {
-        return pass(quasiType, afterType);
-      }
-    }
-    function maybeReturnType(type2) {
-      if (type2 == "=>")
-        return cont(typeexpr);
-    }
-    function typeprops(type2) {
-      if (type2.match(/[\}\)\]]/))
-        return cont();
-      if (type2 == "," || type2 == ";")
-        return cont(typeprops);
-      return pass(typeprop, typeprops);
-    }
-    function typeprop(type2, value) {
-      if (type2 == "variable" || cx.style == "keyword") {
-        cx.marked = "property";
-        return cont(typeprop);
-      } else if (value == "?" || type2 == "number" || type2 == "string") {
-        return cont(typeprop);
-      } else if (type2 == ":") {
-        return cont(typeexpr);
-      } else if (type2 == "[") {
-        return cont(expect("variable"), maybetypeOrIn, expect("]"), typeprop);
-      } else if (type2 == "(") {
-        return pass(functiondecl, typeprop);
-      } else if (!type2.match(/[;\}\)\],]/)) {
-        return cont();
-      }
-    }
-    function quasiType(type2, value) {
-      if (type2 != "quasi")
-        return pass();
-      if (value.slice(value.length - 2) != "${")
-        return cont(quasiType);
-      return cont(typeexpr, continueQuasiType);
-    }
-    function continueQuasiType(type2) {
-      if (type2 == "}") {
-        cx.marked = "string-2";
-        cx.state.tokenize = tokenQuasi;
-        return cont(quasiType);
-      }
-    }
-    function typearg(type2, value) {
-      if (type2 == "variable" && cx.stream.match(/^\s*[?:]/, false) || value == "?")
-        return cont(typearg);
-      if (type2 == ":")
-        return cont(typeexpr);
-      if (type2 == "spread")
-        return cont(typearg);
-      return pass(typeexpr);
-    }
-    function afterType(type2, value) {
-      if (value == "<")
-        return cont(pushlex(">"), commasep(typeexpr, ">"), poplex, afterType);
-      if (value == "|" || type2 == "." || value == "&")
-        return cont(typeexpr);
-      if (type2 == "[")
-        return cont(typeexpr, expect("]"), afterType);
-      if (value == "extends" || value == "implements") {
-        cx.marked = "keyword";
-        return cont(typeexpr);
-      }
-      if (value == "?")
-        return cont(typeexpr, expect(":"), typeexpr);
-    }
-    function maybeTypeArgs(_, value) {
-      if (value == "<")
-        return cont(pushlex(">"), commasep(typeexpr, ">"), poplex, afterType);
-    }
-    function typeparam() {
-      return pass(typeexpr, maybeTypeDefault);
-    }
-    function maybeTypeDefault(_, value) {
-      if (value == "=")
-        return cont(typeexpr);
-    }
-    function vardef(_, value) {
-      if (value == "enum") {
-        cx.marked = "keyword";
-        return cont(enumdef);
-      }
-      return pass(pattern, maybetype, maybeAssign, vardefCont);
-    }
-    function pattern(type2, value) {
-      if (isTS && isModifier(value)) {
-        cx.marked = "keyword";
-        return cont(pattern);
-      }
-      if (type2 == "variable") {
-        register(value);
-        return cont();
-      }
-      if (type2 == "spread")
-        return cont(pattern);
-      if (type2 == "[")
-        return contCommasep(eltpattern, "]");
-      if (type2 == "{")
-        return contCommasep(proppattern, "}");
-    }
-    function proppattern(type2, value) {
-      if (type2 == "variable" && !cx.stream.match(/^\s*:/, false)) {
-        register(value);
-        return cont(maybeAssign);
-      }
-      if (type2 == "variable")
-        cx.marked = "property";
-      if (type2 == "spread")
-        return cont(pattern);
-      if (type2 == "}")
-        return pass();
-      if (type2 == "[")
-        return cont(expression, expect("]"), expect(":"), proppattern);
-      return cont(expect(":"), pattern, maybeAssign);
-    }
-    function eltpattern() {
-      return pass(pattern, maybeAssign);
-    }
-    function maybeAssign(_type, value) {
-      if (value == "=")
-        return cont(expressionNoComma);
-    }
-    function vardefCont(type2) {
-      if (type2 == ",")
-        return cont(vardef);
-    }
-    function maybeelse(type2, value) {
-      if (type2 == "keyword b" && value == "else")
-        return cont(pushlex("form", "else"), statement, poplex);
-    }
-    function forspec(type2, value) {
-      if (value == "await")
-        return cont(forspec);
-      if (type2 == "(")
-        return cont(pushlex(")"), forspec1, poplex);
-    }
-    function forspec1(type2) {
-      if (type2 == "var")
-        return cont(vardef, forspec2);
-      if (type2 == "variable")
-        return cont(forspec2);
-      return pass(forspec2);
-    }
-    function forspec2(type2, value) {
-      if (type2 == ")")
-        return cont();
-      if (type2 == ";")
-        return cont(forspec2);
-      if (value == "in" || value == "of") {
-        cx.marked = "keyword";
-        return cont(expression, forspec2);
-      }
-      return pass(expression, forspec2);
-    }
-    function functiondef(type2, value) {
-      if (value == "*") {
-        cx.marked = "keyword";
-        return cont(functiondef);
-      }
-      if (type2 == "variable") {
-        register(value);
-        return cont(functiondef);
-      }
-      if (type2 == "(")
-        return cont(pushcontext, pushlex(")"), commasep(funarg, ")"), poplex, mayberettype, statement, popcontext);
-      if (isTS && value == "<")
-        return cont(pushlex(">"), commasep(typeparam, ">"), poplex, functiondef);
-    }
-    function functiondecl(type2, value) {
-      if (value == "*") {
-        cx.marked = "keyword";
-        return cont(functiondecl);
-      }
-      if (type2 == "variable") {
-        register(value);
-        return cont(functiondecl);
-      }
-      if (type2 == "(")
-        return cont(pushcontext, pushlex(")"), commasep(funarg, ")"), poplex, mayberettype, popcontext);
-      if (isTS && value == "<")
-        return cont(pushlex(">"), commasep(typeparam, ">"), poplex, functiondecl);
-    }
-    function typename(type2, value) {
-      if (type2 == "keyword" || type2 == "variable") {
-        cx.marked = "type";
-        return cont(typename);
-      } else if (value == "<") {
-        return cont(pushlex(">"), commasep(typeparam, ">"), poplex);
-      }
-    }
-    function funarg(type2, value) {
-      if (value == "@")
-        cont(expression, funarg);
-      if (type2 == "spread")
-        return cont(funarg);
-      if (isTS && isModifier(value)) {
-        cx.marked = "keyword";
-        return cont(funarg);
-      }
-      if (isTS && type2 == "this")
-        return cont(maybetype, maybeAssign);
-      return pass(pattern, maybetype, maybeAssign);
-    }
-    function classExpression(type2, value) {
-      if (type2 == "variable")
-        return className(type2, value);
-      return classNameAfter(type2, value);
-    }
-    function className(type2, value) {
-      if (type2 == "variable") {
-        register(value);
-        return cont(classNameAfter);
-      }
-    }
-    function classNameAfter(type2, value) {
-      if (value == "<")
-        return cont(pushlex(">"), commasep(typeparam, ">"), poplex, classNameAfter);
-      if (value == "extends" || value == "implements" || isTS && type2 == ",") {
-        if (value == "implements")
-          cx.marked = "keyword";
-        return cont(isTS ? typeexpr : expression, classNameAfter);
-      }
-      if (type2 == "{")
-        return cont(pushlex("}"), classBody, poplex);
-    }
-    function classBody(type2, value) {
-      if (type2 == "async" || type2 == "variable" && (value == "static" || value == "get" || value == "set" || isTS && isModifier(value)) && cx.stream.match(/^\s+[\w$\xa1-\uffff]/, false)) {
-        cx.marked = "keyword";
-        return cont(classBody);
-      }
-      if (type2 == "variable" || cx.style == "keyword") {
-        cx.marked = "property";
-        return cont(classfield, classBody);
-      }
-      if (type2 == "number" || type2 == "string")
-        return cont(classfield, classBody);
-      if (type2 == "[")
-        return cont(expression, maybetype, expect("]"), classfield, classBody);
-      if (value == "*") {
-        cx.marked = "keyword";
-        return cont(classBody);
-      }
-      if (isTS && type2 == "(")
-        return pass(functiondecl, classBody);
-      if (type2 == ";" || type2 == ",")
-        return cont(classBody);
-      if (type2 == "}")
-        return cont();
-      if (value == "@")
-        return cont(expression, classBody);
-    }
-    function classfield(type2, value) {
-      if (value == "!")
-        return cont(classfield);
-      if (value == "?")
-        return cont(classfield);
-      if (type2 == ":")
-        return cont(typeexpr, maybeAssign);
-      if (value == "=")
-        return cont(expressionNoComma);
-      var context = cx.state.lexical.prev, isInterface = context && context.info == "interface";
-      return pass(isInterface ? functiondecl : functiondef);
-    }
-    function afterExport(type2, value) {
-      if (value == "*") {
-        cx.marked = "keyword";
-        return cont(maybeFrom, expect(";"));
-      }
-      if (value == "default") {
-        cx.marked = "keyword";
-        return cont(expression, expect(";"));
-      }
-      if (type2 == "{")
-        return cont(commasep(exportField, "}"), maybeFrom, expect(";"));
-      return pass(statement);
-    }
-    function exportField(type2, value) {
-      if (value == "as") {
-        cx.marked = "keyword";
-        return cont(expect("variable"));
-      }
-      if (type2 == "variable")
-        return pass(expressionNoComma, exportField);
-    }
-    function afterImport(type2) {
-      if (type2 == "string")
-        return cont();
-      if (type2 == "(")
-        return pass(expression);
-      if (type2 == ".")
-        return pass(maybeoperatorComma);
-      return pass(importSpec, maybeMoreImports, maybeFrom);
-    }
-    function importSpec(type2, value) {
-      if (type2 == "{")
-        return contCommasep(importSpec, "}");
-      if (type2 == "variable")
-        register(value);
-      if (value == "*")
-        cx.marked = "keyword";
-      return cont(maybeAs);
-    }
-    function maybeMoreImports(type2) {
-      if (type2 == ",")
-        return cont(importSpec, maybeMoreImports);
-    }
-    function maybeAs(_type, value) {
-      if (value == "as") {
-        cx.marked = "keyword";
-        return cont(importSpec);
-      }
-    }
-    function maybeFrom(_type, value) {
-      if (value == "from") {
-        cx.marked = "keyword";
-        return cont(expression);
-      }
-    }
-    function arrayLiteral(type2) {
-      if (type2 == "]")
-        return cont();
-      return pass(commasep(expressionNoComma, "]"));
-    }
-    function enumdef() {
-      return pass(pushlex("form"), pattern, expect("{"), pushlex("}"), commasep(enummember, "}"), poplex, poplex);
-    }
-    function enummember() {
-      return pass(pattern, maybeAssign);
-    }
-    function isContinuedStatement(state, textAfter) {
-      return state.lastType == "operator" || state.lastType == "," || isOperatorChar.test(textAfter.charAt(0)) || /[,.]/.test(textAfter.charAt(0));
-    }
-    function expressionAllowed(stream, state, backUp) {
-      return state.tokenize == tokenBase && /^(?:operator|sof|keyword [bcd]|case|new|export|default|spread|[\[{}\(,;:]|=>)$/.test(state.lastType) || state.lastType == "quasi" && /\{\s*$/.test(stream.string.slice(0, stream.pos - (backUp || 0)));
-    }
-    return {
-      startState: function(basecolumn) {
-        var state = {
-          tokenize: tokenBase,
-          lastType: "sof",
-          cc: [],
-          lexical: new JSLexical((basecolumn || 0) - indentUnit, 0, "block", false),
-          localVars: parserConfig.localVars,
-          context: parserConfig.localVars && new Context(null, null, false),
-          indented: basecolumn || 0
+
+        function tokenQuasi(stream, state) {
+            var escaped = false, next;
+            while ((next = stream.next()) != null) {
+                if (!escaped && (next == "`" || next == "$" && stream.eat("{"))) {
+                    state.tokenize = tokenBase;
+                    break;
+                }
+                escaped = !escaped && next == "\\";
+            }
+            return ret("quasi", "string-2", stream.current());
+        }
+
+        var brackets = "([{}])";
+
+        function findFatArrow(stream, state) {
+            if (state.fatArrowAt)
+                state.fatArrowAt = null;
+            var arrow2 = stream.string.indexOf("=>", stream.start);
+            if (arrow2 < 0)
+                return;
+            if (isTS) {
+                var m = /:\s*(?:\w+(?:<[^>]*>|\[\])?|\{[^}]*\})\s*$/.exec(stream.string.slice(stream.start, arrow2));
+                if (m)
+                    arrow2 = m.index;
+            }
+            var depth = 0, sawSomething = false;
+            for (var pos = arrow2 - 1; pos >= 0; --pos) {
+                var ch = stream.string.charAt(pos);
+                var bracket = brackets.indexOf(ch);
+                if (bracket >= 0 && bracket < 3) {
+                    if (!depth) {
+                        ++pos;
+                        break;
+                    }
+                    if (--depth == 0) {
+                        if (ch == "(")
+                            sawSomething = true;
+                        break;
+                    }
+                } else if (bracket >= 3 && bracket < 6) {
+                    ++depth;
+                } else if (wordRE.test(ch)) {
+                    sawSomething = true;
+                } else if (/["'\/`]/.test(ch)) {
+                    for (; ; --pos) {
+                        if (pos == 0)
+                            return;
+                        var next = stream.string.charAt(pos - 1);
+                        if (next == ch && stream.string.charAt(pos - 2) != "\\") {
+                            pos--;
+                            break;
+                        }
+                    }
+                } else if (sawSomething && !depth) {
+                    ++pos;
+                    break;
+                }
+            }
+            if (sawSomething && !depth)
+                state.fatArrowAt = pos;
+        }
+
+        var atomicTypes = {
+            atom: true,
+            number: true,
+            variable: true,
+            string: true,
+            regexp: true,
+            this: true,
+            import: true,
+            "jsonld-keyword": true
         };
-        if (parserConfig.globalVars && typeof parserConfig.globalVars == "object")
-          state.globalVars = parserConfig.globalVars;
-        return state;
-      },
-      token: function(stream, state) {
-        if (stream.sol()) {
-          if (!state.lexical.hasOwnProperty("align"))
-            state.lexical.align = false;
-          state.indented = stream.indentation();
-          findFatArrow(stream, state);
+
+        function JSLexical(indented, column, type2, align, prev, info) {
+            this.indented = indented;
+            this.column = column;
+            this.type = type2;
+            this.prev = prev;
+            this.info = info;
+            if (align != null)
+                this.align = align;
         }
-        if (state.tokenize != tokenComment && stream.eatSpace())
-          return null;
-        var style = state.tokenize(stream, state);
-        if (type == "comment")
-          return style;
-        state.lastType = type == "operator" && (content == "++" || content == "--") ? "incdec" : type;
-        return parseJS(state, style, type, content, stream);
-      },
-      indent: function(state, textAfter) {
-        if (state.tokenize == tokenComment || state.tokenize == tokenQuasi)
-          return CodeMirror.Pass;
-        if (state.tokenize != tokenBase)
-          return 0;
-        var firstChar = textAfter && textAfter.charAt(0), lexical = state.lexical, top2;
-        if (!/^\s*else\b/.test(textAfter))
-          for (var i = state.cc.length - 1; i >= 0; --i) {
-            var c = state.cc[i];
-            if (c == poplex)
-              lexical = lexical.prev;
-            else if (c != maybeelse && c != popcontext)
-              break;
-          }
-        while ((lexical.type == "stat" || lexical.type == "form") && (firstChar == "}" || (top2 = state.cc[state.cc.length - 1]) && (top2 == maybeoperatorComma || top2 == maybeoperatorNoComma) && !/^[,\.=+\-*:?[\(]/.test(textAfter)))
-          lexical = lexical.prev;
-        if (statementIndent && lexical.type == ")" && lexical.prev.type == "stat")
-          lexical = lexical.prev;
-        var type2 = lexical.type, closing = firstChar == type2;
-        if (type2 == "vardef")
-          return lexical.indented + (state.lastType == "operator" || state.lastType == "," ? lexical.info.length + 1 : 0);
-        else if (type2 == "form" && firstChar == "{")
-          return lexical.indented;
-        else if (type2 == "form")
-          return lexical.indented + indentUnit;
-        else if (type2 == "stat")
-          return lexical.indented + (isContinuedStatement(state, textAfter) ? statementIndent || indentUnit : 0);
-        else if (lexical.info == "switch" && !closing && parserConfig.doubleIndentSwitch != false)
-          return lexical.indented + (/^(?:case|default)\b/.test(textAfter) ? indentUnit : 2 * indentUnit);
-        else if (lexical.align)
-          return lexical.column + (closing ? 0 : 1);
-        else
-          return lexical.indented + (closing ? 0 : indentUnit);
-      },
-      electricInput: /^\s*(?:case .*?:|default:|\{|\})$/,
-      blockCommentStart: jsonMode ? null : "/*",
-      blockCommentEnd: jsonMode ? null : "*/",
-      blockCommentContinue: jsonMode ? null : " * ",
-      lineComment: jsonMode ? null : "//",
-      fold: "brace",
-      closeBrackets: "()[]{}''\"\"``",
-      helperType: jsonMode ? "json" : "javascript",
-      jsonldMode,
-      jsonMode,
-      expressionAllowed,
-      skipExpression: function(state) {
-        parseJS(state, "atom", "atom", "true", new CodeMirror.StringStream("", 2, null));
-      }
-    };
-  });
-  CodeMirror.registerHelper("wordChars", "javascript", /[\w$]/);
-  CodeMirror.defineMIME("text/javascript", "javascript");
-  CodeMirror.defineMIME("text/ecmascript", "javascript");
-  CodeMirror.defineMIME("application/javascript", "javascript");
-  CodeMirror.defineMIME("application/x-javascript", "javascript");
-  CodeMirror.defineMIME("application/ecmascript", "javascript");
-  CodeMirror.defineMIME("application/json", {
-    name: "javascript",
-    json: true
-  });
-  CodeMirror.defineMIME("application/x-json", {
-    name: "javascript",
-    json: true
-  });
-  CodeMirror.defineMIME("application/manifest+json", {
-    name: "javascript",
-    json: true
-  });
-  CodeMirror.defineMIME("application/ld+json", {
-    name: "javascript",
-    jsonld: true
-  });
-  CodeMirror.defineMIME("text/typescript", {
-    name: "javascript",
-    typescript: true
-  });
-  CodeMirror.defineMIME("application/typescript", {
-    name: "javascript",
-    typescript: true
-  });
+
+        function inScope(state, varname) {
+            if (!trackScope)
+                return false;
+            for (var v = state.localVars; v; v = v.next)
+                if (v.name == varname)
+                    return true;
+            for (var cx2 = state.context; cx2; cx2 = cx2.prev) {
+                for (var v = cx2.vars; v; v = v.next)
+                    if (v.name == varname)
+                        return true;
+            }
+        }
+
+        function parseJS(state, style, type2, content2, stream) {
+            var cc = state.cc;
+            cx.state = state;
+            cx.stream = stream;
+            cx.marked = null, cx.cc = cc;
+            cx.style = style;
+            if (!state.lexical.hasOwnProperty("align"))
+                state.lexical.align = true;
+            while (true) {
+                var combinator = cc.length ? cc.pop() : jsonMode ? expression : statement;
+                if (combinator(type2, content2)) {
+                    while (cc.length && cc[cc.length - 1].lex)
+                        cc.pop()();
+                    if (cx.marked)
+                        return cx.marked;
+                    if (type2 == "variable" && inScope(state, content2))
+                        return "variable-2";
+                    return style;
+                }
+            }
+        }
+
+        var cx = {state: null, column: null, marked: null, cc: null};
+
+        function pass() {
+            for (var i = arguments.length - 1; i >= 0; i--)
+                cx.cc.push(arguments[i]);
+        }
+
+        function cont() {
+            pass.apply(null, arguments);
+            return true;
+        }
+
+        function inList(name, list) {
+            for (var v = list; v; v = v.next)
+                if (v.name == name)
+                    return true;
+            return false;
+        }
+
+        function register(varname) {
+            var state = cx.state;
+            cx.marked = "def";
+            if (!trackScope)
+                return;
+            if (state.context) {
+                if (state.lexical.info == "var" && state.context && state.context.block) {
+                    var newContext = registerVarScoped(varname, state.context);
+                    if (newContext != null) {
+                        state.context = newContext;
+                        return;
+                    }
+                } else if (!inList(varname, state.localVars)) {
+                    state.localVars = new Var(varname, state.localVars);
+                    return;
+                }
+            }
+            if (parserConfig.globalVars && !inList(varname, state.globalVars))
+                state.globalVars = new Var(varname, state.globalVars);
+        }
+
+        function registerVarScoped(varname, context) {
+            if (!context) {
+                return null;
+            } else if (context.block) {
+                var inner = registerVarScoped(varname, context.prev);
+                if (!inner)
+                    return null;
+                if (inner == context.prev)
+                    return context;
+                return new Context(inner, context.vars, true);
+            } else if (inList(varname, context.vars)) {
+                return context;
+            } else {
+                return new Context(context.prev, new Var(varname, context.vars), false);
+            }
+        }
+
+        function isModifier(name) {
+            return name == "public" || name == "private" || name == "protected" || name == "abstract" || name == "readonly";
+        }
+
+        function Context(prev, vars, block2) {
+            this.prev = prev;
+            this.vars = vars;
+            this.block = block2;
+        }
+
+        function Var(name, next) {
+            this.name = name;
+            this.next = next;
+        }
+
+        var defaultVars = new Var("this", new Var("arguments", null));
+
+        function pushcontext() {
+            cx.state.context = new Context(cx.state.context, cx.state.localVars, false);
+            cx.state.localVars = defaultVars;
+        }
+
+        function pushblockcontext() {
+            cx.state.context = new Context(cx.state.context, cx.state.localVars, true);
+            cx.state.localVars = null;
+        }
+
+        function popcontext() {
+            cx.state.localVars = cx.state.context.vars;
+            cx.state.context = cx.state.context.prev;
+        }
+
+        popcontext.lex = true;
+
+        function pushlex(type2, info) {
+            var result = function () {
+                var state = cx.state, indent = state.indented;
+                if (state.lexical.type == "stat")
+                    indent = state.lexical.indented;
+                else
+                    for (var outer = state.lexical; outer && outer.type == ")" && outer.align; outer = outer.prev)
+                        indent = outer.indented;
+                state.lexical = new JSLexical(indent, cx.stream.column(), type2, null, state.lexical, info);
+            };
+            result.lex = true;
+            return result;
+        }
+
+        function poplex() {
+            var state = cx.state;
+            if (state.lexical.prev) {
+                if (state.lexical.type == ")")
+                    state.indented = state.lexical.indented;
+                state.lexical = state.lexical.prev;
+            }
+        }
+
+        poplex.lex = true;
+
+        function expect(wanted) {
+            function exp(type2) {
+                if (type2 == wanted)
+                    return cont();
+                else if (wanted == ";" || type2 == "}" || type2 == ")" || type2 == "]")
+                    return pass();
+                else
+                    return cont(exp);
+            }
+
+            return exp;
+        }
+
+        function statement(type2, value) {
+            if (type2 == "var")
+                return cont(pushlex("vardef", value), vardef, expect(";"), poplex);
+            if (type2 == "keyword a")
+                return cont(pushlex("form"), parenExpr, statement, poplex);
+            if (type2 == "keyword b")
+                return cont(pushlex("form"), statement, poplex);
+            if (type2 == "keyword d")
+                return cx.stream.match(/^\s*$/, false) ? cont() : cont(pushlex("stat"), maybeexpression, expect(";"), poplex);
+            if (type2 == "debugger")
+                return cont(expect(";"));
+            if (type2 == "{")
+                return cont(pushlex("}"), pushblockcontext, block, poplex, popcontext);
+            if (type2 == ";")
+                return cont();
+            if (type2 == "if") {
+                if (cx.state.lexical.info == "else" && cx.state.cc[cx.state.cc.length - 1] == poplex)
+                    cx.state.cc.pop()();
+                return cont(pushlex("form"), parenExpr, statement, poplex, maybeelse);
+            }
+            if (type2 == "function")
+                return cont(functiondef);
+            if (type2 == "for")
+                return cont(pushlex("form"), pushblockcontext, forspec, statement, popcontext, poplex);
+            if (type2 == "class" || isTS && value == "interface") {
+                cx.marked = "keyword";
+                return cont(pushlex("form", type2 == "class" ? type2 : value), className, poplex);
+            }
+            if (type2 == "variable") {
+                if (isTS && value == "declare") {
+                    cx.marked = "keyword";
+                    return cont(statement);
+                } else if (isTS && (value == "module" || value == "enum" || value == "type") && cx.stream.match(/^\s*\w/, false)) {
+                    cx.marked = "keyword";
+                    if (value == "enum")
+                        return cont(enumdef);
+                    else if (value == "type")
+                        return cont(typename, expect("operator"), typeexpr, expect(";"));
+                    else
+                        return cont(pushlex("form"), pattern, expect("{"), pushlex("}"), block, poplex, poplex);
+                } else if (isTS && value == "namespace") {
+                    cx.marked = "keyword";
+                    return cont(pushlex("form"), expression, statement, poplex);
+                } else if (isTS && value == "abstract") {
+                    cx.marked = "keyword";
+                    return cont(statement);
+                } else {
+                    return cont(pushlex("stat"), maybelabel);
+                }
+            }
+            if (type2 == "switch")
+                return cont(pushlex("form"), parenExpr, expect("{"), pushlex("}", "switch"), pushblockcontext, block, poplex, poplex, popcontext);
+            if (type2 == "case")
+                return cont(expression, expect(":"));
+            if (type2 == "default")
+                return cont(expect(":"));
+            if (type2 == "catch")
+                return cont(pushlex("form"), pushcontext, maybeCatchBinding, statement, poplex, popcontext);
+            if (type2 == "export")
+                return cont(pushlex("stat"), afterExport, poplex);
+            if (type2 == "import")
+                return cont(pushlex("stat"), afterImport, poplex);
+            if (type2 == "async")
+                return cont(statement);
+            if (value == "@")
+                return cont(expression, statement);
+            return pass(pushlex("stat"), expression, expect(";"), poplex);
+        }
+
+        function maybeCatchBinding(type2) {
+            if (type2 == "(")
+                return cont(funarg, expect(")"));
+        }
+
+        function expression(type2, value) {
+            return expressionInner(type2, value, false);
+        }
+
+        function expressionNoComma(type2, value) {
+            return expressionInner(type2, value, true);
+        }
+
+        function parenExpr(type2) {
+            if (type2 != "(")
+                return pass();
+            return cont(pushlex(")"), maybeexpression, expect(")"), poplex);
+        }
+
+        function expressionInner(type2, value, noComma) {
+            if (cx.state.fatArrowAt == cx.stream.start) {
+                var body = noComma ? arrowBodyNoComma : arrowBody;
+                if (type2 == "(")
+                    return cont(pushcontext, pushlex(")"), commasep(funarg, ")"), poplex, expect("=>"), body, popcontext);
+                else if (type2 == "variable")
+                    return pass(pushcontext, pattern, expect("=>"), body, popcontext);
+            }
+            var maybeop = noComma ? maybeoperatorNoComma : maybeoperatorComma;
+            if (atomicTypes.hasOwnProperty(type2))
+                return cont(maybeop);
+            if (type2 == "function")
+                return cont(functiondef, maybeop);
+            if (type2 == "class" || isTS && value == "interface") {
+                cx.marked = "keyword";
+                return cont(pushlex("form"), classExpression, poplex);
+            }
+            if (type2 == "keyword c" || type2 == "async")
+                return cont(noComma ? expressionNoComma : expression);
+            if (type2 == "(")
+                return cont(pushlex(")"), maybeexpression, expect(")"), poplex, maybeop);
+            if (type2 == "operator" || type2 == "spread")
+                return cont(noComma ? expressionNoComma : expression);
+            if (type2 == "[")
+                return cont(pushlex("]"), arrayLiteral, poplex, maybeop);
+            if (type2 == "{")
+                return contCommasep(objprop, "}", null, maybeop);
+            if (type2 == "quasi")
+                return pass(quasi, maybeop);
+            if (type2 == "new")
+                return cont(maybeTarget(noComma));
+            return cont();
+        }
+
+        function maybeexpression(type2) {
+            if (type2.match(/[;\}\)\],]/))
+                return pass();
+            return pass(expression);
+        }
+
+        function maybeoperatorComma(type2, value) {
+            if (type2 == ",")
+                return cont(maybeexpression);
+            return maybeoperatorNoComma(type2, value, false);
+        }
+
+        function maybeoperatorNoComma(type2, value, noComma) {
+            var me = noComma == false ? maybeoperatorComma : maybeoperatorNoComma;
+            var expr = noComma == false ? expression : expressionNoComma;
+            if (type2 == "=>")
+                return cont(pushcontext, noComma ? arrowBodyNoComma : arrowBody, popcontext);
+            if (type2 == "operator") {
+                if (/\+\+|--/.test(value) || isTS && value == "!")
+                    return cont(me);
+                if (isTS && value == "<" && cx.stream.match(/^([^<>]|<[^<>]*>)*>\s*\(/, false))
+                    return cont(pushlex(">"), commasep(typeexpr, ">"), poplex, me);
+                if (value == "?")
+                    return cont(expression, expect(":"), expr);
+                return cont(expr);
+            }
+            if (type2 == "quasi") {
+                return pass(quasi, me);
+            }
+            if (type2 == ";")
+                return;
+            if (type2 == "(")
+                return contCommasep(expressionNoComma, ")", "call", me);
+            if (type2 == ".")
+                return cont(property, me);
+            if (type2 == "[")
+                return cont(pushlex("]"), maybeexpression, expect("]"), poplex, me);
+            if (isTS && value == "as") {
+                cx.marked = "keyword";
+                return cont(typeexpr, me);
+            }
+            if (type2 == "regexp") {
+                cx.state.lastType = cx.marked = "operator";
+                cx.stream.backUp(cx.stream.pos - cx.stream.start - 1);
+                return cont(expr);
+            }
+        }
+
+        function quasi(type2, value) {
+            if (type2 != "quasi")
+                return pass();
+            if (value.slice(value.length - 2) != "${")
+                return cont(quasi);
+            return cont(maybeexpression, continueQuasi);
+        }
+
+        function continueQuasi(type2) {
+            if (type2 == "}") {
+                cx.marked = "string-2";
+                cx.state.tokenize = tokenQuasi;
+                return cont(quasi);
+            }
+        }
+
+        function arrowBody(type2) {
+            findFatArrow(cx.stream, cx.state);
+            return pass(type2 == "{" ? statement : expression);
+        }
+
+        function arrowBodyNoComma(type2) {
+            findFatArrow(cx.stream, cx.state);
+            return pass(type2 == "{" ? statement : expressionNoComma);
+        }
+
+        function maybeTarget(noComma) {
+            return function (type2) {
+                if (type2 == ".")
+                    return cont(noComma ? targetNoComma : target);
+                else if (type2 == "variable" && isTS)
+                    return cont(maybeTypeArgs, noComma ? maybeoperatorNoComma : maybeoperatorComma);
+                else
+                    return pass(noComma ? expressionNoComma : expression);
+            };
+        }
+
+        function target(_, value) {
+            if (value == "target") {
+                cx.marked = "keyword";
+                return cont(maybeoperatorComma);
+            }
+        }
+
+        function targetNoComma(_, value) {
+            if (value == "target") {
+                cx.marked = "keyword";
+                return cont(maybeoperatorNoComma);
+            }
+        }
+
+        function maybelabel(type2) {
+            if (type2 == ":")
+                return cont(poplex, statement);
+            return pass(maybeoperatorComma, expect(";"), poplex);
+        }
+
+        function property(type2) {
+            if (type2 == "variable") {
+                cx.marked = "property";
+                return cont();
+            }
+        }
+
+        function objprop(type2, value) {
+            if (type2 == "async") {
+                cx.marked = "property";
+                return cont(objprop);
+            } else if (type2 == "variable" || cx.style == "keyword") {
+                cx.marked = "property";
+                if (value == "get" || value == "set")
+                    return cont(getterSetter);
+                var m;
+                if (isTS && cx.state.fatArrowAt == cx.stream.start && (m = cx.stream.match(/^\s*:\s*/, false)))
+                    cx.state.fatArrowAt = cx.stream.pos + m[0].length;
+                return cont(afterprop);
+            } else if (type2 == "number" || type2 == "string") {
+                cx.marked = jsonldMode ? "property" : cx.style + " property";
+                return cont(afterprop);
+            } else if (type2 == "jsonld-keyword") {
+                return cont(afterprop);
+            } else if (isTS && isModifier(value)) {
+                cx.marked = "keyword";
+                return cont(objprop);
+            } else if (type2 == "[") {
+                return cont(expression, maybetype, expect("]"), afterprop);
+            } else if (type2 == "spread") {
+                return cont(expressionNoComma, afterprop);
+            } else if (value == "*") {
+                cx.marked = "keyword";
+                return cont(objprop);
+            } else if (type2 == ":") {
+                return pass(afterprop);
+            }
+        }
+
+        function getterSetter(type2) {
+            if (type2 != "variable")
+                return pass(afterprop);
+            cx.marked = "property";
+            return cont(functiondef);
+        }
+
+        function afterprop(type2) {
+            if (type2 == ":")
+                return cont(expressionNoComma);
+            if (type2 == "(")
+                return pass(functiondef);
+        }
+
+        function commasep(what, end2, sep) {
+            function proceed(type2, value) {
+                if (sep ? sep.indexOf(type2) > -1 : type2 == ",") {
+                    var lex = cx.state.lexical;
+                    if (lex.info == "call")
+                        lex.pos = (lex.pos || 0) + 1;
+                    return cont(function (type3, value2) {
+                        if (type3 == end2 || value2 == end2)
+                            return pass();
+                        return pass(what);
+                    }, proceed);
+                }
+                if (type2 == end2 || value == end2)
+                    return cont();
+                if (sep && sep.indexOf(";") > -1)
+                    return pass(what);
+                return cont(expect(end2));
+            }
+
+            return function (type2, value) {
+                if (type2 == end2 || value == end2)
+                    return cont();
+                return pass(what, proceed);
+            };
+        }
+
+        function contCommasep(what, end2, info) {
+            for (var i = 3; i < arguments.length; i++)
+                cx.cc.push(arguments[i]);
+            return cont(pushlex(end2, info), commasep(what, end2), poplex);
+        }
+
+        function block(type2) {
+            if (type2 == "}")
+                return cont();
+            return pass(statement, block);
+        }
+
+        function maybetype(type2, value) {
+            if (isTS) {
+                if (type2 == ":")
+                    return cont(typeexpr);
+                if (value == "?")
+                    return cont(maybetype);
+            }
+        }
+
+        function maybetypeOrIn(type2, value) {
+            if (isTS && (type2 == ":" || value == "in"))
+                return cont(typeexpr);
+        }
+
+        function mayberettype(type2) {
+            if (isTS && type2 == ":") {
+                if (cx.stream.match(/^\s*\w+\s+is\b/, false))
+                    return cont(expression, isKW, typeexpr);
+                else
+                    return cont(typeexpr);
+            }
+        }
+
+        function isKW(_, value) {
+            if (value == "is") {
+                cx.marked = "keyword";
+                return cont();
+            }
+        }
+
+        function typeexpr(type2, value) {
+            if (value == "keyof" || value == "typeof" || value == "infer" || value == "readonly") {
+                cx.marked = "keyword";
+                return cont(value == "typeof" ? expressionNoComma : typeexpr);
+            }
+            if (type2 == "variable" || value == "void") {
+                cx.marked = "type";
+                return cont(afterType);
+            }
+            if (value == "|" || value == "&")
+                return cont(typeexpr);
+            if (type2 == "string" || type2 == "number" || type2 == "atom")
+                return cont(afterType);
+            if (type2 == "[")
+                return cont(pushlex("]"), commasep(typeexpr, "]", ","), poplex, afterType);
+            if (type2 == "{")
+                return cont(pushlex("}"), typeprops, poplex, afterType);
+            if (type2 == "(")
+                return cont(commasep(typearg, ")"), maybeReturnType, afterType);
+            if (type2 == "<")
+                return cont(commasep(typeexpr, ">"), typeexpr);
+            if (type2 == "quasi") {
+                return pass(quasiType, afterType);
+            }
+        }
+
+        function maybeReturnType(type2) {
+            if (type2 == "=>")
+                return cont(typeexpr);
+        }
+
+        function typeprops(type2) {
+            if (type2.match(/[\}\)\]]/))
+                return cont();
+            if (type2 == "," || type2 == ";")
+                return cont(typeprops);
+            return pass(typeprop, typeprops);
+        }
+
+        function typeprop(type2, value) {
+            if (type2 == "variable" || cx.style == "keyword") {
+                cx.marked = "property";
+                return cont(typeprop);
+            } else if (value == "?" || type2 == "number" || type2 == "string") {
+                return cont(typeprop);
+            } else if (type2 == ":") {
+                return cont(typeexpr);
+            } else if (type2 == "[") {
+                return cont(expect("variable"), maybetypeOrIn, expect("]"), typeprop);
+            } else if (type2 == "(") {
+                return pass(functiondecl, typeprop);
+            } else if (!type2.match(/[;\}\)\],]/)) {
+                return cont();
+            }
+        }
+
+        function quasiType(type2, value) {
+            if (type2 != "quasi")
+                return pass();
+            if (value.slice(value.length - 2) != "${")
+                return cont(quasiType);
+            return cont(typeexpr, continueQuasiType);
+        }
+
+        function continueQuasiType(type2) {
+            if (type2 == "}") {
+                cx.marked = "string-2";
+                cx.state.tokenize = tokenQuasi;
+                return cont(quasiType);
+            }
+        }
+
+        function typearg(type2, value) {
+            if (type2 == "variable" && cx.stream.match(/^\s*[?:]/, false) || value == "?")
+                return cont(typearg);
+            if (type2 == ":")
+                return cont(typeexpr);
+            if (type2 == "spread")
+                return cont(typearg);
+            return pass(typeexpr);
+        }
+
+        function afterType(type2, value) {
+            if (value == "<")
+                return cont(pushlex(">"), commasep(typeexpr, ">"), poplex, afterType);
+            if (value == "|" || type2 == "." || value == "&")
+                return cont(typeexpr);
+            if (type2 == "[")
+                return cont(typeexpr, expect("]"), afterType);
+            if (value == "extends" || value == "implements") {
+                cx.marked = "keyword";
+                return cont(typeexpr);
+            }
+            if (value == "?")
+                return cont(typeexpr, expect(":"), typeexpr);
+        }
+
+        function maybeTypeArgs(_, value) {
+            if (value == "<")
+                return cont(pushlex(">"), commasep(typeexpr, ">"), poplex, afterType);
+        }
+
+        function typeparam() {
+            return pass(typeexpr, maybeTypeDefault);
+        }
+
+        function maybeTypeDefault(_, value) {
+            if (value == "=")
+                return cont(typeexpr);
+        }
+
+        function vardef(_, value) {
+            if (value == "enum") {
+                cx.marked = "keyword";
+                return cont(enumdef);
+            }
+            return pass(pattern, maybetype, maybeAssign, vardefCont);
+        }
+
+        function pattern(type2, value) {
+            if (isTS && isModifier(value)) {
+                cx.marked = "keyword";
+                return cont(pattern);
+            }
+            if (type2 == "variable") {
+                register(value);
+                return cont();
+            }
+            if (type2 == "spread")
+                return cont(pattern);
+            if (type2 == "[")
+                return contCommasep(eltpattern, "]");
+            if (type2 == "{")
+                return contCommasep(proppattern, "}");
+        }
+
+        function proppattern(type2, value) {
+            if (type2 == "variable" && !cx.stream.match(/^\s*:/, false)) {
+                register(value);
+                return cont(maybeAssign);
+            }
+            if (type2 == "variable")
+                cx.marked = "property";
+            if (type2 == "spread")
+                return cont(pattern);
+            if (type2 == "}")
+                return pass();
+            if (type2 == "[")
+                return cont(expression, expect("]"), expect(":"), proppattern);
+            return cont(expect(":"), pattern, maybeAssign);
+        }
+
+        function eltpattern() {
+            return pass(pattern, maybeAssign);
+        }
+
+        function maybeAssign(_type, value) {
+            if (value == "=")
+                return cont(expressionNoComma);
+        }
+
+        function vardefCont(type2) {
+            if (type2 == ",")
+                return cont(vardef);
+        }
+
+        function maybeelse(type2, value) {
+            if (type2 == "keyword b" && value == "else")
+                return cont(pushlex("form", "else"), statement, poplex);
+        }
+
+        function forspec(type2, value) {
+            if (value == "await")
+                return cont(forspec);
+            if (type2 == "(")
+                return cont(pushlex(")"), forspec1, poplex);
+        }
+
+        function forspec1(type2) {
+            if (type2 == "var")
+                return cont(vardef, forspec2);
+            if (type2 == "variable")
+                return cont(forspec2);
+            return pass(forspec2);
+        }
+
+        function forspec2(type2, value) {
+            if (type2 == ")")
+                return cont();
+            if (type2 == ";")
+                return cont(forspec2);
+            if (value == "in" || value == "of") {
+                cx.marked = "keyword";
+                return cont(expression, forspec2);
+            }
+            return pass(expression, forspec2);
+        }
+
+        function functiondef(type2, value) {
+            if (value == "*") {
+                cx.marked = "keyword";
+                return cont(functiondef);
+            }
+            if (type2 == "variable") {
+                register(value);
+                return cont(functiondef);
+            }
+            if (type2 == "(")
+                return cont(pushcontext, pushlex(")"), commasep(funarg, ")"), poplex, mayberettype, statement, popcontext);
+            if (isTS && value == "<")
+                return cont(pushlex(">"), commasep(typeparam, ">"), poplex, functiondef);
+        }
+
+        function functiondecl(type2, value) {
+            if (value == "*") {
+                cx.marked = "keyword";
+                return cont(functiondecl);
+            }
+            if (type2 == "variable") {
+                register(value);
+                return cont(functiondecl);
+            }
+            if (type2 == "(")
+                return cont(pushcontext, pushlex(")"), commasep(funarg, ")"), poplex, mayberettype, popcontext);
+            if (isTS && value == "<")
+                return cont(pushlex(">"), commasep(typeparam, ">"), poplex, functiondecl);
+        }
+
+        function typename(type2, value) {
+            if (type2 == "keyword" || type2 == "variable") {
+                cx.marked = "type";
+                return cont(typename);
+            } else if (value == "<") {
+                return cont(pushlex(">"), commasep(typeparam, ">"), poplex);
+            }
+        }
+
+        function funarg(type2, value) {
+            if (value == "@")
+                cont(expression, funarg);
+            if (type2 == "spread")
+                return cont(funarg);
+            if (isTS && isModifier(value)) {
+                cx.marked = "keyword";
+                return cont(funarg);
+            }
+            if (isTS && type2 == "this")
+                return cont(maybetype, maybeAssign);
+            return pass(pattern, maybetype, maybeAssign);
+        }
+
+        function classExpression(type2, value) {
+            if (type2 == "variable")
+                return className(type2, value);
+            return classNameAfter(type2, value);
+        }
+
+        function className(type2, value) {
+            if (type2 == "variable") {
+                register(value);
+                return cont(classNameAfter);
+            }
+        }
+
+        function classNameAfter(type2, value) {
+            if (value == "<")
+                return cont(pushlex(">"), commasep(typeparam, ">"), poplex, classNameAfter);
+            if (value == "extends" || value == "implements" || isTS && type2 == ",") {
+                if (value == "implements")
+                    cx.marked = "keyword";
+                return cont(isTS ? typeexpr : expression, classNameAfter);
+            }
+            if (type2 == "{")
+                return cont(pushlex("}"), classBody, poplex);
+        }
+
+        function classBody(type2, value) {
+            if (type2 == "async" || type2 == "variable" && (value == "static" || value == "get" || value == "set" || isTS && isModifier(value)) && cx.stream.match(/^\s+[\w$\xa1-\uffff]/, false)) {
+                cx.marked = "keyword";
+                return cont(classBody);
+            }
+            if (type2 == "variable" || cx.style == "keyword") {
+                cx.marked = "property";
+                return cont(classfield, classBody);
+            }
+            if (type2 == "number" || type2 == "string")
+                return cont(classfield, classBody);
+            if (type2 == "[")
+                return cont(expression, maybetype, expect("]"), classfield, classBody);
+            if (value == "*") {
+                cx.marked = "keyword";
+                return cont(classBody);
+            }
+            if (isTS && type2 == "(")
+                return pass(functiondecl, classBody);
+            if (type2 == ";" || type2 == ",")
+                return cont(classBody);
+            if (type2 == "}")
+                return cont();
+            if (value == "@")
+                return cont(expression, classBody);
+        }
+
+        function classfield(type2, value) {
+            if (value == "!")
+                return cont(classfield);
+            if (value == "?")
+                return cont(classfield);
+            if (type2 == ":")
+                return cont(typeexpr, maybeAssign);
+            if (value == "=")
+                return cont(expressionNoComma);
+            var context = cx.state.lexical.prev, isInterface = context && context.info == "interface";
+            return pass(isInterface ? functiondecl : functiondef);
+        }
+
+        function afterExport(type2, value) {
+            if (value == "*") {
+                cx.marked = "keyword";
+                return cont(maybeFrom, expect(";"));
+            }
+            if (value == "default") {
+                cx.marked = "keyword";
+                return cont(expression, expect(";"));
+            }
+            if (type2 == "{")
+                return cont(commasep(exportField, "}"), maybeFrom, expect(";"));
+            return pass(statement);
+        }
+
+        function exportField(type2, value) {
+            if (value == "as") {
+                cx.marked = "keyword";
+                return cont(expect("variable"));
+            }
+            if (type2 == "variable")
+                return pass(expressionNoComma, exportField);
+        }
+
+        function afterImport(type2) {
+            if (type2 == "string")
+                return cont();
+            if (type2 == "(")
+                return pass(expression);
+            if (type2 == ".")
+                return pass(maybeoperatorComma);
+            return pass(importSpec, maybeMoreImports, maybeFrom);
+        }
+
+        function importSpec(type2, value) {
+            if (type2 == "{")
+                return contCommasep(importSpec, "}");
+            if (type2 == "variable")
+                register(value);
+            if (value == "*")
+                cx.marked = "keyword";
+            return cont(maybeAs);
+        }
+
+        function maybeMoreImports(type2) {
+            if (type2 == ",")
+                return cont(importSpec, maybeMoreImports);
+        }
+
+        function maybeAs(_type, value) {
+            if (value == "as") {
+                cx.marked = "keyword";
+                return cont(importSpec);
+            }
+        }
+
+        function maybeFrom(_type, value) {
+            if (value == "from") {
+                cx.marked = "keyword";
+                return cont(expression);
+            }
+        }
+
+        function arrayLiteral(type2) {
+            if (type2 == "]")
+                return cont();
+            return pass(commasep(expressionNoComma, "]"));
+        }
+
+        function enumdef() {
+            return pass(pushlex("form"), pattern, expect("{"), pushlex("}"), commasep(enummember, "}"), poplex, poplex);
+        }
+
+        function enummember() {
+            return pass(pattern, maybeAssign);
+        }
+
+        function isContinuedStatement(state, textAfter) {
+            return state.lastType == "operator" || state.lastType == "," || isOperatorChar.test(textAfter.charAt(0)) || /[,.]/.test(textAfter.charAt(0));
+        }
+
+        function expressionAllowed(stream, state, backUp) {
+            return state.tokenize == tokenBase && /^(?:operator|sof|keyword [bcd]|case|new|export|default|spread|[\[{}\(,;:]|=>)$/.test(state.lastType) || state.lastType == "quasi" && /\{\s*$/.test(stream.string.slice(0, stream.pos - (backUp || 0)));
+        }
+
+        return {
+            startState: function (basecolumn) {
+                var state = {
+                    tokenize: tokenBase,
+                    lastType: "sof",
+                    cc: [],
+                    lexical: new JSLexical((basecolumn || 0) - indentUnit, 0, "block", false),
+                    localVars: parserConfig.localVars,
+                    context: parserConfig.localVars && new Context(null, null, false),
+                    indented: basecolumn || 0
+                };
+                if (parserConfig.globalVars && typeof parserConfig.globalVars == "object")
+                    state.globalVars = parserConfig.globalVars;
+                return state;
+            },
+            token: function (stream, state) {
+                if (stream.sol()) {
+                    if (!state.lexical.hasOwnProperty("align"))
+                        state.lexical.align = false;
+                    state.indented = stream.indentation();
+                    findFatArrow(stream, state);
+                }
+                if (state.tokenize != tokenComment && stream.eatSpace())
+                    return null;
+                var style = state.tokenize(stream, state);
+                if (type == "comment")
+                    return style;
+                state.lastType = type == "operator" && (content == "++" || content == "--") ? "incdec" : type;
+                return parseJS(state, style, type, content, stream);
+            },
+            indent: function (state, textAfter) {
+                if (state.tokenize == tokenComment || state.tokenize == tokenQuasi)
+                    return CodeMirror.Pass;
+                if (state.tokenize != tokenBase)
+                    return 0;
+                var firstChar = textAfter && textAfter.charAt(0), lexical = state.lexical, top2;
+                if (!/^\s*else\b/.test(textAfter))
+                    for (var i = state.cc.length - 1; i >= 0; --i) {
+                        var c = state.cc[i];
+                        if (c == poplex)
+                            lexical = lexical.prev;
+                        else if (c != maybeelse && c != popcontext)
+                            break;
+                    }
+                while ((lexical.type == "stat" || lexical.type == "form") && (firstChar == "}" || (top2 = state.cc[state.cc.length - 1]) && (top2 == maybeoperatorComma || top2 == maybeoperatorNoComma) && !/^[,\.=+\-*:?[\(]/.test(textAfter)))
+                    lexical = lexical.prev;
+                if (statementIndent && lexical.type == ")" && lexical.prev.type == "stat")
+                    lexical = lexical.prev;
+                var type2 = lexical.type, closing = firstChar == type2;
+                if (type2 == "vardef")
+                    return lexical.indented + (state.lastType == "operator" || state.lastType == "," ? lexical.info.length + 1 : 0);
+                else if (type2 == "form" && firstChar == "{")
+                    return lexical.indented;
+                else if (type2 == "form")
+                    return lexical.indented + indentUnit;
+                else if (type2 == "stat")
+                    return lexical.indented + (isContinuedStatement(state, textAfter) ? statementIndent || indentUnit : 0);
+                else if (lexical.info == "switch" && !closing && parserConfig.doubleIndentSwitch != false)
+                    return lexical.indented + (/^(?:case|default)\b/.test(textAfter) ? indentUnit : 2 * indentUnit);
+                else if (lexical.align)
+                    return lexical.column + (closing ? 0 : 1);
+                else
+                    return lexical.indented + (closing ? 0 : indentUnit);
+            },
+            electricInput: /^\s*(?:case .*?:|default:|\{|\})$/,
+            blockCommentStart: jsonMode ? null : "/*",
+            blockCommentEnd: jsonMode ? null : "*/",
+            blockCommentContinue: jsonMode ? null : " * ",
+            lineComment: jsonMode ? null : "//",
+            fold: "brace",
+            closeBrackets: "()[]{}''\"\"``",
+            helperType: jsonMode ? "json" : "javascript",
+            jsonldMode,
+            jsonMode,
+            expressionAllowed,
+            skipExpression: function (state) {
+                parseJS(state, "atom", "atom", "true", new CodeMirror.StringStream("", 2, null));
+            }
+        };
+    });
+    CodeMirror.registerHelper("wordChars", "javascript", /[\w$]/);
+    CodeMirror.defineMIME("text/javascript", "javascript");
+    CodeMirror.defineMIME("text/ecmascript", "javascript");
+    CodeMirror.defineMIME("application/javascript", "javascript");
+    CodeMirror.defineMIME("application/x-javascript", "javascript");
+    CodeMirror.defineMIME("application/ecmascript", "javascript");
+    CodeMirror.defineMIME("application/json", {
+        name: "javascript",
+        json: true
+    });
+    CodeMirror.defineMIME("application/x-json", {
+        name: "javascript",
+        json: true
+    });
+    CodeMirror.defineMIME("application/manifest+json", {
+        name: "javascript",
+        json: true
+    });
+    CodeMirror.defineMIME("application/ld+json", {
+        name: "javascript",
+        jsonld: true
+    });
+    CodeMirror.defineMIME("text/typescript", {
+        name: "javascript",
+        typescript: true
+    });
+    CodeMirror.defineMIME("application/typescript", {
+        name: "javascript",
+        typescript: true
+    });
 });
 
 // src/editor/mode/custom_overlay.js
-(function(mod) {
-  mod(window.CodeMirror);
-})(function(CodeMirror) {
-  "use strict";
-  CodeMirror.customOverlayMode = function(base, overlay, combine) {
-    return {
-      startState: function() {
+(function (mod) {
+    mod(window.CodeMirror);
+})(function (CodeMirror) {
+    "use strict";
+    CodeMirror.customOverlayMode = function (base, overlay, combine) {
         return {
-          base: CodeMirror.startState(base),
-          overlay: CodeMirror.startState(overlay),
-          basePos: 0,
-          baseCur: null,
-          overlayPos: 0,
-          overlayCur: null,
-          streamSeen: null
+            startState: function () {
+                return {
+                    base: CodeMirror.startState(base),
+                    overlay: CodeMirror.startState(overlay),
+                    basePos: 0,
+                    baseCur: null,
+                    overlayPos: 0,
+                    overlayCur: null,
+                    streamSeen: null
+                };
+            },
+            copyState: function (state) {
+                return {
+                    base: CodeMirror.copyState(base, state.base),
+                    overlay: CodeMirror.copyState(overlay, state.overlay),
+                    basePos: state.basePos,
+                    baseCur: null,
+                    overlayPos: state.overlayPos,
+                    overlayCur: null
+                };
+            },
+            token: function (stream, state) {
+                if (stream != state.streamSeen || Math.min(state.basePos, state.overlayPos) < stream.start) {
+                    state.streamSeen = stream;
+                    state.basePos = state.overlayPos = stream.start;
+                }
+                if (stream.start == state.basePos) {
+                    state.baseCur = base.token(stream, state.base);
+                    state.basePos = stream.pos;
+                }
+                if (stream.start == state.overlayPos) {
+                    stream.pos = stream.start;
+                    state.overlayCur = overlay.token(stream, state.overlay);
+                    state.overlayPos = stream.pos;
+                }
+                stream.pos = Math.min(state.basePos, state.overlayPos);
+                if (state.baseCur && state.overlayCur && state.baseCur.contains("line-HyperMD-codeblock")) {
+                    state.overlayCur = state.overlayCur.replace("line-templater-inline", "");
+                    state.overlayCur += ` line-background-HyperMD-codeblock-bg`;
+                }
+                if (state.overlayCur == null)
+                    return state.baseCur;
+                else if (state.baseCur != null && state.overlay.combineTokens || combine && state.overlay.combineTokens == null)
+                    return state.baseCur + " " + state.overlayCur;
+                else
+                    return state.overlayCur;
+            },
+            indent: base.indent && function (state, textAfter, line) {
+                return base.indent(state.base, textAfter, line);
+            },
+            electricChars: base.electricChars,
+            innerMode: function (state) {
+                return {state: state.base, mode: base};
+            },
+            blankLine: function (state) {
+                let baseToken, overlayToken;
+                if (base.blankLine)
+                    baseToken = base.blankLine(state.base);
+                if (overlay.blankLine)
+                    overlayToken = overlay.blankLine(state.overlay);
+                return overlayToken == null ? baseToken : combine && baseToken != null ? baseToken + " " + overlayToken : overlayToken;
+            }
         };
-      },
-      copyState: function(state) {
-        return {
-          base: CodeMirror.copyState(base, state.base),
-          overlay: CodeMirror.copyState(overlay, state.overlay),
-          basePos: state.basePos,
-          baseCur: null,
-          overlayPos: state.overlayPos,
-          overlayCur: null
-        };
-      },
-      token: function(stream, state) {
-        if (stream != state.streamSeen || Math.min(state.basePos, state.overlayPos) < stream.start) {
-          state.streamSeen = stream;
-          state.basePos = state.overlayPos = stream.start;
-        }
-        if (stream.start == state.basePos) {
-          state.baseCur = base.token(stream, state.base);
-          state.basePos = stream.pos;
-        }
-        if (stream.start == state.overlayPos) {
-          stream.pos = stream.start;
-          state.overlayCur = overlay.token(stream, state.overlay);
-          state.overlayPos = stream.pos;
-        }
-        stream.pos = Math.min(state.basePos, state.overlayPos);
-        if (state.baseCur && state.overlayCur && state.baseCur.contains("line-HyperMD-codeblock")) {
-          state.overlayCur = state.overlayCur.replace("line-templater-inline", "");
-          state.overlayCur += ` line-background-HyperMD-codeblock-bg`;
-        }
-        if (state.overlayCur == null)
-          return state.baseCur;
-        else if (state.baseCur != null && state.overlay.combineTokens || combine && state.overlay.combineTokens == null)
-          return state.baseCur + " " + state.overlayCur;
-        else
-          return state.overlayCur;
-      },
-      indent: base.indent && function(state, textAfter, line) {
-        return base.indent(state.base, textAfter, line);
-      },
-      electricChars: base.electricChars,
-      innerMode: function(state) {
-        return { state: state.base, mode: base };
-      },
-      blankLine: function(state) {
-        let baseToken, overlayToken;
-        if (base.blankLine)
-          baseToken = base.blankLine(state.base);
-        if (overlay.blankLine)
-          overlayToken = overlay.blankLine(state.overlay);
-        return overlayToken == null ? baseToken : combine && baseToken != null ? baseToken + " " + overlayToken : overlayToken;
-      }
     };
-  };
 });
 
 // src/editor/Editor.ts
@@ -5469,167 +6347,177 @@ var TP_CLOSING_TAG_TOKEN_CLASS = "templater-closing-tag";
 var TP_INTERPOLATION_TAG_TOKEN_CLASS = "templater-interpolation-tag";
 var TP_EXEC_TAG_TOKEN_CLASS = "templater-execution-tag";
 var Editor2 = class {
-  constructor(plugin) {
-    this.plugin = plugin;
-    this.cursor_jumper = new CursorJumper();
-    this.activeEditorExtensions = [];
-  }
-  desktopShouldHighlight() {
-    return import_obsidian16.Platform.isDesktopApp && this.plugin.settings.syntax_highlighting;
-  }
-  mobileShouldHighlight() {
-    return import_obsidian16.Platform.isMobileApp && this.plugin.settings.syntax_highlighting_mobile;
-  }
-  async setup() {
-    this.plugin.registerEditorSuggest(new Autocomplete(this.plugin.settings));
-    await this.registerCodeMirrorMode();
-    this.templaterLanguage = import_state.Prec.high(import_language.StreamLanguage.define(window.CodeMirror.getMode({}, TEMPLATER_MODE_NAME)));
-    if (this.templaterLanguage === void 0) {
-      log_error(new TemplaterError("Unable to enable syntax highlighting. Could not define language."));
+    constructor(plugin) {
+        this.plugin = plugin;
+        this.cursor_jumper = new CursorJumper();
+        this.activeEditorExtensions = [];
     }
-    this.plugin.registerEditorExtension(this.activeEditorExtensions);
-    if (this.desktopShouldHighlight() || this.mobileShouldHighlight()) {
-      await this.enable_highlighter();
+
+    desktopShouldHighlight() {
+        return import_obsidian16.Platform.isDesktopApp && this.plugin.settings.syntax_highlighting;
     }
-  }
-  async enable_highlighter() {
-    if (this.activeEditorExtensions.length === 0 && this.templaterLanguage) {
-      this.activeEditorExtensions.push(this.templaterLanguage);
-      this.plugin.app.workspace.updateOptions();
+
+    mobileShouldHighlight() {
+        return import_obsidian16.Platform.isMobileApp && this.plugin.settings.syntax_highlighting_mobile;
     }
-  }
-  async disable_highlighter() {
-    if (this.activeEditorExtensions.length > 0) {
-      this.activeEditorExtensions.pop();
-      this.plugin.app.workspace.updateOptions();
-    }
-  }
-  async jump_to_next_cursor_location(file = null, auto_jump = false) {
-    if (auto_jump && !this.plugin.settings.auto_jump_to_cursor) {
-      return;
-    }
-    if (file && get_active_file(this.plugin.app) !== file) {
-      return;
-    }
-    await this.cursor_jumper.jump_to_next_cursor_location();
-  }
-  async registerCodeMirrorMode() {
-    if (!this.desktopShouldHighlight() && !this.mobileShouldHighlight()) {
-      return;
-    }
-    const js_mode = window.CodeMirror.getMode({}, "javascript");
-    if (js_mode.name === "null") {
-      log_error(new TemplaterError("Javascript syntax mode couldn't be found, can't enable syntax highlighting."));
-      return;
-    }
-    const overlay_mode = window.CodeMirror.customOverlayMode;
-    if (overlay_mode == null) {
-      log_error(new TemplaterError("Couldn't find customOverlayMode, can't enable syntax highlighting."));
-      return;
-    }
-    window.CodeMirror.defineMode(TEMPLATER_MODE_NAME, function(config) {
-      const templaterOverlay = {
-        startState: function() {
-          const js_state = window.CodeMirror.startState(js_mode);
-          return {
-            ...js_state,
-            inCommand: false,
-            tag_class: "",
-            freeLine: false
-          };
-        },
-        copyState: function(state) {
-          const js_state = window.CodeMirror.startState(js_mode);
-          const new_state = {
-            ...js_state,
-            inCommand: state.inCommand,
-            tag_class: state.tag_class,
-            freeLine: state.freeLine
-          };
-          return new_state;
-        },
-        blankLine: function(state) {
-          if (state.inCommand) {
-            return `line-background-templater-command-bg`;
-          }
-          return null;
-        },
-        token: function(stream, state) {
-          if (stream.sol() && state.inCommand) {
-            state.freeLine = true;
-          }
-          if (state.inCommand) {
-            let keywords = "";
-            if (stream.match(/[-_]{0,1}%>/, true)) {
-              state.inCommand = false;
-              state.freeLine = false;
-              const tag_class = state.tag_class;
-              state.tag_class = "";
-              return `line-${TP_INLINE_CLASS} ${TP_CMD_TOKEN_CLASS} ${TP_CLOSING_TAG_TOKEN_CLASS} ${tag_class}`;
-            }
-            const js_result = js_mode.token && js_mode.token(stream, state);
-            if (stream.peek() == null && state.freeLine) {
-              keywords += ` line-background-templater-command-bg`;
-            }
-            if (!state.freeLine) {
-              keywords += ` line-${TP_INLINE_CLASS}`;
-            }
-            return `${keywords} ${TP_CMD_TOKEN_CLASS} ${js_result}`;
-          }
-          const match = stream.match(/<%[-_]{0,1}\s*([*+]{0,1})/, true);
-          if (match != null) {
-            switch (match[1]) {
-              case "*":
-                state.tag_class = TP_EXEC_TAG_TOKEN_CLASS;
-                break;
-              default:
-                state.tag_class = TP_INTERPOLATION_TAG_TOKEN_CLASS;
-                break;
-            }
-            state.inCommand = true;
-            return `line-${TP_INLINE_CLASS} ${TP_CMD_TOKEN_CLASS} ${TP_OPENING_TAG_TOKEN_CLASS} ${state.tag_class}`;
-          }
-          while (stream.next() != null && !stream.match(/<%/, false))
-            ;
-          return null;
+
+    async setup() {
+        this.plugin.registerEditorSuggest(new Autocomplete(this.plugin.settings));
+        await this.registerCodeMirrorMode();
+        this.templaterLanguage = import_state.Prec.high(import_language.StreamLanguage.define(window.CodeMirror.getMode({}, TEMPLATER_MODE_NAME)));
+        if (this.templaterLanguage === void 0) {
+            log_error(new TemplaterError("Unable to enable syntax highlighting. Could not define language."));
         }
-      };
-      return overlay_mode(window.CodeMirror.getMode(config, "hypermd"), templaterOverlay);
-    });
-  }
+        this.plugin.registerEditorExtension(this.activeEditorExtensions);
+        if (this.desktopShouldHighlight() || this.mobileShouldHighlight()) {
+            await this.enable_highlighter();
+        }
+    }
+
+    async enable_highlighter() {
+        if (this.activeEditorExtensions.length === 0 && this.templaterLanguage) {
+            this.activeEditorExtensions.push(this.templaterLanguage);
+            this.plugin.app.workspace.updateOptions();
+        }
+    }
+
+    async disable_highlighter() {
+        if (this.activeEditorExtensions.length > 0) {
+            this.activeEditorExtensions.pop();
+            this.plugin.app.workspace.updateOptions();
+        }
+    }
+
+    async jump_to_next_cursor_location(file = null, auto_jump = false) {
+        if (auto_jump && !this.plugin.settings.auto_jump_to_cursor) {
+            return;
+        }
+        if (file && get_active_file(this.plugin.app) !== file) {
+            return;
+        }
+        await this.cursor_jumper.jump_to_next_cursor_location();
+    }
+
+    async registerCodeMirrorMode() {
+        if (!this.desktopShouldHighlight() && !this.mobileShouldHighlight()) {
+            return;
+        }
+        const js_mode = window.CodeMirror.getMode({}, "javascript");
+        if (js_mode.name === "null") {
+            log_error(new TemplaterError("Javascript syntax mode couldn't be found, can't enable syntax highlighting."));
+            return;
+        }
+        const overlay_mode = window.CodeMirror.customOverlayMode;
+        if (overlay_mode == null) {
+            log_error(new TemplaterError("Couldn't find customOverlayMode, can't enable syntax highlighting."));
+            return;
+        }
+        window.CodeMirror.defineMode(TEMPLATER_MODE_NAME, function (config) {
+            const templaterOverlay = {
+                startState: function () {
+                    const js_state = window.CodeMirror.startState(js_mode);
+                    return {
+                        ...js_state,
+                        inCommand: false,
+                        tag_class: "",
+                        freeLine: false
+                    };
+                },
+                copyState: function (state) {
+                    const js_state = window.CodeMirror.startState(js_mode);
+                    const new_state = {
+                        ...js_state,
+                        inCommand: state.inCommand,
+                        tag_class: state.tag_class,
+                        freeLine: state.freeLine
+                    };
+                    return new_state;
+                },
+                blankLine: function (state) {
+                    if (state.inCommand) {
+                        return `line-background-templater-command-bg`;
+                    }
+                    return null;
+                },
+                token: function (stream, state) {
+                    if (stream.sol() && state.inCommand) {
+                        state.freeLine = true;
+                    }
+                    if (state.inCommand) {
+                        let keywords = "";
+                        if (stream.match(/[-_]{0,1}%>/, true)) {
+                            state.inCommand = false;
+                            state.freeLine = false;
+                            const tag_class = state.tag_class;
+                            state.tag_class = "";
+                            return `line-${TP_INLINE_CLASS} ${TP_CMD_TOKEN_CLASS} ${TP_CLOSING_TAG_TOKEN_CLASS} ${tag_class}`;
+                        }
+                        const js_result = js_mode.token && js_mode.token(stream, state);
+                        if (stream.peek() == null && state.freeLine) {
+                            keywords += ` line-background-templater-command-bg`;
+                        }
+                        if (!state.freeLine) {
+                            keywords += ` line-${TP_INLINE_CLASS}`;
+                        }
+                        return `${keywords} ${TP_CMD_TOKEN_CLASS} ${js_result}`;
+                    }
+                    const match = stream.match(/<%[-_]{0,1}\s*([*+]{0,1})/, true);
+                    if (match != null) {
+                        switch (match[1]) {
+                            case "*":
+                                state.tag_class = TP_EXEC_TAG_TOKEN_CLASS;
+                                break;
+                            default:
+                                state.tag_class = TP_INTERPOLATION_TAG_TOKEN_CLASS;
+                                break;
+                        }
+                        state.inCommand = true;
+                        return `line-${TP_INLINE_CLASS} ${TP_CMD_TOKEN_CLASS} ${TP_OPENING_TAG_TOKEN_CLASS} ${state.tag_class}`;
+                    }
+                    while (stream.next() != null && !stream.match(/<%/, false))
+                        ;
+                    return null;
+                }
+            };
+            return overlay_mode(window.CodeMirror.getMode(config, "hypermd"), templaterOverlay);
+        });
+    }
 };
 
 // src/main.ts
 var TemplaterPlugin = class extends import_obsidian17.Plugin {
-  async onload() {
-    await this.load_settings();
-    this.templater = new Templater(this);
-    await this.templater.setup();
-    this.editor_handler = new Editor2(this);
-    await this.editor_handler.setup();
-    this.fuzzy_suggester = new FuzzySuggester(this);
-    this.event_handler = new EventHandler(this, this.templater, this.settings);
-    this.event_handler.setup();
-    this.command_handler = new CommandHandler(this);
-    this.command_handler.setup();
-    (0, import_obsidian17.addIcon)("templater-icon", ICON_DATA);
-    if (this.settings.enable_ribbon_icon) {
-      this.addRibbonIcon("templater-icon", "Templater", async () => {
-        this.fuzzy_suggester.insert_template();
-      }).setAttribute("id", "rb-templater-icon");
+    async onload() {
+        await this.load_settings();
+        this.templater = new Templater(this);
+        await this.templater.setup();
+        this.editor_handler = new Editor2(this);
+        await this.editor_handler.setup();
+        this.fuzzy_suggester = new FuzzySuggester(this);
+        this.event_handler = new EventHandler(this, this.templater, this.settings);
+        this.event_handler.setup();
+        this.command_handler = new CommandHandler(this);
+        this.command_handler.setup();
+        (0, import_obsidian17.addIcon)("templater-icon", ICON_DATA);
+        if (this.settings.enable_ribbon_icon) {
+            this.addRibbonIcon("templater-icon", "Templater", async () => {
+                this.fuzzy_suggester.insert_template();
+            }).setAttribute("id", "rb-templater-icon");
+        }
+        this.addSettingTab(new TemplaterSettingTab(this));
+        app.workspace.onLayoutReady(() => {
+            this.templater.execute_startup_scripts();
+        });
     }
-    this.addSettingTab(new TemplaterSettingTab(this));
-    app.workspace.onLayoutReady(() => {
-      this.templater.execute_startup_scripts();
-    });
-  }
-  onunload() {
-    this.templater.functions_generator.teardown();
-  }
-  async save_settings() {
-    await this.saveData(this.settings);
-  }
-  async load_settings() {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-  }
+
+    onunload() {
+        this.templater.functions_generator.teardown();
+    }
+
+    async save_settings() {
+        await this.saveData(this.settings);
+    }
+
+    async load_settings() {
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    }
 };

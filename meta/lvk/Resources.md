@@ -1,14 +1,17 @@
-### _THE SPEC_ 
+### _THE SPEC_
+
 [Vulkan® 1.3.284 - A Specification (with all registered extensions)](https://registry.khronos.org/vulkan/specs/1.3-extensions/html/)
+
 ## Links
+
 https://vkguide.dev/
 https://vkguide.dev/docs/new_chapter_2/vulkan_imgui_setup/
 https://github.com/SaschaWillems/Vulkan/tree/master/examples
 https://github.com/nvpro-samples/vk_mini_samples
 https://github.com/jpbruyere/vkvg/tree/master
 
-
 ## Links (Raytracing)
+
 - [Introduction to Real-Time Ray Tracing with Vulkan](https://devblogs.nvidia.com/vulkan-raytracing)
 - [NVIDIA Vulkan Ray Tracing Tutorial](https://developer.nvidia.com/rtx/raytracing/vkray)
 - [NVIDIA Vulkan Ray Tracing Helpers: Introduction](https://developer.nvidia.com/rtx/raytracing/vkray_helpers)
@@ -27,6 +30,7 @@ https://github.com/jpbruyere/vkvg/tree/master
 - [GitHub - lukedan/ReSTIR-Vulkan: Vulkan implementation of ReSTIR](https://github.com/lukedan/ReSTIR-Vulkan)
 - [Spatiotemporal Reservoir Resampling (ReSTIR) - Theory and Basic Implementation | Shubham Sachdeva Blog](https://gamehacker1999.github.io/posts/restir/)
 - [A Gentle Introduction to ReSTIR Path Reuse in Real-Time | ACM SIGGRAPH 2023 Courses](https://dl.acm.org/doi/10.1145/3587423.3595511)
+
 ## Videos
 
 ```vid 

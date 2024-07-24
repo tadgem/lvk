@@ -660,7 +660,7 @@ void lvk::VulkanAPI::CleanupSwapChain()
 
 void lvk::VulkanAPI::RecreateSwapChain()
 {
-    spdlog::info("resize swapchain function");
+    spdlog::info("VulkanAPI : Recreating Swapchain");
     while (vkDeviceWaitIdle(m_LogicalDevice) != VK_SUCCESS);
 
     CleanupSwapChain();
@@ -1492,12 +1492,11 @@ void lvk::VulkanAPI::DrawFrame()
     VkResult result = vkAcquireNextImageKHR(m_LogicalDevice, m_SwapChain, UINT64_MAX, m_ImageAvailableSemaphores[p_CurrentFrameIndex], VK_NULL_HANDLE, &imageIndex);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-        spdlog::info("resizing swapchain");
         RecreateSwapChain();
         return;
     }
     else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-        spdlog::error("failed to acquire swap chain image!");
+        spdlog::error("VulkanAPI : Failed to acquire swap chain image!");
         return;
     }
 
@@ -1523,7 +1522,7 @@ void lvk::VulkanAPI::DrawFrame()
 
     if (vkQueueSubmit(m_GraphicsQueue, 1, &submitInfo, m_FrameInFlightFences[p_CurrentFrameIndex]) != VK_SUCCESS)
     {
-        spdlog::error("Failed to submit draw command buffer!");
+        spdlog::error("VulkanAPI : Failed to submit draw command buffer!");
     }
 
     if (m_UseImGui)
@@ -1548,7 +1547,7 @@ void lvk::VulkanAPI::DrawFrame()
         return;
     }
     else if (result != VK_SUCCESS) {
-        spdlog::error("Error presenting");
+        spdlog::error("VulkanAPI : Error presenting swapchain image");
     }
 
     p_CurrentFrameIndex = (p_CurrentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
