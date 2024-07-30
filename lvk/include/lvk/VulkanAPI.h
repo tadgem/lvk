@@ -403,6 +403,8 @@ public:
 
         uint32_t m_IndexCount = 0;
 
+    	void Free(VulkanAPI& vk);
+
         static Mesh* g_ScreenSpaceQuad;
 
         static void InitScreenQuad(lvk::VulkanAPI& vk);

@@ -2488,15 +2488,21 @@ void lvk::VulkanAPI::CreateMappedBuffer(MappedBuffer& buf, VkBufferUsageFlags bu
     VK_CHECK(vmaMapMemory(m_Allocator, buf.m_GpuMemory, &buf.m_MappedAddr));
 }
 
-void lvk::VulkanAPI::CreateUniformBuffers(ShaderBufferFrameData& uniformData, VkDeviceSize bufferSize)
+void lvk::VulkanAPI::CreateUniformBuffers (ShaderBufferFrameData& uniformData, VkDeviceSize bufferSize)
 {
-    uniformData.m_UniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+	uniformData.m_UniformBuffers.resize (MAX_FRAMES_IN_FLIGHT);
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        CreateMappedBuffer(uniformData.m_UniformBuffers[i], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                           static_cast<uint32_t>(bufferSize));
-    }
-
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+		CreateMappedBuffer (uniformData.m_UniformBuffers[i], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+							static_cast<uint32_t> (bufferSize));
+	}
+}
+void Mesh::Free (VulkanAPI& vk)
+{
+	vkDestroyBuffer (vk.m_LogicalDevice, m_VertexBuffer, nullptr);
+	vkDestroyBuffer (vk.m_LogicalDevice, m_IndexBuffer, nullptr);
+	vmaFreeMemory (vk.m_Allocator, m_IndexBufferMemory);
+	vmaFreeMemory (vk.m_Allocator, m_VertexBufferMemory);
 }
 
 void lvk::VulkanAPI::CleanupImGui()

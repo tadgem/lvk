@@ -12,8 +12,16 @@ namespace lvk
             m_PipelineLayout = layout;
         }
 
-        VkPipeline          m_Pipeline;
-        VkPipelineLayout    m_PipelineLayout;
+    	VkPipelineData() = default;
+
+    	void Free(VulkanAPI& vk)
+    	{
+    		vkDestroyPipelineLayout (vk.m_LogicalDevice, m_PipelineLayout, nullptr);
+    		vkDestroyPipeline(vk.m_LogicalDevice, m_Pipeline, nullptr);
+    	}
+
+        VkPipeline          m_Pipeline = VK_NULL_HANDLE;
+        VkPipelineLayout    m_PipelineLayout = VK_NULL_HANDLE;
     };
 
     class Pipeline
@@ -62,6 +70,21 @@ namespace lvk
         {
             m_Im3dState = new LvkIm3dViewState(AddIm3dForViewport(vk, im3dState, m_OutputFramebuffer.value()->m_RenderPass, false));
             return m_Im3dState;
+        }
+
+    	void Free(VulkanAPI& vk)
+        {
+	        for(auto* fb : m_FBs) {
+		        fb->Free (vk);
+	        }
+
+        	for(auto* material : m_PipelineMaterials) {
+        		material->Free (vk);
+        	}
+
+        	for(auto* pipeline_data : m_PipelineDatas) {
+        		pipeline_data->Free (vk);
+        	}
         }
     };
 
