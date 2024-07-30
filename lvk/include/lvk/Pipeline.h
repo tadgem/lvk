@@ -74,6 +74,9 @@ namespace lvk
 
     	void Free(VulkanAPI& vk)
         {
+        	if(m_Im3dState != nullptr) {
+        		lvk::FreeIm3dViewport (vk,*m_Im3dState);
+        	}
 	        for(auto* fb : m_FBs) {
 		        fb->Free (vk);
 	        }
