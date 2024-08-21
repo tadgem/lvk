@@ -2,44 +2,150 @@
 #include "lvk/Shader.h"
 #include "lvk/Material.h"
 #include <algorithm>
+#include "Im3D/im3d_lvk.h"
+#include "ImGui/lvk_extensions.h"
+
 using namespace lvk;
 
-#define NUM_LIGHTS 512
-using DeferredLightData = FrameLightDataT<NUM_LIGHTS>;
-
-struct RenderItem 
+struct ViewData
 {
-    MeshEx      m_Mesh;
-    Material    m_Material;
+    // most of this can be encapsulated in a view pipeline
+    Framebuffer m_GBuffer;
+    Framebuffer m_LightPassFB;
+    Material    m_LightPassMaterial;
+
+    VkPipeline          m_GBufferPipeline, m_LightPassPipeline;
+    VkPipelineLayout    m_GBufferPipelineLayout, m_LightPassPipelineLayour;
+
+    LvkIm3dViewState m_Im3dState;
+    VkExtent2D  m_CurrentResolution{ 1920, 1080 };
+
+    Camera      m_Camera;
+    Mesh        m_ViewQuad;
 };
 
-struct RenderModel
+ViewData CreateView(VulkanAPI& vk, LvkIm3dState im3dState, ShaderProgram gbufferProg, ShaderProgram lightPassProg)
 {
-    Model m_Original;
-    Vector<RenderItem> m_RenderItems;
-    void Free(VulkanAPI& vk)
+    Framebuffer gbuffer{};
+    gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
+    gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
+    gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
+    gbuffer.AddDepthAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
+    gbuffer.Build(vk);
+
+    Framebuffer finalImage{};
+    finalImage.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
+    finalImage.Build(vk);
+
+    Material lightPassMat = Material::Create(vk, lightPassProg);
+
+    lightPassMat.SetColourAttachment(vk, "positionBufferSampler", gbuffer, 1);
+    lightPassMat.SetColourAttachment(vk, "normalBufferSampler", gbuffer, 2);
+    lightPassMat.SetColourAttachment(vk, "colourBufferSampler", gbuffer, 0);
+
+    // create gbuffer pipeline
+    VkPipelineLayout gbufferPipelineLayout;
+    VkPipeline gbufferPipeline = vk.CreateRasterizationGraphicsPipeline(
+        gbufferProg,
+        Vector<VkVertexInputBindingDescription>{VertexDataPosNormalUv::GetBindingDescription() },
+        VertexDataPosNormalUv::GetAttributeDescriptions(),
+        gbuffer.m_RenderPass,
+        vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
+        VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, false,
+        VK_COMPARE_OP_LESS, gbufferPipelineLayout, 3);
+
+    // create present graphics pipeline
+    // Pipeline stage?
+    VkPipelineLayout lightPassPipelineLayout;
+    VkPipeline pipeline = vk.CreateRasterizationGraphicsPipeline(
+        lightPassProg,
+        Vector<VkVertexInputBindingDescription>{VertexDataPosUv::GetBindingDescription() },
+        VertexDataPosUv::GetAttributeDescriptions(),
+        finalImage.m_RenderPass,
+        vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
+        VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, false,
+        VK_COMPARE_OP_LESS, lightPassPipelineLayout);
+
+    auto im3dViewState = AddIm3dForViewport(vk, im3dState, finalImage.m_RenderPass, false);
+
+    static Vector<VertexDataPosUv> screenQuadVerts = {
+                    { { -1.0f, -1.0f , 0.0f}, { 0.0f, 0.0f } },
+                    { {1.0f, -1.0f, 0.0f}, {1.0, 0.0f} },
+                    { {1.0f, 1.0f, 0.0f}, {1.0, 1.0} },
+                    { {-1.0f, 1.0f, 0.0f}, {0.0f, 1.0} }
+    };
+
+    static lvk::Vector<uint32_t> screenQuadIndices = {
+    0, 1, 2, 2, 3, 0
+    };
+
+    VkBuffer vertBuffer;
+    VmaAllocation vertAlloc;
+    vk.CreateVertexBuffer<VertexDataPosUv>(screenQuadVerts, vertBuffer, vertAlloc);
+
+    VkBuffer indexBuffer;
+    VmaAllocation indexAlloc;
+    vk.CreateIndexBuffer(screenQuadIndices, indexBuffer, indexAlloc);
+
+    Mesh screenQuad{ vertBuffer, vertAlloc, indexBuffer, indexAlloc, 6 };
+
+    return { gbuffer, finalImage, lightPassMat, gbufferPipeline, pipeline, gbufferPipelineLayout, lightPassPipelineLayout, im3dViewState , {1920, 1080}, {},  screenQuad };
+}
+
+void FreeView(VulkanAPI& vk, ViewData& view)
+{
+    FreeIm3dViewport(vk, view.m_Im3dState);
+}
+
+static Transform g_Transform;
+
+void UpdateRenderItemUniformBuffer(VulkanAPI& vk, Material& renderItemMaterial)
+{
+    static auto startTime = std::chrono::high_resolution_clock::now();
+
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+    MvpData2 ubo{};
+    ubo.Model = g_Transform.to_mat4();
+
+    renderItemMaterial.SetBuffer(vk.GetFrameIndex(), 0, 0, ubo);
+}
+
+void UpdateViewData(VulkanAPI& vk, ViewData* view, DeferredLightData& lightData)
+{
+    glm::quat qPitch = glm::angleAxis(glm::radians(-view->m_Camera.Rotation.x), glm::vec3(1, 0, 0));
+    glm::quat qYaw = glm::angleAxis(glm::radians(view->m_Camera.Rotation.y), glm::vec3(0, 1, 0));
+    // omit roll
+    glm::quat Rotation = qPitch * qYaw;
+    Rotation = glm::normalize(Rotation);
+    glm::mat4 rotate = glm::mat4_cast(Rotation);
+    glm::mat4 translate = glm::mat4(1.0f);
+    translate = glm::translate(translate, -view->m_Camera.Position);
+
+    view->m_Camera.View = rotate * translate;
+    if (vk.m_SwapChainImageExtent.width > 0 || vk.m_SwapChainImageExtent.height)
     {
-        for (auto& item : m_RenderItems)
-        {
-            item.m_Material.Free(vk);
-            FreeMesh(vk, item.m_Mesh);
-        }
-
-        for (auto& mat : m_Original.m_Materials)
-        {
-            mat.m_Diffuse.Free(vk);
-        }
-        m_RenderItems.clear();
+        view->m_Camera.Proj = glm::perspective(glm::radians(45.0f),(float) view->m_CurrentResolution.width / (float)view->m_CurrentResolution.height, 0.1f, 10000.0f);
+        view->m_Camera.Proj[1][1] *= -1;
     }
-};
 
-static Transform g_Transform; 
+    view->m_LightPassMaterial.SetBuffer(vk.GetFrameIndex(), 0, 3, lightData);
+}
 
-void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
-    VkPipeline& gbufferPipeline , VkPipelineLayout& gbufferPipelineLayout, VkRenderPass gbufferRenderPass, Vector<VkFramebuffer>& gbufferFramebuffers,
-    VkPipeline& lightingPassPipeline, VkPipelineLayout& lightingPassPipelineLayout, VkRenderPass lightingPassRenderPass, Material& lightPassMaterial, Vector<VkFramebuffer>& lightingPassFramebuffers,
-    RenderModel& model, Mesh& screenQuad)
+void RecordCommandBuffersV2(VulkanAPI_SDL& vk, Vector<ViewData*> views, RenderModel& model, Mesh& screenQuad, LvkIm3dState& im3dState, DeferredLightData& lightData)
 {
+    static Vector<VertexDataPosUv> originalScreenQuadData = {
+                    { { -1.0f, -1.0f , 0.0f}, { 0.0f, 0.0f } },
+                    { {1.0f, -1.0f, 0.0f}, {1.0, 0.0f} },
+                    { {1.0f, 1.0f, 0.0f}, {1.0, 1.0} },
+                    { {-1.0f, 1.0f, 0.0f}, {0.0f, 1.0} }
+    };
     vk.RecordGraphicsCommands([&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
         {
             Array<VkClearValue, 4> clearValues{};
@@ -50,8 +156,8 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
 
             VkRenderPassBeginInfo renderPassInfo{};
             renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-            renderPassInfo.renderPass = gbufferRenderPass;
-            renderPassInfo.framebuffer = gbufferFramebuffers[frameIndex];
+            renderPassInfo.renderPass = vk.m_SwapchainImageRenderPass;
+            renderPassInfo.framebuffer = vk.m_SwapChainFramebuffers[frameIndex];
             renderPassInfo.renderArea.offset = { 0,0 };
             renderPassInfo.renderArea.extent = vk.m_SwapChainImageExtent;
 
@@ -59,7 +165,6 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
             renderPassInfo.pClearValues = clearValues.data();
 
             vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gbufferPipeline);
             VkViewport viewport{};
             viewport.x = 0.0f;
             viewport.x = 0.0f;
@@ -77,81 +182,138 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
             vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
             vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-            for (int i = 0; i < model.m_RenderItems.size(); i++)
-            {
-                MeshEx& mesh = model.m_RenderItems[i].m_Mesh;
-                VkBuffer vertexBuffers[]{ mesh.m_VertexBuffer };
-                VkDeviceSize sizes[] = { 0 };
-
-
-                vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, sizes);
-                vkCmdBindIndexBuffer(commandBuffer, mesh.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-                vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gbufferPipelineLayout, 0, 1, &model.m_RenderItems[i].m_Material.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
-                vkCmdDrawIndexed(commandBuffer, mesh.m_IndexCount, 1, 0, 0, 0);
-            }
             vkCmdEndRenderPass(commandBuffer);
         }
 
-        Array<VkClearValue, 2> clearValues{};
-        clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
-        clearValues[1].depthStencil = { 1.0f, 0 };
+        for (auto& view : views)
+        {
+            struct PCViewData
+            {
+                glm::mat4 view;
+                glm::mat4 proj;
+            };
 
-        VkRenderPassBeginInfo renderPassInfo{};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = vk.m_SwapchainImageRenderPass;
-        renderPassInfo.framebuffer = vk.m_SwapChainFramebuffers[frameIndex];
-        renderPassInfo.renderArea.offset = { 0,0 };
-        renderPassInfo.renderArea.extent = vk.m_SwapChainImageExtent;
 
-        renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-        renderPassInfo.pClearValues = clearValues.data();
+            PCViewData pcData{ view->m_Camera.View, view->m_Camera.Proj };
+            VkExtent2D viewExtent = view->m_CurrentResolution;
 
-        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, lightingPassPipeline);
-        VkViewport viewport{};
-        viewport.x = 0.0f;
-        viewport.x = 0.0f;
-        viewport.width = static_cast<float>(vk.m_SwapChainImageExtent.width);
-        viewport.height = static_cast<float>(vk.m_SwapChainImageExtent.height);
-        viewport.minDepth = 0.0f;
-        viewport.maxDepth = 1.0f;
+            // update screen quad
+            {
+                auto max = vk.GetMaxFramebufferResolution();
+                float w = static_cast<float>((float) viewExtent.width / (float) max.width);
+                float h = static_cast<float>((float) viewExtent.height / (float) max.height);
 
-        VkRect2D scissor{};
-        scissor.offset = { 0,0 };
-        scissor.extent = VkExtent2D{
-            static_cast<uint32_t>(vk.m_SwapChainImageExtent.width) ,
-            static_cast<uint32_t>(vk.m_SwapChainImageExtent.height)
-        };
-        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-        VkDeviceSize sizes[] = { 0 };
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &screenQuad.m_VertexBuffer, sizes);
-        vkCmdBindIndexBuffer(commandBuffer, screenQuad.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, lightingPassPipelineLayout, 0, 1, &lightPassMaterial.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
-        vkCmdDrawIndexed(commandBuffer, screenQuad.m_IndexCount, 1, 0, 0, 0);
-        vkCmdEndRenderPass(commandBuffer);
-        });
-}
+                Vector<VertexDataPosUv> newScreenQuadData = {
+                    { { -1.0f, -1.0f , 0.0f}, { 0.0f, 0.0f } },
+                    { {1.0f, -1.0f, 0.0f}, {w, 0.0f} },
+                    { {1.0f, 1.0f, 0.0f}, {w, h} },
+                    { {-1.0f, 1.0f, 0.0f}, {0.0f, h} }
+                };
 
-void UpdateUniformBuffer(VulkanAPI_SDL& vk, Material& renderItemMaterial, Material& lightPassMaterial, DeferredLightData& lightDataCpu)
-{
-    static auto startTime = std::chrono::high_resolution_clock::now();
+                vkCmdUpdateBuffer(commandBuffer, view->m_ViewQuad.m_VertexBuffer, 0, 4 * sizeof(VertexDataPosUv), &newScreenQuadData[0]);
+            }
 
-    auto currentTime = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+            {
+                Array<VkClearValue, 4> clearValues{};
+                clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
+                clearValues[1].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
+                clearValues[2].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
+                clearValues[3].depthStencil = { 1.0f, 0 };
 
-    MvpData ubo{};
-    ubo.Model = g_Transform.to_mat4();
+                VkRenderPassBeginInfo renderPassInfo{};
+                renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+                renderPassInfo.renderPass = view->m_GBuffer.m_RenderPass;
+                renderPassInfo.framebuffer = view->m_GBuffer.m_SwapchainFramebuffers[frameIndex];
+                renderPassInfo.renderArea.offset = { 0,0 };
+                renderPassInfo.renderArea.extent = viewExtent;
 
-    ubo.View = glm::lookAt(glm::vec3(20.0f, 20.0f, 20.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    if (vk.m_SwapChainImageExtent.width > 0 || vk.m_SwapChainImageExtent.height)
-    {
-        ubo.Proj = glm::perspective(glm::radians(45.0f), vk.m_SwapChainImageExtent.width / (float)vk.m_SwapChainImageExtent.height, 0.1f, 1000.0f);
-        ubo.Proj[1][1] *= -1;
-    }
-    renderItemMaterial.SetBuffer(vk.GetFrameIndex(), 0, 0, ubo);
-    lightPassMaterial.SetBuffer(vk.GetFrameIndex(), 0, 0, ubo);
-    lightPassMaterial.SetBuffer(vk.GetFrameIndex(), 0, 4, lightDataCpu);
+                renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+                renderPassInfo.pClearValues = clearValues.data();
+
+                vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, view->m_GBufferPipeline);
+                VkViewport viewport{};
+                viewport.x = 0.0f;
+                viewport.x = 0.0f;
+                viewport.width = static_cast<float>(viewExtent.width);
+                viewport.height = static_cast<float>(viewExtent.height);
+                viewport.minDepth = 0.0f;
+                viewport.maxDepth = 1.0f;
+
+                VkRect2D scissor{};
+                scissor.offset = { 0,0 };
+                scissor.extent = VkExtent2D{
+                    static_cast<uint32_t>(viewExtent.width) ,
+                    static_cast<uint32_t>(viewExtent.height)
+                };
+
+                vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+                vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+                vkCmdPushConstants(commandBuffer, view->m_GBufferPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PCViewData), &pcData);
+
+                for (int i = 0; i < model.m_RenderItems.size(); i++)
+                {
+                    MeshEx& mesh = model.m_RenderItems[i].m_Mesh;
+
+                    VkBuffer vertexBuffers[]{ mesh.m_VertexBuffer };
+                    VkDeviceSize sizes[] = { 0 };
+
+                    vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, sizes);
+                    vkCmdBindIndexBuffer(commandBuffer, mesh.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+                    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, view->m_GBufferPipelineLayout, 0, 1, &model.m_RenderItems[i].m_Material.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
+                    vkCmdDrawIndexed(commandBuffer, mesh.m_IndexCount, 1, 0, 0, 0);
+                }
+                vkCmdEndRenderPass(commandBuffer);
+            }
+
+            Array<VkClearValue, 2> clearValues{};
+            clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
+            clearValues[1].depthStencil = { 1.0f, 0 };
+
+            VkRenderPassBeginInfo renderPassInfo{};
+            renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+            renderPassInfo.renderPass = view->m_LightPassFB.m_RenderPass;
+            renderPassInfo.framebuffer = view->m_LightPassFB.m_SwapchainFramebuffers[frameIndex];
+            renderPassInfo.renderArea.offset = { 0,0 };
+            renderPassInfo.renderArea.extent = viewExtent;
+
+            renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+            renderPassInfo.pClearValues = clearValues.data();
+
+            vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, view->m_LightPassPipeline);
+            VkViewport viewport{};
+            viewport.x = 0.0f;
+            viewport.x = 0.0f;
+            viewport.width = static_cast<float>(viewExtent.width);
+            viewport.height = static_cast<float>(viewExtent.height);
+            viewport.minDepth = 0.0f;
+            viewport.maxDepth = 1.0f;
+
+            VkRect2D scissor{};
+            scissor.offset = { 0,0 };
+            scissor.extent = VkExtent2D{
+                static_cast<uint32_t>(viewExtent.width) ,
+                static_cast<uint32_t>(viewExtent.height)
+            };
+
+            // issue with lighting pass is that uvs are just 0,0 -> 1,1
+            // meaning the entire buffer will be resampled
+            vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+            vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+            vkCmdPushConstants(commandBuffer, view->m_LightPassPipelineLayour, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PCViewData), &pcData);
+            VkDeviceSize sizes[] = { 0 };
+            vkCmdBindVertexBuffers(commandBuffer, 0, 1, &view->m_ViewQuad.m_VertexBuffer, sizes);
+            vkCmdBindIndexBuffer(commandBuffer, view->m_ViewQuad.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, view->m_LightPassPipelineLayour, 0, 1, &view->m_LightPassMaterial.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
+            vkCmdDrawIndexed(commandBuffer, view->m_ViewQuad.m_IndexCount, 1, 0, 0, 0);
+
+            DrawIm3d(vk, commandBuffer, frameIndex, im3dState, view->m_Im3dState, view->m_Camera.Proj * view->m_Camera.View, viewExtent.width, viewExtent.height);
+            vkCmdEndRenderPass(commandBuffer);
+        }
+        }
+    );
 }
 
 RenderModel CreateRenderModelGbuffer(VulkanAPI& vk, const String& modelPath, ShaderProgram& shader)
@@ -176,17 +338,46 @@ RenderModel CreateRenderModelGbuffer(VulkanAPI& vk, const String& modelPath, Sha
     return renderModel;
 }
 
-void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu)
+void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu, Vector<ViewData*> views)
 {
 
-    if (ImGui::Begin("Menu"))
+    if (ImGui::Begin("View 1"))
+    {
+        // size needs to be the current resolution
+        // uv0 will likely always be 0,0
+        // uv1 needs to be MaxResolution / CurrentResolution;
+        auto extent = ImGui::GetContentRegionAvail();
+        auto max = vk.GetMaxFramebufferExtent();
+        ImVec2 uv1 = { extent.x / max.width, extent.y / max.height };
+        auto& image = views[0]->m_LightPassFB.m_ColourAttachments[0].m_AttachmentSwapchainImages[vk.GetFrameIndex()];
+
+        ImGuiX::Image(image, extent, { 0,0 }, uv1);
+        DrawIm3dTextListsImGuiAsChild(Im3d::GetTextDrawLists(), Im3d::GetTextDrawListCount(), (float)views[0]->m_CurrentResolution.width, (float)views[0]->m_CurrentResolution.height, views[0]->m_Camera.Proj * views[0]->m_Camera.View);
+        views[0]->m_CurrentResolution = { (uint32_t)extent.x, (uint32_t)extent.y };
+
+    }
+    ImGui::End();
+
+  
+    if (ImGui::Begin("ECS Debug"))
     {
         ImGui::Text("Frametime: %f", (1.0 / vk.m_DeltaTime));
         ImGui::Separator();
         ImGui::DragFloat3("Position", &g_Transform.m_Position[0]);
         ImGui::DragFloat3("Euler Rotation", &g_Transform.m_Rotation[0]);
         ImGui::DragFloat3("Scale", &g_Transform.m_Scale[0]);
+
         ImGui::Separator();
+
+        ImGui::DragFloat3("Cam 1 Position", &views[0]->m_Camera.Position[0]);
+        ImGui::DragFloat3("Cam 1 Euler Rotation", &views[0]->m_Camera.Rotation[0]);
+
+        ImGui::Separator();
+    }
+    ImGui::End();
+
+    if (ImGui::Begin("Lights Menu"))
+    {
         ImGui::Text("Frametime: %f", (1.0 / vk.m_DeltaTime));
         ImGui::DragFloat3("Directional Light Dir", &lightDataCpu.m_DirectionalLight.Direction[0]);
         ImGui::DragFloat4("Directional Light Colour", &lightDataCpu.m_DirectionalLight.Colour[0]);
@@ -237,101 +428,82 @@ void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu)
     ImGui::End();
 }
 
+void OnIm3D()
+{
+    Im3d::PushAlpha(1.0f);
+    Im3d::PushColor(Im3d::Color_Red);
+    Im3d::SetAlpha(1.0f);
+    Im3d::DrawCircle({ 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, 20.5f, 32);
+    Im3d::DrawCone({ 40.0f, 0.0f, 0.0f }, { 0.0, 1.0, 0.0 }, 30.0f, 30.0f, 32);
+    Im3d::DrawPrism({ 80.0f, 0.0f, 0.0f }, { 80.0f, 80.0f, 0.0f }, 10.0f, 32);
+    Im3d::PopColor();
+    Im3d::PushColor(Im3d::Color_Green);
+    Im3d::DrawArrow({ 120.0f, 0.0f, 0.0f }, { 3.0f, 23.0f, 0.0f }, 2.0f, 2.0f);
+    Im3d::DrawXyzAxes();
+    Im3d::DrawCylinder({ 160.0f, 0.0f, 0.0f }, { 160.0f,20.0f, 0.0f }, 20.0f, 32);
+    Im3d::PopColor();
+    Im3d::PushColor(Im3d::Color_White);
+    Im3d::Text({ 0.0, 20.0f, 0.0f }, 0, "Hello from you fuck you bloody");
+    Im3d::PopColor();
+    Im3d::PopAlpha();
+}
+
 int main() {
     VulkanAPI_SDL vk;
     bool enableMSAA = false;
-    vk.Start(1280, 720, enableMSAA);
+    vk.Start("Compute", 1920, 1080, enableMSAA);
+    auto im3dState = LoadIm3D(vk);
 
     DeferredLightData lightDataCpu{};
     FillExampleLightData(lightDataCpu);
 
-    ShaderProgram particleCompProgram = ShaderProgram::CreateCompute(vk, "shaders/particle.comp.spv");
-    Material computeMaterial = Material::Create(vk, particleCompProgram);
-    computeMaterial.Free(vk);
+    ShaderProgram gbufferProg = ShaderProgram::Create(vk, "shaders/gbuffer.vert.spv", "shaders/gbuffer.frag.spv");
+    ShaderProgram lightPassProg = ShaderProgram::Create(vk, "shaders/lights.vert.spv", "shaders/lights.frag.spv");
 
-    ShaderProgram gbufferProg     = ShaderProgram::Create(vk, "shaders/gbuffer.vert.spv", "shaders/gbuffer.frag.spv");
-    ShaderProgram lightPassProg   = ShaderProgram::Create(vk, "shaders/lights.vert.spv", "shaders/lights.frag.spv");
-    Material lightPassMat = Material::Create(vk, lightPassProg);
+    ViewData viewA = CreateView(vk, im3dState, gbufferProg, lightPassProg);
+    viewA.m_Camera.Position = { -40.0, 10.0f, 30.0f };
 
-    Framebuffer gbuffer{};
-    gbuffer.m_Width = vk.m_SwapChainImageExtent.width;
-    gbuffer.m_Height = vk.m_SwapChainImageExtent.height;
-    gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
-    gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
-    gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
-    gbuffer.AddDepthAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
-    gbuffer.Build(vk);
-
-    // todo: idk why this works, we need to respect each image in the swap chain, not just the 0th element
-    lightPassMat.SetColourAttachment(vk, "positionBufferSampler", gbuffer, 1);
-    lightPassMat.SetColourAttachment(vk, "normalBufferSampler", gbuffer, 2);
-    lightPassMat.SetColourAttachment(vk, "colourBufferSampler", gbuffer, 0);
-
-    // create gbuffer pipeline
-    VkPipelineLayout gbufferPipelineLayout;
-    VkPipeline gbufferPipeline = vk.CreateRasterizationGraphicsPipeline(
-        gbufferProg.m_Stages[0].m_StageBinary, gbufferProg.m_Stages[1].m_StageBinary,
-        gbufferProg.m_DescriptorSetLayout, 
-        Vector<VkVertexInputBindingDescription>{VertexDataPosNormalUv::GetBindingDescription() }, 
-        VertexDataPosNormalUv::GetAttributeDescriptions(),
-        gbuffer.m_RenderPass,
-        vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
-        VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, false,
-        VK_COMPARE_OP_LESS, gbufferPipelineLayout, 3);
-
-    // create present graphics pipeline
-    // Pipeline stage?
-    VkPipelineLayout lightPassPipelineLayout;
-    VkPipeline pipeline = vk.CreateRasterizationGraphicsPipeline(
-        lightPassProg.m_Stages[0].m_StageBinary, lightPassProg.m_Stages[1].m_StageBinary,
-        lightPassProg.m_DescriptorSetLayout, 
-        Vector<VkVertexInputBindingDescription>{VertexDataPosUv::GetBindingDescription() }, 
-        VertexDataPosUv::GetAttributeDescriptions(),
-        vk.m_SwapchainImageRenderPass,
-        vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
-        VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, enableMSAA,
-        VK_COMPARE_OP_LESS, lightPassPipelineLayout);
+    Vector<ViewData*> views{ &viewA};
 
     // create vertex and index buffer
     // allocate materials instead of raw buffers etc.
-    RenderModel m   = CreateRenderModelGbuffer(vk, "assets/sponza/sponza.gltf", gbufferProg);
+    RenderModel m = CreateRenderModelGbuffer(vk, "assets/sponza/sponza.gltf", gbufferProg);
 
     while (vk.ShouldRun())
     {
         vk.PreFrame();
 
-        for (auto& item : m.m_RenderItems)
+        Im3d::NewFrame();
+
+        for (int i = 0; i < m.m_RenderItems.size(); i++)
         {
-            UpdateUniformBuffer(vk, item.m_Material, lightPassMat, lightDataCpu);
+            UpdateRenderItemUniformBuffer(vk, m.m_RenderItems[i].m_Material);
         }
 
-        RecordCommandBuffersV2(vk, 
-            gbufferPipeline, gbufferPipelineLayout, gbuffer.m_RenderPass, gbuffer.m_SwapchainFramebuffers,
-            pipeline, lightPassPipelineLayout, vk.m_SwapchainImageRenderPass, lightPassMat, vk.m_SwapChainFramebuffers,
-            m, *Mesh::g_ScreenSpaceQuad);
+        for (int i = 0; i < views.size(); i++)
+        {
+            UpdateViewData(vk, views[i], lightDataCpu);
+        }
 
-        OnImGui(vk, lightDataCpu);
+
+        OnIm3D();
+
+        Im3d::EndFrame();
+
+        RecordCommandBuffersV2(vk, views, m, *Mesh::g_ScreenSpaceQuad, im3dState, lightDataCpu);
+
+        OnImGui(vk, lightDataCpu, views);
 
         vk.PostFrame();
     }
+    gbufferProg.Free(vk);
+    lightPassProg.Free(vk);
 
-    lightPassMat.Free(vk);
-    gbuffer.Free(vk);
+    FreeView(vk, viewA);
+
     m.Free(vk);
 
-    vkDestroyRenderPass(vk.m_LogicalDevice, gbuffer.m_RenderPass, nullptr);
-
-    vkDestroyDescriptorSetLayout(vk.m_LogicalDevice, gbufferProg.m_DescriptorSetLayout, nullptr);
-    vkDestroyDescriptorSetLayout(vk.m_LogicalDevice, lightPassProg.m_DescriptorSetLayout, nullptr);
-    
-    vkDestroyPipelineLayout(vk.m_LogicalDevice, gbufferPipelineLayout, nullptr);
-    vkDestroyPipeline(vk.m_LogicalDevice, gbufferPipeline, nullptr);
-    vkDestroyPipelineLayout(vk.m_LogicalDevice, lightPassPipelineLayout, nullptr);
-    vkDestroyPipeline(vk.m_LogicalDevice, pipeline, nullptr);
+    FreeIm3d(vk, im3dState);
 
     return 0;
 }
