@@ -7,6 +7,14 @@
 
 using namespace lvk;
 
+static Transform g_Transform;
+
+struct Particle
+{
+    glm::vec4   position;
+    glm::vec4   direction;
+};
+
 struct ViewData
 {
     // most of this can be encapsulated in a view pipeline
@@ -101,8 +109,6 @@ void FreeView(VulkanAPI& vk, ViewData& view)
 {
     FreeIm3dViewport(vk, view.m_Im3dState);
 }
-
-static Transform g_Transform;
 
 void UpdateRenderItemUniformBuffer(VulkanAPI& vk, Material& renderItemMaterial)
 {
@@ -463,10 +469,16 @@ int main() {
     ViewData viewA = CreateView(vk, im3dState, gbufferProg, lightPassProg);
     viewA.m_Camera.Position = { -40.0, 10.0f, 30.0f };
 
-    Vector<ViewData*> views{ &viewA};
+    Vector<ViewData*>   views{ &viewA};
+    Vector<Particle>    particles;
+    particles.resize(256);
 
-    // create vertex and index buffer
-    // allocate materials instead of raw buffers etc.
+    VkBuffer        particle_buffer{};
+    VmaAllocation   particle_memory;
+    vk.CreateBufferVMA(particles.size() * sizeof(Particle),
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, particle_buffer, particle_memory);
+
     RenderModel m = CreateRenderModelGbuffer(vk, "assets/sponza/sponza.gltf", gbufferProg);
 
     while (vk.ShouldRun())
@@ -484,7 +496,6 @@ int main() {
         {
             UpdateViewData(vk, views[i], lightDataCpu);
         }
-
 
         OnIm3D();
 
