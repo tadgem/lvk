@@ -10,3 +10,6 @@
 [submodule "submodules/vkvg"]
 	path = submodules/vkvg
 	url = https://github.com/jpbruyere/vkvg.git
+[submodule "submodules/volk"]
+	path = submodules/volk
+	url = https://github.com/zeux/volk.git

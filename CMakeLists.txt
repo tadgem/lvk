@@ -16,6 +16,7 @@ add_subdirectory(submodules/assimp)
 # add_subdirectory(submodules/vkvg)
 add_subdirectory(third-party/spdlog)
 add_subdirectory(third-party/sdl)
+add_subdirectory(submodules/volk)
 
 set(ASSIMP_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/submodules/assimp/include CACHE INTERNAL "")
 set(GLM_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/submodules/glm CACHE INTERNAL "")

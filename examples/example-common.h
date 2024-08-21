@@ -1,5 +1,5 @@
 #pragma once
-
+#include "lvk/VulkanAPI.h"
 #include "VulkanAPI_SDL.h"
 #include "lvk/Framebuffer.h"
 #include "lvk/Mesh.h"
@@ -16,6 +16,8 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/quaternion.hpp"
 #include "glm/gtc/matrix_transform.hpp"
+
+#include "volk.h"
 
 glm::vec3 CalculateVec3Radians(glm::vec3 eulerDegrees) {
     return glm::vec3(glm::radians(eulerDegrees.x), glm::radians(eulerDegrees.y), glm::radians(eulerDegrees.z));

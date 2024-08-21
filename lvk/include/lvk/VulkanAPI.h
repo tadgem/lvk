@@ -4,7 +4,8 @@ if(X != VK_SUCCESS){\
 spdlog::error("VK check failed at {} Line {} : {}",_filePath, _lineNumber, #X);}}
 
 #include "Alias.h"
-#include <vulkan/vulkan.h>
+#define VK_NO_PROTOTYPES
+#include "vulkan/vulkan.h"
 #include "ThirdParty/spirv_reflect.h"
 #include "ThirdParty/VulkanMemoryAllocator.h"
 #include "ThirdParty/stb_image.h"
@@ -418,15 +419,6 @@ public:
         VkPipelineLayout   m_PipelineLayout;
         Mesh               m_Mesh;
 
-        void RecordGraphicsCommands(VkCommandBuffer& commandBuffer)
-        {
-            VkBuffer vertexBuffers[]{ m_Mesh.m_VertexBuffer };
-            VkDeviceSize sizes[] = { 0 };
-
-            vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, sizes);
-            vkCmdBindIndexBuffer(commandBuffer, m_Mesh.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSet, 0, nullptr);
-            vkCmdDrawIndexed(commandBuffer, m_Mesh.m_IndexCount, 1, 0, 0, 0);
-        }
+        void RecordGraphicsCommands(VkCommandBuffer& commandBuffer);
     };
 }

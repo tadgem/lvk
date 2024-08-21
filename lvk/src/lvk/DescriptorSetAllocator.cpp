@@ -1,3 +1,4 @@
+#include "volk.h"
 #include "lvk/DescriptorSetAllocator.h"
 #include "lvk/VulkanAPI.h"
 
@@ -101,7 +102,7 @@ VkDescriptorPool lvk::DescriptorSetAllocator::CreatePool(VkDevice device, uint32
 	pool_info.poolSizeCount = (uint32_t)poolSizes.size();
 	pool_info.pPoolSizes = poolSizes.data();
 
-	VkDescriptorPool newPool;
+	VkDescriptorPool newPool{};
 	VK_CHECK(vkCreateDescriptorPool(device, &pool_info, nullptr, &newPool));
 	return newPool;
 }

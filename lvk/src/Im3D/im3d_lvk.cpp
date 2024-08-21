@@ -9,6 +9,7 @@
 #include "Im3D/im3d_math.h"
 #include "ImGui/imgui_internal.h"
 #include "ImGui/imgui.h"
+#include "volk.h"
 
 namespace lvk
 {

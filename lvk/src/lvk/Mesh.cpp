@@ -1,4 +1,5 @@
 #include "lvk/Mesh.h"
+#include "volk.h"
 
 lvk::Mesh* lvk::Mesh::g_ScreenSpaceQuad = nullptr;
 

@@ -126,16 +126,6 @@ namespace lvk
         static void InitDefaultTexture(lvk::VulkanAPI& vk);
         static void FreeDefaultTexture(lvk::VulkanAPI& vk);
 
-        void Free(lvk::VulkanAPI& vk)
-        {
-            vkDestroySampler(vk.m_LogicalDevice, m_Sampler, nullptr);
-            vkDestroyImageView(vk.m_LogicalDevice, m_ImageView, nullptr);
-            vkDestroyImage(vk.m_LogicalDevice, m_Image, nullptr);
-            vkFreeMemory(vk.m_LogicalDevice, m_Memory, nullptr);
-            if (vk.m_UseImGui)
-            {
-                ImGui_ImplVulkan_RemoveTexture(m_ImGuiHandle);
-            }
-        }
+        void Free(lvk::VulkanAPI& vk);
     };
 }

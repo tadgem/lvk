@@ -11,7 +11,8 @@
 #include "lvk/Texture.h"
 #include "lvk/Mesh.h"
 #include "lvk/Shader.h"
-
+#define VOLK_IMPLEMENTATION
+#include "volk.h"
 //#ifdef WIN32
 //#include "windows.h"
 //#include <dwmapi.h>
@@ -230,6 +231,8 @@ void lvk::VulkanAPI::CreateInstance()
     {
         spdlog::error("Failed to create vulkan m_Instance");
     }
+
+    volkLoadInstance(m_Instance);
 
 }
 
@@ -502,6 +505,8 @@ void lvk::VulkanAPI::CreateLogicalDevice()
         spdlog::error("Failed to create logical device.");
         std::cerr << "Failed to create logical device. \n";
     }
+
+    volkLoadDevice(m_LogicalDevice);
 }
 
 void lvk::VulkanAPI::GetQueueHandles()
@@ -2042,8 +2047,8 @@ void lvk::VulkanAPI::ClearCommandBuffers()
 void lvk::VulkanAPI::CreateVmaAllocator()
 {
     VmaVulkanFunctions vulkanFunctions = {};
-    vulkanFunctions.vkGetInstanceProcAddr = &vkGetInstanceProcAddr;
-    vulkanFunctions.vkGetDeviceProcAddr = &vkGetDeviceProcAddr;
+    vulkanFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
+    vulkanFunctions.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
 
     VmaAllocatorCreateInfo allocatorCreateInfo = {};
     allocatorCreateInfo.flags = VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT;
@@ -2079,6 +2084,7 @@ void lvk::VulkanAPI::InitVulkan(bool enableSwapchainMsaa)
 {
     p_CurrentFrameIndex = 0;
     m_EnableSwapchainMsaa = enableSwapchainMsaa;
+    VK_CHECK(volkInitialize());
     CreateInstance();
     SetupDebugOutput();
     CreateSurface();
@@ -2521,3 +2527,14 @@ VulkanAPI::VulkanAPI(bool enableDebugValidation) : m_UseValidation(enableDebugVa
 
 }
 
+
+void lvk::Renderable::RecordGraphicsCommands(VkCommandBuffer& commandBuffer)
+{
+    VkBuffer vertexBuffers[]{ m_Mesh.m_VertexBuffer };
+    VkDeviceSize sizes[] = { 0 };
+
+    vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, sizes);
+    vkCmdBindIndexBuffer(commandBuffer, m_Mesh.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSet, 0, nullptr);
+    vkCmdDrawIndexed(commandBuffer, m_Mesh.m_IndexCount, 1, 0, 0, 0);
+}

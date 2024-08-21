@@ -1,6 +1,7 @@
 #include "lvk/Material.h"
 #include "lvk/Shader.h"
 #include "lvk/Texture.h"
+#include "volk.h"
 
 static auto collect_uniform_data = [](lvk::ShaderStage& stage, lvk::Material &mat, lvk::VulkanAPI& vk)
     {

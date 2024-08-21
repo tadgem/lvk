@@ -1,4 +1,5 @@
 #include "lvk/Texture.h"
+#include "volk.h"
 
 lvk::Texture* lvk::Texture::g_DefaultTexture = nullptr;
 
@@ -267,4 +268,16 @@ void lvk::Texture::FreeDefaultTexture(lvk::VulkanAPI& vk)
 {
 	g_DefaultTexture->Free(vk);
 	delete g_DefaultTexture;
+}
+
+void lvk::Texture::Free(lvk::VulkanAPI& vk)
+{
+    vkDestroySampler(vk.m_LogicalDevice, m_Sampler, nullptr);
+    vkDestroyImageView(vk.m_LogicalDevice, m_ImageView, nullptr);
+    vkDestroyImage(vk.m_LogicalDevice, m_Image, nullptr);
+    vkFreeMemory(vk.m_LogicalDevice, m_Memory, nullptr);
+    if (vk.m_UseImGui)
+    {
+        ImGui_ImplVulkan_RemoveTexture(m_ImGuiHandle);
+    }
 }

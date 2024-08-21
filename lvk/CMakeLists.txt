@@ -3,8 +3,6 @@ project(lvk)
 
 set(CMAKE_CXX_STANDARD 17)
 
-find_package(Vulkan REQUIRED) # error
-
 add_library(${PROJECT_NAME} STATIC src/lvk/VulkanAPI.cpp
         src/lvk/Texture.cpp
         src/lvk/Framebuffer.cpp
@@ -56,4 +54,4 @@ if (MSVC)
 endif ()
 
 
-target_link_libraries(${PROJECT_NAME} ${Vulkan_LIBRARIES} spdlog)
+target_link_libraries(${PROJECT_NAME} volk spdlog)
