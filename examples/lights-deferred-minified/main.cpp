@@ -2,36 +2,14 @@
 #include "lvk/Shader.h"
 #include "lvk/Material.h"
 #include <algorithm>
+#include "Im3D/im3d_lvk.h"
+#include "ImGui/lvk_extensions.h"
+
+
 using namespace lvk;
 
 #define NUM_LIGHTS 512
 using DeferredLightData = FrameLightDataT<NUM_LIGHTS>;
-
-struct RenderItem
-{
-    MeshEx      m_Mesh;
-    Material    m_Material;
-};
-
-struct RenderModel
-{
-    Model m_Original;
-    Vector<RenderItem> m_RenderItems;
-    void Free(VulkanAPI& vk)
-    {
-        for (auto& item : m_RenderItems)
-        {
-            item.m_Material.Free(vk);
-            FreeMesh(vk, item.m_Mesh);
-        }
-
-        for (auto& mat : m_Original.m_Materials)
-        {
-            mat.m_Diffuse.Free(vk);
-        }
-        m_RenderItems.clear();
-    }
-};
 
 static Transform g_Transform;
 
@@ -243,7 +221,7 @@ void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu)
 int main() {
     VulkanAPI_SDL vk;
     bool enableMSAA = false;
-    vk.Start(1280, 720, enableMSAA);
+    vk.Start("Deferred Minified",1280, 720, enableMSAA);
 
     DeferredLightData lightDataCpu{};
     FillExampleLightData(lightDataCpu);
@@ -253,8 +231,6 @@ int main() {
     Material lightPassMat = Material::Create(vk, lightPassProg);
 
     Framebuffer gbuffer{};
-    gbuffer.m_Width = vk.m_SwapChainImageExtent.width;
-    gbuffer.m_Height = vk.m_SwapChainImageExtent.height;
     gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
     gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
@@ -273,8 +249,7 @@ int main() {
     // create gbuffer pipeline
     VkPipelineLayout gbufferPipelineLayout;
     VkPipeline gbufferPipeline = vk.CreateRasterizationGraphicsPipeline(
-        gbufferProg.m_Stages[0].m_StageBinary, gbufferProg.m_Stages[1].m_StageBinary,
-        gbufferProg.m_DescriptorSetLayout,
+        gbufferProg,
         Vector<VkVertexInputBindingDescription>{VertexDataPosNormalUv::GetBindingDescription() },
         VertexDataPosNormalUv::GetAttributeDescriptions(),
         gbuffer.m_RenderPass,
@@ -286,8 +261,7 @@ int main() {
     // Pipeline stage?
     VkPipelineLayout lightPassPipelineLayout;
     VkPipeline pipeline = vk.CreateRasterizationGraphicsPipeline(
-        lightPassProg.m_Stages[0].m_StageBinary, lightPassProg.m_Stages[1].m_StageBinary,
-        lightPassProg.m_DescriptorSetLayout,
+        lightPassProg,
         Vector<VkVertexInputBindingDescription>{VertexDataPosUv::GetBindingDescription() },
         VertexDataPosUv::GetAttributeDescriptions(),
         vk.m_SwapchainImageRenderPass,

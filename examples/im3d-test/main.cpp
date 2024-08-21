@@ -106,7 +106,7 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, lightingPassPipelineLayout, 0, 1, &lightPassMaterial.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
         vkCmdDrawIndexed(commandBuffer, screenQuad.m_IndexCount, 1, 0, 0, 0);
 
-        DrawIm3d(vk, commandBuffer, frameIndex, im3dState, im3dViewState, g_Camera.Proj * g_Camera.View, true);
+        DrawIm3d(vk, commandBuffer, frameIndex, im3dState, im3dViewState, g_Camera.Proj * g_Camera.View, vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height, true);
         vkCmdEndRenderPass(commandBuffer);
         });
 }
@@ -254,7 +254,7 @@ void OnIm3D()
 int main() {
     VulkanAPI_SDL vk;
     bool enableMSAA = true;
-    vk.Start(1280, 720, enableMSAA);
+    vk.Start("IM3D",1280, 720, enableMSAA);
     auto im3dState = LoadIm3D(vk);
     auto im3dViewState = AddIm3dForViewport(vk, im3dState, vk.m_SwapchainImageRenderPass, enableMSAA);
 
@@ -266,8 +266,6 @@ int main() {
     Material lightPassMat = Material::Create(vk, lightPassProg);
 
     Framebuffer gbuffer{};
-    gbuffer.m_Width = vk.m_SwapChainImageExtent.width;
-    gbuffer.m_Height = vk.m_SwapChainImageExtent.height;
 
     gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);

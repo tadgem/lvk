@@ -470,7 +470,7 @@ void OnIm3D()
 int main() {
     VulkanAPI_SDL vk;
     bool enableMSAA = false;
-    vk.Start(1920, 1080, enableMSAA);
+    vk.Start("Im3D Multiview", 1920, 1080, enableMSAA);
     auto im3dState = LoadIm3D(vk);
 
     DeferredLightData lightDataCpu{};

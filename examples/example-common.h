@@ -387,8 +387,8 @@ using DeferredLightData = FrameLightDataT<NUM_LIGHTS>;
 
 struct RenderItem
 {
-    MeshEx      m_Mesh;
-    lvk::Material    m_Material;
+    MeshEx              m_Mesh;
+    lvk::Material       m_Material;
 };
 
 struct RenderModel
