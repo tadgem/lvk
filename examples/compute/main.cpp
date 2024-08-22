@@ -465,6 +465,7 @@ int main() {
 
     ShaderProgram gbufferProg = ShaderProgram::Create(vk, "shaders/gbuffer.vert.spv", "shaders/gbuffer.frag.spv");
     ShaderProgram lightPassProg = ShaderProgram::Create(vk, "shaders/lights.vert.spv", "shaders/lights.frag.spv");
+    ShaderProgram particlesProg = ShaderProgram::CreateCompute(vk, "shaders/particles.comp.spv");
 
     ViewData viewA = CreateView(vk, im3dState, gbufferProg, lightPassProg);
     viewA.m_Camera.Position = { -40.0, 10.0f, 30.0f };

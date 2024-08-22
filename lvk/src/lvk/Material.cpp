@@ -57,6 +57,7 @@ static auto collect_uniform_data = [](lvk::ShaderStage& stage, lvk::Material &ma
         }
     };
 
+// todo: add ability to add existing buffers when creating the material
 lvk::Material lvk::Material::Create(VulkanAPI& vk, ShaderProgram& shader)
 {
     Material mat{};

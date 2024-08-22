@@ -1716,7 +1716,7 @@ VkPipeline lvk::VulkanAPI::CreateComputePipeline(StageBinary& comp, VkDescriptor
 
     VkPipelineShaderStageCreateInfo compShaderStageInfo{};
     compShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    compShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    compShaderStageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
     compShaderStageInfo.module = compStage;
     compShaderStageInfo.pName = "main";
 
