@@ -37,7 +37,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Debugging/Im3D Debugging.md",
+                "file": "Tidbits.md",
                 "mode": "source",
                 "source": false
               }
@@ -110,7 +110,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Debugging/Im3D Debugging.md",
+                "file": "Tidbits.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -127,7 +127,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Debugging/Im3D Debugging.md",
+                "file": "Tidbits.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -150,7 +150,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Debugging/Im3D Debugging.md"
+                "file": "Tidbits.md"
               }
             }
           },
@@ -182,14 +182,14 @@
   },
   "active": "0044f041a055a1b9",
   "lastOpenFiles": [
+    "Resources.md",
+    "Tidbits.md",
+    "Debugging/Im3D Debugging.md",
     "Images/Pasted image 20240618184022.png",
     "Images",
     "Images/Pasted image 20240618183938.png",
     "LVK.md",
-    "Debugging/Im3D Debugging.md",
-    "Resources.md",
     "Debugging",
-    "Tidbits.md",
     "Untitled.canvas"
   ]
 }

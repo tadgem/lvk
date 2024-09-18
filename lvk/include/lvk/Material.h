@@ -26,8 +26,8 @@ namespace lvk
         {
             uint32_t        m_SetNumber;
             uint32_t        m_BindingNumber;
-            VkImageView& m_ImageView;
-            VkSampler& m_Sampler;
+            VkImageView&    m_ImageView;
+            VkSampler&      m_Sampler;
         };
 
         struct ShaderAccessorData
