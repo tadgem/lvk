@@ -6,8 +6,6 @@
 #include "Im3D/im3d_lvk.h"
 #include "ImGui/lvk_extensions.h"
 using namespace lvk;
-
-
 struct View
 {
     Camera      m_Camera;
@@ -15,7 +13,6 @@ struct View
 };
 
 using VkRecordCommandCallback = std::function<void(VkCommandBuffer&, uint32_t, View&, Mesh&, Vector<Renderable>)>;
-
 
 struct ViewData
 {
@@ -536,8 +533,10 @@ int main() {
     DeferredLightData lightDataCpu{};
     FillExampleLightData(lightDataCpu);
 
-    ShaderProgram gbufferProg = ShaderProgram::Create(vk, "../shaders/gbuffer.vert.spv", "../shaders/gbuffer.frag.spv");
-    ShaderProgram lightPassProg = ShaderProgram::Create(vk, "../shaders/lights.vert.spv", "../shaders/lights.frag.spv");
+    ShaderProgram gbufferProg = ShaderProgram::CreateFromBinaryPath(
+        vk, "../shaders/gbuffer.vert.spv", "../shaders/gbuffer.frag.spv");
+    ShaderProgram lightPassProg = ShaderProgram::CreateFromBinaryPath(
+        vk, "../shaders/lights.vert.spv", "../shaders/lights.frag.spv");
     
     ViewData viewA = CreateView(vk, im3dState, gbufferProg, lightPassProg);
     viewA.m_View.m_Camera.Position = { -40.0, 10.0f, 30.0f };

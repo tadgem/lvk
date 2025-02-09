@@ -1,4 +1,5 @@
 #include "example-common.h"
+#include "lvk/Shader.h"
 using namespace lvk;
 
 #define NUM_LIGHTS 16
@@ -66,6 +67,7 @@ void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkPipelineLay
 void UpdateUniformBuffer(VulkanAPI_SDL& vk)
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
+    
 
     auto currentTime = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
@@ -137,80 +139,16 @@ void UpdateUniformBuffer(VulkanAPI_SDL& vk)
     lightsUniformData.Set(vk.GetFrameIndex(), lightDataCpu);
 }
 
-void CreateDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler)
-{
-    std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
-    VkDescriptorSetAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = vk.m_DescriptorPool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-    allocInfo.pSetLayouts = layouts.data();
-
-    descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-    VK_CHECK(vkAllocateDescriptorSets(vk.m_LogicalDevice, &allocInfo, descriptorSets.data()));
-
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        VkDescriptorBufferInfo mvpBufferInfo{};
-        mvpBufferInfo.buffer = mvpUniformData.m_UniformBuffers[i];
-        mvpBufferInfo.offset = 0;
-        mvpBufferInfo.range = sizeof(MvpData);
-
-        VkDescriptorImageInfo imageInfo{};
-        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.imageView = textureImageView;
-        imageInfo.sampler = textureSampler;
-
-        VkDescriptorBufferInfo lightBufferInfo{};
-        lightBufferInfo.buffer = lightsUniformData.m_UniformBuffers[i];
-        lightBufferInfo.offset = 0;
-        lightBufferInfo.range = sizeof(ForwardLightData);
-
-        std::array<VkWriteDescriptorSet, 3> descriptorWrites{};
-
-        descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[0].dstSet = descriptorSets[i];
-        descriptorWrites[0].dstBinding = 0;
-        descriptorWrites[0].dstArrayElement = 0;
-        descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrites[0].descriptorCount = 1;
-        descriptorWrites[0].pBufferInfo = &mvpBufferInfo;
-
-        descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[1].dstSet = descriptorSets[i];
-        descriptorWrites[1].dstBinding = 1;
-        descriptorWrites[1].dstArrayElement = 0;
-        descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites[1].descriptorCount = 1;
-        descriptorWrites[1].pImageInfo = &imageInfo;
-
-        descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[2].dstSet = descriptorSets[i];
-        descriptorWrites[2].dstBinding = 2;
-        descriptorWrites[2].dstArrayElement = 0;
-        descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrites[2].descriptorCount = 1;
-        descriptorWrites[2].pBufferInfo = &lightBufferInfo;
-
-
-        vkUpdateDescriptorSets(vk.m_LogicalDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-    }
-
-}
-
 int main()
 {
     VulkanAPI_SDL vk;
     bool enableMSAA = true;
-    vk.Start(1280, 720, enableMSAA);
+    vk.Start("Forward Lights", 1280, 720, enableMSAA);
 
     // shader abstraction
-    auto vertBin = vk.LoadSpirvBinary("shaders/lights.vert.spv");
-    auto fragBin = vk.LoadSpirvBinary("shaders/lights.frag.spv");
 
-    auto vertexLayoutDatas = vk.ReflectDescriptorSetLayouts(vertBin);
-    auto fragmentLayoutDatas = vk.ReflectDescriptorSetLayouts(fragBin);
-    VkDescriptorSetLayout descriptorSetLayout;
-    vk.CreateDescriptorSetLayout(vertexLayoutDatas, fragmentLayoutDatas, descriptorSetLayout);
+    ShaderProgram lights_prog = ShaderProgram::CreateFromBinaryPath(
+        vk, "shaders/lights.vert.spv", "shaders/lights.frag.spv");
 
     FillExampleLightData(lightDataCpu);
 
@@ -226,8 +164,7 @@ int main()
     // Pipeline stage?
     VkPipelineLayout pipelineLayout;
     VkPipeline pipeline = vk.CreateRasterizationGraphicsPipeline(
-        vertBin, fragBin,
-        descriptorSetLayout, Vector<VkVertexInputBindingDescription>{VertexDataPosNormalUv::GetBindingDescription() }, VertexDataPosNormalUv::GetAttributeDescriptions(),
+        lights_prog, Vector<VkVertexInputBindingDescription>{VertexDataPosNormalUv::GetBindingDescription() }, VertexDataPosNormalUv::GetAttributeDescriptions(),
         vk.m_SwapchainImageRenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
         VK_POLYGON_MODE_FILL,
@@ -244,7 +181,6 @@ int main()
     vk.CreateUniformBuffers<MvpData>(mvpUniformData);
     vk.CreateUniformBuffers<FrameLightDataT<NUM_LIGHTS>>(lightsUniformData);
 
-    CreateDescriptorSets(vk, descriptorSetLayout, imageView, imageSampler);
 
     while (vk.ShouldRun())
     {    
@@ -265,7 +201,6 @@ int main()
     vkDestroyImageView(vk.m_LogicalDevice, imageView, nullptr);
     vkDestroyImage(vk.m_LogicalDevice, textureImage, nullptr);
     vkFreeMemory(vk.m_LogicalDevice, textureMemory, nullptr);
-    vkDestroyDescriptorSetLayout(vk.m_LogicalDevice, descriptorSetLayout, nullptr);
     vkDestroyPipelineLayout(vk.m_LogicalDevice, pipelineLayout, nullptr);
     vkDestroyPipeline(vk.m_LogicalDevice, pipeline, nullptr);
 

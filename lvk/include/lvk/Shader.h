@@ -19,7 +19,8 @@ namespace lvk
         Vector<DescriptorSetLayoutData> m_LayoutDatas;
         ShaderStage::Type m_Type;
 
-        static ShaderStage Create(VulkanAPI& vk, const String& stagePath, const ShaderStage::Type& stageType)
+        static ShaderStage
+        CreateFromBinaryPath(VulkanAPI& vk, const String& stagePath, const ShaderStage::Type& stageType)
         {
             auto stageBin = vk.LoadSpirvBinary(stagePath);
             auto pushConstants = vk.ReflectPushConstants(stageBin);
@@ -28,7 +29,7 @@ namespace lvk
             return { stageBin, pushConstants, stageLayoutDatas, stageType };
         }
 
-        static ShaderStage Create(VulkanAPI& vk, Vector<unsigned char>& binary, const ShaderStage::Type& type)
+        static ShaderStage CreateFromBinary(VulkanAPI& vk, Vector<unsigned char>& binary, const ShaderStage::Type& type)
         {
             auto stageLayoutDatas = vk.ReflectDescriptorSetLayouts(binary);
             auto pushConstants = vk.ReflectPushConstants(binary);
@@ -45,10 +46,12 @@ namespace lvk
 
         void Free(VulkanAPI& vk);
 
-        static ShaderProgram Create(VulkanAPI& vk, const String& vertPath, const String& fragPath)
+        static ShaderProgram CreateFromBinaryPath(VulkanAPI& vk, const String& vertPath, const String& fragPath)
         {
-            ShaderStage vert = ShaderStage::Create(vk, vertPath, ShaderStage::Type::Vertex);
-            ShaderStage frag = ShaderStage::Create(vk, fragPath, ShaderStage::Type::Fragment);
+            ShaderStage vert = ShaderStage::CreateFromBinaryPath(
+                vk, vertPath, ShaderStage::Type::Vertex);
+            ShaderStage frag = ShaderStage::CreateFromBinaryPath(
+                vk, fragPath, ShaderStage::Type::Fragment);
             VkDescriptorSetLayout layout;
             vk.CreateDescriptorSetLayout(vert.m_LayoutDatas, frag.m_LayoutDatas, layout);
 

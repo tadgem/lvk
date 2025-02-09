@@ -9,7 +9,8 @@ void lvk::ShaderProgram::Free(VulkanAPI& vk)
 lvk::ShaderProgram lvk::ShaderProgram::CreateCompute(VulkanAPI& vk, const String& computePath)
 
 {
-    ShaderStage comp = ShaderStage::Create(vk, computePath, ShaderStage::Type::Compute);
+    ShaderStage comp = ShaderStage::CreateFromBinaryPath(
+        vk, computePath, ShaderStage::Type::Compute);
     VkDescriptorSetLayout layout;
 
     std::vector<VkDescriptorSetLayoutBinding> bindings;

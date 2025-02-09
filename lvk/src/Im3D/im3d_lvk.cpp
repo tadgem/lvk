@@ -26,21 +26,27 @@ namespace lvk
     LvkIm3dState LoadIm3D(VulkanAPI& vk)
     {
         Vector<unsigned char> tris_vert_bin = ToVector(&im3d_tris_vert_spv_bin[0], (uint32_t)im3d_tris_vert_spv_bin_SIZE);
-        ShaderStage tris_vert = ShaderStage::Create(vk, tris_vert_bin, ShaderStage::Type::Vertex);
+        ShaderStage tris_vert = ShaderStage::CreateFromBinary(
+            vk, tris_vert_bin, ShaderStage::Type::Vertex);
         Vector<unsigned char> tris_frag_bin = ToVector(&im3d_tris_frag_spv_bin[0], (uint32_t)im3d_tris_frag_spv_bin_SIZE);
-        ShaderStage tris_frag = ShaderStage::Create(vk, tris_frag_bin, ShaderStage::Type::Fragment);
+        ShaderStage tris_frag = ShaderStage::CreateFromBinary(
+            vk, tris_frag_bin, ShaderStage::Type::Fragment);
         ShaderProgram tris_prog = ShaderProgram::Create(vk, tris_vert, tris_frag);
 
         Vector<unsigned char> lines_vert_bin = ToVector(&im3d_lines_vert_spv_bin[0], (uint32_t)im3d_lines_vert_spv_bin_SIZE);
-        ShaderStage lines_vert = ShaderStage::Create(vk, lines_vert_bin, ShaderStage::Type::Vertex);
+        ShaderStage lines_vert = ShaderStage::CreateFromBinary(
+            vk, lines_vert_bin, ShaderStage::Type::Vertex);
         Vector<unsigned char> lines_frag_bin = ToVector(&im3d_lines_frag_spv_bin[0], (uint32_t)im3d_lines_frag_spv_bin_SIZE);
-        ShaderStage lines_frag = ShaderStage::Create(vk, lines_frag_bin, ShaderStage::Type::Fragment);
+        ShaderStage lines_frag = ShaderStage::CreateFromBinary(
+            vk, lines_frag_bin, ShaderStage::Type::Fragment);
         ShaderProgram lines_prog = ShaderProgram::Create(vk, lines_vert, lines_frag);
 
         Vector<unsigned char> points_vert_bin = ToVector(&im3d_points_vert_spv_bin[0], (uint32_t)im3d_points_vert_spv_bin_SIZE);
-        ShaderStage points_vert = ShaderStage::Create(vk, points_vert_bin, ShaderStage::Type::Vertex);
+        ShaderStage points_vert = ShaderStage::CreateFromBinary(
+            vk, points_vert_bin, ShaderStage::Type::Vertex);
         Vector<unsigned char> points_frag_bin = ToVector(&im3d_points_frag_spv_bin[0], (uint32_t)im3d_points_frag_spv_bin_SIZE);
-        ShaderStage points_frag = ShaderStage::Create(vk, points_frag_bin, ShaderStage::Type::Fragment);
+        ShaderStage points_frag = ShaderStage::CreateFromBinary(
+            vk, points_frag_bin, ShaderStage::Type::Fragment);
         ShaderProgram points_prog = ShaderProgram::Create(vk, points_vert, points_frag);
 
 

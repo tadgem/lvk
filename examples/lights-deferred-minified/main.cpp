@@ -226,8 +226,10 @@ int main() {
     DeferredLightData lightDataCpu{};
     FillExampleLightData(lightDataCpu);
 
-    ShaderProgram gbufferProg = ShaderProgram::Create(vk, "shaders/gbuffer.vert.spv", "shaders/gbuffer.frag.spv");
-    ShaderProgram lightPassProg = ShaderProgram::Create(vk, "shaders/lights.vert.spv", "shaders/lights.frag.spv");
+    ShaderProgram gbufferProg = ShaderProgram::CreateFromBinaryPath(
+        vk, "shaders/gbuffer.vert.spv", "shaders/gbuffer.frag.spv");
+    ShaderProgram lightPassProg = ShaderProgram::CreateFromBinaryPath(
+        vk, "shaders/lights.vert.spv", "shaders/lights.frag.spv");
     Material lightPassMat = Material::Create(vk, lightPassProg);
 
     Framebuffer gbuffer{};
