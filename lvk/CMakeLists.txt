@@ -44,7 +44,12 @@ add_library(${PROJECT_NAME} STATIC src/lvk/VulkanAPI.cpp
         include/ImGui/imstb_truetype.h
 )
 
-set(LVK_INCLUDES ${Vulkan_INCLUDE_DIRS} ${SPDLOG_INCLUDES} ${GLM_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR}/include CACHE INTERNAL "")
+set(LVK_INCLUDES    ${Vulkan_INCLUDE_DIRS}
+                    ${SPDLOG_INCLUDES}
+                    ${GLM_INCLUDES}
+                    ${SHADERC_INCLUDES}
+                    ${SHADERC_UTIL_INCLUDES}
+                    ${CMAKE_CURRENT_SOURCE_DIR}/include CACHE INTERNAL "")
 target_include_directories(${PROJECT_NAME} PUBLIC ${LVK_INCLUDES})
 
 
@@ -54,4 +59,4 @@ if (MSVC)
 endif ()
 
 
-target_link_libraries(${PROJECT_NAME} volk spdlog)
+target_link_libraries(${PROJECT_NAME} volk spdlog shaderc shaderc_util)

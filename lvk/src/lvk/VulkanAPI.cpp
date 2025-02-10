@@ -13,6 +13,8 @@
 #include "lvk/Shader.h"
 #define VOLK_IMPLEMENTATION
 #include "volk.h"
+#include "shaderc/shaderc.h"
+
 //#ifdef WIN32
 //#include "windows.h"
 //#include <dwmapi.h>

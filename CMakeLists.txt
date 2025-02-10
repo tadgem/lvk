@@ -18,10 +18,18 @@ add_subdirectory(third-party/spdlog)
 add_subdirectory(third-party/sdl)
 add_subdirectory(submodules/volk)
 
+add_subdirectory(submodules/SPIRV-headers)
+add_subdirectory(submodules/SPIRV-tools)
+add_subdirectory(submodules/glslang)
+set(SHADERC_SKIP_TESTS ON CACHE BOOL "" FORCE)
+add_subdirectory(submodules/shaderc)
+
 set(ASSIMP_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/submodules/assimp/include CACHE INTERNAL "")
 set(GLM_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/submodules/glm CACHE INTERNAL "")
 set(SPDLOG_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/submodules/spdlog/include CACHE INTERNAL "")
 set(SDL_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/third-party/sdl/include CACHE INTERNAL "")
+set(SHADERC_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/submodules/shaderc/libshaderc/include CACHE INTERNAL "")
+set(SHADERC_UTIL_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/submodules/shaderc/libshaderc_util/include CACHE INTERNAL "")
 
 set_target_properties(glm PROPERTIES FOLDER "ThirdParty/glm")
 set_target_properties(sdl_headers_copy PROPERTIES FOLDER "ThirdParty/SDL")

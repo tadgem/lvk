@@ -13,3 +13,15 @@
 [submodule "submodules/volk"]
 	path = submodules/volk
 	url = https://github.com/zeux/volk.git
+[submodule "submodules/shaderc"]
+	path = submodules/shaderc
+	url = https://github.com/google/shaderc.git
+[submodule "submodules/glslang"]
+	path = submodules/glslang
+	url = https://github.com/KhronosGroup/glslang.git
+[submodule "submodules/SPIRV-tools"]
+	path = submodules/SPIRV-tools
+	url = https://github.com/KhronosGroup/SPIRV-Tools.git
+[submodule "submodules/SPIRV-headers"]
+	path = submodules/SPIRV-headers
+	url = https://github.com/KhronosGroup/SPIRV-Headers.git
