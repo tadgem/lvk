@@ -1,9 +1,10 @@
-#include "example-common.h"
 #include "assimp/Importer.hpp"
-#include "assimp/postprocess.h"
 #include "assimp/cimport.h"
 #include "assimp/mesh.h"
+#include "assimp/postprocess.h"
 #include "assimp/scene.h"
+#include "example-common.h"
+#include "lvk/Shader.h"
 using namespace lvk;
 
 static std::vector<VkBuffer>            uniformBuffers;
@@ -87,7 +88,7 @@ void CreateDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSe
     std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = vk.m_DescriptorPool;
+    allocInfo.descriptorPool = vk.m_DescriptorSetAllocator.GetPool(vk.m_LogicalDevice);
     allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
     allocInfo.pSetLayouts = layouts.data();
 
@@ -131,15 +132,10 @@ void CreateDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSe
 int main()
 {
     VulkanAPI_SDL vk;
-    vk.Start(1280, 720);
+    vk.Start("Model Example", 1280, 720);
 
-    auto vertBin = vk.LoadSpirvBinary("shaders/texture.vert.spv");
-    auto fragBin = vk.LoadSpirvBinary("shaders/texture.frag.spv");
-
-    auto vertexLayoutDatas = vk.ReflectDescriptorSetLayouts(vertBin);
-    auto fragmentLayoutDatas = vk.ReflectDescriptorSetLayouts(fragBin);
-    VkDescriptorSetLayout descriptorSetLayout;
-    vk.CreateDescriptorSetLayout(vertexLayoutDatas, fragmentLayoutDatas, descriptorSetLayout);
+    ShaderProgram prog = ShaderProgram::CreateFromBinaryPath(
+        vk, "shaders/texture.vert.spv", "shaders/texture.frag.spv");
 
     VkImage textureImage;
     VkImageView imageView;
@@ -151,8 +147,7 @@ int main()
     VkPipelineLayout pipelineLayout;
 
     VkPipeline pipeline = vk.CreateRasterizationGraphicsPipeline(
-        vertBin, fragBin,
-        descriptorSetLayout, Vector<VkVertexInputBindingDescription>{VertexDataPosUv::GetBindingDescription() }, VertexDataPosUv::GetAttributeDescriptions(),
+        prog, Vector<VkVertexInputBindingDescription>{VertexDataPosUv::GetBindingDescription() }, VertexDataPosUv::GetAttributeDescriptions(),
         vk.m_SwapchainImageRenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
         VK_POLYGON_MODE_FILL,
@@ -167,7 +162,7 @@ int main()
 
     vk.CreateUniformBuffers<MvpData>(uniformBuffers, uniformBuffersMemory, uniformBuffersMapped);
 
-    CreateDescriptorSets(vk, descriptorSetLayout, imageView, imageSampler);
+    CreateDescriptorSets(vk, prog.m_DescriptorSetLayout, imageView, imageSampler);
 
     while (vk.ShouldRun())
     {    
@@ -196,7 +191,6 @@ int main()
     vkDestroyImageView(vk.m_LogicalDevice, imageView, nullptr);
     vkDestroyImage(vk.m_LogicalDevice, textureImage, nullptr);
     vkFreeMemory(vk.m_LogicalDevice, textureMemory, nullptr);
-    vkDestroyDescriptorSetLayout(vk.m_LogicalDevice, descriptorSetLayout, nullptr);
     vkDestroyPipelineLayout(vk.m_LogicalDevice, pipelineLayout, nullptr);
     vkDestroyPipeline(vk.m_LogicalDevice, pipeline, nullptr);
 
