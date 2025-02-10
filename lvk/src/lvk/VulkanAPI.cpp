@@ -200,7 +200,7 @@ void lvk::VulkanAPI::CreateInstance()
             }
         }
 
-        if (shouldAdd)
+        if (shouldAdd && extension.extensionName != NULL)
         {
             extensionNames.push_back(extension.extensionName);
         }

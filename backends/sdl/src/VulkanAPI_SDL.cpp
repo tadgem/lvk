@@ -1,7 +1,7 @@
 #include "VulkanAPI_SDL.h"
 #include "spdlog/spdlog.h"
-#include "SDL_vulkan.h"
-#include "ImGui/imgui_impl_sdl2.h"
+#include "SDL3/SDL_vulkan.h"
+#include "ImGui/imgui_impl_sdl3.h"
 #include "ImGui/imgui_impl_vulkan.h"
 #include "volk.h"
 #include <filesystem>
@@ -12,30 +12,36 @@ lvk::VulkanAPI_SDL::~VulkanAPI_SDL()
 
 void lvk::VulkanAPI_SDL::HandleSDLEvent(SDL_Event& sdl_event)
 {
-    if (sdl_event.type == SDL_QUIT)
+    if (sdl_event.type == SDL_EVENT_QUIT)
     {
         p_ShouldRun = false;
     }
-    if (sdl_event.type == SDL_WINDOWEVENT) {
-        if (sdl_event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
-            RecreateSwapChain();
-        }
-        if (sdl_event.window.event == SDL_WINDOWEVENT_MAXIMIZED) {
-            RecreateSwapChain();
-        }
+
+    if (sdl_event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
+        RecreateSwapChain();
     }
+    if (sdl_event.type == SDL_EVENT_WINDOW_MAXIMIZED) {
+        RecreateSwapChain();
+    }
+
 }
 std::vector<const char*> lvk::VulkanAPI_SDL::GetRequiredExtensions()
 {
     uint32_t extensionCount = 0;
-    if (SDL_Vulkan_GetInstanceExtensions(nullptr, &extensionCount, nullptr) != SDL_TRUE)
+
+    const char* const * extensionNamesC =
+        SDL_Vulkan_GetInstanceExtensions(&extensionCount);
+    if(extensionCount == 0)
     {
-        spdlog::error("Failed to enumerate instance extensions!");
+        spdlog::error("Failed to enumerate required SDL device extensions");
+        return {};
     }
+    std::vector<const char*> extensionNames;
 
-    std::vector<const char*> extensionNames(extensionCount);
-    SDL_Vulkan_GetInstanceExtensions(m_SdlHandle->m_SdlWindow, &extensionCount, extensionNames.data());
-
+    for(auto i = 0; i < extensionCount; i++)
+    {
+        extensionNames.push_back(extensionNamesC[i]);
+    }
     if (m_UseValidation)
     {
         extensionNames.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
@@ -46,7 +52,10 @@ std::vector<const char*> lvk::VulkanAPI_SDL::GetRequiredExtensions()
 
 void lvk::VulkanAPI_SDL::CreateSurface()
 {
-    if (!SDL_Vulkan_CreateSurface(m_SdlHandle->m_SdlWindow, m_Instance, &m_Surface))
+    // todo: do we want to provide an alloc callback to SDL?
+    const VkAllocationCallbacks* alloc_callback = nullptr;
+    if (!SDL_Vulkan_CreateSurface(
+            m_SdlHandle->m_SdlWindow, m_Instance,alloc_callback, &m_Surface))
     {
         spdlog::error("Failed to create SDL Vulkan surface");
         std::cerr << "Failed to create SDL Vulkan surface";
@@ -80,10 +89,10 @@ void lvk::VulkanAPI_SDL::PreFrame()
     while (SDL_PollEvent(&sdl_event) > 0)
     {
         HandleSDLEvent(sdl_event);
-        ImGui_ImplSDL2_ProcessEvent(&sdl_event);
+        ImGui_ImplSDL3_ProcessEvent(&sdl_event);
     }
     ImGui_ImplVulkan_NewFrame();
-    ImGui_ImplSDL2_NewFrame();
+    ImGui_ImplSDL3_NewFrame();
     ImGui::NewFrame();
 }
 
@@ -105,12 +114,12 @@ void lvk::VulkanAPI_SDL::PostFrame()
 
 void lvk::VulkanAPI_SDL::InitImGuiBackend()
 {
-    ImGui_ImplSDL2_InitForVulkan(m_SdlHandle->m_SdlWindow);
+    ImGui_ImplSDL3_InitForVulkan(m_SdlHandle->m_SdlWindow);
 }
 
 void lvk::VulkanAPI_SDL::CleanupImGuiBackend()
 {
-    ImGui_ImplSDL2_Shutdown();
+    ImGui_ImplSDL3_Shutdown();
 }
 
 void lvk::VulkanAPI_SDL::Run(std::function<void()> callback)
@@ -139,23 +148,24 @@ void lvk::VulkanAPI_SDL::Run(std::function<void()> callback)
 
 VkExtent2D lvk::VulkanAPI_SDL::GetSurfaceExtent(VkSurfaceCapabilitiesKHR surface)
 {
-    SDL_DisplayMode displayMode;
-    SDL_GetCurrentDisplayMode(0, &displayMode);
+    SDL_DisplayID id = SDL_GetPrimaryDisplay();
+    SDL_DisplayMode displayMode = *SDL_GetCurrentDisplayMode(id);
 
     return VkExtent2D();
 }
 
 VkExtent2D lvk::VulkanAPI_SDL::GetMaxFramebufferResolution()
 {
-    auto numDispays = SDL_GetNumVideoDisplays();
+    int numDisplays = 0;
+    SDL_DisplayID* ids = SDL_GetDisplays(&numDisplays);
     VkExtent2D res{};
-    for (auto i = 0; i < numDispays; i++)
+    for (auto i = 0; i < numDisplays; i++)
     {
-        auto displayModes = SDL_GetNumDisplayModes(i);
-        for (int j = 0; j < displayModes; j++)
+        int mode_count = 0;
+        auto* displayModes = SDL_GetFullscreenDisplayModes(ids[i], &mode_count);
+        for (int j = 0; j < mode_count; j++)
         {
-            SDL_DisplayMode displayMode;
-            SDL_GetDisplayMode(i, j, &displayMode);
+            SDL_DisplayMode displayMode = *displayModes[i];
 
             if (res.width < static_cast<uint32_t>(displayMode.w))
             {

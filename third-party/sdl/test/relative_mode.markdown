@@ -5,12 +5,13 @@ See test program at the bottom of this file.
 
 Initial tests:
 
-- When in relative mode, the mouse shouldn't be moveable outside of the window.
-- When the cursor is outside the window when relative mode is enabled, mouse
-  clicks should not go to whatever app was under the cursor previously.
-- When alt/cmd-tabbing between a relative mode app and another app, clicks when
-  in the relative mode app should also not go to whatever app was under the
-  cursor previously.
+ - When in relative mode, the mouse shouldn't be moveable outside of the window.
+ - When the cursor is outside the window when relative mode is enabled, mouse
+   clicks should not go to whatever app was under the cursor previously.
+ - When alt/cmd-tabbing between a relative mode app and another app, clicks when
+   in the relative mode app should also not go to whatever app was under the
+   cursor previously.
+
 
 Code
 ====
@@ -24,7 +25,7 @@ Code
         {
             switch (event.type)
             {
-                case SDL_QUIT:
+                case SDL_EVENT_QUIT:
                     return 1;
                 default:
                     break;
@@ -40,8 +41,8 @@ Code
 
         SDL_Init(SDL_INIT_VIDEO);
 
-        win = SDL_CreateWindow("Test", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, 0);
-        SDL_SetRelativeMouseMode(SDL_TRUE);
+        win = SDL_CreateWindow("Test", 800, 600, 0);
+        SDL_SetWindowRelativeMouseMode(win, true);
 
         while (1)
         {

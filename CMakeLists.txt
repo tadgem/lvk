@@ -6,9 +6,9 @@ set(SDL_STATIC TRUE CACHE INTERNAL TRUE)
 set(CMAKE_SUPPRESS_REGENERATION true)
 # remove INSTALL 
 set(CMAKE_SKIP_INSTALL_RULES true)
-set(SDL2_DISABLE_SDL2MAIN ON CACHE BOOL "Disable SDL Entrypoint")
-set(SDL2_DISABLE_INSTALL ON CACHE BOOL "Disable SDL Install")
-set(SDL2_DISABLE_UNINSTALL ON CACHE BOOL "Disable SDL Uninstall")
+set(SDL3_DISABLE_SDL3MAIN ON CACHE BOOL "Disable SDL Entrypoint")
+set(SDL3_DISABLE_INSTALL ON CACHE BOOL "Disable SDL Install")
+set(SDL3_DISABLE_UNINSTALL ON CACHE BOOL "Disable SDL Uninstall")
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Disable ASSIMP dynamic linking")
 
 add_subdirectory(submodules/glm)
@@ -32,9 +32,8 @@ set(SHADERC_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/submodules/shaderc/libshaderc/i
 set(SHADERC_UTIL_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/submodules/shaderc/libshaderc_util/include CACHE INTERNAL "")
 
 set_target_properties(glm PROPERTIES FOLDER "ThirdParty/glm")
-set_target_properties(sdl_headers_copy PROPERTIES FOLDER "ThirdParty/SDL")
-set_target_properties(SDL2_test PROPERTIES FOLDER "ThirdParty/SDL")
-set_target_properties(SDL2-static PROPERTIES FOLDER "ThirdParty/SDL")
+set_target_properties(SDL3_test PROPERTIES FOLDER "ThirdParty/SDL")
+set_target_properties(SDL3-static PROPERTIES FOLDER "ThirdParty/SDL")
 set_target_properties(spdlog PROPERTIES FOLDER "ThirdParty/spdlog")
 
 add_subdirectory(lvk)

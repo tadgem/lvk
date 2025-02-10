@@ -276,7 +276,8 @@ void lvk::Texture::Free(lvk::VulkanAPI& vk)
     vkDestroyImageView(vk.m_LogicalDevice, m_ImageView, nullptr);
     vkDestroyImage(vk.m_LogicalDevice, m_Image, nullptr);
     vkFreeMemory(vk.m_LogicalDevice, m_Memory, nullptr);
-    if (vk.m_UseImGui)
+    // TODO: Better solution for descriptor sets in ImGui, this currently leaks
+    if (vk.m_UseImGui && false)
     {
         ImGui_ImplVulkan_RemoveTexture(m_ImGuiHandle);
     }
