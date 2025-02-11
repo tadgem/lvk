@@ -14,6 +14,8 @@ add_library(${PROJECT_NAME} STATIC
         src/lvk/DescriptorSetAllocator.cpp
         src/lvk/Pipeline.cpp
         src/lvk/Buffer.cpp
+        src/lvk/Commands.cpp
+        src/lvk/Utils.cpp
         src/ThirdParty/spirv_reflect.c
         src/ImGui/imgui_impl_vulkan.cpp
         src/ImGui/imgui_draw.cpp
@@ -22,6 +24,7 @@ add_library(${PROJECT_NAME} STATIC
         src/ImGui/imgui.cpp
         src/Im3D/im3d.cpp
         src/Im3D/im3d_lvk.cpp
+        include/lvk/lvk.h
         include/lvk/VkBackend.h
         include/lvk/Texture.h
         include/lvk/Framebuffer.h
@@ -33,6 +36,8 @@ add_library(${PROJECT_NAME} STATIC
         include/lvk/Pipeline.h
         include/lvk/Structs.h
         include/lvk/Buffer.h
+        include/lvk/Commands.h
+        include/lvk/Utils.h
         include/Alias.h
         include/ThirdParty/spirv_reflect.h
         include/ThirdParty/VulkanMemoryAllocator.h
