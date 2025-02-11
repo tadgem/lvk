@@ -69,12 +69,6 @@ void lvk::ShaderBufferFrameData::Free(lvk::VulkanAPI& vk)
     m_UniformBuffers.clear();
 }
 
-bool lvk::VulkanAPI::QueueFamilyIndices::IsComplete()
-{
-    bool foundGraphicsQueue = m_QueueFamilies.find(QueueFamilyType::GraphicsAndCompute) != m_QueueFamilies.end();
-    bool foundPresentQueue  = m_QueueFamilies.find(QueueFamilyType::Present) != m_QueueFamilies.end();
-    return foundGraphicsQueue && foundPresentQueue;
-}
 
 VkApplicationInfo lvk::VulkanAPI::CreateAppInfo()
 {
@@ -319,7 +313,7 @@ void lvk::VulkanAPI::Quit()
     p_ShouldRun = false;
 }
 
-lvk::VulkanAPI::QueueFamilyIndices lvk::VulkanAPI::FindQueueFamilies(VkPhysicalDevice m_PhysicalDevice)
+lvk::QueueFamilyIndices lvk::VulkanAPI::FindQueueFamilies(VkPhysicalDevice m_PhysicalDevice)
 {
     QueueFamilyIndices indices;
 
@@ -346,7 +340,7 @@ lvk::VulkanAPI::QueueFamilyIndices lvk::VulkanAPI::FindQueueFamilies(VkPhysicalD
     return indices;
 }
 
-lvk::VulkanAPI::SwapChainSupportDetais lvk::VulkanAPI::GetSwapChainSupportDetails(VkPhysicalDevice physicalDevice)
+lvk::SwapChainSupportDetais lvk::VulkanAPI::GetSwapChainSupportDetails(VkPhysicalDevice physicalDevice)
 {
     SwapChainSupportDetais details;
 
@@ -1914,6 +1908,8 @@ void lvk::VulkanAPI::CreateRenderPass(VkRenderPass& renderPass, Vector<VkAttachm
 }
 #ifdef WIN32
 #include "windows.h"
+#include "lvk/Structs.h"
+
 #include <dwmapi.h>
 #endif
 void lvk::VulkanAPI::Start(const String& appName, uint32_t width, uint32_t height, bool enableSwapchainMsaa)
@@ -2592,3 +2588,4 @@ void lvk::Renderable::RecordGraphicsCommands(VkCommandBuffer& commandBuffer)
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSet, 0, nullptr);
     vkCmdDrawIndexed(commandBuffer, m_Mesh.m_IndexCount, 1, 0, 0, 0);
 }
+
