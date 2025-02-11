@@ -1,9 +1,32 @@
 #pragma once
 #include "lvk/Material.h"
+#include "lvk/Shader.h"
 #include "Im3D/im3d_lvk.h"
 
 namespace lvk
 {
+
+    VkPipeline                          CreateComputePipeline(
+        VkState& vk,
+        StageBinary& comp,
+        VkDescriptorSetLayout& descriptorSetLayout,
+        uint32_t width, uint32_t height,
+        VkPipelineLayout& pipelineLayout);
+
+    VkPipeline                          CreateRasterPipeline(
+        VkState& vk,
+        ShaderProgram& shader,
+        Vector<VkVertexInputBindingDescription>& vertexBindingDescriptions,
+        Vector<VkVertexInputAttributeDescription>& vertexAttributeDescriptions,
+        VkRenderPass& pipelineRenderPass,
+        uint32_t width, uint32_t height,
+        VkPolygonMode polyMode,
+        VkCullModeFlags cullMode,
+        bool enableMultisampling,
+        VkCompareOp depthCompareOp,
+        VkPipelineLayout& pipelineLayout,
+        uint32_t colorAttachmentCount = 1);
+
     struct VkPipelineData
     {
         VkPipelineData(VkPipeline pipeline, VkPipelineLayout layout)

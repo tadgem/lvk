@@ -30,3 +30,18 @@ lvk::ShaderProgram lvk::ShaderProgram::CreateCompute(VkBackend & vk, const Strin
 
     return { Vector<ShaderStage> {comp} , layout };
 }
+VkShaderModule lvk::CreateShaderModule(lvk::VkState &vk,
+                                       const lvk::StageBinary &data) {
+    VkShaderModuleCreateInfo createInfo{};
+    createInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    createInfo.codeSize = static_cast<uint32_t>(data.size());
+    createInfo.pCode    = reinterpret_cast<const uint32_t*>(data.data());
+
+    VkShaderModule shaderModule;
+    if (vkCreateShaderModule(vk.m_LogicalDevice, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
+    {
+        spdlog::error("Failed to create shader module!");
+        std::cerr << "Failed to create shader module" << std::endl;
+    }
+    return shaderModule;
+}

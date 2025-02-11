@@ -3,7 +3,8 @@ project(lvk)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_library(${PROJECT_NAME} STATIC src/lvk/VulkanAPI.cpp
+add_library(${PROJECT_NAME} STATIC
+        src/lvk/VkBackend.cpp
         src/lvk/Texture.cpp
         src/lvk/Framebuffer.cpp
         src/lvk/Mesh.cpp
@@ -11,6 +12,8 @@ add_library(${PROJECT_NAME} STATIC src/lvk/VulkanAPI.cpp
         src/lvk/Shader.cpp
         src/lvk/Structs.cpp
         src/lvk/DescriptorSetAllocator.cpp
+        src/lvk/Pipeline.cpp
+        src/lvk/Buffer.cpp
         src/ThirdParty/spirv_reflect.c
         src/ImGui/imgui_impl_vulkan.cpp
         src/ImGui/imgui_draw.cpp
@@ -29,6 +32,7 @@ add_library(${PROJECT_NAME} STATIC src/lvk/VulkanAPI.cpp
         include/lvk/DescriptorSetAllocator.h
         include/lvk/Pipeline.h
         include/lvk/Structs.h
+        include/lvk/Buffer.h
         include/Alias.h
         include/ThirdParty/spirv_reflect.h
         include/ThirdParty/VulkanMemoryAllocator.h
