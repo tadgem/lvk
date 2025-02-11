@@ -3,7 +3,7 @@
 #include "lvk/Structs.h"
 namespace lvk
 {
-    static VkShaderModule CreateShaderModule(VkState& vk, const StageBinary& data);
+    VkShaderModule CreateShaderModule(VkState& vk, const StageBinary& data);
 
     struct ShaderStage
     {
