@@ -38,7 +38,7 @@ std::vector<const char*> lvk::VulkanAPI_SDL::GetRequiredExtensions()
     }
     std::vector<const char*> extensionNames;
 
-    for(auto i = 0; i < extensionCount; i++)
+    for(uint32_t i = 0; i < extensionCount; i++)
     {
         extensionNames.push_back(extensionNamesC[i]);
     }
@@ -86,7 +86,7 @@ void lvk::VulkanAPI_SDL::PreFrame()
     m_DeltaTime = (currentFrame - p_LastFrameTime) / (double)SDL_GetPerformanceFrequency();
     p_LastFrameTime = currentFrame;
     SDL_Event sdl_event;
-    while (SDL_PollEvent(&sdl_event) > 0)
+    while (SDL_PollEvent(&sdl_event))
     {
         HandleSDLEvent(sdl_event);
         ImGui_ImplSDL3_ProcessEvent(&sdl_event);
@@ -181,7 +181,7 @@ VkExtent2D lvk::VulkanAPI_SDL::GetMaxFramebufferResolution()
     return res;
 }
 
-lvk::VulkanAPI_SDL::VulkanAPI_SDL(bool enableDebugValidation) : VulkanAPI(enableDebugValidation)
+lvk::VulkanAPI_SDL::VulkanAPI_SDL(bool enableDebugValidation) : VkBackend(enableDebugValidation)
 {
     spdlog::info("LVK : current working directory : {}", std::filesystem::current_path().string());
 }

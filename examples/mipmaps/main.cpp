@@ -145,11 +145,13 @@ int main()
 
     VkPipelineLayout pipelineLayout;
 
-    VkPipeline pipeline = vk.CreateRasterizationGraphicsPipeline(
-        tex_prog, Vector<VkVertexInputBindingDescription>{VertexDataPosUv::GetBindingDescription() }, VertexDataPosUv::GetAttributeDescriptions(),
-        vk.m_SwapchainImageRenderPass,
-        vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
-        VK_POLYGON_MODE_FILL,
+    VkPipeline pipeline = vk.CreateRasterPipeline(
+        tex_prog,
+        Vector<VkVertexInputBindingDescription>{
+            VertexDataPosUv::GetBindingDescription()},
+        VertexDataPosUv::GetAttributeDescriptions(),
+        vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent.width,
+        vk.m_SwapChainImageExtent.height, VK_POLYGON_MODE_FILL,
         VK_CULL_MODE_NONE,
         false, // no msaa atm
         VK_COMPARE_OP_LESS, pipelineLayout);

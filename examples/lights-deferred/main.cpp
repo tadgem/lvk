@@ -13,7 +13,7 @@ public:
     Vector<Texture> m_Attachments;
     VkFramebuffer   m_FB;
 
-    void Free(VulkanAPI& vk)
+    void Free(VkBackend & vk)
     {
         for (auto& t : m_Attachments)
         {
@@ -27,7 +27,7 @@ class FramebufferSetEx {
 public:
     Array<FramebufferEx, MAX_FRAMES_IN_FLIGHT> m_Framebuffers;
 
-    void Free(VulkanAPI& vk)
+    void Free(VkBackend & vk)
     {
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
@@ -207,7 +207,7 @@ void UpdateUniformBufferMat(VulkanAPI_SDL& vk, Material& itemMat, ShaderBufferFr
     lightsData.Set(vk.GetFrameIndex(), lightDataCpu);
 }
 
-void CreateGBufferDescriptorSets(VulkanAPI& vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler, Vector<VkDescriptorSet>& descriptorSets, ShaderBufferFrameData& mvpUniformData)
+void CreateGBufferDescriptorSets(VkBackend & vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler, Vector<VkDescriptorSet>& descriptorSets, ShaderBufferFrameData& mvpUniformData)
 {
     std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -373,7 +373,7 @@ void CreateGBufferRenderPass(VulkanAPI_SDL& vk, VkRenderPass& renderPass)
     vk.CreateRenderPass(renderPass, colourAttachmentDescriptions, resolveAttachmentDescriptions, true, depthAttachmentDescription, VK_ATTACHMENT_LOAD_OP_CLEAR);
 }
 
-RenderModel CreateRenderModelGbuffer(VulkanAPI& vk, const String& modelPath, ShaderProgram& shader)
+RenderModel CreateRenderModelGbuffer(VkBackend & vk, const String& modelPath, ShaderProgram& shader)
 {
     Model model;
     LoadModelAssimp(vk, model, modelPath, true);
@@ -395,7 +395,7 @@ RenderModel CreateRenderModelGbuffer(VulkanAPI& vk, const String& modelPath, Sha
     return renderModel;
 }
 
-void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu)
+void OnImGui(VkBackend & vk, DeferredLightData& lightDataCpu)
 {
     if (ImGui::Begin("Debug"))
     {
@@ -484,28 +484,26 @@ int main()
 
     // create gbuffer pipeline
     VkPipelineLayout gbufferPipelineLayout;
-    VkPipeline gbufferPipeline = vk.CreateRasterizationGraphicsPipeline(
-        gbufferProg, Vector<VkVertexInputBindingDescription>{VertexDataPosNormalUv::GetBindingDescription() }, VertexDataPosNormalUv::GetAttributeDescriptions(),
-        gbufferRenderPass,
+    VkPipeline gbufferPipeline = vk.CreateRasterPipeline(
+        gbufferProg,
+        Vector<VkVertexInputBindingDescription>{
+            VertexDataPosNormalUv::GetBindingDescription()},
+        VertexDataPosNormalUv::GetAttributeDescriptions(), gbufferRenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
-        VK_POLYGON_MODE_FILL,
-        VK_CULL_MODE_NONE,
-        false,
-        VK_COMPARE_OP_LESS,
-        gbufferPipelineLayout, 3
-    );
+        VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, false, VK_COMPARE_OP_LESS,
+        gbufferPipelineLayout, 3);
 
     // create present graphics pipeline
     // Pipeline stage?
     VkPipelineLayout lightPassPipelineLayout;
-    VkPipeline pipeline = vk.CreateRasterizationGraphicsPipeline(
-        lightPassProg, Vector<VkVertexInputBindingDescription>{VertexDataPosUv::GetBindingDescription() }, VertexDataPosUv::GetAttributeDescriptions(),
-        vk.m_SwapchainImageRenderPass,
-        vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
-        VK_POLYGON_MODE_FILL,
-        VK_CULL_MODE_NONE,
-        enableMSAA,
-        VK_COMPARE_OP_LESS,
+    VkPipeline pipeline = vk.CreateRasterPipeline(
+        lightPassProg,
+        Vector<VkVertexInputBindingDescription>{
+            VertexDataPosUv::GetBindingDescription()},
+        VertexDataPosUv::GetAttributeDescriptions(),
+        vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent.width,
+        vk.m_SwapChainImageExtent.height, VK_POLYGON_MODE_FILL,
+        VK_CULL_MODE_NONE, enableMSAA, VK_COMPARE_OP_LESS,
         lightPassPipelineLayout);
 
     FramebufferSetEx gbufferSet{};

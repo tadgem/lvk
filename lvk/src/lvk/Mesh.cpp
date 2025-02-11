@@ -14,7 +14,7 @@ static lvk::Vector<uint32_t> g_ScreenSpaceQuadIndexData = {
     0, 1, 2, 2, 3, 0
 };
 
-void lvk::Mesh::InitBuiltInMeshes(lvk::VulkanAPI& vk)
+void lvk::Mesh::InitBuiltInMeshes(lvk::VkBackend & vk)
 {
     VkBuffer vertexBuffer;
     VmaAllocation vertexBufferMemory;
@@ -26,7 +26,7 @@ void lvk::Mesh::InitBuiltInMeshes(lvk::VulkanAPI& vk)
     g_ScreenSpaceQuad = new Mesh { vertexBuffer, vertexBufferMemory, indexBuffer, indexBufferMemory, 6 };
 }
 
-void lvk::Mesh::FreeBuiltInMeshes(lvk::VulkanAPI& vk)
+void lvk::Mesh::FreeBuiltInMeshes(lvk::VkBackend & vk)
 {
     vkDestroyBuffer(vk.m_LogicalDevice, g_ScreenSpaceQuad->m_VertexBuffer, nullptr);
     vmaFreeMemory(vk.m_Allocator, g_ScreenSpaceQuad->m_VertexBufferMemory);
@@ -34,7 +34,7 @@ void lvk::Mesh::FreeBuiltInMeshes(lvk::VulkanAPI& vk)
     vmaFreeMemory(vk.m_Allocator, g_ScreenSpaceQuad->m_IndexBufferMemory);
 }
 
-void lvk::Mesh::Free (VulkanAPI& vk)
+void lvk::Mesh::Free (VkBackend & vk)
 {
     vkDestroyBuffer (vk.m_LogicalDevice, m_VertexBuffer, nullptr);
     vkDestroyBuffer (vk.m_LogicalDevice, m_IndexBuffer, nullptr);

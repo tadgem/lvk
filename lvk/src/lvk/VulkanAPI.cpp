@@ -1,16 +1,17 @@
 #define VMA_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
-#include <cstdint>
-#include <algorithm>
-#include <fstream>
-#include <array>
-#include "lvk/VulkanAPI.h"
-#include "ThirdParty/spirv_reflect.h"
-#include "spdlog/spdlog.h"
+#define VK_NO_PROTOTYPES
 #include "ImGui/imgui_impl_vulkan.h"
-#include "lvk/Texture.h"
+#include "ThirdParty/spirv_reflect.h"
 #include "lvk/Mesh.h"
 #include "lvk/Shader.h"
+#include "lvk/Texture.h"
+#include "lvk/VkBackend.h"
+#include "spdlog/spdlog.h"
+#include <algorithm>
+#include <array>
+#include <cstdint>
+#include <fstream>
 #define VOLK_IMPLEMENTATION
 #include "volk.h"
 #include "shaderc/shaderc.h"
@@ -46,13 +47,13 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
         {
             return VK_FALSE;
         }
-        VulkanAPI* api = (VulkanAPI*)pUserData;
+        VkBackend * api = (VkBackend *)pUserData;
         api->Quit();
     }
     return VK_FALSE;
 }
 
-void lvk::MappedBuffer::Free(VulkanAPI& vk)
+void lvk::MappedBuffer::Free(VkBackend & vk)
 {
     vmaUnmapMemory(vk.m_Allocator, m_GpuMemory);
     vkDestroyBuffer(vk.m_LogicalDevice, m_GpuBuffer, nullptr);
@@ -60,7 +61,7 @@ void lvk::MappedBuffer::Free(VulkanAPI& vk)
 }
 
 
-void lvk::ShaderBufferFrameData::Free(lvk::VulkanAPI& vk)
+void lvk::ShaderBufferFrameData::Free(lvk::VkBackend & vk)
 {
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         m_UniformBuffers[i].Free(vk);
@@ -70,7 +71,7 @@ void lvk::ShaderBufferFrameData::Free(lvk::VulkanAPI& vk)
 }
 
 
-VkApplicationInfo lvk::VulkanAPI::CreateAppInfo()
+VkApplicationInfo lvk::VkBackend::CreateAppInfo()
 {
     VkApplicationInfo appInfo{};
     // each struct needs to explicitly be told its type
@@ -84,7 +85,7 @@ VkApplicationInfo lvk::VulkanAPI::CreateAppInfo()
     return appInfo;
 }
 
-bool lvk::VulkanAPI::CheckValidationLayerSupport()
+bool lvk::VkBackend::CheckValidationLayerSupport()
 {
     uint32_t layerCount;
     if (vkEnumerateInstanceLayerProperties(&layerCount, nullptr) != VK_SUCCESS)
@@ -116,7 +117,7 @@ bool lvk::VulkanAPI::CheckValidationLayerSupport()
     return true;
 }
 
-bool lvk::VulkanAPI::CheckDeviceExtensionSupport(VkPhysicalDevice device)
+bool lvk::VkBackend::CheckDeviceExtensionSupport(VkPhysicalDevice device)
 {
     std::vector<VkExtensionProperties> availableExtensions = GetDeviceAvailableExtensions(device);
 
@@ -137,7 +138,7 @@ bool lvk::VulkanAPI::CheckDeviceExtensionSupport(VkPhysicalDevice device)
 
 }
 
-void lvk::VulkanAPI::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
+void lvk::VkBackend::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
 {
     createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -156,7 +157,7 @@ void lvk::VulkanAPI::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreat
                                     // dont need this right now
 }
 
-void lvk::VulkanAPI::CreateInstance()
+void lvk::VkBackend::CreateInstance()
 {
     if (m_UseValidation && !CheckValidationLayerSupport())
     {
@@ -232,7 +233,7 @@ void lvk::VulkanAPI::CreateInstance()
 
 }
 
-void lvk::VulkanAPI::Cleanup()
+void lvk::VkBackend::Cleanup()
 {
     Texture::FreeDefaultTexture(*this);
     Mesh::FreeBuiltInMeshes(*this);
@@ -241,7 +242,7 @@ void lvk::VulkanAPI::Cleanup()
     CleanupVulkan();
 }
 
-void lvk::VulkanAPI::SetupDebugOutput()
+void lvk::VkBackend::SetupDebugOutput()
 {
     if (!m_UseValidation) return;
 
@@ -266,7 +267,7 @@ void lvk::VulkanAPI::SetupDebugOutput()
 
 }
 
-void lvk::VulkanAPI::CleanupDebugOutput()
+void lvk::VkBackend::CleanupDebugOutput()
 {
     PFN_vkVoidFunction rawFunction = vkGetInstanceProcAddr(m_Instance, "vkDestroyDebugUtilsMessengerEXT");
     auto function = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(rawFunction);
@@ -281,7 +282,7 @@ void lvk::VulkanAPI::CleanupDebugOutput()
     }
 }
 
-void lvk::VulkanAPI::CleanupVulkan()
+void lvk::VkBackend::CleanupVulkan()
 {
     vmaDestroyAllocator(m_Allocator);
     CleanupSwapChain();
@@ -308,12 +309,12 @@ void lvk::VulkanAPI::CleanupVulkan()
     vkDestroyInstance(m_Instance, nullptr);
 }
 
-void lvk::VulkanAPI::Quit()
+void lvk::VkBackend::Quit()
 {
     p_ShouldRun = false;
 }
 
-lvk::QueueFamilyIndices lvk::VulkanAPI::FindQueueFamilies(VkPhysicalDevice m_PhysicalDevice)
+lvk::QueueFamilyIndices lvk::VkBackend::FindQueueFamilies(VkPhysicalDevice m_PhysicalDevice)
 {
     QueueFamilyIndices indices;
 
@@ -340,7 +341,7 @@ lvk::QueueFamilyIndices lvk::VulkanAPI::FindQueueFamilies(VkPhysicalDevice m_Phy
     return indices;
 }
 
-lvk::SwapChainSupportDetais lvk::VulkanAPI::GetSwapChainSupportDetails(VkPhysicalDevice physicalDevice)
+lvk::SwapChainSupportDetais lvk::VkBackend::GetSwapChainSupportDetails(VkPhysicalDevice physicalDevice)
 {
     SwapChainSupportDetais details;
 
@@ -367,7 +368,7 @@ lvk::SwapChainSupportDetais lvk::VulkanAPI::GetSwapChainSupportDetails(VkPhysica
     return details;
 }
 
-bool lvk::VulkanAPI::IsDeviceSuitable(VkPhysicalDevice physicalDevice)
+bool lvk::VkBackend::IsDeviceSuitable(VkPhysicalDevice physicalDevice)
 {
     QueueFamilyIndices indices = FindQueueFamilies(physicalDevice);
     bool extensionsSupported = CheckDeviceExtensionSupport(physicalDevice);
@@ -384,7 +385,7 @@ bool lvk::VulkanAPI::IsDeviceSuitable(VkPhysicalDevice physicalDevice)
     return indices.IsComplete() && extensionsSupported && swapChainSupport && supportedFeatures.samplerAnisotropy && supportedFeatures.wideLines;
 }
 
-uint32_t lvk::VulkanAPI::AssessDeviceSuitability(VkPhysicalDevice m_PhysicalDevice)
+uint32_t lvk::VkBackend::AssessDeviceSuitability(VkPhysicalDevice m_PhysicalDevice)
 {
     uint32_t score = 0;
 
@@ -406,7 +407,7 @@ uint32_t lvk::VulkanAPI::AssessDeviceSuitability(VkPhysicalDevice m_PhysicalDevi
     return score;
 }
 
-void lvk::VulkanAPI::PickPhysicalDevice()
+void lvk::VkBackend::PickPhysicalDevice()
 {
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(m_Instance, &deviceCount, nullptr);
@@ -455,7 +456,7 @@ void lvk::VulkanAPI::PickPhysicalDevice()
     }
 }
 
-void lvk::VulkanAPI::CreateLogicalDevice()
+void lvk::VkBackend::CreateLogicalDevice()
 {
     m_QueueFamilyIndices = FindQueueFamilies(m_PhysicalDevice);
 
@@ -505,14 +506,14 @@ void lvk::VulkanAPI::CreateLogicalDevice()
     volkLoadDevice(m_LogicalDevice);
 }
 
-void lvk::VulkanAPI::GetQueueHandles()
+void lvk::VkBackend::GetQueueHandles()
 {
     vkGetDeviceQueue(m_LogicalDevice, m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::GraphicsAndCompute],    0, &m_GraphicsQueue);
     vkGetDeviceQueue(m_LogicalDevice, m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::GraphicsAndCompute],    0, &m_ComputeQueue);
     vkGetDeviceQueue(m_LogicalDevice, m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Present],               0, &m_PresentQueue);
 }
 
-VkSurfaceFormatKHR lvk::VulkanAPI::ChooseSwapChainSurfaceFormat(std::vector<VkSurfaceFormatKHR> availableFormats)
+VkSurfaceFormatKHR lvk::VkBackend::ChooseSwapChainSurfaceFormat(std::vector<VkSurfaceFormatKHR> availableFormats)
 {
     if (availableFormats.size() == 0)
     {
@@ -533,7 +534,7 @@ VkSurfaceFormatKHR lvk::VulkanAPI::ChooseSwapChainSurfaceFormat(std::vector<VkSu
     return availableFormats[0];
 }
 
-VkPresentModeKHR lvk::VulkanAPI::ChooseSwapChainPresentMode(std::vector<VkPresentModeKHR> availableModes)
+VkPresentModeKHR lvk::VkBackend::ChooseSwapChainPresentMode(std::vector<VkPresentModeKHR> availableModes)
 {
     for (auto const& presentMode : availableModes)
     {
@@ -545,7 +546,7 @@ VkPresentModeKHR lvk::VulkanAPI::ChooseSwapChainPresentMode(std::vector<VkPresen
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D lvk::VulkanAPI::ChooseSwapExtent(VkSurfaceCapabilitiesKHR& surfaceCapabilities)
+VkExtent2D lvk::VkBackend::ChooseSwapExtent(VkSurfaceCapabilitiesKHR& surfaceCapabilities)
 {
     if(surfaceCapabilities.currentExtent.width != UINT32_MAX)
     {
@@ -557,12 +558,12 @@ VkExtent2D lvk::VulkanAPI::ChooseSwapExtent(VkSurfaceCapabilitiesKHR& surfaceCap
     }
 }
 
-VkExtent2D lvk::VulkanAPI::GetMaxFramebufferExtent()
+VkExtent2D lvk::VkBackend::GetMaxFramebufferExtent()
 {
     return p_MaxFramebufferExtent;
 }
 
-void lvk::VulkanAPI::CreateSwapChain()
+void lvk::VkBackend::CreateSwapChain()
 {
     SwapChainSupportDetais swapChainDetails = GetSwapChainSupportDetails(m_PhysicalDevice);
 
@@ -627,7 +628,7 @@ void lvk::VulkanAPI::CreateSwapChain()
     m_SwapChainImageExtent = surfaceExtent;
 }
 
-void lvk::VulkanAPI::CreateSwapChainImageViews()
+void lvk::VkBackend::CreateSwapChainImageViews()
 {
     m_SwapChainImageViews.resize(m_SwapChainImages.size());
 
@@ -637,7 +638,7 @@ void lvk::VulkanAPI::CreateSwapChainImageViews()
     }
 }
 
-void lvk::VulkanAPI::CleanupSwapChain()
+void lvk::VkBackend::CleanupSwapChain()
 {
     for (int i = 0; i < m_SwapChainFramebuffers.size(); i++)
     {
@@ -659,7 +660,7 @@ void lvk::VulkanAPI::CleanupSwapChain()
     vkDestroySwapchainKHR(m_LogicalDevice, m_SwapChain, nullptr);
 }
 
-void lvk::VulkanAPI::RecreateSwapChain()
+void lvk::VkBackend::RecreateSwapChain()
 {
     spdlog::info("VulkanAPI : Recreating Swapchain");
     while (vkDeviceWaitIdle(m_LogicalDevice) != VK_SUCCESS);
@@ -676,7 +677,7 @@ void lvk::VulkanAPI::RecreateSwapChain()
     InitImGui();
 }
 
-void lvk::VulkanAPI::CreateSwapChainColourTexture(bool enableMsaa)
+void lvk::VkBackend::CreateSwapChainColourTexture(bool enableMsaa)
 {
     VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT;
     
@@ -696,7 +697,7 @@ void lvk::VulkanAPI::CreateSwapChainColourTexture(bool enableMsaa)
     CreateImageView(m_SwapChainColourImage, m_SwapChainImageFormat, 1, VK_IMAGE_ASPECT_COLOR_BIT, m_SwapChainColourImageView);
 }
 
-void lvk::VulkanAPI::CreateSwapChainDepthTexture(bool enableMsaa )
+void lvk::VkBackend::CreateSwapChainDepthTexture(bool enableMsaa )
 {
     VkFormat depthFormat = FindDepthFormat();
 
@@ -719,7 +720,7 @@ void lvk::VulkanAPI::CreateSwapChainDepthTexture(bool enableMsaa )
     TransitionImageLayout(m_SwapChainDepthImage, depthFormat, 1, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 }
 
-VkShaderModule lvk::VulkanAPI::CreateShaderModule(const StageBinary& data)
+VkShaderModule lvk::VkBackend::CreateShaderModule(const StageBinary& data)
 {
     VkShaderModuleCreateInfo createInfo{};
     createInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -735,7 +736,7 @@ VkShaderModule lvk::VulkanAPI::CreateShaderModule(const StageBinary& data)
     return shaderModule;
 }
 
-uint32_t lvk::VulkanAPI::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+uint32_t lvk::VkBackend::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
 {
     VkPhysicalDeviceMemoryProperties memProperties;
     vkGetPhysicalDeviceMemoryProperties(m_PhysicalDevice, &memProperties);
@@ -747,7 +748,7 @@ uint32_t lvk::VulkanAPI::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFla
     return UINT32_MAX;
 }
 
-VkFormat lvk::VulkanAPI::FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
+VkFormat lvk::VkBackend::FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
 {
     for (VkFormat format : candidates) {
         VkFormatProperties props;
@@ -764,7 +765,7 @@ VkFormat lvk::VulkanAPI::FindSupportedFormat(const std::vector<VkFormat>& candid
 
 }
 
-VkFormat lvk::VulkanAPI::FindDepthFormat()
+VkFormat lvk::VkBackend::FindDepthFormat()
 {
     return FindSupportedFormat(
         { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
@@ -773,12 +774,12 @@ VkFormat lvk::VulkanAPI::FindDepthFormat()
     );
 }
 
-bool lvk::VulkanAPI::HasStencilComponent(VkFormat& format)
+bool lvk::VkBackend::HasStencilComponent(VkFormat& format)
 {
     return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
-void lvk::VulkanAPI::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
+void lvk::VkBackend::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
 {
     VkBufferCreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -812,7 +813,7 @@ void lvk::VulkanAPI::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, V
     
 }
 
-void lvk::VulkanAPI::CreateBufferVMA(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VmaAllocation& allocation)
+void lvk::VkBackend::CreateBufferVMA(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VmaAllocation& allocation)
 {
     VkBufferCreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -835,7 +836,7 @@ void lvk::VulkanAPI::CreateBufferVMA(VkDeviceSize size, VkBufferUsageFlags usage
     VK_CHECK(vmaCreateBuffer(m_Allocator, &bufferInfo, &allocInfo, &buffer, &allocation, nullptr));
 }
 
-void lvk::VulkanAPI::CreateImage(uint32_t width, uint32_t height, uint32_t numMips, VkSampleCountFlagBits sampleCount, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, uint32_t depth)
+void lvk::VkBackend::CreateImage(uint32_t width, uint32_t height, uint32_t numMips, VkSampleCountFlagBits sampleCount, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, uint32_t depth)
 {
     VkImageCreateInfo imageInfo{};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -869,7 +870,7 @@ void lvk::VulkanAPI::CreateImage(uint32_t width, uint32_t height, uint32_t numMi
     vkBindImageMemory(m_LogicalDevice, image, imageMemory, 0);
 }
 
-void lvk::VulkanAPI::CreateImageView(VkImage& image, VkFormat format, uint32_t numMips, VkImageAspectFlags aspectFlags, VkImageView& imageView, VkImageViewType imageViewType)
+void lvk::VkBackend::CreateImageView(VkImage& image, VkFormat format, uint32_t numMips, VkImageAspectFlags aspectFlags, VkImageView& imageView, VkImageViewType imageViewType)
 {
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -885,7 +886,7 @@ void lvk::VulkanAPI::CreateImageView(VkImage& image, VkFormat format, uint32_t n
     VK_CHECK(vkCreateImageView(m_LogicalDevice, &viewInfo, nullptr, &imageView))
 }
 
-void lvk::VulkanAPI::CreateImageSampler(VkImageView& imageView, uint32_t numMips, VkFilter filterMode, VkSamplerAddressMode addressMode, VkSampler& sampler)
+void lvk::VkBackend::CreateImageSampler(VkImageView& imageView, uint32_t numMips, VkFilter filterMode, VkSamplerAddressMode addressMode, VkSampler& sampler)
 {
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -914,7 +915,7 @@ void lvk::VulkanAPI::CreateImageSampler(VkImageView& imageView, uint32_t numMips
     VK_CHECK(vkCreateSampler(m_LogicalDevice, &samplerInfo, nullptr, &sampler))
 }
 
-void lvk::VulkanAPI::CreateTexture(const String& path, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips)
+void lvk::VkBackend::CreateTexture(const String& path, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips)
 {
     bool generateMips = numMips != nullptr;
 
@@ -965,7 +966,7 @@ void lvk::VulkanAPI::CreateTexture(const String& path, VkFormat format, VkImage&
     vmaFreeMemory(m_Allocator, stagingBufferMemory);
 }
 
-void lvk::VulkanAPI::CreateTextureFromMemory(unsigned char* tex_data, uint32_t dataSize, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips)
+void lvk::VkBackend::CreateTextureFromMemory(unsigned char* tex_data, uint32_t dataSize, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips)
 {
     bool generateMips = numMips != nullptr;
 
@@ -1016,7 +1017,7 @@ void lvk::VulkanAPI::CreateTextureFromMemory(unsigned char* tex_data, uint32_t d
     vmaFreeMemory(m_Allocator, stagingBufferMemory);
 }
 
-void lvk::VulkanAPI::CreateTexture3DFromMemory(unsigned char* tex_data, VkExtent3D extent, uint32_t dataSize, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips)
+void lvk::VkBackend::CreateTexture3DFromMemory(unsigned char* tex_data, VkExtent3D extent, uint32_t dataSize, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips)
 {
     bool generateMips = numMips != nullptr;
 
@@ -1068,7 +1069,7 @@ void lvk::VulkanAPI::CreateTexture3DFromMemory(unsigned char* tex_data, VkExtent
 }
 
 
-void lvk::VulkanAPI::CopyBuffer(VkBuffer& src, VkBuffer& dst, VkDeviceSize size)
+void lvk::VkBackend::CopyBuffer(VkBuffer& src, VkBuffer& dst, VkDeviceSize size)
 {
     // create a new command buffer to record the buffer copy
     VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
@@ -1082,7 +1083,7 @@ void lvk::VulkanAPI::CopyBuffer(VkBuffer& src, VkBuffer& dst, VkDeviceSize size)
     EndSingleTimeCommands(commandBuffer);
 }
 
-void lvk::VulkanAPI::CopyBufferToImage(VkBuffer& src, VkImage& image, uint32_t width, uint32_t height)
+void lvk::VkBackend::CopyBufferToImage(VkBuffer& src, VkImage& image, uint32_t width, uint32_t height)
 {
     VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
 
@@ -1144,7 +1145,7 @@ std::vector<VkDescriptorSetLayoutBinding> CleanDescriptorSetLayout(std::vector<V
     return clean;
 }
 
-void lvk::VulkanAPI::CreateDescriptorSetLayout(std::vector<DescriptorSetLayoutData>& vertLayoutDatas, std::vector<DescriptorSetLayoutData>& fragLayoutDatas, VkDescriptorSetLayout& descriptorSetLayout)
+void lvk::VkBackend::CreateDescriptorSetLayout(std::vector<DescriptorSetLayoutData>& vertLayoutDatas, std::vector<DescriptorSetLayoutData>& fragLayoutDatas, VkDescriptorSetLayout& descriptorSetLayout)
 {
     std::vector<VkDescriptorSetLayoutBinding> bindings;
     uint8_t count = 0;
@@ -1191,7 +1192,7 @@ void lvk::VulkanAPI::CreateDescriptorSetLayout(std::vector<DescriptorSetLayoutDa
     VK_CHECK(vkCreateDescriptorSetLayout(m_LogicalDevice, &layoutInfo, nullptr, &descriptorSetLayout))
 }
 
-void lvk::VulkanAPI::CreateFramebuffer(Vector<VkImageView>& attachments, VkRenderPass renderPass, VkExtent2D extent, VkFramebuffer& framebuffer)
+void lvk::VkBackend::CreateFramebuffer(Vector<VkImageView>& attachments, VkRenderPass renderPass, VkExtent2D extent, VkFramebuffer& framebuffer)
 {
     VkFramebufferCreateInfo framebufferCreateInfo{};
     framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -1205,7 +1206,7 @@ void lvk::VulkanAPI::CreateFramebuffer(Vector<VkImageView>& attachments, VkRende
     VK_CHECK (vkCreateFramebuffer(m_LogicalDevice, &framebufferCreateInfo, nullptr, &framebuffer) != VK_SUCCESS)
 }
 
-VkPipeline lvk::VulkanAPI::CreateRasterizationGraphicsPipeline(ShaderProgram& shader,
+VkPipeline lvk::VkBackend::CreateRasterPipeline(ShaderProgram& shader,
     Vector<VkVertexInputBindingDescription>& vertexBindingDescriptions, Vector<VkVertexInputAttributeDescription>& vertexAttributeDescriptions, 
     VkRenderPass& pipelineRenderPass, 
     uint32_t width, uint32_t height, 
@@ -1214,7 +1215,7 @@ VkPipeline lvk::VulkanAPI::CreateRasterizationGraphicsPipeline(ShaderProgram& sh
     bool enableMultisampling, 
     VkCompareOp depthCompareOp, 
     VkPipelineLayout& pipelineLayout,
-    uint32_t colourAttachmentCount)
+    uint32_t colorAttachmentCount)
 {
     VkShaderModule vertShaderModule = CreateShaderModule(shader.m_Stages[0].m_StageBinary);
     VkShaderModule fragShaderModule = CreateShaderModule(shader.m_Stages[1].m_StageBinary);
@@ -1311,7 +1312,7 @@ VkPipeline lvk::VulkanAPI::CreateRasterizationGraphicsPipeline(ShaderProgram& sh
 
     Vector<VkPipelineColorBlendAttachmentState> colorAttachmentBlendStates;
 
-    for (uint32_t i = 0; i < colourAttachmentCount; i++)
+    for (uint32_t i = 0; i < colorAttachmentCount; i++)
     {
         VkPipelineColorBlendAttachmentState colorBlendAttachment{};
         colorBlendAttachment.colorWriteMask = 
@@ -1449,7 +1450,7 @@ VkPipeline lvk::VulkanAPI::CreateRasterizationGraphicsPipeline(ShaderProgram& sh
     return pipeline;
 }
 
-void lvk::VulkanAPI::CreateSwapChainFramebuffers()
+void lvk::VkBackend::CreateSwapChainFramebuffers()
 {
     m_SwapChainFramebuffers.resize(m_SwapChainImageViews.size());
 
@@ -1476,7 +1477,7 @@ void lvk::VulkanAPI::CreateSwapChainFramebuffers()
     }
 }
 
-void lvk::VulkanAPI::CreateCommandPool()
+void lvk::VkBackend::CreateCommandPool()
 {
     VkCommandPoolCreateInfo createInfo{};
     createInfo.sType                = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -1490,7 +1491,7 @@ void lvk::VulkanAPI::CreateCommandPool()
     }
 }
 
-void lvk::VulkanAPI::CreateDescriptorSetAllocator()
+void lvk::VkBackend::CreateDescriptorSetAllocator()
 {
     m_DescriptorSetAllocator.Init(*this, MAX_FRAMES_IN_FLIGHT * 128, {
         {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0.33f},
@@ -1499,7 +1500,7 @@ void lvk::VulkanAPI::CreateDescriptorSetAllocator()
     });
 }
 
-void lvk::VulkanAPI::CreateSemaphores()
+void lvk::VkBackend::CreateSemaphores()
 {
     m_ImageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     m_RenderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
@@ -1518,7 +1519,7 @@ void lvk::VulkanAPI::CreateSemaphores()
     
 }
 
-void lvk::VulkanAPI::CreateFences()
+void lvk::VkBackend::CreateFences()
 {
     m_FrameInFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
     m_ImagesInFlight.resize(m_SwapChainImages.size(), VK_NULL_HANDLE);
@@ -1537,7 +1538,7 @@ void lvk::VulkanAPI::CreateFences()
     }
 }
 
-void lvk::VulkanAPI::DrawFrame()
+void lvk::VkBackend::DrawFrame()
 {
     vkWaitForFences(m_LogicalDevice, 1, &m_FrameInFlightFences[p_CurrentFrameIndex], VK_TRUE, UINT64_MAX);
 
@@ -1606,7 +1607,7 @@ void lvk::VulkanAPI::DrawFrame()
     p_CurrentFrameIndex = (p_CurrentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-void lvk::VulkanAPI::ListDeviceExtensions(VkPhysicalDevice physicalDevice)
+void lvk::VkBackend::ListDeviceExtensions(VkPhysicalDevice physicalDevice)
 {
     std::vector<VkExtensionProperties> extensions = GetDeviceAvailableExtensions(physicalDevice);
 
@@ -1618,7 +1619,7 @@ void lvk::VulkanAPI::ListDeviceExtensions(VkPhysicalDevice physicalDevice)
     }
 }
 
-std::vector<VkExtensionProperties> lvk::VulkanAPI::GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice)
+std::vector<VkExtensionProperties> lvk::VkBackend::GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice)
 {
     uint32_t extensionCount;
     vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
@@ -1631,7 +1632,7 @@ std::vector<VkExtensionProperties> lvk::VulkanAPI::GetDeviceAvailableExtensions(
 
 }
 
-StageBinary lvk::VulkanAPI::LoadSpirvBinary(const String& path)
+StageBinary lvk::VkBackend::LoadSpirvBinary(const String& path)
 {
     std::ifstream file(path, std::ios::ate | std::ios::binary);
 
@@ -1653,12 +1654,12 @@ StageBinary lvk::VulkanAPI::LoadSpirvBinary(const String& path)
     return data;
 }
 
-VkDescriptorSet lvk::VulkanAPI::CreateDescriptorSet(DescriptorSetLayoutData& layoutData)
+VkDescriptorSet lvk::VkBackend::CreateDescriptorSet(DescriptorSetLayoutData& layoutData)
 {
     return m_DescriptorSetAllocator.Allocate(m_LogicalDevice, layoutData.m_Layout, nullptr);
 }
 
-void lvk::VulkanAPI::CreateBuiltInRenderPasses()
+void lvk::VkBackend::CreateBuiltInRenderPasses()
 {
     {
         Vector<VkAttachmentDescription> colourAttachmentDescriptions{};
@@ -1757,9 +1758,8 @@ void lvk::VulkanAPI::CreateBuiltInRenderPasses()
     }
 }
 
-VkPipeline lvk::VulkanAPI::CreateComputePipeline(StageBinary& comp, VkDescriptorSetLayout& descriptorSetLayout, uint32_t width, uint32_t height, VkPipelineLayout& pipelineLayout)
+VkPipeline lvk::VkBackend::CreateComputePipeline(StageBinary& comp, VkDescriptorSetLayout& descriptorSetLayout, uint32_t width, uint32_t height, VkPipelineLayout& pipelineLayout)
 {
-
     auto compStage = CreateShaderModule(comp);
 
     VkPipelineShaderStageCreateInfo compShaderStageInfo{};
@@ -1783,7 +1783,7 @@ VkPipeline lvk::VulkanAPI::CreateComputePipeline(StageBinary& comp, VkDescriptor
     return VK_NULL_HANDLE;
 }
 
-Vector<VkDescriptorSetLayoutBinding> lvk::VulkanAPI::GetDescriptorSetLayoutBindings(Vector<DescriptorSetLayoutData>& vertLayoutDatas, Vector<DescriptorSetLayoutData>& fragLayoutDatas)
+Vector<VkDescriptorSetLayoutBinding> lvk::VkBackend::GetDescriptorSetLayoutBindings(Vector<DescriptorSetLayoutData>& vertLayoutDatas, Vector<DescriptorSetLayoutData>& fragLayoutDatas)
 {
     Vector<VkDescriptorSetLayoutBinding> bindings;
     uint8_t count = 0;
@@ -1823,7 +1823,7 @@ Vector<VkDescriptorSetLayoutBinding> lvk::VulkanAPI::GetDescriptorSetLayoutBindi
     return CleanDescriptorSetLayout(bindings);
 }
 
-void lvk::VulkanAPI::CreateRenderPass(VkRenderPass& renderPass, Vector<VkAttachmentDescription>& colourAttachments, Vector<VkAttachmentDescription>& resolveAttachments, bool hasDepthAttachment, VkAttachmentDescription depthAttachment, VkAttachmentLoadOp attachmentLoadOp)
+void lvk::VkBackend::CreateRenderPass(VkRenderPass& renderPass, Vector<VkAttachmentDescription>& colourAttachments, Vector<VkAttachmentDescription>& resolveAttachments, bool hasDepthAttachment, VkAttachmentDescription depthAttachment, VkAttachmentLoadOp attachmentLoadOp)
 {
     // Layout: Colour attachments -> Depth attachments -> Resolve attachments
     VkSubpassDescription subpass{};
@@ -1912,7 +1912,7 @@ void lvk::VulkanAPI::CreateRenderPass(VkRenderPass& renderPass, Vector<VkAttachm
 
 #include <dwmapi.h>
 #endif
-void lvk::VulkanAPI::Start(const String& appName, uint32_t width, uint32_t height, bool enableSwapchainMsaa)
+void lvk::VkBackend::Start(const String& appName, uint32_t width, uint32_t height, bool enableSwapchainMsaa)
 {
     p_AppName = appName;
 #ifdef WIN32
@@ -1949,7 +1949,7 @@ lvk::ShaderBindingType GetBindingType(const SpvReflectDescriptorBinding& binding
     return ShaderBindingType::UniformBuffer;
 }
 
-Vector<DescriptorSetLayoutData> lvk::VulkanAPI::ReflectDescriptorSetLayouts(StageBinary& stageBin)
+Vector<DescriptorSetLayoutData> lvk::VkBackend::ReflectDescriptorSetLayouts(StageBinary& stageBin)
 {
     SpvReflectShaderModule shaderReflectModule;
     SpvReflectResult result = spvReflectCreateShaderModule(stageBin.size(), stageBin.data(), &shaderReflectModule);
@@ -2050,7 +2050,7 @@ Vector<DescriptorSetLayoutData> lvk::VulkanAPI::ReflectDescriptorSetLayouts(Stag
     return layoutDatas;
 }
 
-Vector<PushConstantBlock> lvk::VulkanAPI::ReflectPushConstants(StageBinary& stageBin)
+Vector<PushConstantBlock> lvk::VkBackend::ReflectPushConstants(StageBinary& stageBin)
 {
     Vector<PushConstantBlock> pushConstants{};
     SpvReflectShaderModule shaderReflectModule;
@@ -2072,7 +2072,7 @@ Vector<PushConstantBlock> lvk::VulkanAPI::ReflectPushConstants(StageBinary& stag
     return pushConstants;
 }
 
-void lvk::VulkanAPI::CreateCommandBuffers()
+void lvk::VkBackend::CreateCommandBuffers()
 {
     m_CommandBuffers.resize(m_SwapChainFramebuffers.size());
 
@@ -2086,7 +2086,7 @@ void lvk::VulkanAPI::CreateCommandBuffers()
 
 }
 
-void lvk::VulkanAPI::ClearCommandBuffers()
+void lvk::VkBackend::ClearCommandBuffers()
 {
     for (uint32_t i = 0; i < m_CommandBuffers.size(); i++)
     {
@@ -2094,7 +2094,7 @@ void lvk::VulkanAPI::ClearCommandBuffers()
     }
 }
 
-void lvk::VulkanAPI::CreateVmaAllocator()
+void lvk::VkBackend::CreateVmaAllocator()
 {
     VmaVulkanFunctions vulkanFunctions = {};
     vulkanFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
@@ -2111,7 +2111,7 @@ void lvk::VulkanAPI::CreateVmaAllocator()
     VK_CHECK(vmaCreateAllocator(&allocatorCreateInfo, &m_Allocator));
 }
 
-void lvk::VulkanAPI::GetMaxUsableSampleCount()
+void lvk::VkBackend::GetMaxUsableSampleCount()
 {
     VkPhysicalDeviceProperties physicalDeviceProperties;
     vkGetPhysicalDeviceProperties(m_PhysicalDevice, &physicalDeviceProperties);
@@ -2130,7 +2130,7 @@ void lvk::VulkanAPI::GetMaxUsableSampleCount()
     if (counts & VK_SAMPLE_COUNT_2_BIT) {   m_MaxMsaaSamples = VK_SAMPLE_COUNT_2_BIT;   return ;}
 }
 
-void lvk::VulkanAPI::InitVulkan(bool enableSwapchainMsaa)
+void lvk::VkBackend::InitVulkan(bool enableSwapchainMsaa)
 {
     p_CurrentFrameIndex = 0;
     m_EnableSwapchainMsaa = enableSwapchainMsaa;
@@ -2156,7 +2156,7 @@ void lvk::VulkanAPI::InitVulkan(bool enableSwapchainMsaa)
     CreateVmaAllocator();
 }
 
-void lvk::VulkanAPI::InitImGui()
+void lvk::VkBackend::InitImGui()
 {
     if (!m_UseImGui)
     {
@@ -2193,7 +2193,7 @@ void lvk::VulkanAPI::InitImGui()
 
 }
 
-void lvk::VulkanAPI::RenderImGui()
+void lvk::VkBackend::RenderImGui()
 {    
     ImGui::Render();
     VkCommandBuffer imguiCommandBuffer = BeginSingleTimeCommands();
@@ -2218,7 +2218,7 @@ void lvk::VulkanAPI::RenderImGui()
     EndSingleTimeCommands(imguiCommandBuffer);
 }
 
-VkCommandBuffer lvk::VulkanAPI::BeginSingleTimeCommands()
+VkCommandBuffer lvk::VkBackend::BeginSingleTimeCommands()
 {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -2238,7 +2238,7 @@ VkCommandBuffer lvk::VulkanAPI::BeginSingleTimeCommands()
     return commandBuffer;
 }
 
-void lvk::VulkanAPI::EndSingleTimeCommands(VkCommandBuffer& commandBuffer)
+void lvk::VkBackend::EndSingleTimeCommands(VkCommandBuffer& commandBuffer)
 {
     vkEndCommandBuffer(commandBuffer);
 
@@ -2253,7 +2253,7 @@ void lvk::VulkanAPI::EndSingleTimeCommands(VkCommandBuffer& commandBuffer)
     vkFreeCommandBuffers(m_LogicalDevice , m_GraphicsQueueCommandPool, 1, &commandBuffer);
 }
 
-VkCommandBuffer& VulkanAPI::BeginGraphicsCommands(uint32_t frameIndex) {
+VkCommandBuffer&VkBackend::BeginGraphicsCommands(uint32_t frameIndex) {
     VkCommandBufferBeginInfo commandBufferBeginInfo{};
     commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     commandBufferBeginInfo.flags = 0;
@@ -2263,13 +2263,13 @@ VkCommandBuffer& VulkanAPI::BeginGraphicsCommands(uint32_t frameIndex) {
     return m_CommandBuffers[frameIndex];
 }
 
-void VulkanAPI::EndGraphicsCommands(uint32_t frameIndex) {
+void VkBackend::EndGraphicsCommands(uint32_t frameIndex) {
     VK_CHECK(vkEndCommandBuffer(m_CommandBuffers[frameIndex]));
 }
 
 
 
-void lvk::VulkanAPI::RecordGraphicsCommands(std::function<void(VkCommandBuffer&, uint32_t)> graphicsCommandsCallback)
+void lvk::VkBackend::RecordGraphicsCommands(std::function<void(VkCommandBuffer&, uint32_t)> graphicsCommandsCallback)
 {
     for (uint32_t i = 0; i < m_CommandBuffers.size(); i++)
     {
@@ -2288,7 +2288,7 @@ void lvk::VulkanAPI::RecordGraphicsCommands(std::function<void(VkCommandBuffer&,
     } 
 }
 
-void lvk::VulkanAPI::TransitionImageLayout(VkImage image, VkFormat format, uint32_t numMips, VkImageLayout oldLayout, VkImageLayout newLayout)
+void lvk::VkBackend::TransitionImageLayout(VkImage image, VkFormat format, uint32_t numMips, VkImageLayout oldLayout, VkImageLayout newLayout)
 {
     VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
 
@@ -2367,7 +2367,7 @@ void lvk::VulkanAPI::TransitionImageLayout(VkImage image, VkFormat format, uint3
     EndSingleTimeCommands(commandBuffer);
 }
 
-void lvk::VulkanAPI::GenerateMips(VkImage image, VkFormat format, uint32_t imageWidth, uint32_t imageHeight, uint32_t numMips, VkFilter filterMethod)
+void lvk::VkBackend::GenerateMips(VkImage image, VkFormat format, uint32_t imageWidth, uint32_t imageHeight, uint32_t numMips, VkFilter filterMethod)
 {
     VkFormatProperties formatProperties;
     vkGetPhysicalDeviceFormatProperties(m_PhysicalDevice, format, &formatProperties);
@@ -2446,7 +2446,7 @@ void lvk::VulkanAPI::GenerateMips(VkImage image, VkFormat format, uint32_t image
     EndSingleTimeCommands(cmd);
 }
 
-void lvk::VulkanAPI::CreateIndexBuffer(std::vector<uint32_t> indices, VkBuffer& buffer, VmaAllocation& deviceMemory)
+void lvk::VkBackend::CreateIndexBuffer(std::vector<uint32_t> indices, VkBuffer& buffer, VmaAllocation& deviceMemory)
 {
     VkDeviceSize bufferSize = sizeof(uint32_t) * indices.size();
 
@@ -2538,13 +2538,13 @@ ShaderBufferMemberType lvk::GetTypeFromSpvReflect(SpvReflectTypeDescription* typ
 }
 
 
-void lvk::VulkanAPI::CreateMappedBuffer(MappedBuffer& buf, VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags memoryProperties, uint32_t size)
+void lvk::VkBackend::CreateMappedBuffer(MappedBuffer& buf, VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags memoryProperties, uint32_t size)
 {
     CreateBufferVMA(VkDeviceSize{ size }, bufferUsage, memoryProperties, buf.m_GpuBuffer, buf.m_GpuMemory);
     VK_CHECK(vmaMapMemory(m_Allocator, buf.m_GpuMemory, &buf.m_MappedAddr));
 }
 
-void lvk::VulkanAPI::CreateUniformBuffers (ShaderBufferFrameData& uniformData, VkDeviceSize bufferSize)
+void lvk::VkBackend::CreateUniformBuffers (ShaderBufferFrameData& uniformData, VkDeviceSize bufferSize)
 {
 	uniformData.m_UniformBuffers.resize (MAX_FRAMES_IN_FLIGHT);
 
@@ -2555,7 +2555,7 @@ void lvk::VulkanAPI::CreateUniformBuffers (ShaderBufferFrameData& uniformData, V
 }
 
 
-void lvk::VulkanAPI::CleanupImGui()
+void lvk::VkBackend::CleanupImGui()
 {
     if (m_UseImGui)
     {
@@ -2566,7 +2566,7 @@ void lvk::VulkanAPI::CleanupImGui()
     }
 }
 
-VulkanAPI::VulkanAPI(bool enableDebugValidation) : m_UseValidation(enableDebugValidation)
+VkBackend::VkBackend(bool enableDebugValidation) : m_UseValidation(enableDebugValidation)
 {
 
 }

@@ -1,6 +1,6 @@
 #pragma once
-#include "lvk/VulkanAPI.h"
 #include "glm/glm.hpp"
+#include "lvk/VkBackend.h"
 
 namespace lvk
 {
@@ -148,13 +148,13 @@ namespace lvk
 
         uint32_t m_IndexCount = 0;
 
-        void Free(VulkanAPI& vk);
+        void Free(VkBackend & vk);
 
         static Mesh* g_ScreenSpaceQuad;
         static Mesh* g_Cube;
 
-        static void InitBuiltInMeshes(lvk::VulkanAPI& vk);
-        static void FreeBuiltInMeshes(lvk::VulkanAPI& vk);
+        static void InitBuiltInMeshes(lvk::VkBackend & vk);
+        static void FreeBuiltInMeshes(lvk::VkBackend & vk);
     };
 
     class Renderable

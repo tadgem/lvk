@@ -143,7 +143,7 @@ void UpdateUniformBuffer(VulkanAPI_SDL& vk, Material& renderItemMaterial, Materi
     lightPassMaterial.SetBuffer(vk.GetFrameIndex(), 0, 4, lightDataCpu);
 }
 
-RenderModel CreateRenderModelGbuffer(VulkanAPI& vk, const String& modelPath, ShaderProgram& shader)
+RenderModel CreateRenderModelGbuffer(VkBackend & vk, const String& modelPath, ShaderProgram& shader)
 {
     Model model;
     LoadModelAssimp(vk, model, modelPath, true);
@@ -165,7 +165,7 @@ RenderModel CreateRenderModelGbuffer(VulkanAPI& vk, const String& modelPath, Sha
     return renderModel;
 }
 
-void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu)
+void OnImGui(VkBackend & vk, DeferredLightData& lightDataCpu)
 {
     if (ImGui::Begin("Debug"))
     {
@@ -286,26 +286,27 @@ int main() {
 
     // create gbuffer pipeline
     VkPipelineLayout gbufferPipelineLayout;
-    VkPipeline gbufferPipeline = vk.CreateRasterizationGraphicsPipeline(
+    VkPipeline gbufferPipeline = vk.CreateRasterPipeline(
         gbufferProg,
-        Vector<VkVertexInputBindingDescription>{VertexDataPosNormalUv::GetBindingDescription() },
-        VertexDataPosNormalUv::GetAttributeDescriptions(),
-        gbuffer.m_RenderPass,
+        Vector<VkVertexInputBindingDescription>{
+            VertexDataPosNormalUv::GetBindingDescription()},
+        VertexDataPosNormalUv::GetAttributeDescriptions(), gbuffer.m_RenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
-        VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, false,
-        VK_COMPARE_OP_LESS, gbufferPipelineLayout, 3);
+        VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, false, VK_COMPARE_OP_LESS,
+        gbufferPipelineLayout, 3);
 
     // create present graphics pipeline
     // Pipeline stage?
     VkPipelineLayout lightPassPipelineLayout;
-    VkPipeline pipeline = vk.CreateRasterizationGraphicsPipeline(
+    VkPipeline pipeline = vk.CreateRasterPipeline(
         lightPassProg,
-        Vector<VkVertexInputBindingDescription>{VertexDataPosUv::GetBindingDescription() },
+        Vector<VkVertexInputBindingDescription>{
+            VertexDataPosUv::GetBindingDescription()},
         VertexDataPosUv::GetAttributeDescriptions(),
-        vk.m_SwapchainImageRenderPass,
-        vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
-        VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, enableMSAA,
-        VK_COMPARE_OP_LESS, lightPassPipelineLayout);
+        vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent.width,
+        vk.m_SwapChainImageExtent.height, VK_POLYGON_MODE_FILL,
+        VK_CULL_MODE_NONE, enableMSAA, VK_COMPARE_OP_LESS,
+        lightPassPipelineLayout);
 
     // create vertex and index buffer
     // allocate materials instead of raw buffers etc.

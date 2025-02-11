@@ -24,7 +24,7 @@ struct ViewData
     Mesh        m_ViewQuad;
 };
 
-ViewData CreateView(VulkanAPI& vk, LvkIm3dState im3dState, ShaderProgram gbufferProg, ShaderProgram lightPassProg)
+ViewData CreateView(VkBackend & vk, LvkIm3dState im3dState, ShaderProgram gbufferProg, ShaderProgram lightPassProg)
 {
     Framebuffer gbuffer{};
     gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
@@ -50,26 +50,26 @@ ViewData CreateView(VulkanAPI& vk, LvkIm3dState im3dState, ShaderProgram gbuffer
 
     // create gbuffer pipeline
     VkPipelineLayout gbufferPipelineLayout;
-    VkPipeline gbufferPipeline = vk.CreateRasterizationGraphicsPipeline(
+    VkPipeline gbufferPipeline = vk.CreateRasterPipeline(
         gbufferProg,
-        Vector<VkVertexInputBindingDescription>{VertexDataPosNormalUv::GetBindingDescription() },
-        VertexDataPosNormalUv::GetAttributeDescriptions(),
-        gbuffer.m_RenderPass,
+        Vector<VkVertexInputBindingDescription>{
+            VertexDataPosNormalUv::GetBindingDescription()},
+        VertexDataPosNormalUv::GetAttributeDescriptions(), gbuffer.m_RenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
-        VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, false,
-        VK_COMPARE_OP_LESS, gbufferPipelineLayout, 3);
+        VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, false, VK_COMPARE_OP_LESS,
+        gbufferPipelineLayout, 3);
 
     // create present graphics pipeline
     // Pipeline stage?
     VkPipelineLayout lightPassPipelineLayout;
-    VkPipeline pipeline = vk.CreateRasterizationGraphicsPipeline(
+    VkPipeline pipeline = vk.CreateRasterPipeline(
         lightPassProg,
-        Vector<VkVertexInputBindingDescription>{VertexDataPosUv::GetBindingDescription() },
-        VertexDataPosUv::GetAttributeDescriptions(),
-        finalImage.m_RenderPass,
+        Vector<VkVertexInputBindingDescription>{
+            VertexDataPosUv::GetBindingDescription()},
+        VertexDataPosUv::GetAttributeDescriptions(), finalImage.m_RenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
-        VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, false,
-        VK_COMPARE_OP_LESS, lightPassPipelineLayout);
+        VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, false, VK_COMPARE_OP_LESS,
+        lightPassPipelineLayout);
 
     auto im3dViewState = AddIm3dForViewport(vk, im3dState, finalImage.m_RenderPass, false);
 
@@ -97,14 +97,14 @@ ViewData CreateView(VulkanAPI& vk, LvkIm3dState im3dState, ShaderProgram gbuffer
     return { gbuffer, finalImage, lightPassMat, gbufferPipeline, pipeline, gbufferPipelineLayout, lightPassPipelineLayout, im3dViewState , {1920, 1080}, {},  screenQuad };
 }
 
-void FreeView(VulkanAPI& vk, ViewData& view)
+void FreeView(VkBackend & vk, ViewData& view)
 {
     FreeIm3dViewport(vk, view.m_Im3dState);
 }
 
 static Transform g_Transform;
 
-void UpdateRenderItemUniformBuffer(VulkanAPI& vk, Material& renderItemMaterial)
+void UpdateRenderItemUniformBuffer(VkBackend & vk, Material& renderItemMaterial)
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -117,7 +117,7 @@ void UpdateRenderItemUniformBuffer(VulkanAPI& vk, Material& renderItemMaterial)
     renderItemMaterial.SetBuffer(vk.GetFrameIndex(), 0, 0, ubo);
 }
 
-void UpdateViewData(VulkanAPI& vk, ViewData* view, DeferredLightData& lightData)
+void UpdateViewData(VkBackend & vk, ViewData* view, DeferredLightData& lightData)
 {
     glm::quat qPitch = glm::angleAxis(glm::radians(-view->m_Camera.Rotation.x), glm::vec3(1, 0, 0));
     glm::quat qYaw = glm::angleAxis(glm::radians(view->m_Camera.Rotation.y), glm::vec3(0, 1, 0));
@@ -316,7 +316,7 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk, Vector<ViewData*> views, RenderMo
     );
 }
 
-RenderModel CreateRenderModelGbuffer(VulkanAPI& vk, const String& modelPath, ShaderProgram& shader)
+RenderModel CreateRenderModelGbuffer(VkBackend & vk, const String& modelPath, ShaderProgram& shader)
 {
     Model model;
     LoadModelAssimp(vk, model, modelPath, true);
@@ -338,7 +338,7 @@ RenderModel CreateRenderModelGbuffer(VulkanAPI& vk, const String& modelPath, Sha
     return renderModel;
 }
 
-void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu, Vector<ViewData*> views)
+void OnImGui(VkBackend & vk, DeferredLightData& lightDataCpu, Vector<ViewData*> views)
 {
 
     if (ImGui::Begin("View 1"))

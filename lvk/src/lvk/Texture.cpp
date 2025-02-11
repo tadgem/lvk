@@ -259,18 +259,18 @@ static unsigned char p_DefaultTextureBytesPNG[] = {
   0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82
 };
 
-void lvk::Texture::InitDefaultTexture(lvk::VulkanAPI& vk)
+void lvk::Texture::InitDefaultTexture(lvk::VkBackend & vk)
 {
 	g_DefaultTexture = new Texture(Texture::CreateTextureFromMemory(vk, &p_DefaultTextureBytesPNG[0], p_DefaultTextureBytesPNG_Length, VK_FORMAT_R8G8B8A8_UNORM));
 }
 
-void lvk::Texture::FreeDefaultTexture(lvk::VulkanAPI& vk)
+void lvk::Texture::FreeDefaultTexture(lvk::VkBackend & vk)
 {
 	g_DefaultTexture->Free(vk);
 	delete g_DefaultTexture;
 }
 
-void lvk::Texture::Free(lvk::VulkanAPI& vk)
+void lvk::Texture::Free(lvk::VkBackend & vk)
 {
     vkDestroySampler(vk.m_LogicalDevice, m_Sampler, nullptr);
     vkDestroyImageView(vk.m_LogicalDevice, m_ImageView, nullptr);

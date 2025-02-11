@@ -14,7 +14,7 @@ namespace lvk
 
     	VkPipelineData() = default;
 
-    	void Free(VulkanAPI& vk)
+    	void Free(VkBackend & vk)
     	{
     		vkDestroyPipelineLayout (vk.m_LogicalDevice, m_PipelineLayout, nullptr);
     		vkDestroyPipeline(vk.m_LogicalDevice, m_Pipeline, nullptr);
@@ -34,7 +34,7 @@ namespace lvk
         Optional<Framebuffer*>              m_OutputFramebuffer;
         LvkIm3dViewState* m_Im3dState = nullptr;
 
-        Framebuffer* AddFramebuffer(VulkanAPI& vk)
+        Framebuffer* AddFramebuffer(VkBackend & vk)
         {
             m_FBs.push_back(new Framebuffer());
             return m_FBs[m_FBs.size() - 1];
@@ -54,25 +54,25 @@ namespace lvk
             return nullptr;
         }
 
-        Material* AddMaterial(VulkanAPI& vk, ShaderProgram& prog)
+        Material* AddMaterial(VkBackend & vk, ShaderProgram& prog)
         {
             m_PipelineMaterials.push_back(new Material(Material::Create(vk, prog)));
             return m_PipelineMaterials.back();
         }
 
-        VkPipelineData* AddPipeline(VulkanAPI& vk, VkPipeline pipeline, VkPipelineLayout layout)
+        VkPipelineData* AddPipeline(VkBackend & vk, VkPipeline pipeline, VkPipelineLayout layout)
         {
             m_PipelineDatas.emplace_back(new VkPipelineData(pipeline, layout));
             return m_PipelineDatas.back();
         }
 
-        LvkIm3dViewState* AddIm3d(VulkanAPI& vk, LvkIm3dState im3dState)
+        LvkIm3dViewState* AddIm3d(VkBackend & vk, LvkIm3dState im3dState)
         {
             m_Im3dState = new LvkIm3dViewState(AddIm3dForViewport(vk, im3dState, m_OutputFramebuffer.value()->m_RenderPass, false));
             return m_Im3dState;
         }
 
-    	void Free(VulkanAPI& vk)
+    	void Free(VkBackend & vk)
         {
         	if(m_Im3dState != nullptr) {
         		lvk::FreeIm3dViewport (vk,*m_Im3dState);
@@ -104,7 +104,7 @@ namespace lvk
 
         Optional<_Ty>   m_CommandCallback;
 
-        Framebuffer* AddFramebuffer(VulkanAPI& vk)
+        Framebuffer* AddFramebuffer(VkBackend & vk)
         {
             m_FBs.push_back(new Framebuffer());
             return m_FBs[m_FBs.size() - 1];
@@ -124,19 +124,19 @@ namespace lvk
             return nullptr;
         }
 
-        Material* AddMaterial(VulkanAPI& vk, ShaderProgram& prog)
+        Material* AddMaterial(VkBackend & vk, ShaderProgram& prog)
         {
             m_PipelineMaterials.push_back(new Material(Material::Create(vk, prog)));
             return m_PipelineMaterials.back();
         }
 
-        VkPipelineData* AddPipeline(VulkanAPI& vk, VkPipeline pipeline, VkPipelineLayout layout)
+        VkPipelineData* AddPipeline(VkBackend & vk, VkPipeline pipeline, VkPipelineLayout layout)
         {
             m_PipelineDatas.emplace_back(new VkPipelineData(pipeline, layout));
             return m_PipelineDatas.back();
         }
 
-        LvkIm3dViewState* AddIm3d(VulkanAPI& vk, LvkIm3dState im3dState)
+        LvkIm3dViewState* AddIm3d(VkBackend & vk, LvkIm3dState im3dState)
         {
             m_Im3dState = new LvkIm3dViewState(AddIm3dForViewport(vk, im3dState, m_OutputFramebuffer.value()->m_RenderPass, false));
             return m_Im3dState;

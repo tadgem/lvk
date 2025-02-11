@@ -3,7 +3,7 @@
 #include "lvk/Texture.h"
 #include "volk.h"
 
-static auto collect_uniform_data = [](lvk::ShaderStage& stage, lvk::Material &mat, lvk::VulkanAPI& vk)
+static auto collect_uniform_data = [](lvk::ShaderStage& stage, lvk::Material &mat, lvk::VkBackend & vk)
     {
         using namespace lvk;
 
@@ -58,7 +58,7 @@ static auto collect_uniform_data = [](lvk::ShaderStage& stage, lvk::Material &ma
     };
 
 // todo: add ability to add existing buffers when creating the material
-lvk::Material lvk::Material::Create(VulkanAPI& vk, ShaderProgram& shader)
+lvk::Material lvk::Material::Create(VkBackend & vk, ShaderProgram& shader)
 {
     Material mat{};
 
@@ -137,7 +137,7 @@ lvk::Material lvk::Material::Create(VulkanAPI& vk, ShaderProgram& shader)
     return mat;
 }
 
-bool lvk::Material::SetSampler(VulkanAPI& vk, const String& name, const VkImageView& imageView, const VkSampler& sampler, bool isAttachment)
+bool lvk::Material::SetSampler(VkBackend & vk, const String& name, const VkImageView& imageView, const VkSampler& sampler, bool isAttachment)
 {
     if (m_Samplers.find(name) == m_Samplers.end())
     {
@@ -168,7 +168,7 @@ bool lvk::Material::SetSampler(VulkanAPI& vk, const String& name, const VkImageV
     return true;
 }
 
-bool lvk::Material::SetColourAttachment(VulkanAPI& vk, const String& name, Framebuffer& framebuffer, uint32_t colourAttachmentIndex)
+bool lvk::Material::SetColourAttachment(VkBackend & vk, const String& name, Framebuffer& framebuffer, uint32_t colourAttachmentIndex)
 {
     if (m_Samplers.find(name) == m_Samplers.end())
     {
@@ -201,7 +201,7 @@ bool lvk::Material::SetColourAttachment(VulkanAPI& vk, const String& name, Frame
 
 }
 
-bool lvk::Material::SetDepthAttachment(VulkanAPI& vk, const String& name, Framebuffer& framebuffer)
+bool lvk::Material::SetDepthAttachment(VkBackend & vk, const String& name, Framebuffer& framebuffer)
 {
     if (m_Samplers.find(name) == m_Samplers.end())
     {
@@ -232,7 +232,7 @@ bool lvk::Material::SetDepthAttachment(VulkanAPI& vk, const String& name, Frameb
     return true;
 }
 
-void lvk::Material::Free(VulkanAPI& vk)
+void lvk::Material::Free(VkBackend & vk)
 {
     m_UniformBufferAccessors.clear();
 

@@ -19,7 +19,7 @@ add_library(${PROJECT_NAME} STATIC src/lvk/VulkanAPI.cpp
         src/ImGui/imgui.cpp
         src/Im3D/im3d.cpp
         src/Im3D/im3d_lvk.cpp
-        include/lvk/VulkanAPI.h
+        include/lvk/VkBackend.h
         include/lvk/Texture.h
         include/lvk/Framebuffer.h
         include/lvk/Mesh.h
@@ -55,11 +55,12 @@ set(LVK_INCLUDES    ${Vulkan_INCLUDE_DIRS}
                     ${CMAKE_CURRENT_SOURCE_DIR}/include CACHE INTERNAL "")
 target_include_directories(${PROJECT_NAME} PUBLIC ${LVK_INCLUDES})
 
-
+set(LVK_COMPILE_DEFS "/DIMGUI_IMPL_VULKAN_USE_VOLK")
 if (MSVC)
-    target_compile_options(${PROJECT_NAME} PRIVATE "/bigobj" "/MP" "/Zi")
+    set(${LVK_COMPILE_DEFS} ${LVK_COMPILE_DEFS} "/bigobj" "/MP" "/Zi")
     set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<$<CONFIG:Debug,Release>:ProgramDatabase>")
 endif ()
 
+target_compile_options(${PROJECT_NAME} PRIVATE ${LVK_COMPILE_DEFS})
 
 target_link_libraries(${PROJECT_NAME} volk spdlog shaderc shaderc_util)

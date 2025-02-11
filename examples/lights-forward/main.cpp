@@ -223,15 +223,14 @@ int main()
 
     // Pipeline stage?
     VkPipelineLayout pipelineLayout;
-    VkPipeline pipeline = vk.CreateRasterizationGraphicsPipeline(
-        lights_prog, Vector<VkVertexInputBindingDescription>{VertexDataPosNormalUv::GetBindingDescription() }, VertexDataPosNormalUv::GetAttributeDescriptions(),
-        vk.m_SwapchainImageRenderPass,
-        vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
-        VK_POLYGON_MODE_FILL,
-        VK_CULL_MODE_NONE,
-        enableMSAA,
-        VK_COMPARE_OP_LESS,
-        pipelineLayout);
+    VkPipeline pipeline = vk.CreateRasterPipeline(
+        lights_prog,
+        Vector<VkVertexInputBindingDescription>{
+            VertexDataPosNormalUv::GetBindingDescription()},
+        VertexDataPosNormalUv::GetAttributeDescriptions(),
+        vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent.width,
+        vk.m_SwapChainImageExtent.height, VK_POLYGON_MODE_FILL,
+        VK_CULL_MODE_NONE, enableMSAA, VK_COMPARE_OP_LESS, pipelineLayout);
 
     // create vertex and index buffer
     Model model;

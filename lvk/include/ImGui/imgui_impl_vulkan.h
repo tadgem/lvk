@@ -55,11 +55,9 @@
 #endif
 
 // Vulkan includes
-#ifdef IMGUI_IMPL_VULKAN_USE_VOLK
-#include <Volk/volk.h>
-#else
-#include <vulkan/vulkan.h>
-#endif
+#define VK_NO_PROTOTYPES
+#include <volk.h>
+
 #if defined(VK_VERSION_1_3) || defined(VK_KHR_dynamic_rendering)
 #define IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING
 #endif

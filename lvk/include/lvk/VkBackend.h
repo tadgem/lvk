@@ -1,7 +1,6 @@
 #pragma once
 #include "Macros.h"
 #include "Structs.h"
-
 #include "ThirdParty/spirv_reflect.h"
 #include "ThirdParty/stb_image.h"
 #include "ImGui/imgui.h"
@@ -9,15 +8,14 @@
 #include "lvk/DescriptorSetAllocator.h"
 namespace lvk
 {
-    class VulkanAPI;
+    class VkBackend;
     struct ShaderProgram;
 
     static constexpr int        MAX_FRAMES_IN_FLIGHT = 2;
 
     static ShaderBufferMemberType GetTypeFromSpvReflect(SpvReflectTypeDescription* typeDescription);
 
-    class VulkanAPI
-    {
+    class VkBackend {
     protected:
         const Vector<const char*>   p_ValidationLayers = {
             "VK_LAYER_KHRONOS_validation"
@@ -30,7 +28,7 @@ namespace lvk
         const bool                  m_UseValidation = true;
         const bool                  m_UseImGui      = true;
 
-        VulkanAPI(bool enableDebugValidation);
+        VkBackend(bool enableDebugValidation);
 
         VkInstance                      m_Instance;
         VkSurfaceKHR                    m_Surface;
@@ -202,7 +200,7 @@ public:
                                             uint32_t width, uint32_t height,
                                             VkPipelineLayout& pipelineLayout);
 
-        VkPipeline                          CreateRasterizationGraphicsPipeline(
+        VkPipeline                          CreateRasterPipeline(
                                             ShaderProgram& shader,
                                             Vector<VkVertexInputBindingDescription>& vertexBindingDescriptions,
                                             Vector<VkVertexInputAttributeDescription>& vertexAttributeDescriptions,

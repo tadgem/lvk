@@ -1,5 +1,5 @@
 #pragma once
-#include "lvk/VulkanAPI.h"
+#include "lvk/VkBackend.h"
 
 namespace lvk
 {
@@ -20,7 +20,7 @@ namespace lvk
         ShaderStage::Type m_Type;
 
         static ShaderStage
-        CreateFromBinaryPath(VulkanAPI& vk, const String& stagePath, const ShaderStage::Type& stageType)
+        CreateFromBinaryPath(VkBackend & vk, const String& stagePath, const ShaderStage::Type& stageType)
         {
             auto stageBin = vk.LoadSpirvBinary(stagePath);
             auto pushConstants = vk.ReflectPushConstants(stageBin);
@@ -29,7 +29,7 @@ namespace lvk
             return { stageBin, pushConstants, stageLayoutDatas, stageType };
         }
 
-        static ShaderStage CreateFromBinary(VulkanAPI& vk, Vector<unsigned char>& binary, const ShaderStage::Type& type)
+        static ShaderStage CreateFromBinary(VkBackend & vk, Vector<unsigned char>& binary, const ShaderStage::Type& type)
         {
             auto stageLayoutDatas = vk.ReflectDescriptorSetLayouts(binary);
             auto pushConstants = vk.ReflectPushConstants(binary);
@@ -44,9 +44,9 @@ namespace lvk
 
         VkDescriptorSetLayout m_DescriptorSetLayout;
 
-        void Free(VulkanAPI& vk);
+        void Free(VkBackend & vk);
 
-        static ShaderProgram CreateFromBinaryPath(VulkanAPI& vk, const String& vertPath, const String& fragPath)
+        static ShaderProgram CreateFromBinaryPath(VkBackend & vk, const String& vertPath, const String& fragPath)
         {
             ShaderStage vert = ShaderStage::CreateFromBinaryPath(
                 vk, vertPath, ShaderStage::Type::Vertex);
@@ -59,7 +59,7 @@ namespace lvk
 
         }
 
-        static ShaderProgram Create(VulkanAPI& vk, ShaderStage& vert, ShaderStage& frag)
+        static ShaderProgram Create(VkBackend & vk, ShaderStage& vert, ShaderStage& frag)
         {
             VkDescriptorSetLayout layout;
             vk.CreateDescriptorSetLayout(vert.m_LayoutDatas, frag.m_LayoutDatas, layout);
@@ -68,7 +68,7 @@ namespace lvk
 
         }
 
-        static ShaderProgram CreateCompute(VulkanAPI& vk, const String& computePath);
+        static ShaderProgram CreateCompute(VkBackend & vk, const String& computePath);
     };
 
 }

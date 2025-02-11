@@ -21,7 +21,7 @@ struct ViewData
     Mesh        m_ViewQuad;
 };
 
-PipelineT<VkRecordCommandCallback> CreateViewPipeline(VulkanAPI& vk, LvkIm3dState& im3dState, ShaderProgram& gbufferProg, ShaderProgram& lightPassProg)
+PipelineT<VkRecordCommandCallback> CreateViewPipeline(VkBackend & vk, LvkIm3dState& im3dState, ShaderProgram& gbufferProg, ShaderProgram& lightPassProg)
 {
     PipelineT<VkRecordCommandCallback> p{};
     auto* gbuffer = p.AddFramebuffer(vk);
@@ -52,28 +52,24 @@ PipelineT<VkRecordCommandCallback> CreateViewPipeline(VulkanAPI& vk, LvkIm3dStat
     VkPipelineLayout gbufferPipelineLayout;
     auto gbufferBindingDescriptions = Vector<VkVertexInputBindingDescription>{VertexDataPosNormalUv::GetBindingDescription() };
     auto gbufferAttributeDescriptions = VertexDataPosNormalUv::GetAttributeDescriptions();
-    VkPipeline gbufferPipeline = vk.CreateRasterizationGraphicsPipeline(
-        gbufferProg,
-        gbufferBindingDescriptions,
-        gbufferAttributeDescriptions,
-        gbuffer->m_RenderPass,
-        vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
-        VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, false,
-        VK_COMPARE_OP_LESS, gbufferPipelineLayout, 3);
+    VkPipeline gbufferPipeline = vk.CreateRasterPipeline(
+        gbufferProg, gbufferBindingDescriptions, gbufferAttributeDescriptions,
+        gbuffer->m_RenderPass, vk.m_SwapChainImageExtent.width,
+        vk.m_SwapChainImageExtent.height, VK_POLYGON_MODE_FILL,
+        VK_CULL_MODE_BACK_BIT, false, VK_COMPARE_OP_LESS, gbufferPipelineLayout,
+        3);
 
     // create present graphics pipeline
     // Pipeline stage?
     VkPipelineLayout lightPassPipelineLayout;
     auto lightPassBindingDescriptions = Vector<VkVertexInputBindingDescription>{VertexDataPosUv::GetBindingDescription() };
     auto lightPassAttributeDescriptions = VertexDataPosUv::GetAttributeDescriptions();
-    VkPipeline lightPassPipeline = vk.CreateRasterizationGraphicsPipeline(
-        lightPassProg,
-        lightPassBindingDescriptions,
-        lightPassAttributeDescriptions,
-        lightPassImage->m_RenderPass,
+    VkPipeline lightPassPipeline = vk.CreateRasterPipeline(
+        lightPassProg, lightPassBindingDescriptions,
+        lightPassAttributeDescriptions, lightPassImage->m_RenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
-        VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, false,
-        VK_COMPARE_OP_LESS, lightPassPipelineLayout);
+        VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, false, VK_COMPARE_OP_LESS,
+        lightPassPipelineLayout);
 
 
     VkPipelineData* gbufferPipelineData = p.AddPipeline(vk, gbufferPipeline, gbufferPipelineLayout );
@@ -210,7 +206,7 @@ PipelineT<VkRecordCommandCallback> CreateViewPipeline(VulkanAPI& vk, LvkIm3dStat
     return p;
 }
 
-ViewData CreateView(VulkanAPI& vk, LvkIm3dState im3dState, ShaderProgram gbufferProg, ShaderProgram lightPassProg)
+ViewData CreateView(VkBackend & vk, LvkIm3dState im3dState, ShaderProgram gbufferProg, ShaderProgram lightPassProg)
 {
     PipelineT<VkRecordCommandCallback> pipeline = CreateViewPipeline(vk, im3dState, gbufferProg, lightPassProg);
 
@@ -240,7 +236,7 @@ ViewData CreateView(VulkanAPI& vk, LvkIm3dState im3dState, ShaderProgram gbuffer
 
 static Transform g_Transform;
 
-void UpdateRenderItemUniformBuffer(VulkanAPI& vk, Material& renderItemMaterial)
+void UpdateRenderItemUniformBuffer(VkBackend & vk, Material& renderItemMaterial)
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -253,7 +249,7 @@ void UpdateRenderItemUniformBuffer(VulkanAPI& vk, Material& renderItemMaterial)
     renderItemMaterial.SetBuffer(vk.GetFrameIndex(), 0, 0, ubo);
 }
 
-void UpdateViewData(VulkanAPI& vk, ViewData* view, DeferredLightData& lightData)
+void UpdateViewData(VkBackend & vk, ViewData* view, DeferredLightData& lightData)
 {
     glm::quat qPitch = glm::angleAxis(glm::radians(-view->m_View.m_Camera.Rotation.x), glm::vec3(1, 0, 0));
     glm::quat qYaw = glm::angleAxis(glm::radians(view->m_View.m_Camera.Rotation.y), glm::vec3(0, 1, 0));
@@ -354,7 +350,7 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk, Vector<ViewData*> views, RenderMo
     });
 }
 
-RenderModel CreateRenderModelGbuffer(VulkanAPI& vk, const String& modelPath, ShaderProgram& shader)
+RenderModel CreateRenderModelGbuffer(VkBackend & vk, const String& modelPath, ShaderProgram& shader)
 {
     Model model;
     LoadModelAssimp(vk, model, modelPath, true);
@@ -376,7 +372,7 @@ RenderModel CreateRenderModelGbuffer(VulkanAPI& vk, const String& modelPath, Sha
     return renderModel;
 }
 
-void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu, Vector<ViewData*> views)
+void OnImGui(VkBackend & vk, DeferredLightData& lightDataCpu, Vector<ViewData*> views)
 {
     if (ImGui::Begin("Statistics"))
     {
