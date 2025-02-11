@@ -137,4 +137,33 @@ namespace lvk
             return attributeDescriptions;
         }
     };
+
+    class Mesh
+    {
+      public:
+        VkBuffer m_VertexBuffer = VK_NULL_HANDLE;
+        VmaAllocation m_VertexBufferMemory;
+        VkBuffer m_IndexBuffer = VK_NULL_HANDLE;
+        VmaAllocation m_IndexBufferMemory;
+
+        uint32_t m_IndexCount = 0;
+
+        void Free(VulkanAPI& vk);
+
+        static Mesh* g_ScreenSpaceQuad;
+        static Mesh* g_Cube;
+
+        static void InitBuiltInMeshes(lvk::VulkanAPI& vk);
+        static void FreeBuiltInMeshes(lvk::VulkanAPI& vk);
+    };
+
+    class Renderable
+    {
+      public:
+        VkDescriptorSet    m_DescriptorSet;
+        VkPipelineLayout   m_PipelineLayout;
+        Mesh               m_Mesh;
+
+        void RecordGraphicsCommands(VkCommandBuffer& commandBuffer);
+    };
 }

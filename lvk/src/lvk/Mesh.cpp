@@ -33,3 +33,22 @@ void lvk::Mesh::FreeBuiltInMeshes(lvk::VulkanAPI& vk)
     vkDestroyBuffer(vk.m_LogicalDevice, g_ScreenSpaceQuad->m_IndexBuffer, nullptr);
     vmaFreeMemory(vk.m_Allocator, g_ScreenSpaceQuad->m_IndexBufferMemory);
 }
+
+void lvk::Mesh::Free (VulkanAPI& vk)
+{
+    vkDestroyBuffer (vk.m_LogicalDevice, m_VertexBuffer, nullptr);
+    vkDestroyBuffer (vk.m_LogicalDevice, m_IndexBuffer, nullptr);
+    vmaFreeMemory (vk.m_Allocator, m_IndexBufferMemory);
+    vmaFreeMemory (vk.m_Allocator, m_VertexBufferMemory);
+}
+
+void lvk::Renderable::RecordGraphicsCommands(VkCommandBuffer& commandBuffer)
+{
+    VkBuffer vertexBuffers[]{ m_Mesh.m_VertexBuffer };
+    VkDeviceSize sizes[] = { 0 };
+
+    vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, sizes);
+    vkCmdBindIndexBuffer(commandBuffer, m_Mesh.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSet, 0, nullptr);
+    vkCmdDrawIndexed(commandBuffer, m_Mesh.m_IndexCount, 1, 0, 0, 0);
+}
