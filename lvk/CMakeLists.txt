@@ -16,6 +16,7 @@ add_library(${PROJECT_NAME} STATIC
         src/lvk/Buffer.cpp
         src/lvk/Commands.cpp
         src/lvk/Utils.cpp
+        src/lvk/Init.cpp
         src/ThirdParty/spirv_reflect.c
         src/ImGui/imgui_impl_vulkan.cpp
         src/ImGui/imgui_draw.cpp
@@ -38,6 +39,7 @@ add_library(${PROJECT_NAME} STATIC
         include/lvk/Buffer.h
         include/lvk/Commands.h
         include/lvk/Utils.h
+        include/lvk/Init.h
         include/Alias.h
         include/ThirdParty/spirv_reflect.h
         include/ThirdParty/VulkanMemoryAllocator.h
