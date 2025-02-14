@@ -3,6 +3,7 @@
 #include "ImGui/imgui_impl_vulkan.h"
 #include "lvk/Commands.h"
 #include "lvk/Macros.h"
+#include "lvk/RenderPass.h"
 #include "lvk/Texture.h"
 #include "lvk/Utils.h"
 #include "spdlog/spdlog.h"
@@ -1005,15 +1006,103 @@ void lvk::init::GetMaxUsableSampleCount(VkState& vk)
   if (counts & VK_SAMPLE_COUNT_2_BIT) {   vk.m_MaxMsaaSamples = VK_SAMPLE_COUNT_2_BIT;   return ;}
 }
 
-
-
-
-
-
-
 void lvk::init::CreateBuiltInRenderPasses(lvk::VkState &vk) {
 
-  // todo: port from VkAPi
+  {
+    Vector<VkAttachmentDescription> colourAttachmentDescriptions{};
+    Vector<VkAttachmentDescription> resolveAttachmentDescriptions{};
+    VkAttachmentDescription depthAttachmentDescription{};
+
+    VkAttachmentDescription colorAttachment{};
+    colorAttachment.format = vk.m_SwapChainImageFormat;
+    colorAttachment.samples = vk.m_UseSwapchainMsaa ? vk.m_MaxMsaaSamples : VK_SAMPLE_COUNT_1_BIT;
+    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    if (vk.m_UseSwapchainMsaa)
+    {
+      colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    }
+    else
+    {
+      colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    }
+    colourAttachmentDescriptions.push_back(colorAttachment);
+
+    depthAttachmentDescription.format = FindDepthFormat(vk);
+    depthAttachmentDescription.samples = vk.m_UseSwapchainMsaa ? vk.m_MaxMsaaSamples : VK_SAMPLE_COUNT_1_BIT;;
+    depthAttachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depthAttachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    depthAttachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    depthAttachmentDescription.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentDescription colorAttachmentResolve{};
+    if (vk.m_UseSwapchainMsaa)
+    {
+      colorAttachmentResolve.format = vk.m_SwapChainImageFormat;
+      colorAttachmentResolve.samples = VK_SAMPLE_COUNT_1_BIT;
+      colorAttachmentResolve.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+      colorAttachmentResolve.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+      colorAttachmentResolve.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+      colorAttachmentResolve.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+      colorAttachmentResolve.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+      colorAttachmentResolve.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+      resolveAttachmentDescriptions.push_back(colorAttachmentResolve);
+    }
+
+    CreateRenderPass(vk, vk.m_SwapchainImageRenderPass, colourAttachmentDescriptions, resolveAttachmentDescriptions, true, depthAttachmentDescription, VK_ATTACHMENT_LOAD_OP_CLEAR);
+  }
+  {
+    Vector<VkAttachmentDescription> colourAttachmentDescriptions{};
+    Vector<VkAttachmentDescription> resolveAttachmentDescriptions{};
+    VkAttachmentDescription depthAttachmentDescription{};
+
+    VkAttachmentDescription colorAttachment{};
+    colorAttachment.format = vk.m_SwapChainImageFormat;
+    colorAttachment.samples = vk.m_UseSwapchainMsaa ? vk.m_MaxMsaaSamples : VK_SAMPLE_COUNT_1_BIT;
+    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    if (vk.m_UseSwapchainMsaa)
+    {
+      colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    }
+    else
+    {
+      colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    }
+    colourAttachmentDescriptions.push_back(colorAttachment);
+
+    depthAttachmentDescription.format = FindDepthFormat(vk);
+    depthAttachmentDescription.samples = vk.m_UseSwapchainMsaa ? vk.m_MaxMsaaSamples : VK_SAMPLE_COUNT_1_BIT;;
+    depthAttachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    depthAttachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    depthAttachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    depthAttachmentDescription.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentDescription colorAttachmentResolve{};
+    if (vk.m_UseSwapchainMsaa)
+    {
+      colorAttachmentResolve.format = vk.m_SwapChainImageFormat;
+      colorAttachmentResolve.samples = VK_SAMPLE_COUNT_1_BIT;
+      colorAttachmentResolve.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+      colorAttachmentResolve.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+      colorAttachmentResolve.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+      colorAttachmentResolve.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+      colorAttachmentResolve.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+      colorAttachmentResolve.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+      resolveAttachmentDescriptions.push_back(colorAttachmentResolve);
+    }
+    CreateRenderPass(vk, vk.m_ImGuiRenderPass, colourAttachmentDescriptions, resolveAttachmentDescriptions, true, depthAttachmentDescription, VK_ATTACHMENT_LOAD_OP_DONT_CARE);
+  }
 }
 
 

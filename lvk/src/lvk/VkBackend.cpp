@@ -1872,6 +1872,7 @@ void lvk::VkAPI::CreateRenderPass(VkRenderPass& renderPass, Vector<VkAttachmentD
         std::cerr << "Failed to create Render Pass!" << std::endl;
     }
 }
+
 #ifdef WIN32
 #include "windows.h"
 #include "lvk/Structs.h"
