@@ -68,7 +68,7 @@ namespace init
     VkState vk;
     vk.m_AppName = appName;
     vk.m_Backend = std::make_unique<_BackendTy>();
-    vk.m_Backend->CreateWindowLVK(width, height);
+    vk.m_Backend->CreateWindowLVK(vk, width, height);
     InitVulkan(vk, enableSwapchainMsaa);
     vk.m_MaxFramebufferExtent = vk.m_Backend->GetMaxFramebufferResolution(vk);
     InitImGui(vk);
