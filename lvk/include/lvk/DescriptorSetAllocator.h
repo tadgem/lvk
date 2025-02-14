@@ -16,7 +16,7 @@ namespace lvk
                     float m_Ratio;
             };
 
-            void Init(VkAPI & vk, uint32_t initialSetAmount, Vector<PoolSizeRatio> ratios);
+            void Init(VkDevice logical_device, uint32_t initialSetAmount, Vector<PoolSizeRatio> ratios);
             void Reset(VkDevice device);
             void Free(VkDevice device);
 

@@ -111,6 +111,7 @@ namespace lvk
         uint32_t                            AssessDeviceSuitability(VkPhysicalDevice physicalDevice);
         void                                PickPhysicalDevice();
         void                                CreateLogicalDevice();
+
         void                                GetQueueHandles();
         VkSurfaceFormatKHR                  ChooseSwapChainSurfaceFormat(Vector<VkSurfaceFormatKHR> availableFormats);
         VkPresentModeKHR                    ChooseSwapChainPresentMode(Vector<VkPresentModeKHR> availableModes);
@@ -121,6 +122,8 @@ namespace lvk
         void                                RecreateSwapChain();
         void                                CreateSwapChainColourTexture(bool enableMsaa = false);
         void                                CreateSwapChainDepthTexture(bool enableMsaa = false);
+
+
         VkExtent2D                          ChooseSwapExtent(VkSurfaceCapabilitiesKHR& surfaceCapabilities);
         void                                CreateCommandPool();
         void                                CreateDescriptorSetAllocator();

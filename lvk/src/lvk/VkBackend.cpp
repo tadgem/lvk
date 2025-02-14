@@ -1459,7 +1459,7 @@ void lvk::VkAPI::CreateCommandPool()
 
 void lvk::VkAPI::CreateDescriptorSetAllocator()
 {
-    m_DescriptorSetAllocator.Init(*this, MAX_FRAMES_IN_FLIGHT * 128, {
+    m_DescriptorSetAllocator.Init(m_LogicalDevice, MAX_FRAMES_IN_FLIGHT * 128, {
         {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0.33f},
         {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0.33f},
         {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0.33f},

@@ -12,6 +12,9 @@ namespace init
       "VK_KHR_swapchain"
   };
 
+  void                                CleanupImGui(VkState& vk);
+  void                                Cleanup(VkState& vk);
+
   bool                                CheckValidationLayerSupport(VkState& vk);
   bool                                CheckDeviceExtensionSupport(VkState& vk, VkPhysicalDevice device);
   void                                SetupDebugOutput(VkState& vk);
@@ -51,6 +54,8 @@ namespace init
   void                                ClearCommandBuffers(VkState& vk);
   void                                CreateVmaAllocator(VkState& vk);
   void                                GetMaxUsableSampleCount(VkState& vk);
+
+
   Vector<VkExtensionProperties>       GetDeviceAvailableExtensions(VkState& vk, VkPhysicalDevice physicalDevice);
 
   void                                CreateBuiltInRenderPasses(VkState& vk);
@@ -65,7 +70,7 @@ namespace init
     vk.m_Backend = std::make_unique<_BackendTy>();
     vk.m_Backend->CreateWindowLVK(width, height);
     InitVulkan(vk, enableSwapchainMsaa);
-    vk.m_MaxFramebufferExtent = vk.m_Backend->GetMaxFramebufferResolution();
+    vk.m_MaxFramebufferExtent = vk.m_Backend->GetMaxFramebufferResolution(vk);
     InitImGui(vk);
 
     // todo: Texture::InitDefaultTexture(*this);
