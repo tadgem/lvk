@@ -120,8 +120,28 @@ namespace lvk {
     Vector<VkPresentModeKHR>    m_SupportedPresentModes;
   };
 
+  struct VkState;
+
+  class VkBackend
+  {
+  public:
+    virtual Vector<const char*>         GetRequiredExtensions(VkState& vk) = 0;
+    virtual void                        CreateSurface(VkState& vk) = 0;
+    virtual void                        CreateWindowLVK(VkState& vk, uint32_t width, uint32_t height) = 0;
+    virtual void                        CleanupWindow(VkState& vk) = 0;
+    virtual VkExtent2D                  GetSurfaceExtent(VkState& vk, VkSurfaceCapabilitiesKHR surface) = 0;
+    virtual VkExtent2D                  GetMaxFramebufferResolution(VkState& vk) = 0;
+    virtual bool                        ShouldRun(VkState& vk) = 0;
+    virtual void                        PreFrame(VkState& vk) = 0;
+    virtual void                        PostFrame(VkState& vk) = 0;
+    virtual void                        Run(VkState& vk, std::function<void()> callback) = 0;
+    virtual void                        InitImGuiBackend(VkState& vk) = 0;
+    virtual void                        CleanupImGuiBackend(VkState& vk) = 0;
+  };
+
   struct VkState
   {
+    Unique<VkBackend>               m_Backend;
 
     VkInstance                      m_Instance;
     VkSurfaceKHR                    m_Surface;

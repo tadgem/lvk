@@ -41,7 +41,7 @@ void lvk::init::InitVulkan(VkState& vk, bool enableSwapchainMsaa)
   CreateInstance(vk);
   SetupDebugOutput(vk);
   // TODO: Renable on backkend rework
-  //CreateSurface(vk);
+  vk.m_Backend->CreateSurface(vk);
   PickPhysicalDevice(vk);
   CreateLogicalDevice(vk);
   GetMaxUsableSampleCount(vk);
@@ -51,8 +51,7 @@ void lvk::init::InitVulkan(VkState& vk, bool enableSwapchainMsaa)
   CreateSwapChainImageViews(vk);
   CreateSwapChainDepthTexture(vk, vk.m_UseSwapchainMsaa);
   CreateSwapChainColourTexture(vk, vk.m_UseSwapchainMsaa);
-  // TODO: Renable on backkend rework
-  //CreateBuiltInRenderPasses(vk);
+  CreateBuiltInRenderPasses(vk);
   CreateSwapChainFramebuffers(vk);
   CreateDescriptorSetAllocator(vk);
   CreateSemaphores(vk);
@@ -261,4 +260,8 @@ void lvk::init::PopulateDebugMessengerCreateInfo(VkState& vk, VkDebugUtilsMessen
 
   createInfo.pfnUserCallback = debugCallback;
   // TODO: Find a way to quit on a debug error
+}
+void lvk::init::CreateBuiltInRenderPasses(lvk::VkState &vk) {
+
+  // todo: port from VkAPi
 }
