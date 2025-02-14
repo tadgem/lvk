@@ -1,0 +1,11 @@
+#pragma once
+#include "lvk/Structs.h"
+
+namespace lvk {
+
+    Vector<VkDescriptorSetLayoutBinding>GetDescriptorSetLayoutBindings(VkState& vk, Vector<DescriptorSetLayoutData>& vertLayoutDatas, Vector<DescriptorSetLayoutData>& fragLayoutDatas);
+    void                                CreateDescriptorSetLayout(VkState& vk, Vector<DescriptorSetLayoutData>& vertLayoutDatas, Vector<DescriptorSetLayoutData>& fragLayoutDatas, VkDescriptorSetLayout& descriptorSetLayout);
+    Vector<DescriptorSetLayoutData>     ReflectDescriptorSetLayouts(VkState& vk, StageBinary& stageBin);
+    Vector<PushConstantBlock>           ReflectPushConstants(VkState& vk, StageBinary& stageBin);
+    VkDescriptorSet                     CreateDescriptorSet(VkState& vk, DescriptorSetLayoutData& layoutData);
+}

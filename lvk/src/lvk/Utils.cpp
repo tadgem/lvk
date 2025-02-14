@@ -1,5 +1,6 @@
 #include "lvk/Utils.h"
 #include "spdlog/spdlog.h"
+#include <fstream>
 
 uint32_t lvk::FindMemoryType(VkState& vk, uint32_t typeFilter, VkMemoryPropertyFlags properties)
 {
@@ -40,4 +41,27 @@ VkFormat lvk::FindDepthFormat(VkState& vk)
 }
 bool lvk::HasStencilComponent(VkFormat &format) {
   return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+}
+
+
+lvk::StageBinary lvk::LoadSpirvBinary(const String& path)
+{
+  std::ifstream file(path, std::ios::ate | std::ios::binary);
+
+  if (!file.is_open())
+  {
+    spdlog::error("Failed to open file at path {} as binary!", path);
+    std::cerr << "Failed to open file!" << std::endl;
+    return StageBinary();
+  }
+
+  size_t fileSize = static_cast<size_t>(file.tellg());
+  StageBinary data(fileSize);
+
+  file.seekg(0);
+
+  file.read((char*) data.data(), fileSize);
+
+  file.close();
+  return data;
 }
