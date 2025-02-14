@@ -4,7 +4,7 @@
 
 namespace lvk
 {
-    class VkBackend;
+    class VkAPI;
 
     // ty https://vkguide.dev/docs/new_chapter_4/descriptor_abstractions/
     class DescriptorSetAllocator
@@ -16,7 +16,7 @@ namespace lvk
                     float m_Ratio;
             };
 
-            void Init(VkBackend & vk, uint32_t initialSetAmount, Vector<PoolSizeRatio> ratios);
+            void Init(VkAPI & vk, uint32_t initialSetAmount, Vector<PoolSizeRatio> ratios);
             void Reset(VkDevice device);
             void Free(VkDevice device);
 

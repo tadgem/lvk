@@ -1,6 +1,6 @@
 #pragma once
 #include "SDL3/SDL.h"
-#include "lvk/VkBackend.h"
+#include "lvk/VkAPI.h"
 #undef main // why is this a thing SDL?!
 namespace lvk {
 	class VulkanAPIWindowHandle_SDL : public VulkanAPIWindowHandle
@@ -10,7 +10,7 @@ namespace lvk {
 		SDL_Window* m_SdlWindow;
 	};
 
-	class VulkanAPI_SDL : public VkBackend {
+	class VulkanAPI_SDL : public VkAPI {
 	public:
           VulkanAPI_SDL(bool enableDebugValidation = true);
           virtual ~VulkanAPI_SDL();

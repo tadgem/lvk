@@ -21,7 +21,7 @@ struct ViewData
     Mesh        m_ViewQuad;
 };
 
-PipelineT<VkRecordCommandCallback> CreateViewPipeline(VkBackend & vk, LvkIm3dState& im3dState, ShaderProgram& gbufferProg, ShaderProgram& lightPassProg)
+PipelineT<VkRecordCommandCallback> CreateViewPipeline(VkAPI & vk, LvkIm3dState& im3dState, ShaderProgram& gbufferProg, ShaderProgram& lightPassProg)
 {
     PipelineT<VkRecordCommandCallback> p{};
     auto* gbuffer = p.AddFramebuffer(vk);
@@ -206,7 +206,7 @@ PipelineT<VkRecordCommandCallback> CreateViewPipeline(VkBackend & vk, LvkIm3dSta
     return p;
 }
 
-ViewData CreateView(VkBackend & vk, LvkIm3dState im3dState, ShaderProgram gbufferProg, ShaderProgram lightPassProg)
+ViewData CreateView(VkAPI & vk, LvkIm3dState im3dState, ShaderProgram gbufferProg, ShaderProgram lightPassProg)
 {
     PipelineT<VkRecordCommandCallback> pipeline = CreateViewPipeline(vk, im3dState, gbufferProg, lightPassProg);
 
@@ -236,7 +236,7 @@ ViewData CreateView(VkBackend & vk, LvkIm3dState im3dState, ShaderProgram gbuffe
 
 static Transform g_Transform;
 
-void UpdateRenderItemUniformBuffer(VkBackend & vk, Material& renderItemMaterial)
+void UpdateRenderItemUniformBuffer(VkAPI & vk, Material& renderItemMaterial)
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -249,7 +249,7 @@ void UpdateRenderItemUniformBuffer(VkBackend & vk, Material& renderItemMaterial)
     renderItemMaterial.SetBuffer(vk.GetFrameIndex(), 0, 0, ubo);
 }
 
-void UpdateViewData(VkBackend & vk, ViewData* view, DeferredLightData& lightData)
+void UpdateViewData(VkAPI & vk, ViewData* view, DeferredLightData& lightData)
 {
     glm::quat qPitch = glm::angleAxis(glm::radians(-view->m_View.m_Camera.Rotation.x), glm::vec3(1, 0, 0));
     glm::quat qYaw = glm::angleAxis(glm::radians(view->m_View.m_Camera.Rotation.y), glm::vec3(0, 1, 0));
@@ -350,7 +350,7 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk, Vector<ViewData*> views, RenderMo
     });
 }
 
-RenderModel CreateRenderModelGbuffer(VkBackend & vk, const String& modelPath, ShaderProgram& shader)
+RenderModel CreateRenderModelGbuffer(VkAPI & vk, const String& modelPath, ShaderProgram& shader)
 {
     Model model;
     LoadModelAssimp(vk, model, modelPath, true);
@@ -372,7 +372,7 @@ RenderModel CreateRenderModelGbuffer(VkBackend & vk, const String& modelPath, Sh
     return renderModel;
 }
 
-void OnImGui(VkBackend & vk, DeferredLightData& lightDataCpu, Vector<ViewData*> views)
+void OnImGui(VkAPI & vk, DeferredLightData& lightDataCpu, Vector<ViewData*> views)
 {
     if (ImGui::Begin("Statistics"))
     {

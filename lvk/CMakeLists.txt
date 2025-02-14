@@ -26,7 +26,7 @@ add_library(${PROJECT_NAME} STATIC
         src/Im3D/im3d.cpp
         src/Im3D/im3d_lvk.cpp
         include/lvk/lvk.h
-        include/lvk/VkBackend.h
+        include/lvk/VkAPI.h
         include/lvk/Texture.h
         include/lvk/Framebuffer.h
         include/lvk/Mesh.h

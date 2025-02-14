@@ -8,7 +8,7 @@
 #include "lvk/Framebuffer.h"
 #include "lvk/Material.h"
 #include "lvk/Mesh.h"
-#include "lvk/VkBackend.h"
+#include "lvk/VkAPI.h"
 #include "spdlog/spdlog.h"
 
 #define GLM_FORCE_RADIANS
@@ -170,7 +170,7 @@ static lvk::String AssimpToSTD(aiString str) {
     return lvk::String(str.C_Str());
 }
 
-void FreeMesh(lvk::VkBackend & vk, MeshEx& m)
+void FreeMesh(lvk::VkAPI & vk, MeshEx& m)
 {
     vkDestroyBuffer(vk.m_LogicalDevice, m.m_VertexBuffer, nullptr);
     vmaFreeMemory(vk.m_Allocator, m.m_VertexBufferMemory);
@@ -178,7 +178,7 @@ void FreeMesh(lvk::VkBackend & vk, MeshEx& m)
     vmaFreeMemory(vk.m_Allocator, m.m_IndexBufferMemory);
 }
 
-void FreeModel(lvk::VkBackend & vk, Model& model)
+void FreeModel(lvk::VkAPI & vk, Model& model)
 {
     for (MeshEx& m : model.m_Meshes)
     {
@@ -186,7 +186,7 @@ void FreeModel(lvk::VkBackend & vk, Model& model)
     }
 }
 
-void ProcessMesh(lvk::VkBackend & vk, Model& model, aiMesh* mesh, aiNode* node, const aiScene* scene) {
+void ProcessMesh(lvk::VkAPI & vk, Model& model, aiMesh* mesh, aiNode* node, const aiScene* scene) {
     using namespace lvk;
     bool hasPositions = mesh->HasPositions();
     bool hasUVs = mesh->HasTextureCoords(0);
@@ -256,7 +256,7 @@ AABB TransformAABB(AABB& in, glm::mat4& m)
     return ret;
 }
 
-void ProcessMeshWithNormals(lvk::VkBackend & vk, Model& model, aiMesh* mesh, aiNode* node, const aiScene* scene) {
+void ProcessMeshWithNormals(lvk::VkAPI & vk, Model& model, aiMesh* mesh, aiNode* node, const aiScene* scene) {
     using namespace lvk;
     bool hasPositions = mesh->HasPositions();
     bool hasUVs = mesh->HasTextureCoords(0);
@@ -307,7 +307,7 @@ void ProcessMeshWithNormals(lvk::VkBackend & vk, Model& model, aiMesh* mesh, aiN
     model.m_Meshes.push_back(m);
 }
 
-void ProcessNode(lvk::VkBackend & vk, Model& model, aiNode* node, const aiScene* scene, bool withNormals = false) {
+void ProcessNode(lvk::VkAPI & vk, Model& model, aiNode* node, const aiScene* scene, bool withNormals = false) {
 
     if (node->mNumMeshes > 0) {
         for (unsigned int i = 0; i < node->mNumMeshes; i++) {
@@ -333,7 +333,7 @@ void ProcessNode(lvk::VkBackend & vk, Model& model, aiNode* node, const aiScene*
     }
 }
 
-void LoadModelAssimp(lvk::VkBackend & vk, Model& model, const lvk::String& path, bool withNormals = false)
+void LoadModelAssimp(lvk::VkAPI & vk, Model& model, const lvk::String& path, bool withNormals = false)
 {
     Assimp::Importer importer;
     const aiScene* scene = importer.ReadFile(path.c_str(),
@@ -371,7 +371,7 @@ void LoadModelAssimp(lvk::VkBackend & vk, Model& model, const lvk::String& path,
     }
 }
 
-MeshEx BuildScreenSpaceQuad(lvk::VkBackend & vk, lvk::Vector <lvk::VertexDataPosUv > & verts, lvk::Vector<uint32_t>& indices)
+MeshEx BuildScreenSpaceQuad(lvk::VkAPI & vk, lvk::Vector <lvk::VertexDataPosUv > & verts, lvk::Vector<uint32_t>& indices)
 {
     VkBuffer vertexBuffer;
     VmaAllocation vertexBufferMemory;
@@ -397,7 +397,7 @@ struct RenderModel
 {
     Model m_Original;
     lvk::Vector<RenderItem> m_RenderItems;
-    void Free(lvk::VkBackend & vk)
+    void Free(lvk::VkAPI & vk)
     {
         for (auto& item : m_RenderItems)
         {

@@ -1,7 +1,7 @@
 #pragma once
 #include "lvk/Framebuffer.h"
 #include "lvk/Texture.h"
-#include "lvk/VkBackend.h"
+#include "lvk/VkAPI.h"
 namespace lvk
 {
     struct ShaderProgram;
@@ -59,7 +59,7 @@ namespace lvk
         HashMap<String, SamplerBindingData>             m_Samplers;
         HashMap<String, ShaderAccessorData>             m_UniformBufferAccessors;
 
-        static Material Create(VkBackend & vk, ShaderProgram& shader);
+        static Material Create(VkAPI & vk, ShaderProgram& shader);
 
         template<typename _Ty>
         bool SetBuffer(uint32_t frameIndex, uint32_t set, uint32_t binding, const _Ty& value)
@@ -121,13 +121,13 @@ namespace lvk
             return true;
         }
 
-        bool SetSampler(VkBackend & vk, const String& name, const VkImageView& imageView, const VkSampler& sampler, bool isAttachment = false);
-        bool SetSampler(VkBackend & vk, const String& name, Texture& texture);
-        bool SetColourAttachment(VkBackend & vk, const String& name, Framebuffer& framebuffer, uint32_t colourAttachmentIndex);
-        bool SetDepthAttachment(VkBackend & vk, const String& name, Framebuffer& framebuffer);
+        bool SetSampler(VkAPI & vk, const String& name, const VkImageView& imageView, const VkSampler& sampler, bool isAttachment = false);
+        bool SetSampler(VkAPI & vk, const String& name, Texture& texture);
+        bool SetColourAttachment(VkAPI & vk, const String& name, Framebuffer& framebuffer, uint32_t colourAttachmentIndex);
+        bool SetDepthAttachment(VkAPI & vk, const String& name, Framebuffer& framebuffer);
 
         
-        void Free(VkBackend & vk);
+        void Free(VkAPI & vk);
     };
 
 }

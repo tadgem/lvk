@@ -6,7 +6,7 @@
 #include "lvk/Mesh.h"
 #include "lvk/Shader.h"
 #include "lvk/Texture.h"
-#include "lvk/VkBackend.h"
+#include "lvk/VkAPI.h"
 #include "spdlog/spdlog.h"
 #include <algorithm>
 #include <array>
@@ -47,13 +47,13 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
         {
             return VK_FALSE;
         }
-        VkBackend * api = (VkBackend *)pUserData;
+        VkAPI * api = (VkAPI *)pUserData;
         api->Quit();
     }
     return VK_FALSE;
 }
 
-void lvk::MappedBuffer::Free(VkBackend & vk)
+void lvk::MappedBuffer::Free(VkAPI & vk)
 {
     vmaUnmapMemory(vk.m_Allocator, m_GpuMemory);
     vkDestroyBuffer(vk.m_LogicalDevice, m_GpuBuffer, nullptr);
@@ -61,7 +61,7 @@ void lvk::MappedBuffer::Free(VkBackend & vk)
 }
 
 
-void lvk::ShaderBufferFrameData::Free(lvk::VkBackend & vk)
+void lvk::ShaderBufferFrameData::Free(lvk::VkAPI & vk)
 {
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         m_UniformBuffers[i].Free(vk);
@@ -71,7 +71,7 @@ void lvk::ShaderBufferFrameData::Free(lvk::VkBackend & vk)
 }
 
 
-VkApplicationInfo lvk::VkBackend::CreateAppInfo()
+VkApplicationInfo lvk::VkAPI::CreateAppInfo()
 {
     VkApplicationInfo appInfo{};
     // each struct needs to explicitly be told its type
@@ -85,7 +85,7 @@ VkApplicationInfo lvk::VkBackend::CreateAppInfo()
     return appInfo;
 }
 
-bool lvk::VkBackend::CheckValidationLayerSupport()
+bool lvk::VkAPI::CheckValidationLayerSupport()
 {
     uint32_t layerCount;
     if (vkEnumerateInstanceLayerProperties(&layerCount, nullptr) != VK_SUCCESS)
@@ -117,7 +117,7 @@ bool lvk::VkBackend::CheckValidationLayerSupport()
     return true;
 }
 
-bool lvk::VkBackend::CheckDeviceExtensionSupport(VkPhysicalDevice device)
+bool lvk::VkAPI::CheckDeviceExtensionSupport(VkPhysicalDevice device)
 {
     std::vector<VkExtensionProperties> availableExtensions = GetDeviceAvailableExtensions(device);
 
@@ -138,7 +138,7 @@ bool lvk::VkBackend::CheckDeviceExtensionSupport(VkPhysicalDevice device)
 
 }
 
-void lvk::VkBackend::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
+void lvk::VkAPI::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
 {
     createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -157,7 +157,7 @@ void lvk::VkBackend::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreat
                                     // dont need this right now
 }
 
-void lvk::VkBackend::CreateInstance()
+void lvk::VkAPI::CreateInstance()
 {
     if (m_UseValidation && !CheckValidationLayerSupport())
     {
@@ -233,7 +233,7 @@ void lvk::VkBackend::CreateInstance()
 
 }
 
-void lvk::VkBackend::Cleanup()
+void lvk::VkAPI::Cleanup()
 {
     Texture::FreeDefaultTexture(*this);
     Mesh::FreeBuiltInMeshes(*this);
@@ -242,7 +242,7 @@ void lvk::VkBackend::Cleanup()
     CleanupVulkan();
 }
 
-void lvk::VkBackend::SetupDebugOutput()
+void lvk::VkAPI::SetupDebugOutput()
 {
     if (!m_UseValidation) return;
 
@@ -267,7 +267,7 @@ void lvk::VkBackend::SetupDebugOutput()
 
 }
 
-void lvk::VkBackend::CleanupDebugOutput()
+void lvk::VkAPI::CleanupDebugOutput()
 {
     PFN_vkVoidFunction rawFunction = vkGetInstanceProcAddr(m_Instance, "vkDestroyDebugUtilsMessengerEXT");
     auto function = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(rawFunction);
@@ -282,7 +282,7 @@ void lvk::VkBackend::CleanupDebugOutput()
     }
 }
 
-void lvk::VkBackend::CleanupVulkan()
+void lvk::VkAPI::CleanupVulkan()
 {
     vmaDestroyAllocator(m_Allocator);
     CleanupSwapChain();
@@ -309,12 +309,12 @@ void lvk::VkBackend::CleanupVulkan()
     vkDestroyInstance(m_Instance, nullptr);
 }
 
-void lvk::VkBackend::Quit()
+void lvk::VkAPI::Quit()
 {
     p_ShouldRun = false;
 }
 
-lvk::QueueFamilyIndices lvk::VkBackend::FindQueueFamilies(VkPhysicalDevice m_PhysicalDevice)
+lvk::QueueFamilyIndices lvk::VkAPI::FindQueueFamilies(VkPhysicalDevice m_PhysicalDevice)
 {
     QueueFamilyIndices indices;
 
@@ -341,7 +341,7 @@ lvk::QueueFamilyIndices lvk::VkBackend::FindQueueFamilies(VkPhysicalDevice m_Phy
     return indices;
 }
 
-lvk::SwapChainSupportDetais lvk::VkBackend::GetSwapChainSupportDetails(VkPhysicalDevice physicalDevice)
+lvk::SwapChainSupportDetais lvk::VkAPI::GetSwapChainSupportDetails(VkPhysicalDevice physicalDevice)
 {
     SwapChainSupportDetais details;
 
@@ -368,7 +368,7 @@ lvk::SwapChainSupportDetais lvk::VkBackend::GetSwapChainSupportDetails(VkPhysica
     return details;
 }
 
-bool lvk::VkBackend::IsDeviceSuitable(VkPhysicalDevice physicalDevice)
+bool lvk::VkAPI::IsDeviceSuitable(VkPhysicalDevice physicalDevice)
 {
     QueueFamilyIndices indices = FindQueueFamilies(physicalDevice);
     bool extensionsSupported = CheckDeviceExtensionSupport(physicalDevice);
@@ -385,7 +385,7 @@ bool lvk::VkBackend::IsDeviceSuitable(VkPhysicalDevice physicalDevice)
     return indices.IsComplete() && extensionsSupported && swapChainSupport && supportedFeatures.samplerAnisotropy && supportedFeatures.wideLines;
 }
 
-uint32_t lvk::VkBackend::AssessDeviceSuitability(VkPhysicalDevice m_PhysicalDevice)
+uint32_t lvk::VkAPI::AssessDeviceSuitability(VkPhysicalDevice m_PhysicalDevice)
 {
     uint32_t score = 0;
 
@@ -407,7 +407,7 @@ uint32_t lvk::VkBackend::AssessDeviceSuitability(VkPhysicalDevice m_PhysicalDevi
     return score;
 }
 
-void lvk::VkBackend::PickPhysicalDevice()
+void lvk::VkAPI::PickPhysicalDevice()
 {
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(m_Instance, &deviceCount, nullptr);
@@ -456,7 +456,7 @@ void lvk::VkBackend::PickPhysicalDevice()
     }
 }
 
-void lvk::VkBackend::CreateLogicalDevice()
+void lvk::VkAPI::CreateLogicalDevice()
 {
     m_QueueFamilyIndices = FindQueueFamilies(m_PhysicalDevice);
 
@@ -506,14 +506,14 @@ void lvk::VkBackend::CreateLogicalDevice()
     volkLoadDevice(m_LogicalDevice);
 }
 
-void lvk::VkBackend::GetQueueHandles()
+void lvk::VkAPI::GetQueueHandles()
 {
     vkGetDeviceQueue(m_LogicalDevice, m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::GraphicsAndCompute],    0, &m_GraphicsQueue);
     vkGetDeviceQueue(m_LogicalDevice, m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::GraphicsAndCompute],    0, &m_ComputeQueue);
     vkGetDeviceQueue(m_LogicalDevice, m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Present],               0, &m_PresentQueue);
 }
 
-VkSurfaceFormatKHR lvk::VkBackend::ChooseSwapChainSurfaceFormat(std::vector<VkSurfaceFormatKHR> availableFormats)
+VkSurfaceFormatKHR lvk::VkAPI::ChooseSwapChainSurfaceFormat(std::vector<VkSurfaceFormatKHR> availableFormats)
 {
     if (availableFormats.size() == 0)
     {
@@ -534,7 +534,7 @@ VkSurfaceFormatKHR lvk::VkBackend::ChooseSwapChainSurfaceFormat(std::vector<VkSu
     return availableFormats[0];
 }
 
-VkPresentModeKHR lvk::VkBackend::ChooseSwapChainPresentMode(std::vector<VkPresentModeKHR> availableModes)
+VkPresentModeKHR lvk::VkAPI::ChooseSwapChainPresentMode(std::vector<VkPresentModeKHR> availableModes)
 {
     for (auto const& presentMode : availableModes)
     {
@@ -546,7 +546,7 @@ VkPresentModeKHR lvk::VkBackend::ChooseSwapChainPresentMode(std::vector<VkPresen
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D lvk::VkBackend::ChooseSwapExtent(VkSurfaceCapabilitiesKHR& surfaceCapabilities)
+VkExtent2D lvk::VkAPI::ChooseSwapExtent(VkSurfaceCapabilitiesKHR& surfaceCapabilities)
 {
     if(surfaceCapabilities.currentExtent.width != UINT32_MAX)
     {
@@ -558,12 +558,12 @@ VkExtent2D lvk::VkBackend::ChooseSwapExtent(VkSurfaceCapabilitiesKHR& surfaceCap
     }
 }
 
-VkExtent2D lvk::VkBackend::GetMaxFramebufferExtent()
+VkExtent2D lvk::VkAPI::GetMaxFramebufferExtent()
 {
     return p_MaxFramebufferExtent;
 }
 
-void lvk::VkBackend::CreateSwapChain()
+void lvk::VkAPI::CreateSwapChain()
 {
     SwapChainSupportDetais swapChainDetails = GetSwapChainSupportDetails(m_PhysicalDevice);
 
@@ -628,7 +628,7 @@ void lvk::VkBackend::CreateSwapChain()
     m_SwapChainImageExtent = surfaceExtent;
 }
 
-void lvk::VkBackend::CreateSwapChainImageViews()
+void lvk::VkAPI::CreateSwapChainImageViews()
 {
     m_SwapChainImageViews.resize(m_SwapChainImages.size());
 
@@ -638,7 +638,7 @@ void lvk::VkBackend::CreateSwapChainImageViews()
     }
 }
 
-void lvk::VkBackend::CleanupSwapChain()
+void lvk::VkAPI::CleanupSwapChain()
 {
     for (int i = 0; i < m_SwapChainFramebuffers.size(); i++)
     {
@@ -660,7 +660,7 @@ void lvk::VkBackend::CleanupSwapChain()
     vkDestroySwapchainKHR(m_LogicalDevice, m_SwapChain, nullptr);
 }
 
-void lvk::VkBackend::RecreateSwapChain()
+void lvk::VkAPI::RecreateSwapChain()
 {
     spdlog::info("VulkanAPI : Recreating Swapchain");
     while (vkDeviceWaitIdle(m_LogicalDevice) != VK_SUCCESS);
@@ -677,7 +677,7 @@ void lvk::VkBackend::RecreateSwapChain()
     InitImGui();
 }
 
-void lvk::VkBackend::CreateSwapChainColourTexture(bool enableMsaa)
+void lvk::VkAPI::CreateSwapChainColourTexture(bool enableMsaa)
 {
     VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT;
     
@@ -697,7 +697,7 @@ void lvk::VkBackend::CreateSwapChainColourTexture(bool enableMsaa)
     CreateImageView(m_SwapChainColourImage, m_SwapChainImageFormat, 1, VK_IMAGE_ASPECT_COLOR_BIT, m_SwapChainColourImageView);
 }
 
-void lvk::VkBackend::CreateSwapChainDepthTexture(bool enableMsaa )
+void lvk::VkAPI::CreateSwapChainDepthTexture(bool enableMsaa )
 {
     VkFormat depthFormat = FindDepthFormat();
 
@@ -720,7 +720,7 @@ void lvk::VkBackend::CreateSwapChainDepthTexture(bool enableMsaa )
     TransitionImageLayout(m_SwapChainDepthImage, depthFormat, 1, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 }
 
-VkShaderModule lvk::VkBackend::CreateShaderModule(const StageBinary& data)
+VkShaderModule lvk::VkAPI::CreateShaderModule(const StageBinary& data)
 {
     VkShaderModuleCreateInfo createInfo{};
     createInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -736,7 +736,7 @@ VkShaderModule lvk::VkBackend::CreateShaderModule(const StageBinary& data)
     return shaderModule;
 }
 
-uint32_t lvk::VkBackend::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+uint32_t lvk::VkAPI::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
 {
     VkPhysicalDeviceMemoryProperties memProperties;
     vkGetPhysicalDeviceMemoryProperties(m_PhysicalDevice, &memProperties);
@@ -748,7 +748,7 @@ uint32_t lvk::VkBackend::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFla
     return UINT32_MAX;
 }
 
-VkFormat lvk::VkBackend::FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
+VkFormat lvk::VkAPI::FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
 {
     for (VkFormat format : candidates) {
         VkFormatProperties props;
@@ -765,7 +765,7 @@ VkFormat lvk::VkBackend::FindSupportedFormat(const std::vector<VkFormat>& candid
 
 }
 
-VkFormat lvk::VkBackend::FindDepthFormat()
+VkFormat lvk::VkAPI::FindDepthFormat()
 {
     return FindSupportedFormat(
         { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
@@ -774,12 +774,12 @@ VkFormat lvk::VkBackend::FindDepthFormat()
     );
 }
 
-bool lvk::VkBackend::HasStencilComponent(VkFormat& format)
+bool lvk::VkAPI::HasStencilComponent(VkFormat& format)
 {
     return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
-void lvk::VkBackend::CreateBufferVMA(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VmaAllocation& allocation)
+void lvk::VkAPI::CreateBufferVMA(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VmaAllocation& allocation)
 {
     VkBufferCreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -802,7 +802,7 @@ void lvk::VkBackend::CreateBufferVMA(VkDeviceSize size, VkBufferUsageFlags usage
     VK_CHECK(vmaCreateBuffer(m_Allocator, &bufferInfo, &allocInfo, &buffer, &allocation, nullptr));
 }
 
-void lvk::VkBackend::CreateImage(uint32_t width, uint32_t height, uint32_t numMips, VkSampleCountFlagBits sampleCount, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, uint32_t depth)
+void lvk::VkAPI::CreateImage(uint32_t width, uint32_t height, uint32_t numMips, VkSampleCountFlagBits sampleCount, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, uint32_t depth)
 {
     VkImageCreateInfo imageInfo{};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -836,7 +836,7 @@ void lvk::VkBackend::CreateImage(uint32_t width, uint32_t height, uint32_t numMi
     vkBindImageMemory(m_LogicalDevice, image, imageMemory, 0);
 }
 
-void lvk::VkBackend::CreateImageView(VkImage& image, VkFormat format, uint32_t numMips, VkImageAspectFlags aspectFlags, VkImageView& imageView, VkImageViewType imageViewType)
+void lvk::VkAPI::CreateImageView(VkImage& image, VkFormat format, uint32_t numMips, VkImageAspectFlags aspectFlags, VkImageView& imageView, VkImageViewType imageViewType)
 {
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -852,7 +852,7 @@ void lvk::VkBackend::CreateImageView(VkImage& image, VkFormat format, uint32_t n
     VK_CHECK(vkCreateImageView(m_LogicalDevice, &viewInfo, nullptr, &imageView))
 }
 
-void lvk::VkBackend::CreateImageSampler(VkImageView& imageView, uint32_t numMips, VkFilter filterMode, VkSamplerAddressMode addressMode, VkSampler& sampler)
+void lvk::VkAPI::CreateImageSampler(VkImageView& imageView, uint32_t numMips, VkFilter filterMode, VkSamplerAddressMode addressMode, VkSampler& sampler)
 {
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -881,7 +881,7 @@ void lvk::VkBackend::CreateImageSampler(VkImageView& imageView, uint32_t numMips
     VK_CHECK(vkCreateSampler(m_LogicalDevice, &samplerInfo, nullptr, &sampler))
 }
 
-void lvk::VkBackend::CreateTexture(const String& path, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips)
+void lvk::VkAPI::CreateTexture(const String& path, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips)
 {
     bool generateMips = numMips != nullptr;
 
@@ -932,7 +932,7 @@ void lvk::VkBackend::CreateTexture(const String& path, VkFormat format, VkImage&
     vmaFreeMemory(m_Allocator, stagingBufferMemory);
 }
 
-void lvk::VkBackend::CreateTextureFromMemory(unsigned char* tex_data, uint32_t dataSize, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips)
+void lvk::VkAPI::CreateTextureFromMemory(unsigned char* tex_data, uint32_t dataSize, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips)
 {
     bool generateMips = numMips != nullptr;
 
@@ -983,7 +983,7 @@ void lvk::VkBackend::CreateTextureFromMemory(unsigned char* tex_data, uint32_t d
     vmaFreeMemory(m_Allocator, stagingBufferMemory);
 }
 
-void lvk::VkBackend::CreateTexture3DFromMemory(unsigned char* tex_data, VkExtent3D extent, uint32_t dataSize, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips)
+void lvk::VkAPI::CreateTexture3DFromMemory(unsigned char* tex_data, VkExtent3D extent, uint32_t dataSize, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips)
 {
     bool generateMips = numMips != nullptr;
 
@@ -1035,7 +1035,7 @@ void lvk::VkBackend::CreateTexture3DFromMemory(unsigned char* tex_data, VkExtent
 }
 
 
-void lvk::VkBackend::CopyBuffer(VkBuffer& src, VkBuffer& dst, VkDeviceSize size)
+void lvk::VkAPI::CopyBuffer(VkBuffer& src, VkBuffer& dst, VkDeviceSize size)
 {
     // create a new command buffer to record the buffer copy
     VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
@@ -1049,7 +1049,7 @@ void lvk::VkBackend::CopyBuffer(VkBuffer& src, VkBuffer& dst, VkDeviceSize size)
     EndSingleTimeCommands(commandBuffer);
 }
 
-void lvk::VkBackend::CopyBufferToImage(VkBuffer& src, VkImage& image, uint32_t width, uint32_t height)
+void lvk::VkAPI::CopyBufferToImage(VkBuffer& src, VkImage& image, uint32_t width, uint32_t height)
 {
     VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
 
@@ -1111,7 +1111,7 @@ std::vector<VkDescriptorSetLayoutBinding> CleanDescriptorSetLayout(std::vector<V
     return clean;
 }
 
-void lvk::VkBackend::CreateDescriptorSetLayout(std::vector<DescriptorSetLayoutData>& vertLayoutDatas, std::vector<DescriptorSetLayoutData>& fragLayoutDatas, VkDescriptorSetLayout& descriptorSetLayout)
+void lvk::VkAPI::CreateDescriptorSetLayout(std::vector<DescriptorSetLayoutData>& vertLayoutDatas, std::vector<DescriptorSetLayoutData>& fragLayoutDatas, VkDescriptorSetLayout& descriptorSetLayout)
 {
     std::vector<VkDescriptorSetLayoutBinding> bindings;
     uint8_t count = 0;
@@ -1158,7 +1158,7 @@ void lvk::VkBackend::CreateDescriptorSetLayout(std::vector<DescriptorSetLayoutDa
     VK_CHECK(vkCreateDescriptorSetLayout(m_LogicalDevice, &layoutInfo, nullptr, &descriptorSetLayout))
 }
 
-void lvk::VkBackend::CreateFramebuffer(Vector<VkImageView>& attachments, VkRenderPass renderPass, VkExtent2D extent, VkFramebuffer& framebuffer)
+void lvk::VkAPI::CreateFramebuffer(Vector<VkImageView>& attachments, VkRenderPass renderPass, VkExtent2D extent, VkFramebuffer& framebuffer)
 {
     VkFramebufferCreateInfo framebufferCreateInfo{};
     framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -1172,7 +1172,7 @@ void lvk::VkBackend::CreateFramebuffer(Vector<VkImageView>& attachments, VkRende
     VK_CHECK (vkCreateFramebuffer(m_LogicalDevice, &framebufferCreateInfo, nullptr, &framebuffer) != VK_SUCCESS)
 }
 
-VkPipeline lvk::VkBackend::CreateRasterPipeline(ShaderProgram& shader,
+VkPipeline lvk::VkAPI::CreateRasterPipeline(ShaderProgram& shader,
     Vector<VkVertexInputBindingDescription>& vertexBindingDescriptions, Vector<VkVertexInputAttributeDescription>& vertexAttributeDescriptions, 
     VkRenderPass& pipelineRenderPass, 
     uint32_t width, uint32_t height, 
@@ -1416,7 +1416,7 @@ VkPipeline lvk::VkBackend::CreateRasterPipeline(ShaderProgram& shader,
     return pipeline;
 }
 
-void lvk::VkBackend::CreateSwapChainFramebuffers()
+void lvk::VkAPI::CreateSwapChainFramebuffers()
 {
     m_SwapChainFramebuffers.resize(m_SwapChainImageViews.size());
 
@@ -1443,7 +1443,7 @@ void lvk::VkBackend::CreateSwapChainFramebuffers()
     }
 }
 
-void lvk::VkBackend::CreateCommandPool()
+void lvk::VkAPI::CreateCommandPool()
 {
     VkCommandPoolCreateInfo createInfo{};
     createInfo.sType                = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -1457,7 +1457,7 @@ void lvk::VkBackend::CreateCommandPool()
     }
 }
 
-void lvk::VkBackend::CreateDescriptorSetAllocator()
+void lvk::VkAPI::CreateDescriptorSetAllocator()
 {
     m_DescriptorSetAllocator.Init(*this, MAX_FRAMES_IN_FLIGHT * 128, {
         {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0.33f},
@@ -1466,7 +1466,7 @@ void lvk::VkBackend::CreateDescriptorSetAllocator()
     });
 }
 
-void lvk::VkBackend::CreateSemaphores()
+void lvk::VkAPI::CreateSemaphores()
 {
     m_ImageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     m_RenderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
@@ -1485,7 +1485,7 @@ void lvk::VkBackend::CreateSemaphores()
     
 }
 
-void lvk::VkBackend::CreateFences()
+void lvk::VkAPI::CreateFences()
 {
     m_FrameInFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
     m_ImagesInFlight.resize(m_SwapChainImages.size(), VK_NULL_HANDLE);
@@ -1504,7 +1504,7 @@ void lvk::VkBackend::CreateFences()
     }
 }
 
-void lvk::VkBackend::DrawFrame()
+void lvk::VkAPI::DrawFrame()
 {
     vkWaitForFences(m_LogicalDevice, 1, &m_FrameInFlightFences[p_CurrentFrameIndex], VK_TRUE, UINT64_MAX);
 
@@ -1573,7 +1573,7 @@ void lvk::VkBackend::DrawFrame()
     p_CurrentFrameIndex = (p_CurrentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-void lvk::VkBackend::ListDeviceExtensions(VkPhysicalDevice physicalDevice)
+void lvk::VkAPI::ListDeviceExtensions(VkPhysicalDevice physicalDevice)
 {
     std::vector<VkExtensionProperties> extensions = GetDeviceAvailableExtensions(physicalDevice);
 
@@ -1585,7 +1585,7 @@ void lvk::VkBackend::ListDeviceExtensions(VkPhysicalDevice physicalDevice)
     }
 }
 
-std::vector<VkExtensionProperties> lvk::VkBackend::GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice)
+std::vector<VkExtensionProperties> lvk::VkAPI::GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice)
 {
     uint32_t extensionCount;
     vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
@@ -1598,7 +1598,7 @@ std::vector<VkExtensionProperties> lvk::VkBackend::GetDeviceAvailableExtensions(
 
 }
 
-StageBinary lvk::VkBackend::LoadSpirvBinary(const String& path)
+StageBinary lvk::VkAPI::LoadSpirvBinary(const String& path)
 {
     std::ifstream file(path, std::ios::ate | std::ios::binary);
 
@@ -1620,12 +1620,12 @@ StageBinary lvk::VkBackend::LoadSpirvBinary(const String& path)
     return data;
 }
 
-VkDescriptorSet lvk::VkBackend::CreateDescriptorSet(DescriptorSetLayoutData& layoutData)
+VkDescriptorSet lvk::VkAPI::CreateDescriptorSet(DescriptorSetLayoutData& layoutData)
 {
     return m_DescriptorSetAllocator.Allocate(m_LogicalDevice, layoutData.m_Layout, nullptr);
 }
 
-void lvk::VkBackend::CreateBuiltInRenderPasses()
+void lvk::VkAPI::CreateBuiltInRenderPasses()
 {
     {
         Vector<VkAttachmentDescription> colourAttachmentDescriptions{};
@@ -1724,7 +1724,7 @@ void lvk::VkBackend::CreateBuiltInRenderPasses()
     }
 }
 
-VkPipeline lvk::VkBackend::CreateComputePipeline(StageBinary& comp, VkDescriptorSetLayout& descriptorSetLayout, uint32_t width, uint32_t height, VkPipelineLayout& pipelineLayout)
+VkPipeline lvk::VkAPI::CreateComputePipeline(StageBinary& comp, VkDescriptorSetLayout& descriptorSetLayout, uint32_t width, uint32_t height, VkPipelineLayout& pipelineLayout)
 {
     auto compStage = CreateShaderModule(comp);
 
@@ -1749,7 +1749,7 @@ VkPipeline lvk::VkBackend::CreateComputePipeline(StageBinary& comp, VkDescriptor
     return VK_NULL_HANDLE;
 }
 
-Vector<VkDescriptorSetLayoutBinding> lvk::VkBackend::GetDescriptorSetLayoutBindings(Vector<DescriptorSetLayoutData>& vertLayoutDatas, Vector<DescriptorSetLayoutData>& fragLayoutDatas)
+Vector<VkDescriptorSetLayoutBinding> lvk::VkAPI::GetDescriptorSetLayoutBindings(Vector<DescriptorSetLayoutData>& vertLayoutDatas, Vector<DescriptorSetLayoutData>& fragLayoutDatas)
 {
     Vector<VkDescriptorSetLayoutBinding> bindings;
     uint8_t count = 0;
@@ -1789,7 +1789,7 @@ Vector<VkDescriptorSetLayoutBinding> lvk::VkBackend::GetDescriptorSetLayoutBindi
     return CleanDescriptorSetLayout(bindings);
 }
 
-void lvk::VkBackend::CreateRenderPass(VkRenderPass& renderPass, Vector<VkAttachmentDescription>& colourAttachments, Vector<VkAttachmentDescription>& resolveAttachments, bool hasDepthAttachment, VkAttachmentDescription depthAttachment, VkAttachmentLoadOp attachmentLoadOp)
+void lvk::VkAPI::CreateRenderPass(VkRenderPass& renderPass, Vector<VkAttachmentDescription>& colourAttachments, Vector<VkAttachmentDescription>& resolveAttachments, bool hasDepthAttachment, VkAttachmentDescription depthAttachment, VkAttachmentLoadOp attachmentLoadOp)
 {
     // Layout: Colour attachments -> Depth attachments -> Resolve attachments
     VkSubpassDescription subpass{};
@@ -1878,7 +1878,7 @@ void lvk::VkBackend::CreateRenderPass(VkRenderPass& renderPass, Vector<VkAttachm
 
 #include <dwmapi.h>
 #endif
-void lvk::VkBackend::Start(const String& appName, uint32_t width, uint32_t height, bool enableSwapchainMsaa)
+void lvk::VkAPI::Start(const String& appName, uint32_t width, uint32_t height, bool enableSwapchainMsaa)
 {
     p_AppName = appName;
 #ifdef WIN32
@@ -1915,7 +1915,7 @@ lvk::ShaderBindingType GetBindingType(const SpvReflectDescriptorBinding& binding
     return ShaderBindingType::UniformBuffer;
 }
 
-Vector<DescriptorSetLayoutData> lvk::VkBackend::ReflectDescriptorSetLayouts(StageBinary& stageBin)
+Vector<DescriptorSetLayoutData> lvk::VkAPI::ReflectDescriptorSetLayouts(StageBinary& stageBin)
 {
     SpvReflectShaderModule shaderReflectModule;
     SpvReflectResult result = spvReflectCreateShaderModule(stageBin.size(), stageBin.data(), &shaderReflectModule);
@@ -2016,7 +2016,7 @@ Vector<DescriptorSetLayoutData> lvk::VkBackend::ReflectDescriptorSetLayouts(Stag
     return layoutDatas;
 }
 
-Vector<PushConstantBlock> lvk::VkBackend::ReflectPushConstants(StageBinary& stageBin)
+Vector<PushConstantBlock> lvk::VkAPI::ReflectPushConstants(StageBinary& stageBin)
 {
     Vector<PushConstantBlock> pushConstants{};
     SpvReflectShaderModule shaderReflectModule;
@@ -2038,7 +2038,7 @@ Vector<PushConstantBlock> lvk::VkBackend::ReflectPushConstants(StageBinary& stag
     return pushConstants;
 }
 
-void lvk::VkBackend::CreateCommandBuffers()
+void lvk::VkAPI::CreateCommandBuffers()
 {
     m_CommandBuffers.resize(m_SwapChainFramebuffers.size());
 
@@ -2052,7 +2052,7 @@ void lvk::VkBackend::CreateCommandBuffers()
 
 }
 
-void lvk::VkBackend::ClearCommandBuffers()
+void lvk::VkAPI::ClearCommandBuffers()
 {
     for (uint32_t i = 0; i < m_CommandBuffers.size(); i++)
     {
@@ -2060,7 +2060,7 @@ void lvk::VkBackend::ClearCommandBuffers()
     }
 }
 
-void lvk::VkBackend::CreateVmaAllocator()
+void lvk::VkAPI::CreateVmaAllocator()
 {
     VmaVulkanFunctions vulkanFunctions = {};
     vulkanFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
@@ -2077,7 +2077,7 @@ void lvk::VkBackend::CreateVmaAllocator()
     VK_CHECK(vmaCreateAllocator(&allocatorCreateInfo, &m_Allocator));
 }
 
-void lvk::VkBackend::GetMaxUsableSampleCount()
+void lvk::VkAPI::GetMaxUsableSampleCount()
 {
     VkPhysicalDeviceProperties physicalDeviceProperties;
     vkGetPhysicalDeviceProperties(m_PhysicalDevice, &physicalDeviceProperties);
@@ -2096,7 +2096,7 @@ void lvk::VkBackend::GetMaxUsableSampleCount()
     if (counts & VK_SAMPLE_COUNT_2_BIT) {   m_MaxMsaaSamples = VK_SAMPLE_COUNT_2_BIT;   return ;}
 }
 
-void lvk::VkBackend::InitVulkan(bool enableSwapchainMsaa)
+void lvk::VkAPI::InitVulkan(bool enableSwapchainMsaa)
 {
     p_CurrentFrameIndex = 0;
     m_EnableSwapchainMsaa = enableSwapchainMsaa;
@@ -2122,7 +2122,7 @@ void lvk::VkBackend::InitVulkan(bool enableSwapchainMsaa)
     CreateVmaAllocator();
 }
 
-void lvk::VkBackend::InitImGui()
+void lvk::VkAPI::InitImGui()
 {
     if (!m_UseImGui)
     {
@@ -2159,7 +2159,7 @@ void lvk::VkBackend::InitImGui()
 
 }
 
-void lvk::VkBackend::RenderImGui()
+void lvk::VkAPI::RenderImGui()
 {    
     ImGui::Render();
     VkCommandBuffer imguiCommandBuffer = BeginSingleTimeCommands();
@@ -2184,7 +2184,7 @@ void lvk::VkBackend::RenderImGui()
     EndSingleTimeCommands(imguiCommandBuffer);
 }
 
-VkCommandBuffer lvk::VkBackend::BeginSingleTimeCommands()
+VkCommandBuffer lvk::VkAPI::BeginSingleTimeCommands()
 {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -2204,7 +2204,7 @@ VkCommandBuffer lvk::VkBackend::BeginSingleTimeCommands()
     return commandBuffer;
 }
 
-void lvk::VkBackend::EndSingleTimeCommands(VkCommandBuffer& commandBuffer)
+void lvk::VkAPI::EndSingleTimeCommands(VkCommandBuffer& commandBuffer)
 {
     vkEndCommandBuffer(commandBuffer);
 
@@ -2219,7 +2219,7 @@ void lvk::VkBackend::EndSingleTimeCommands(VkCommandBuffer& commandBuffer)
     vkFreeCommandBuffers(m_LogicalDevice , m_GraphicsQueueCommandPool, 1, &commandBuffer);
 }
 
-VkCommandBuffer&VkBackend::BeginGraphicsCommands(uint32_t frameIndex) {
+VkCommandBuffer&VkAPI::BeginGraphicsCommands(uint32_t frameIndex) {
     VkCommandBufferBeginInfo commandBufferBeginInfo{};
     commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     commandBufferBeginInfo.flags = 0;
@@ -2229,13 +2229,13 @@ VkCommandBuffer&VkBackend::BeginGraphicsCommands(uint32_t frameIndex) {
     return m_CommandBuffers[frameIndex];
 }
 
-void VkBackend::EndGraphicsCommands(uint32_t frameIndex) {
+void VkAPI::EndGraphicsCommands(uint32_t frameIndex) {
     VK_CHECK(vkEndCommandBuffer(m_CommandBuffers[frameIndex]));
 }
 
 
 
-void lvk::VkBackend::RecordGraphicsCommands(std::function<void(VkCommandBuffer&, uint32_t)> graphicsCommandsCallback)
+void lvk::VkAPI::RecordGraphicsCommands(std::function<void(VkCommandBuffer&, uint32_t)> graphicsCommandsCallback)
 {
     for (uint32_t i = 0; i < m_CommandBuffers.size(); i++)
     {
@@ -2254,7 +2254,7 @@ void lvk::VkBackend::RecordGraphicsCommands(std::function<void(VkCommandBuffer&,
     } 
 }
 
-void lvk::VkBackend::TransitionImageLayout(VkImage image, VkFormat format, uint32_t numMips, VkImageLayout oldLayout, VkImageLayout newLayout)
+void lvk::VkAPI::TransitionImageLayout(VkImage image, VkFormat format, uint32_t numMips, VkImageLayout oldLayout, VkImageLayout newLayout)
 {
     VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
 
@@ -2333,7 +2333,7 @@ void lvk::VkBackend::TransitionImageLayout(VkImage image, VkFormat format, uint3
     EndSingleTimeCommands(commandBuffer);
 }
 
-void lvk::VkBackend::GenerateMips(VkImage image, VkFormat format, uint32_t imageWidth, uint32_t imageHeight, uint32_t numMips, VkFilter filterMethod)
+void lvk::VkAPI::GenerateMips(VkImage image, VkFormat format, uint32_t imageWidth, uint32_t imageHeight, uint32_t numMips, VkFilter filterMethod)
 {
     VkFormatProperties formatProperties;
     vkGetPhysicalDeviceFormatProperties(m_PhysicalDevice, format, &formatProperties);
@@ -2412,7 +2412,7 @@ void lvk::VkBackend::GenerateMips(VkImage image, VkFormat format, uint32_t image
     EndSingleTimeCommands(cmd);
 }
 
-void lvk::VkBackend::CreateIndexBuffer(std::vector<uint32_t> indices, VkBuffer& buffer, VmaAllocation& deviceMemory)
+void lvk::VkAPI::CreateIndexBuffer(std::vector<uint32_t> indices, VkBuffer& buffer, VmaAllocation& deviceMemory)
 {
     VkDeviceSize bufferSize = sizeof(uint32_t) * indices.size();
 
@@ -2504,13 +2504,13 @@ ShaderBufferMemberType lvk::GetTypeFromSpvReflect(SpvReflectTypeDescription* typ
 }
 
 
-void lvk::VkBackend::CreateMappedBuffer(MappedBuffer& buf, VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags memoryProperties, uint32_t size)
+void lvk::VkAPI::CreateMappedBuffer(MappedBuffer& buf, VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags memoryProperties, uint32_t size)
 {
     CreateBufferVMA(VkDeviceSize{ size }, bufferUsage, memoryProperties, buf.m_GpuBuffer, buf.m_GpuMemory);
     VK_CHECK(vmaMapMemory(m_Allocator, buf.m_GpuMemory, &buf.m_MappedAddr));
 }
 
-void lvk::VkBackend::CreateUniformBuffers (ShaderBufferFrameData& uniformData, VkDeviceSize bufferSize)
+void lvk::VkAPI::CreateUniformBuffers (ShaderBufferFrameData& uniformData, VkDeviceSize bufferSize)
 {
 	uniformData.m_UniformBuffers.resize (MAX_FRAMES_IN_FLIGHT);
 
@@ -2521,7 +2521,7 @@ void lvk::VkBackend::CreateUniformBuffers (ShaderBufferFrameData& uniformData, V
 }
 
 
-void lvk::VkBackend::CleanupImGui()
+void lvk::VkAPI::CleanupImGui()
 {
     if (m_UseImGui)
     {
@@ -2532,7 +2532,7 @@ void lvk::VkBackend::CleanupImGui()
     }
 }
 
-VkBackend::VkBackend(bool enableDebugValidation) : m_UseValidation(enableDebugValidation)
+VkAPI::VkAPI(bool enableDebugValidation) : m_UseValidation(enableDebugValidation)
 {
 
 }

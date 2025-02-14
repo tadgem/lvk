@@ -13,7 +13,7 @@ public:
     Vector<Texture> m_Attachments;
     VkFramebuffer   m_FB;
 
-    void Free(VkBackend & vk)
+    void Free(VkAPI & vk)
     {
         for (auto& t : m_Attachments)
         {
@@ -27,7 +27,7 @@ class FramebufferSetEx {
 public:
     Array<FramebufferEx, MAX_FRAMES_IN_FLIGHT> m_Framebuffers;
 
-    void Free(VkBackend & vk)
+    void Free(VkAPI & vk)
     {
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
@@ -207,7 +207,7 @@ void UpdateUniformBufferMat(VulkanAPI_SDL& vk, Material& itemMat, ShaderBufferFr
     lightsData.Set(vk.GetFrameIndex(), lightDataCpu);
 }
 
-void CreateGBufferDescriptorSets(VkBackend & vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler, Vector<VkDescriptorSet>& descriptorSets, ShaderBufferFrameData& mvpUniformData)
+void CreateGBufferDescriptorSets(VkAPI & vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler, Vector<VkDescriptorSet>& descriptorSets, ShaderBufferFrameData& mvpUniformData)
 {
     std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -373,7 +373,7 @@ void CreateGBufferRenderPass(VulkanAPI_SDL& vk, VkRenderPass& renderPass)
     vk.CreateRenderPass(renderPass, colourAttachmentDescriptions, resolveAttachmentDescriptions, true, depthAttachmentDescription, VK_ATTACHMENT_LOAD_OP_CLEAR);
 }
 
-RenderModel CreateRenderModelGbuffer(VkBackend & vk, const String& modelPath, ShaderProgram& shader)
+RenderModel CreateRenderModelGbuffer(VkAPI & vk, const String& modelPath, ShaderProgram& shader)
 {
     Model model;
     LoadModelAssimp(vk, model, modelPath, true);
@@ -395,7 +395,7 @@ RenderModel CreateRenderModelGbuffer(VkBackend & vk, const String& modelPath, Sh
     return renderModel;
 }
 
-void OnImGui(VkBackend & vk, DeferredLightData& lightDataCpu)
+void OnImGui(VkAPI & vk, DeferredLightData& lightDataCpu)
 {
     if (ImGui::Begin("Debug"))
     {

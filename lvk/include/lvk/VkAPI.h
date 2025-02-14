@@ -8,13 +8,13 @@
 #include "lvk/DescriptorSetAllocator.h"
 namespace lvk
 {
-    class VkBackend;
+    class VkAPI;
     struct ShaderProgram;
 
 
     static ShaderBufferMemberType GetTypeFromSpvReflect(SpvReflectTypeDescription* typeDescription);
 
-    class VkBackend {
+    class VkAPI {
     protected:
         const Vector<const char*>   p_ValidationLayers = {
             "VK_LAYER_KHRONOS_validation"
@@ -27,7 +27,7 @@ namespace lvk
         const bool                  m_UseValidation = true;
         const bool                  m_UseImGui      = true;
 
-        VkBackend(bool enableDebugValidation);
+        VkAPI(bool enableDebugValidation);
 
         VkInstance                      m_Instance;
         VkSurfaceKHR                    m_Surface;

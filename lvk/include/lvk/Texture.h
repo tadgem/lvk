@@ -1,7 +1,7 @@
 #pragma once
 #include "ImGui/imgui_impl_vulkan.h"
-#include "lvk/VkBackend.h"
 #include "lvk/Structs.h"
+#include "lvk/VkAPI.h"
 
 namespace lvk
 {
@@ -72,7 +72,7 @@ namespace lvk
 
         }
 
-        static Texture CreateAttachment(lvk::VkBackend & vk, uint32_t width, uint32_t height,
+        static Texture CreateAttachment(lvk::VkAPI & vk, uint32_t width, uint32_t height,
             uint32_t numMips, VkSampleCountFlagBits sampleCount,
             VkFormat format, VkImageTiling tiling, VkImageUsageFlags usageFlags,
             VkMemoryPropertyFlagBits memoryFlags, VkImageAspectFlagBits imageAspect,
@@ -95,7 +95,7 @@ namespace lvk
             return Texture(image, imageView, memory, sampler, format, sampleCount, imguiTextureHandle);
         }
 
-        static Texture CreateTexture(lvk::VkBackend & vk, const lvk::String& path, VkFormat format, VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
+        static Texture CreateTexture(lvk::VkAPI & vk, const lvk::String& path, VkFormat format, VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
         {
             VkImage image;
             VkImageView imageView;
@@ -115,7 +115,7 @@ namespace lvk
             return Texture(image, imageView, memory, sampler, format, VK_SAMPLE_COUNT_1_BIT, imguiTextureHandle);
         }
 
-        static Texture CreateTextureFromMemory(lvk::VkBackend & vk, unsigned char* tex_data, uint32_t length, VkFormat format, VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
+        static Texture CreateTextureFromMemory(lvk::VkAPI & vk, unsigned char* tex_data, uint32_t length, VkFormat format, VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
         {
             VkImage image;
             VkImageView imageView;
@@ -135,7 +135,7 @@ namespace lvk
             return Texture(image, imageView, memory, sampler, format, VK_SAMPLE_COUNT_1_BIT, imguiTextureHandle);
         }
 
-        static Texture CreateTexture3DFromMemory(lvk::VkBackend & vk, VkExtent3D extent, unsigned char* tex_data, uint32_t length, VkFormat format, VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
+        static Texture CreateTexture3DFromMemory(lvk::VkAPI & vk, VkExtent3D extent, unsigned char* tex_data, uint32_t length, VkFormat format, VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
         {
             VkImage image;
             VkImageView imageView;
@@ -155,9 +155,9 @@ namespace lvk
             return Texture(image, imageView, memory, sampler, format, VK_SAMPLE_COUNT_1_BIT, imguiTextureHandle);
         }
 
-        static void InitDefaultTexture(lvk::VkBackend & vk);
-        static void FreeDefaultTexture(lvk::VkBackend & vk);
+        static void InitDefaultTexture(lvk::VkAPI & vk);
+        static void FreeDefaultTexture(lvk::VkAPI & vk);
 
-        void Free(lvk::VkBackend & vk);
+        void Free(lvk::VkAPI & vk);
     };
 }

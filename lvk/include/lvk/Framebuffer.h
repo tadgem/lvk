@@ -11,7 +11,7 @@ namespace lvk
         VkFormat                m_Format;
         VkSampleCountFlagBits   m_SampleCount;
 
-        void Free(VkBackend & vk)
+        void Free(VkAPI & vk)
         {
             for (auto& t : m_AttachmentSwapchainImages)
             {
@@ -19,7 +19,7 @@ namespace lvk
             }
         }
 
-        static Attachment CreateColourAttachment(lvk::VkBackend & vk, VkExtent2D resolution,
+        static Attachment CreateColourAttachment(lvk::VkAPI & vk, VkExtent2D resolution,
             uint32_t numMips, VkSampleCountFlagBits sampleCount,
             VkFormat format, VkImageUsageFlags usageFlags,
             VkMemoryPropertyFlagBits memoryFlags, VkImageAspectFlagBits imageAspect,
@@ -34,7 +34,7 @@ namespace lvk
             return a;
         }
 
-        static Attachment CreateDepthAttachment(lvk::VkBackend & vk, VkExtent2D resolution,
+        static Attachment CreateDepthAttachment(lvk::VkAPI & vk, VkExtent2D resolution,
             uint32_t numMips, VkSampleCountFlagBits sampleCount,
             VkImageUsageFlags usageFlags,
             VkMemoryPropertyFlagBits memoryFlags, VkImageAspectFlagBits imageAspect,
@@ -66,7 +66,7 @@ namespace lvk
         VkAttachmentLoadOp          m_AttachmentLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         VkExtent2D                  m_Resolution;
         
-        void AddColourAttachment(lvk::VkBackend & vk, ResolutionScale scale,
+        void AddColourAttachment(lvk::VkAPI & vk, ResolutionScale scale,
             uint32_t numMips, VkSampleCountFlagBits sampleCount,
             VkFormat format, VkImageUsageFlags usageFlags,
             VkMemoryPropertyFlagBits memoryFlags, VkImageAspectFlagBits imageAspect,
@@ -79,7 +79,7 @@ namespace lvk
             m_Resolution = resolution;
         }
 
-        void AddDepthAttachment(lvk::VkBackend & vk, ResolutionScale scale,
+        void AddDepthAttachment(lvk::VkAPI & vk, ResolutionScale scale,
             uint32_t numMips, VkSampleCountFlagBits sampleCount,
             VkImageUsageFlags usageFlags,
             VkMemoryPropertyFlagBits memoryFlags, VkImageAspectFlagBits imageAspect,
@@ -93,7 +93,7 @@ namespace lvk
 
         }
 
-        void AddResolveAttachment(lvk::VkBackend & vk, ResolutionScale scale,
+        void AddResolveAttachment(lvk::VkAPI & vk, ResolutionScale scale,
             uint32_t numMips, VkSampleCountFlagBits sampleCount,
             VkFormat format, VkImageUsageFlags usageFlags,
             VkMemoryPropertyFlagBits memoryFlags, VkImageAspectFlagBits imageAspect,
@@ -108,7 +108,7 @@ namespace lvk
         }
 
 
-        void Build(lvk::VkBackend & vk)
+        void Build(lvk::VkAPI & vk)
         {
             // build renderpass
             Vector<VkAttachmentDescription> colourAttachmentDescriptions{};
@@ -183,6 +183,6 @@ namespace lvk
             }
         }
 
-        void Free(VkBackend & vk);
+        void Free(VkAPI & vk);
     };
 }

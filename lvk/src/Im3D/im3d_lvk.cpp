@@ -23,7 +23,7 @@ namespace lvk
         return chars;
     }
 
-    LvkIm3dState LoadIm3D(VkBackend & vk)
+    LvkIm3dState LoadIm3D(VkAPI & vk)
     {
         Vector<unsigned char> tris_vert_bin = ToVector(&im3d_tris_vert_spv_bin[0], (uint32_t)im3d_tris_vert_spv_bin_SIZE);
         ShaderStage tris_vert = ShaderStage::CreateFromBinary(
@@ -66,7 +66,7 @@ namespace lvk
         return { tris_prog, points_prog, lines_prog, vertexBuffer, vertexBufferMemory };
     }
 
-    LvkIm3dViewState AddIm3dForViewport(VkBackend & vk, LvkIm3dState& state, VkRenderPass renderPass, bool enableMSAA)
+    LvkIm3dViewState AddIm3dForViewport(VkAPI & vk, LvkIm3dState& state, VkRenderPass renderPass, bool enableMSAA)
     {
         auto bindingDescriptions = Vector<VkVertexInputBindingDescription>{VertexDataPos4::GetBindingDescription() };
         auto attrbuteDescriptions = VertexDataPos4::GetAttributeDescriptions();
@@ -101,7 +101,7 @@ namespace lvk
                 tris_layout, points_layout, lines_layout };
     }
 
-    void FreeIm3dViewport(VkBackend & vk, LvkIm3dViewState& viewState)
+    void FreeIm3dViewport(VkAPI & vk, LvkIm3dViewState& viewState)
     {
         viewState.m_TrisMaterial.Free(vk);
         viewState.m_LinesMaterial.Free(vk);
@@ -125,7 +125,7 @@ namespace lvk
         return m;
     }
 
-    void FreeIm3d(VkBackend & vk, LvkIm3dState& state)
+    void FreeIm3d(VkAPI & vk, LvkIm3dState& state)
     {
         state.m_TriProg.Free(vk);
         state.m_LinesProg.Free(vk);
@@ -135,7 +135,7 @@ namespace lvk
         vmaFreeMemory(vk.m_Allocator, state.m_ScreenQuadMemory);
     }
 
-    void DrawIm3d(VkBackend & vk, VkCommandBuffer& buffer, uint32_t frameIndex, LvkIm3dState& state, LvkIm3dViewState& viewState, glm::mat4 _viewProj, uint32_t width, uint32_t height, bool drawText)
+    void DrawIm3d(VkAPI & vk, VkCommandBuffer& buffer, uint32_t frameIndex, LvkIm3dState& state, LvkIm3dViewState& viewState, glm::mat4 _viewProj, uint32_t width, uint32_t height, bool drawText)
     {
         auto& context = Im3d::GetContext();
 

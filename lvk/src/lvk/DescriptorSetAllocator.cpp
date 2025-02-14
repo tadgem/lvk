@@ -1,8 +1,8 @@
 #include "volk.h"
 #include "lvk/DescriptorSetAllocator.h"
-#include "lvk/VkBackend.h"
+#include "lvk/VkAPI.h"
 
-void lvk::DescriptorSetAllocator::Init(VkBackend & vk, uint32_t initialSetAmount, Vector<PoolSizeRatio> ratios)
+void lvk::DescriptorSetAllocator::Init(VkAPI & vk, uint32_t initialSetAmount, Vector<PoolSizeRatio> ratios)
 {
 	m_Ratios = ratios;
 

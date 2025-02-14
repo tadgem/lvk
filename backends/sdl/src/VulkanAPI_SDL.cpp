@@ -181,7 +181,7 @@ VkExtent2D lvk::VulkanAPI_SDL::GetMaxFramebufferResolution()
     return res;
 }
 
-lvk::VulkanAPI_SDL::VulkanAPI_SDL(bool enableDebugValidation) : VkBackend(enableDebugValidation)
+lvk::VulkanAPI_SDL::VulkanAPI_SDL(bool enableDebugValidation) : VkAPI(enableDebugValidation)
 {
     spdlog::info("LVK : current working directory : {}", std::filesystem::current_path().string());
 }

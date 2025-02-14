@@ -1,6 +1,6 @@
 #pragma once
-#include "lvk/VkBackend.h"
 #include "lvk/Structs.h"
+#include "lvk/VkAPI.h"
 namespace lvk
 {
     VkShaderModule CreateShaderModule(VkState& vk, const StageBinary& data);
@@ -21,7 +21,7 @@ namespace lvk
         ShaderStage::Type m_Type;
 
         static ShaderStage
-        CreateFromBinaryPath(VkBackend & vk, const String& stagePath, const ShaderStage::Type& stageType)
+        CreateFromBinaryPath(VkAPI & vk, const String& stagePath, const ShaderStage::Type& stageType)
         {
             auto stageBin = vk.LoadSpirvBinary(stagePath);
             auto pushConstants = vk.ReflectPushConstants(stageBin);
@@ -30,7 +30,7 @@ namespace lvk
             return { stageBin, pushConstants, stageLayoutDatas, stageType };
         }
 
-        static ShaderStage CreateFromBinary(VkBackend & vk, Vector<unsigned char>& binary, const ShaderStage::Type& type)
+        static ShaderStage CreateFromBinary(VkAPI & vk, Vector<unsigned char>& binary, const ShaderStage::Type& type)
         {
             auto stageLayoutDatas = vk.ReflectDescriptorSetLayouts(binary);
             auto pushConstants = vk.ReflectPushConstants(binary);
@@ -45,9 +45,9 @@ namespace lvk
 
         VkDescriptorSetLayout m_DescriptorSetLayout;
 
-        void Free(VkBackend & vk);
+        void Free(VkAPI & vk);
 
-        static ShaderProgram CreateFromBinaryPath(VkBackend & vk, const String& vertPath, const String& fragPath)
+        static ShaderProgram CreateFromBinaryPath(VkAPI & vk, const String& vertPath, const String& fragPath)
         {
             ShaderStage vert = ShaderStage::CreateFromBinaryPath(
                 vk, vertPath, ShaderStage::Type::Vertex);
@@ -60,7 +60,7 @@ namespace lvk
 
         }
 
-        static ShaderProgram Create(VkBackend & vk, ShaderStage& vert, ShaderStage& frag)
+        static ShaderProgram Create(VkAPI & vk, ShaderStage& vert, ShaderStage& frag)
         {
             VkDescriptorSetLayout layout;
             vk.CreateDescriptorSetLayout(vert.m_LayoutDatas, frag.m_LayoutDatas, layout);
@@ -69,7 +69,7 @@ namespace lvk
 
         }
 
-        static ShaderProgram CreateCompute(VkBackend & vk, const String& computePath);
+        static ShaderProgram CreateCompute(VkAPI & vk, const String& computePath);
     };
 
 }

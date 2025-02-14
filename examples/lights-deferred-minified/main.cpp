@@ -132,7 +132,7 @@ void UpdateUniformBuffer(VulkanAPI_SDL& vk, Material& renderItemMaterial, Materi
     lightPassMaterial.SetBuffer(vk.GetFrameIndex(), 0, 4, lightDataCpu);
 }
 
-RenderModel CreateRenderModelGbuffer(VkBackend & vk, const String& modelPath, ShaderProgram& shader)
+RenderModel CreateRenderModelGbuffer(VkAPI & vk, const String& modelPath, ShaderProgram& shader)
 {
     Model model;
     LoadModelAssimp(vk, model, modelPath, true);
@@ -154,7 +154,7 @@ RenderModel CreateRenderModelGbuffer(VkBackend & vk, const String& modelPath, Sh
     return renderModel;
 }
 
-void OnImGui(VkBackend & vk, DeferredLightData& lightDataCpu)
+void OnImGui(VkAPI & vk, DeferredLightData& lightDataCpu)
 {
     if (ImGui::Begin("Debug"))
     {
