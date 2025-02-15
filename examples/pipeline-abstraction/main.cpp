@@ -16,14 +16,14 @@ using VkRecordCommandCallback = std::function<void(VkCommandBuffer&, uint32_t, V
 
 struct ViewData
 {
-    PipelineT<VkRecordCommandCallback>    m_Pipeline;
+    pipelines::PipelineT<VkRecordCommandCallback>    m_Pipeline;
     View        m_View;
     Mesh        m_ViewQuad;
 };
 
-PipelineT<VkRecordCommandCallback> CreateViewPipeline(VkState & vk, LvkIm3dState& im3dState, ShaderProgram& gbufferProg, ShaderProgram& lightPassProg)
+pipelines::PipelineT<VkRecordCommandCallback> CreateViewPipeline(VkState & vk, LvkIm3dState& im3dState, ShaderProgram& gbufferProg, ShaderProgram& lightPassProg)
 {
-    PipelineT<VkRecordCommandCallback> p{};
+    pipelines::PipelineT<VkRecordCommandCallback> p{};
     auto* gbuffer = p.AddFramebuffer(vk);
     gbuffer->AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
@@ -52,7 +52,7 @@ PipelineT<VkRecordCommandCallback> CreateViewPipeline(VkState & vk, LvkIm3dState
     VkPipelineLayout gbufferPipelineLayout;
     auto gbufferBindingDescriptions = Vector<VkVertexInputBindingDescription>{VertexDataPosNormalUv::GetBindingDescription() };
     auto gbufferAttributeDescriptions = VertexDataPosNormalUv::GetAttributeDescriptions();
-    VkPipeline gbufferPipeline = lvk::CreateRasterPipeline(vk,
+    VkPipeline gbufferPipeline = lvk::pipelines::CreateRasterPipeline(vk,
         gbufferProg, gbufferBindingDescriptions, gbufferAttributeDescriptions,
         gbuffer->m_RenderPass, vk.m_SwapChainImageExtent.width,
         vk.m_SwapChainImageExtent.height, VK_POLYGON_MODE_FILL,
@@ -64,7 +64,7 @@ PipelineT<VkRecordCommandCallback> CreateViewPipeline(VkState & vk, LvkIm3dState
     VkPipelineLayout lightPassPipelineLayout;
     auto lightPassBindingDescriptions = Vector<VkVertexInputBindingDescription>{VertexDataPosUv::GetBindingDescription() };
     auto lightPassAttributeDescriptions = VertexDataPosUv::GetAttributeDescriptions();
-    VkPipeline lightPassPipeline = lvk::CreateRasterPipeline(vk,
+    VkPipeline lightPassPipeline = lvk::pipelines::CreateRasterPipeline(vk,
         lightPassProg, lightPassBindingDescriptions,
         lightPassAttributeDescriptions, lightPassImage->m_RenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
@@ -72,8 +72,8 @@ PipelineT<VkRecordCommandCallback> CreateViewPipeline(VkState & vk, LvkIm3dState
         lightPassPipelineLayout);
 
 
-    VkPipelineData* gbufferPipelineData = p.AddPipeline(vk, gbufferPipeline, gbufferPipelineLayout );
-    VkPipelineData* lightPassPipelineData = p.AddPipeline(vk, lightPassPipeline, lightPassPipelineLayout);
+    pipelines::VkPipelineData* gbufferPipelineData = p.AddPipeline(vk, gbufferPipeline, gbufferPipelineLayout );
+    pipelines::VkPipelineData* lightPassPipelineData = p.AddPipeline(vk, lightPassPipeline, lightPassPipelineLayout);
     auto* im3dViewState = p.AddIm3d(vk, im3dState);
 
     p.RecordCommands(
@@ -208,7 +208,7 @@ PipelineT<VkRecordCommandCallback> CreateViewPipeline(VkState & vk, LvkIm3dState
 
 ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferProg, ShaderProgram lightPassProg)
 {
-    PipelineT<VkRecordCommandCallback> pipeline = CreateViewPipeline(vk, im3dState, gbufferProg, lightPassProg);
+    pipelines::PipelineT<VkRecordCommandCallback> pipeline = CreateViewPipeline(vk, im3dState, gbufferProg, lightPassProg);
 
     static Vector<VertexDataPosUv> screenQuadVerts = {
                     { { -1.0f, -1.0f , 0.0f}, { 0.0f, 0.0f } },
@@ -223,11 +223,11 @@ ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferP
 
     VkBuffer vertBuffer;
     VmaAllocation vertAlloc;
-    CreateVertexBuffer<VertexDataPosUv>(vk, screenQuadVerts, vertBuffer, vertAlloc);
+    buffers::CreateVertexBuffer<VertexDataPosUv>(vk, screenQuadVerts, vertBuffer, vertAlloc);
 
     VkBuffer indexBuffer;
     VmaAllocation indexAlloc;
-    CreateIndexBuffer(vk, screenQuadIndices, indexBuffer, indexAlloc);
+    buffers::CreateIndexBuffer(vk, screenQuadIndices, indexBuffer, indexAlloc);
 
     Mesh screenQuad{ vertBuffer, vertAlloc, indexBuffer, indexAlloc, 6 };
 
@@ -281,7 +281,7 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderModel& 
 
     
 
-    lvk::RecordGraphicsCommands(vk, [&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
+    lvk::commands::RecordGraphicsCommands(vk, [&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
         {
             Array<VkClearValue, 4> clearValues{};
             clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };

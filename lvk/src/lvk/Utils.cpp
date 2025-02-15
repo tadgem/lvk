@@ -2,7 +2,7 @@
 #include "spdlog/spdlog.h"
 #include <fstream>
 
-uint32_t lvk::FindMemoryType(VkState& vk, uint32_t typeFilter, VkMemoryPropertyFlags properties)
+uint32_t lvk::utils::FindMemoryType(VkState& vk, uint32_t typeFilter, VkMemoryPropertyFlags properties)
 {
   VkPhysicalDeviceMemoryProperties memProperties;
   vkGetPhysicalDeviceMemoryProperties(vk.m_PhysicalDevice, &memProperties);
@@ -14,7 +14,7 @@ uint32_t lvk::FindMemoryType(VkState& vk, uint32_t typeFilter, VkMemoryPropertyF
   return UINT32_MAX;
 }
 
-VkFormat lvk::FindSupportedFormat(VkState& vk, const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
+VkFormat lvk::utils::FindSupportedFormat(VkState& vk, const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
 {
   for (VkFormat format : candidates) {
     VkFormatProperties props;
@@ -31,7 +31,7 @@ VkFormat lvk::FindSupportedFormat(VkState& vk, const std::vector<VkFormat>& cand
 
 }
 
-VkFormat lvk::FindDepthFormat(VkState& vk)
+VkFormat lvk::utils::FindDepthFormat(VkState& vk)
 {
   return FindSupportedFormat(vk,
       { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
@@ -39,12 +39,12 @@ VkFormat lvk::FindDepthFormat(VkState& vk)
       VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
   );
 }
-bool lvk::HasStencilComponent(VkFormat &format) {
+bool lvk::utils::HasStencilComponent(VkFormat &format) {
   return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
 
-lvk::StageBinary lvk::LoadSpirvBinary(const String& path)
+lvk::StageBinary lvk::utils::LoadSpirvBinary(const String& path)
 {
   std::ifstream file(path, std::ios::ate | std::ios::binary);
 

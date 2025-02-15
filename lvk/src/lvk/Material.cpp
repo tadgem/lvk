@@ -33,7 +33,7 @@ static auto collect_uniform_data = [](lvk::ShaderStage& stage, lvk::Material &ma
                 {
                     // if a uniform buffer
                     ShaderBufferFrameData uniform;
-                    CreateUniformBuffers(vk, uniform, VkDeviceSize{ bindingInfo.m_ExpectedBufferSize });
+                    buffers::CreateUniformBuffers(vk, uniform, VkDeviceSize{ bindingInfo.m_ExpectedBufferSize });
                     // build accessors
                     for (auto& member : bindingInfo.m_Members)
                     {

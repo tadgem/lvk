@@ -18,7 +18,7 @@ void RecordCommandBuffersV2(VkState & vk,
     VkPipeline& lightingPassPipeline, VkPipelineLayout& lightingPassPipelineLayout, VkRenderPass lightingPassRenderPass, Material& lightPassMaterial, Vector<VkFramebuffer>& lightingPassFramebuffers,
     RenderModel& model, Mesh& screenQuad)
 {
-    lvk::RecordGraphicsCommands(vk, [&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
+    lvk::commands::RecordGraphicsCommands(vk, [&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
         {
             Array<VkClearValue, 4> clearValues{};
             clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
@@ -249,7 +249,7 @@ int main() {
 
     // create gbuffer pipeline
     VkPipelineLayout gbufferPipelineLayout;
-    VkPipeline gbufferPipeline = lvk::CreateRasterPipeline(vk,
+    VkPipeline gbufferPipeline = lvk::pipelines::CreateRasterPipeline(vk,
         gbufferProg,
         Vector<VkVertexInputBindingDescription>{
             VertexDataPosNormalUv::GetBindingDescription()},
@@ -261,7 +261,7 @@ int main() {
     // create present graphics pipeline
     // Pipeline stage?
     VkPipelineLayout lightPassPipelineLayout;
-    VkPipeline pipeline = lvk::CreateRasterPipeline(vk,
+    VkPipeline pipeline = lvk::pipelines::CreateRasterPipeline(vk,
         lightPassProg,
         Vector<VkVertexInputBindingDescription>{
             VertexDataPosUv::GetBindingDescription()},

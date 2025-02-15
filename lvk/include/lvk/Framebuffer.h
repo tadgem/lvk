@@ -43,7 +43,7 @@ namespace lvk
             VkMemoryPropertyFlagBits memoryFlags, VkImageAspectFlagBits imageAspect,
             VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
         {
-            Attachment a{ {}, FindDepthFormat(vk), sampleCount };
+            Attachment a{ {}, utils::FindDepthFormat(vk), sampleCount };
             VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL;
             for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
             {
@@ -160,7 +160,7 @@ namespace lvk
                 depthAttachmentDescription.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             }
 
-            CreateRenderPass(vk, m_RenderPass,
+            render_passes::CreateRenderPass(vk, m_RenderPass,
                 colourAttachmentDescriptions, resolveAttachmentDescriptions, hasDepth,
                 depthAttachmentDescription, m_AttachmentLoadOp);
 
@@ -181,7 +181,7 @@ namespace lvk
                     framebufferAttachments.push_back(resolve.m_AttachmentSwapchainImages[i].m_ImageView);
                 }
                 VkFramebuffer fb;
-                CreateFramebuffer(vk, framebufferAttachments, m_RenderPass, m_Resolution, fb);
+                textures::CreateFramebuffer(vk, framebufferAttachments, m_RenderPass, m_Resolution, fb);
                 m_SwapchainFramebuffers.push_back(fb);
             }
         }

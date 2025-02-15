@@ -2,8 +2,10 @@
 #include "lvk/Macros.h"
 #include "lvk/Commands.h"
 #include "spdlog/spdlog.h"
-
-void lvk::CreateBufferVMA(VkState& vk, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VmaAllocation& allocation)
+namespace lvk
+{
+namespace buffers {
+void CreateBufferVMA(VkState& vk, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VmaAllocation& allocation)
 {
   VkBufferCreateInfo bufferInfo{};
   bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -26,10 +28,10 @@ void lvk::CreateBufferVMA(VkState& vk, VkDeviceSize size, VkBufferUsageFlags usa
   VK_CHECK(vmaCreateBuffer(vk.m_Allocator, &bufferInfo, &allocInfo, &buffer, &allocation, nullptr));
 }
 
-void lvk::CopyBuffer(VkState& vk, VkBuffer& src, VkBuffer& dst, VkDeviceSize size)
+void CopyBuffer(VkState& vk, VkBuffer& src, VkBuffer& dst, VkDeviceSize size)
 {
   // create a new command buffer to record the buffer copy
-  VkCommandBuffer commandBuffer = BeginSingleTimeCommands(vk);
+  VkCommandBuffer commandBuffer = commands::BeginSingleTimeCommands(vk);
 
   // record copy command
   VkBufferCopy copyRegion{};
@@ -37,10 +39,10 @@ void lvk::CopyBuffer(VkState& vk, VkBuffer& src, VkBuffer& dst, VkDeviceSize siz
   copyRegion.dstOffset = 0; // Optional
   copyRegion.size = size;
   vkCmdCopyBuffer(commandBuffer, src, dst, 1, &copyRegion);
-  EndSingleTimeCommands(vk, commandBuffer);
+  commands::EndSingleTimeCommands(vk, commandBuffer);
 }
 
-void lvk::CreateIndexBuffer(VkState& vk, std::vector<uint32_t> indices, VkBuffer& buffer, VmaAllocation& deviceMemory)
+void CreateIndexBuffer(VkState& vk, std::vector<uint32_t> indices, VkBuffer& buffer, VmaAllocation& deviceMemory)
 {
   VkDeviceSize bufferSize = sizeof(uint32_t) * indices.size();
 
@@ -67,13 +69,13 @@ void lvk::CreateIndexBuffer(VkState& vk, std::vector<uint32_t> indices, VkBuffer
   vmaFreeMemory(vk.m_Allocator, stagingBufferMemory);
 }
 
-void lvk::CreateMappedBuffer(VkState& vk, MappedBuffer& buf, VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags memoryProperties, uint32_t size)
+void CreateMappedBuffer(VkState& vk, MappedBuffer& buf, VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags memoryProperties, uint32_t size)
 {
   CreateBufferVMA(vk,VkDeviceSize{ size }, bufferUsage, memoryProperties, buf.m_GpuBuffer, buf.m_GpuMemory);
   VK_CHECK(vmaMapMemory(vk.m_Allocator, buf.m_GpuMemory, &buf.m_MappedAddr));
 }
 
-void lvk::CreateUniformBuffers (VkState& vk, ShaderBufferFrameData& uniformData, VkDeviceSize bufferSize)
+void CreateUniformBuffers (VkState& vk, ShaderBufferFrameData& uniformData, VkDeviceSize bufferSize)
 {
   uniformData.m_UniformBuffers.resize (MAX_FRAMES_IN_FLIGHT);
 
@@ -81,5 +83,7 @@ void lvk::CreateUniformBuffers (VkState& vk, ShaderBufferFrameData& uniformData,
     CreateMappedBuffer (vk, uniformData.m_UniformBuffers[i], VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                        static_cast<uint32_t> (bufferSize));
   }
+}
+}
 }
 

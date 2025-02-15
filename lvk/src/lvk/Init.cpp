@@ -251,7 +251,7 @@ void lvk::init::InitImGui(VkState& vk)
 void lvk::init::RenderImGui(VkState& vk)
 {
   ImGui::Render();
-  VkCommandBuffer imguiCommandBuffer = BeginSingleTimeCommands(vk);
+  VkCommandBuffer imguiCommandBuffer = commands::BeginSingleTimeCommands(vk);
 
   VkRenderPassBeginInfo renderPassInfo{};
   renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -270,7 +270,7 @@ void lvk::init::RenderImGui(VkState& vk)
   vkCmdBeginRenderPass(imguiCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
   ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), imguiCommandBuffer);
   vkCmdEndRenderPass(imguiCommandBuffer);
-  EndSingleTimeCommands(vk, imguiCommandBuffer);
+  commands::EndSingleTimeCommands(vk, imguiCommandBuffer);
 }
 
 VkApplicationInfo lvk::init::CreateAppInfo(VkState& vk)
@@ -710,7 +710,7 @@ void lvk::init::CreateSwapChainFramebuffers(VkState& vk)
 
     }
 
-    CreateFramebuffer(vk, attachments, vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent, vk.m_SwapChainFramebuffers[i]);
+    textures::CreateFramebuffer(vk, attachments, vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent, vk.m_SwapChainFramebuffers[i]);
   }
 }
 
@@ -720,7 +720,7 @@ void lvk::init::CreateSwapChainImageViews(VkState& vk)
 
   for (uint32_t i = 0; i < vk.m_SwapChainImages.size(); i++)
   {
-    CreateImageView(vk, vk.m_SwapChainImages[i], vk.m_SwapChainImageFormat, 1, VK_IMAGE_ASPECT_COLOR_BIT,  vk.m_SwapChainImageViews[i]);
+    textures::CreateImageView(vk, vk.m_SwapChainImages[i], vk.m_SwapChainImageFormat, 1, VK_IMAGE_ASPECT_COLOR_BIT,  vk.m_SwapChainImageViews[i]);
   }
 }
 
@@ -772,7 +772,7 @@ void lvk::init::CreateSwapChainColourTexture(VkState& vk, bool enableMsaa)
     sampleCount = vk.m_MaxMsaaSamples;
   }
 
-  CreateImage(vk, vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height, 1, sampleCount,
+  textures::CreateImage(vk, vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height, 1, sampleCount,
               vk.m_SwapChainImageFormat,
               VK_IMAGE_TILING_OPTIMAL,
               VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
@@ -780,12 +780,12 @@ void lvk::init::CreateSwapChainColourTexture(VkState& vk, bool enableMsaa)
               vk.m_SwapChainColourImage,
               vk.m_SwapChainColourImageMemory);
 
-  CreateImageView(vk, vk.m_SwapChainColourImage, vk.m_SwapChainImageFormat, 1, VK_IMAGE_ASPECT_COLOR_BIT, vk.m_SwapChainColourImageView);
+  textures::CreateImageView(vk, vk.m_SwapChainColourImage, vk.m_SwapChainImageFormat, 1, VK_IMAGE_ASPECT_COLOR_BIT, vk.m_SwapChainColourImageView);
 }
 
 void lvk::init::CreateSwapChainDepthTexture(VkState& vk, bool enableMsaa )
 {
-  VkFormat depthFormat = FindDepthFormat(vk);
+  VkFormat depthFormat = utils::FindDepthFormat(vk);
 
   VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT;
 
@@ -794,7 +794,7 @@ void lvk::init::CreateSwapChainDepthTexture(VkState& vk, bool enableMsaa )
     sampleCount = vk.m_MaxMsaaSamples;
   }
 
-  CreateImage(vk, vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height, 1, sampleCount,
+  textures::CreateImage(vk, vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height, 1, sampleCount,
               depthFormat,
               VK_IMAGE_TILING_OPTIMAL,
               VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
@@ -802,8 +802,8 @@ void lvk::init::CreateSwapChainDepthTexture(VkState& vk, bool enableMsaa )
               vk.m_SwapChainDepthImage,
               vk.m_SwapChainDepthImageMemory);
 
-  CreateImageView(vk, vk.m_SwapChainDepthImage, depthFormat, 1, VK_IMAGE_ASPECT_DEPTH_BIT, vk.m_SwapChainDepthImageView);
-  TransitionImageLayout(vk, vk.m_SwapChainDepthImage, depthFormat, 1, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+  textures::CreateImageView(vk, vk.m_SwapChainDepthImage, depthFormat, 1, VK_IMAGE_ASPECT_DEPTH_BIT, vk.m_SwapChainDepthImageView);
+  textures::TransitionImageLayout(vk, vk.m_SwapChainDepthImage, depthFormat, 1, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 }
 
 VkExtent2D lvk::init::ChooseSwapExtent(VkState& vk, VkSurfaceCapabilitiesKHR& surfaceCapabilities)
@@ -1032,7 +1032,7 @@ void lvk::init::CreateBuiltInRenderPasses(lvk::VkState &vk) {
     }
     colourAttachmentDescriptions.push_back(colorAttachment);
 
-    depthAttachmentDescription.format = FindDepthFormat(vk);
+    depthAttachmentDescription.format = utils::FindDepthFormat(vk);
     depthAttachmentDescription.samples = vk.m_UseSwapchainMsaa ? vk.m_MaxMsaaSamples : VK_SAMPLE_COUNT_1_BIT;;
     depthAttachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     depthAttachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -1055,7 +1055,7 @@ void lvk::init::CreateBuiltInRenderPasses(lvk::VkState &vk) {
       resolveAttachmentDescriptions.push_back(colorAttachmentResolve);
     }
 
-    CreateRenderPass(vk, vk.m_SwapchainImageRenderPass, colourAttachmentDescriptions, resolveAttachmentDescriptions, true, depthAttachmentDescription, VK_ATTACHMENT_LOAD_OP_CLEAR);
+    render_passes::CreateRenderPass(vk, vk.m_SwapchainImageRenderPass, colourAttachmentDescriptions, resolveAttachmentDescriptions, true, depthAttachmentDescription, VK_ATTACHMENT_LOAD_OP_CLEAR);
   }
   {
     Vector<VkAttachmentDescription> colourAttachmentDescriptions{};
@@ -1080,7 +1080,7 @@ void lvk::init::CreateBuiltInRenderPasses(lvk::VkState &vk) {
     }
     colourAttachmentDescriptions.push_back(colorAttachment);
 
-    depthAttachmentDescription.format = FindDepthFormat(vk);
+    depthAttachmentDescription.format = utils::FindDepthFormat(vk);
     depthAttachmentDescription.samples = vk.m_UseSwapchainMsaa ? vk.m_MaxMsaaSamples : VK_SAMPLE_COUNT_1_BIT;;
     depthAttachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     depthAttachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -1102,7 +1102,7 @@ void lvk::init::CreateBuiltInRenderPasses(lvk::VkState &vk) {
       colorAttachmentResolve.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
       resolveAttachmentDescriptions.push_back(colorAttachmentResolve);
     }
-    CreateRenderPass(vk, vk.m_ImGuiRenderPass, colourAttachmentDescriptions, resolveAttachmentDescriptions, true, depthAttachmentDescription, VK_ATTACHMENT_LOAD_OP_DONT_CARE);
+    render_passes::CreateRenderPass(vk, vk.m_ImGuiRenderPass, colourAttachmentDescriptions, resolveAttachmentDescriptions, true, depthAttachmentDescription, VK_ATTACHMENT_LOAD_OP_DONT_CARE);
   }
 }
 

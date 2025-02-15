@@ -5,6 +5,7 @@
 
 namespace lvk
 {
+    namespace textures {
     void  CreateImage(VkState& vk, uint32_t width, uint32_t height, uint32_t numMips, VkSampleCountFlagBits sampleCount, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, uint32_t depth = 1);
     void  CreateImageView(VkState& vk, VkImage& image, VkFormat format, uint32_t numMips, VkImageAspectFlags aspectFlags, VkImageView& imageView, VkImageViewType imageViewType= VK_IMAGE_VIEW_TYPE_2D);
     void  CreateImageSampler(VkState& vk, VkImageView& imageView, uint32_t numMips, VkFilter filterMode, VkSamplerAddressMode addressMode, VkSampler& sampler);
@@ -15,7 +16,7 @@ namespace lvk
     void  CopyBufferToImage(VkState& vk, VkBuffer& src, VkImage& image,  uint32_t width, uint32_t height);
     void  GenerateMips(VkState& vk, VkImage image, VkFormat format, uint32_t imageWidth, uint32_t imageHeight, uint32_t numMips, VkFilter filterMethod);
     void  TransitionImageLayout(VkState& vk, VkImage image, VkFormat format, uint32_t numMips, VkImageLayout oldLayout, VkImageLayout newLayout);
-
+    }
     enum class ResolutionScale
     {
         Full,
@@ -82,9 +83,9 @@ namespace lvk
             VkImageView imageView;
             VkDeviceMemory memory;
             VkSampler sampler;
-            CreateImage(vk,width, height, numMips, sampleCount, format, tiling, usageFlags, memoryFlags, image, memory);
-            CreateImageView(vk,image, format, numMips, imageAspect, imageView);
-            CreateImageSampler(vk,imageView, numMips, samplerFilter, samplerAddressMode, sampler);
+            textures::CreateImage(vk,width, height, numMips, sampleCount, format, tiling, usageFlags, memoryFlags, image, memory);
+            textures::CreateImageView(vk,image, format, numMips, imageAspect, imageView);
+            textures::CreateImageSampler(vk,imageView, numMips, samplerFilter, samplerAddressMode, sampler);
 
             VkDescriptorSet imguiTextureHandle = VK_NULL_HANDLE;
             if (vk.m_UseImGui)
@@ -102,9 +103,9 @@ namespace lvk
             VkDeviceMemory memory;
             // Texture abstraction
             uint32_t mipLevels;
-            lvk::CreateTexture(vk, path, format, image, imageView, memory, &mipLevels);
+            lvk::textures::CreateTexture(vk, path, format, image, imageView, memory, &mipLevels);
             VkSampler sampler;
-            CreateImageSampler(vk, imageView, mipLevels, samplerFilter, samplerAddressMode, sampler);
+            textures::CreateImageSampler(vk, imageView, mipLevels, samplerFilter, samplerAddressMode, sampler);
 
             VkDescriptorSet imguiTextureHandle = VK_NULL_HANDLE;
             if (vk.m_UseImGui)
@@ -122,9 +123,9 @@ namespace lvk
             VkDeviceMemory memory;
             // Texture abstraction
             uint32_t mipLevels;
-            lvk::CreateTextureFromMemory(vk, tex_data, length, format, image, imageView, memory, &mipLevels);
+            lvk::textures::CreateTextureFromMemory(vk, tex_data, length, format, image, imageView, memory, &mipLevels);
             VkSampler sampler;
-            CreateImageSampler(vk, imageView, mipLevels, samplerFilter, samplerAddressMode, sampler);
+            textures::CreateImageSampler(vk, imageView, mipLevels, samplerFilter, samplerAddressMode, sampler);
 
             VkDescriptorSet imguiTextureHandle = VK_NULL_HANDLE;
             if (vk.m_UseImGui)
@@ -142,9 +143,9 @@ namespace lvk
             VkDeviceMemory memory;
             // Texture abstraction
             uint32_t mipLevels;
-            lvk::CreateTexture3DFromMemory(vk, tex_data, extent, length, format, image, imageView, memory, &mipLevels);
+            lvk::textures::CreateTexture3DFromMemory(vk, tex_data, extent, length, format, image, imageView, memory, &mipLevels);
             VkSampler sampler;
-            CreateImageSampler(vk, imageView, mipLevels, samplerFilter, samplerAddressMode, sampler);
+            textures::CreateImageSampler(vk, imageView, mipLevels, samplerFilter, samplerAddressMode, sampler);
 
             VkDescriptorSet imguiTextureHandle = VK_NULL_HANDLE;
             if (vk.m_UseImGui)

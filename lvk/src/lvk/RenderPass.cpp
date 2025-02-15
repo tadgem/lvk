@@ -1,7 +1,7 @@
 #include "lvk/RenderPass.h"
 #include "spdlog/spdlog.h"
 
-void lvk::CreateRenderPass(VkState& vk, VkRenderPass& renderPass, Vector<VkAttachmentDescription>& colourAttachments, Vector<VkAttachmentDescription>& resolveAttachments, bool hasDepthAttachment, VkAttachmentDescription depthAttachment, VkAttachmentLoadOp attachmentLoadOp)
+void lvk::render_passes::CreateRenderPass(VkState& vk, VkRenderPass& renderPass, Vector<VkAttachmentDescription>& colourAttachments, Vector<VkAttachmentDescription>& resolveAttachments, bool hasDepthAttachment, VkAttachmentDescription depthAttachment, VkAttachmentLoadOp attachmentLoadOp)
 {
   // Layout: Colour attachments -> Depth attachments -> Resolve attachments
   VkSubpassDescription subpass{};

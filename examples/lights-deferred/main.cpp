@@ -68,7 +68,7 @@ void RecordCommandBuffersV2(VkState & vk,
     VkPipeline& lightingPassPipeline, VkPipelineLayout& lightingPassPipelineLayout, VkRenderPass lightingPassRenderPass, Vector<VkDescriptorSet>& lightingPassDescriptorSets, Vector<VkFramebuffer>& lightingPassFramebuffers,
     RenderModel& model, MeshEx& screenQuad)
 {
-    lvk::RecordGraphicsCommands(vk, [&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
+    lvk::commands::RecordGraphicsCommands(vk, [&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
         // push to example
         {
             std::array<VkClearValue, 4> clearValues{};
@@ -362,7 +362,7 @@ void CreateGBufferRenderPass(VkState & vk, VkRenderPass& renderPass)
     colourAttachmentDescriptions.push_back(positionNormalColourAttachment);
     colourAttachmentDescriptions.push_back(positionNormalColourAttachment);
 
-    depthAttachmentDescription.format = lvk::FindDepthFormat(vk);
+    depthAttachmentDescription.format = lvk::utils::FindDepthFormat(vk);
     depthAttachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;;
     depthAttachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     depthAttachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -371,7 +371,7 @@ void CreateGBufferRenderPass(VkState & vk, VkRenderPass& renderPass)
     depthAttachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     depthAttachmentDescription.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-    lvk::CreateRenderPass(vk, renderPass, colourAttachmentDescriptions, resolveAttachmentDescriptions, true, depthAttachmentDescription, VK_ATTACHMENT_LOAD_OP_CLEAR);
+    lvk::render_passes::CreateRenderPass(vk, renderPass, colourAttachmentDescriptions, resolveAttachmentDescriptions, true, depthAttachmentDescription, VK_ATTACHMENT_LOAD_OP_CLEAR);
 }
 
 RenderModel CreateRenderModelGbuffer(VkState & vk, const String& modelPath, ShaderProgram& shader)
@@ -484,7 +484,7 @@ int main()
 
     // create gbuffer pipeline
     VkPipelineLayout gbufferPipelineLayout;
-    VkPipeline gbufferPipeline = lvk::CreateRasterPipeline(vk,
+    VkPipeline gbufferPipeline = lvk::pipelines::CreateRasterPipeline(vk,
         gbufferProg,
         Vector<VkVertexInputBindingDescription>{
             VertexDataPosNormalUv::GetBindingDescription()},
@@ -496,7 +496,7 @@ int main()
     // create present graphics pipeline
     // Pipeline stage?
     VkPipelineLayout lightPassPipelineLayout;
-    VkPipeline pipeline = lvk::CreateRasterPipeline(vk,
+    VkPipeline pipeline = lvk::pipelines::CreateRasterPipeline(vk,
         lightPassProg,
         Vector<VkVertexInputBindingDescription>{
             VertexDataPosUv::GetBindingDescription()},
@@ -523,14 +523,14 @@ int main()
             VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
 
-        VkFormat depthFormat = FindDepthFormat(vk);
+        VkFormat depthFormat = utils::FindDepthFormat(vk);
         Texture depthAttachment = Texture::CreateAttachment(vk, vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height, 1,
             VK_SAMPLE_COUNT_1_BIT, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
 
         VkFramebuffer gbuffer;
         Vector<VkImageView> gbufferAttachments{ colourAttachment.m_ImageView, positionAttachment.m_ImageView, normalAttachment.m_ImageView, depthAttachment.m_ImageView };
-        CreateFramebuffer(vk, gbufferAttachments, gbufferRenderPass, vk.m_SwapChainImageExtent, gbuffer);
+        textures::CreateFramebuffer(vk, gbufferAttachments, gbufferRenderPass, vk.m_SwapChainImageExtent, gbuffer);
 
         Vector<Texture> textures{ colourAttachment, positionAttachment, normalAttachment, depthAttachment };
         FramebufferEx fb{ textures, gbuffer };
@@ -547,8 +547,8 @@ int main()
     Texture texture = Texture::CreateTexture(vk, "assets/viking_room.png", VK_FORMAT_R8G8B8A8_UNORM);
 
     // Shader too probably
-    CreateUniformBuffers<FrameLightDataT<NUM_LIGHTS>>(vk, lightsUniformData);
-    CreateUniformBuffers<MvpData>(vk, mvpUniformData);
+    buffers::CreateUniformBuffers<FrameLightDataT<NUM_LIGHTS>>(vk, lightsUniformData);
+    buffers::CreateUniformBuffers<MvpData>(vk, mvpUniformData);
 
     CreateGBufferDescriptorSets(vk, gbufferProg.m_DescriptorSetLayout, texture.m_ImageView, texture.m_Sampler, gbufferDescriptorSets, mvpUniformData);
     CreateLightingPassDescriptorSets(vk, lightPassProg.m_DescriptorSetLayout, gbufferSet, lightPassDescriptorSets, mvpUniformData, lightsUniformData);

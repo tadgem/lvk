@@ -289,7 +289,7 @@ void lvk::Texture::Free(lvk::VkState & vk)
 
 
 
-void lvk::CreateImage(VkState& vk, uint32_t width, uint32_t height, uint32_t numMips, VkSampleCountFlagBits sampleCount, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, uint32_t depth)
+void lvk::textures::CreateImage(VkState& vk, uint32_t width, uint32_t height, uint32_t numMips, VkSampleCountFlagBits sampleCount, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, uint32_t depth)
 {
     VkImageCreateInfo imageInfo{};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -316,14 +316,14 @@ void lvk::CreateImage(VkState& vk, uint32_t width, uint32_t height, uint32_t num
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = FindMemoryType(vk,memRequirements.memoryTypeBits, properties);
+    allocInfo.memoryTypeIndex = utils::FindMemoryType(vk,memRequirements.memoryTypeBits, properties);
 
     VK_CHECK(vkAllocateMemory(vk.m_LogicalDevice, &allocInfo, nullptr, &imageMemory))
 
     vkBindImageMemory(vk.m_LogicalDevice, image, imageMemory, 0);
 }
 
-void lvk::CreateImageView(VkState& vk, VkImage& image, VkFormat format, uint32_t numMips, VkImageAspectFlags aspectFlags, VkImageView& imageView, VkImageViewType imageViewType)
+void lvk::textures::CreateImageView(VkState& vk, VkImage& image, VkFormat format, uint32_t numMips, VkImageAspectFlags aspectFlags, VkImageView& imageView, VkImageViewType imageViewType)
 {
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -339,7 +339,7 @@ void lvk::CreateImageView(VkState& vk, VkImage& image, VkFormat format, uint32_t
     VK_CHECK(vkCreateImageView(vk.m_LogicalDevice, &viewInfo, nullptr, &imageView))
 }
 
-void lvk::CreateImageSampler(VkState& vk, VkImageView& imageView, uint32_t numMips, VkFilter filterMode, VkSamplerAddressMode addressMode, VkSampler& sampler)
+void lvk::textures::CreateImageSampler(VkState& vk, VkImageView& imageView, uint32_t numMips, VkFilter filterMode, VkSamplerAddressMode addressMode, VkSampler& sampler)
 {
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -368,7 +368,7 @@ void lvk::CreateImageSampler(VkState& vk, VkImageView& imageView, uint32_t numMi
     VK_CHECK(vkCreateSampler(vk.m_LogicalDevice, &samplerInfo, nullptr, &sampler))
 }
 
-void lvk::CreateTexture(VkState& vk, const String& path, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips)
+void lvk::textures::CreateTexture(VkState& vk, const String& path, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips)
 {
     bool generateMips = numMips != nullptr;
 
@@ -394,7 +394,7 @@ void lvk::CreateTexture(VkState& vk, const String& path, VkFormat format, VkImag
     VmaAllocation stagingBufferMemory;
     constexpr VkBufferUsageFlags bufferUsageFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     constexpr VkMemoryPropertyFlags memoryPropertiesFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    CreateBufferVMA(vk,imageSize, bufferUsageFlags, memoryPropertiesFlags, stagingBuffer, stagingBufferMemory);
+    buffers::CreateBufferVMA(vk,imageSize, bufferUsageFlags, memoryPropertiesFlags, stagingBuffer, stagingBufferMemory);
 
     void* data;
     vmaMapMemory(vk.m_Allocator, stagingBufferMemory, &data);
@@ -419,7 +419,7 @@ void lvk::CreateTexture(VkState& vk, const String& path, VkFormat format, VkImag
     vmaFreeMemory(vk.m_Allocator, stagingBufferMemory);
 }
 
-void lvk::CreateTextureFromMemory(VkState& vk, unsigned char* tex_data, uint32_t dataSize, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips)
+void lvk::textures::CreateTextureFromMemory(VkState& vk, unsigned char* tex_data, uint32_t dataSize, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips)
 {
     bool generateMips = numMips != nullptr;
 
@@ -445,7 +445,7 @@ void lvk::CreateTextureFromMemory(VkState& vk, unsigned char* tex_data, uint32_t
     VmaAllocation stagingBufferMemory;
     constexpr VkBufferUsageFlags bufferUsageFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     constexpr VkMemoryPropertyFlags memoryPropertiesFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    CreateBufferVMA(vk,imageSize, bufferUsageFlags, memoryPropertiesFlags, stagingBuffer, stagingBufferMemory);
+    buffers::CreateBufferVMA(vk,imageSize, bufferUsageFlags, memoryPropertiesFlags, stagingBuffer, stagingBufferMemory);
 
     void* data;
     vmaMapMemory(vk.m_Allocator, stagingBufferMemory, &data);
@@ -470,7 +470,7 @@ void lvk::CreateTextureFromMemory(VkState& vk, unsigned char* tex_data, uint32_t
     vmaFreeMemory(vk.m_Allocator, stagingBufferMemory);
 }
 
-void lvk::CreateTexture3DFromMemory(VkState& vk, unsigned char* tex_data, VkExtent3D extent, uint32_t dataSize, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips)
+void lvk::textures::CreateTexture3DFromMemory(VkState& vk, unsigned char* tex_data, VkExtent3D extent, uint32_t dataSize, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips)
 {
     bool generateMips = numMips != nullptr;
 
@@ -496,7 +496,7 @@ void lvk::CreateTexture3DFromMemory(VkState& vk, unsigned char* tex_data, VkExte
     VmaAllocation stagingBufferMemory;
     constexpr VkBufferUsageFlags bufferUsageFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     constexpr VkMemoryPropertyFlags memoryPropertiesFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    CreateBufferVMA(vk,imageSize, bufferUsageFlags, memoryPropertiesFlags, stagingBuffer, stagingBufferMemory);
+    buffers::CreateBufferVMA(vk,imageSize, bufferUsageFlags, memoryPropertiesFlags, stagingBuffer, stagingBufferMemory);
 
     void* data;
     vmaMapMemory(vk.m_Allocator, stagingBufferMemory, &data);
@@ -522,7 +522,7 @@ void lvk::CreateTexture3DFromMemory(VkState& vk, unsigned char* tex_data, VkExte
 }
 
 
-void lvk::GenerateMips(VkState& vk, VkImage image, VkFormat format, uint32_t imageWidth, uint32_t imageHeight, uint32_t numMips, VkFilter filterMethod)
+void lvk::textures::GenerateMips(VkState& vk, VkImage image, VkFormat format, uint32_t imageWidth, uint32_t imageHeight, uint32_t numMips, VkFilter filterMethod)
 {
     VkFormatProperties formatProperties;
     vkGetPhysicalDeviceFormatProperties(vk.m_PhysicalDevice, format, &formatProperties);
@@ -535,7 +535,7 @@ void lvk::GenerateMips(VkState& vk, VkImage image, VkFormat format, uint32_t ima
         return;
     }
 
-    VkCommandBuffer cmd = BeginSingleTimeCommands(vk);
+    VkCommandBuffer cmd = commands::BeginSingleTimeCommands(vk);
 
     VkImageMemoryBarrier barrier{ };
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -598,13 +598,13 @@ void lvk::GenerateMips(VkState& vk, VkImage image, VkFormat format, uint32_t ima
         if (mipHeight > 1) mipHeight /= 2;
     }
 
-    EndSingleTimeCommands(vk, cmd);
+    commands::EndSingleTimeCommands(vk, cmd);
 }
 
 
-void lvk::TransitionImageLayout(VkState& vk, VkImage image, VkFormat format, uint32_t numMips, VkImageLayout oldLayout, VkImageLayout newLayout)
+void lvk::textures::TransitionImageLayout(VkState& vk, VkImage image, VkFormat format, uint32_t numMips, VkImageLayout oldLayout, VkImageLayout newLayout)
 {
-    VkCommandBuffer commandBuffer = BeginSingleTimeCommands(vk);
+    VkCommandBuffer commandBuffer = commands::BeginSingleTimeCommands(vk);
 
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -626,7 +626,7 @@ void lvk::TransitionImageLayout(VkState& vk, VkImage image, VkFormat format, uin
     if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 
-        if (HasStencilComponent(format)) {
+        if (utils::HasStencilComponent(format)) {
           barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
         }
     }
@@ -678,12 +678,12 @@ void lvk::TransitionImageLayout(VkState& vk, VkImage image, VkFormat format, uin
                          &barrier
     );
 
-    EndSingleTimeCommands(vk, commandBuffer);
+    commands::EndSingleTimeCommands(vk, commandBuffer);
 }
 
-void lvk::CopyBufferToImage(VkState& vk, VkBuffer& src, VkImage& image, uint32_t width, uint32_t height)
+void lvk::textures::CopyBufferToImage(VkState& vk, VkBuffer& src, VkImage& image, uint32_t width, uint32_t height)
 {
-    VkCommandBuffer commandBuffer = BeginSingleTimeCommands(vk);
+    VkCommandBuffer commandBuffer = commands::BeginSingleTimeCommands(vk);
 
     VkBufferImageCopy region{};
     region.bufferOffset = 0;
@@ -704,9 +704,9 @@ void lvk::CopyBufferToImage(VkState& vk, VkBuffer& src, VkImage& image, uint32_t
 
     vkCmdCopyBufferToImage(commandBuffer, src, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
-    EndSingleTimeCommands(vk, commandBuffer);
+    commands::EndSingleTimeCommands(vk, commandBuffer);
 }
-void lvk::CreateFramebuffer(lvk::VkState &vk,
+void lvk::textures::CreateFramebuffer(lvk::VkState &vk,
                             lvk::Vector<VkImageView> &attachments,
                             VkRenderPass renderPass, VkExtent2D extent,
                             VkFramebuffer &framebuffer) {

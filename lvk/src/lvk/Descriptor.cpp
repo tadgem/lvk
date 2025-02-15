@@ -2,8 +2,9 @@
 #include "lvk/Macros.h"
 #include "spdlog/spdlog.h"
 
-using namespace lvk;
-
+namespace lvk
+{
+namespace descriptor{
 
 std::vector<VkDescriptorSetLayoutBinding> CleanDescriptorSetLayout(std::vector<VkDescriptorSetLayoutBinding>& arr)
 {
@@ -41,27 +42,27 @@ std::vector<VkDescriptorSetLayoutBinding> CleanDescriptorSetLayout(std::vector<V
   return clean;
 }
 
-lvk::ShaderBindingType GetBindingType(const SpvReflectDescriptorBinding& binding)
+ShaderBindingType GetBindingType(const SpvReflectDescriptorBinding& binding)
 {
   if (binding.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
   {
-    return lvk::ShaderBindingType::UniformBuffer;
+    return ShaderBindingType::UniformBuffer;
   }
   if (binding.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER)
   {
-    return lvk::ShaderBindingType::ShaderStorageBuffer;
+    return ShaderBindingType::ShaderStorageBuffer;
   }
   if (binding.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLER ||
       binding.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
   {
-    return lvk::ShaderBindingType::Sampler;
+    return ShaderBindingType::Sampler;
   }
 
   return ShaderBindingType::UniformBuffer;
 }
 
 
-ShaderBufferMemberType lvk::GetTypeFromSpvReflect(SpvReflectTypeDescription* typeDescription)
+ShaderBufferMemberType GetTypeFromSpvReflect(SpvReflectTypeDescription* typeDescription)
 {
 
   if (typeDescription->type_flags & SPV_REFLECT_TYPE_FLAG_MATRIX)
@@ -126,7 +127,7 @@ ShaderBufferMemberType lvk::GetTypeFromSpvReflect(SpvReflectTypeDescription* typ
 }
 
 
-Vector<VkDescriptorSetLayoutBinding> lvk::GetDescriptorSetLayoutBindings(VkState& vk, Vector<DescriptorSetLayoutData>& vertLayoutDatas, Vector<DescriptorSetLayoutData>& fragLayoutDatas)
+Vector<VkDescriptorSetLayoutBinding> GetDescriptorSetLayoutBindings(VkState& vk, Vector<DescriptorSetLayoutData>& vertLayoutDatas, Vector<DescriptorSetLayoutData>& fragLayoutDatas)
 {
   Vector<VkDescriptorSetLayoutBinding> bindings;
   uint8_t count = 0;
@@ -166,7 +167,7 @@ Vector<VkDescriptorSetLayoutBinding> lvk::GetDescriptorSetLayoutBindings(VkState
   return CleanDescriptorSetLayout(bindings);
 }
 
-void lvk::CreateDescriptorSetLayout(VkState& vk, std::vector<DescriptorSetLayoutData>& vertLayoutDatas, std::vector<DescriptorSetLayoutData>& fragLayoutDatas, VkDescriptorSetLayout& descriptorSetLayout)
+void CreateDescriptorSetLayout(VkState& vk, std::vector<DescriptorSetLayoutData>& vertLayoutDatas, std::vector<DescriptorSetLayoutData>& fragLayoutDatas, VkDescriptorSetLayout& descriptorSetLayout)
 {
   std::vector<VkDescriptorSetLayoutBinding> bindings;
   uint8_t count = 0;
@@ -213,7 +214,7 @@ void lvk::CreateDescriptorSetLayout(VkState& vk, std::vector<DescriptorSetLayout
   VK_CHECK(vkCreateDescriptorSetLayout(vk.m_LogicalDevice, &layoutInfo, nullptr, &descriptorSetLayout))
 }
 
-Vector<DescriptorSetLayoutData> lvk::ReflectDescriptorSetLayouts(VkState& vk, StageBinary& stageBin)
+Vector<DescriptorSetLayoutData> ReflectDescriptorSetLayouts(VkState& vk, StageBinary& stageBin)
 {
   SpvReflectShaderModule shaderReflectModule;
   SpvReflectResult result = spvReflectCreateShaderModule(stageBin.size(), stageBin.data(), &shaderReflectModule);
@@ -314,7 +315,7 @@ Vector<DescriptorSetLayoutData> lvk::ReflectDescriptorSetLayouts(VkState& vk, St
   return layoutDatas;
 }
 
-Vector<PushConstantBlock> lvk::ReflectPushConstants(VkState& vk, StageBinary& stageBin)
+Vector<PushConstantBlock> ReflectPushConstants(VkState& vk, StageBinary& stageBin)
 {
   Vector<PushConstantBlock> pushConstants{};
   SpvReflectShaderModule shaderReflectModule;
@@ -336,7 +337,9 @@ Vector<PushConstantBlock> lvk::ReflectPushConstants(VkState& vk, StageBinary& st
   return pushConstants;
 }
 
-VkDescriptorSet lvk::CreateDescriptorSet(VkState& vk, DescriptorSetLayoutData& layoutData)
+VkDescriptorSet CreateDescriptorSet(VkState& vk, DescriptorSetLayoutData& layoutData)
 {
   return vk.m_DescriptorSetAllocator.Allocate(vk.m_LogicalDevice, layoutData.m_Layout, nullptr);
+}
+}
 }

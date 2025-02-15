@@ -14,7 +14,7 @@ static std::vector<VkDescriptorSet>     descriptorSets;
 
 void RecordCommandBuffers(VkState & vk, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout, Model& model)
 {
-    lvk::RecordGraphicsCommands(vk, [&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
+    lvk::commands::RecordGraphicsCommands(vk, [&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
         // push to example
         std::array<VkClearValue, 2> clearValues{};
         clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
@@ -140,13 +140,13 @@ int main()
     VkImage textureImage;
     VkImageView imageView;
     VkDeviceMemory textureMemory;
-    CreateTexture(vk, "assets/viking_room.png", VK_FORMAT_R8G8B8A8_UNORM, textureImage, imageView, textureMemory);
     VkSampler imageSampler;
-    CreateImageSampler(vk, imageView, 1, VK_FILTER_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, imageSampler);
+    textures::CreateTexture(vk, "assets/viking_room.png", VK_FORMAT_R8G8B8A8_UNORM, textureImage, imageView, textureMemory);
+    textures::CreateImageSampler(vk, imageView, 1, VK_FILTER_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, imageSampler);
 
     VkPipelineLayout pipelineLayout;
 
-    VkPipeline pipeline = lvk::CreateRasterPipeline(vk,
+    VkPipeline pipeline = lvk::pipelines::CreateRasterPipeline(vk,
         prog,
         Vector<VkVertexInputBindingDescription>{
             VertexDataPosUv::GetBindingDescription()},
@@ -161,7 +161,7 @@ int main()
     Model model;
     LoadModelAssimp(vk, model, "assets/viking_room.obj");
 
-    CreateUniformBuffers<MvpData>(vk, uniformBuffers, uniformBuffersMemory, uniformBuffersMapped);
+    buffers::CreateUniformBuffers<MvpData>(vk, uniformBuffers, uniformBuffersMemory, uniformBuffersMapped);
 
     CreateDescriptorSets(vk, prog.m_DescriptorSetLayout, imageView, imageSampler);
 

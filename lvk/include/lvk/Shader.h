@@ -24,17 +24,17 @@ namespace lvk
         static ShaderStage
         CreateFromBinaryPath(VkState & vk, const String& stagePath, const ShaderStage::Type& stageType)
         {
-            auto stageBin = LoadSpirvBinary(stagePath);
-            auto pushConstants = ReflectPushConstants(vk, stageBin);
-            auto stageLayoutDatas = ReflectDescriptorSetLayouts(vk, stageBin);
+            auto stageBin = utils::LoadSpirvBinary(stagePath);
+            auto pushConstants = descriptor::ReflectPushConstants(vk, stageBin);
+            auto stageLayoutDatas = descriptor::ReflectDescriptorSetLayouts(vk, stageBin);
 
             return { stageBin, pushConstants, stageLayoutDatas, stageType };
         }
 
         static ShaderStage CreateFromBinary(VkState & vk, Vector<unsigned char>& binary, const ShaderStage::Type& type)
         {
-            auto stageLayoutDatas = ReflectDescriptorSetLayouts(vk, binary);
-            auto pushConstants = ReflectPushConstants(vk, binary);
+            auto stageLayoutDatas = descriptor::ReflectDescriptorSetLayouts(vk, binary);
+            auto pushConstants = descriptor::ReflectPushConstants(vk, binary);
 
             return { binary, pushConstants, stageLayoutDatas, type };
         }
@@ -55,7 +55,7 @@ namespace lvk
             ShaderStage frag = ShaderStage::CreateFromBinaryPath(
                 vk, fragPath, ShaderStage::Type::Fragment);
             VkDescriptorSetLayout layout;
-            CreateDescriptorSetLayout(vk, vert.m_LayoutDatas, frag.m_LayoutDatas, layout);
+            descriptor::CreateDescriptorSetLayout(vk, vert.m_LayoutDatas, frag.m_LayoutDatas, layout);
 
             return { Vector<ShaderStage> {vert, frag} , layout };
 
@@ -64,7 +64,7 @@ namespace lvk
         static ShaderProgram Create(VkState & vk, ShaderStage& vert, ShaderStage& frag)
         {
             VkDescriptorSetLayout layout;
-            CreateDescriptorSetLayout(vk, vert.m_LayoutDatas, frag.m_LayoutDatas, layout);
+            descriptor::CreateDescriptorSetLayout(vk, vert.m_LayoutDatas, frag.m_LayoutDatas, layout);
 
             return { Vector<ShaderStage> {vert, frag} , layout };
 

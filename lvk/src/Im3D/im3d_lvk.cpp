@@ -64,7 +64,7 @@ namespace lvk
 
         VkBuffer vertexBuffer;
         VmaAllocation vertexBufferMemory;
-        CreateVertexBuffer<VertexDataPos4>(vk, vertexData, vertexBuffer, vertexBufferMemory);
+        buffers::CreateVertexBuffer<VertexDataPos4>(vk, vertexData, vertexBuffer, vertexBufferMemory);
 
         return { tris_prog, points_prog, lines_prog, vertexBuffer, vertexBufferMemory };
     }
@@ -74,7 +74,7 @@ namespace lvk
         auto bindingDescriptions = Vector<VkVertexInputBindingDescription>{VertexDataPos4::GetBindingDescription() };
         auto attrbuteDescriptions = VertexDataPos4::GetAttributeDescriptions();
         VkPipelineLayout tris_layout;
-        VkPipeline tris_pipeline = CreateRasterPipeline(vk,
+        VkPipeline tris_pipeline = pipelines::CreateRasterPipeline(vk,
             state.m_TriProg, bindingDescriptions, attrbuteDescriptions,
             renderPass, vk.m_SwapChainImageExtent.width,
             vk.m_SwapChainImageExtent.height, VK_POLYGON_MODE_FILL,
@@ -82,7 +82,7 @@ namespace lvk
         Material tris_material = Material::Create(vk, state.m_TriProg);
 
         VkPipelineLayout points_layout;
-        VkPipeline points_pipeline = CreateRasterPipeline(vk,
+        VkPipeline points_pipeline = pipelines::CreateRasterPipeline(vk,
             state.m_PointsProg, bindingDescriptions, attrbuteDescriptions,
             renderPass, vk.m_SwapChainImageExtent.width,
             vk.m_SwapChainImageExtent.height, VK_POLYGON_MODE_POINT,
@@ -91,7 +91,7 @@ namespace lvk
 
 
         VkPipelineLayout lines_layout;
-        VkPipeline lines_pipeline = CreateRasterPipeline(vk,
+        VkPipeline lines_pipeline = pipelines::CreateRasterPipeline(vk,
             state.m_LinesProg, bindingDescriptions, attrbuteDescriptions,
             renderPass, vk.m_SwapChainImageExtent.width,
             vk.m_SwapChainImageExtent.height, VK_POLYGON_MODE_LINE,

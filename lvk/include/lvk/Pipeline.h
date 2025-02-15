@@ -5,6 +5,7 @@
 
 namespace lvk
 {
+namespace pipelines{
 
     VkPipeline                          CreateComputePipeline(
         VkState& vk,
@@ -170,4 +171,5 @@ namespace lvk
             m_CommandCallback = callback;
         }
     };
+}
 }

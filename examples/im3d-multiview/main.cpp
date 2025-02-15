@@ -50,7 +50,7 @@ ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferP
 
     // create gbuffer pipeline
     VkPipelineLayout gbufferPipelineLayout;
-    VkPipeline gbufferPipeline = lvk::CreateRasterPipeline(vk,
+    VkPipeline gbufferPipeline = lvk::pipelines::CreateRasterPipeline(vk,
         gbufferProg,
         Vector<VkVertexInputBindingDescription>{
             VertexDataPosNormalUv::GetBindingDescription()},
@@ -62,7 +62,7 @@ ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferP
     // create present graphics pipeline
     // Pipeline stage?
     VkPipelineLayout lightPassPipelineLayout;
-    VkPipeline pipeline = lvk::CreateRasterPipeline(vk,
+    VkPipeline pipeline = lvk::pipelines::CreateRasterPipeline(vk,
         lightPassProg,
         Vector<VkVertexInputBindingDescription>{
             VertexDataPosUv::GetBindingDescription()},
@@ -86,11 +86,11 @@ ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferP
 
     VkBuffer vertBuffer;
     VmaAllocation vertAlloc;
-    CreateVertexBuffer<VertexDataPosUv>(vk, screenQuadVerts, vertBuffer, vertAlloc);
+    buffers::CreateVertexBuffer<VertexDataPosUv>(vk, screenQuadVerts, vertBuffer, vertAlloc);
 
     VkBuffer indexBuffer;
     VmaAllocation indexAlloc;
-    CreateIndexBuffer(vk, screenQuadIndices, indexBuffer, indexAlloc);
+    buffers::CreateIndexBuffer(vk, screenQuadIndices, indexBuffer, indexAlloc);
 
     Mesh screenQuad{ vertBuffer, vertAlloc, indexBuffer, indexAlloc, 6 };
 
@@ -146,7 +146,7 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderModel& 
                     { {1.0f, 1.0f, 0.0f}, {1.0, 1.0} },
                     { {-1.0f, 1.0f, 0.0f}, {0.0f, 1.0} }
     };
-    lvk::RecordGraphicsCommands(vk, [&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
+    lvk::commands::RecordGraphicsCommands(vk, [&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
         {
             Array<VkClearValue, 4> clearValues{};
             clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };

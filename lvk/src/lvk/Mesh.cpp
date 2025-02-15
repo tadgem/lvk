@@ -21,8 +21,8 @@ void lvk::Mesh::InitBuiltInMeshes(lvk::VkState & vk)
     VmaAllocation vertexBufferMemory;
     VkBuffer indexBuffer;
     VmaAllocation indexBufferMemory;
-    CreateVertexBuffer<VertexDataPosUv>(vk, g_ScreenSpaceQuadVertexData, vertexBuffer, vertexBufferMemory);
-    CreateIndexBuffer(vk, g_ScreenSpaceQuadIndexData, indexBuffer, indexBufferMemory);
+    buffers::CreateVertexBuffer<VertexDataPosUv>(vk, g_ScreenSpaceQuadVertexData, vertexBuffer, vertexBufferMemory);
+    buffers::CreateIndexBuffer(vk, g_ScreenSpaceQuadIndexData, indexBuffer, indexBufferMemory);
 
     g_ScreenSpaceQuad = new Mesh { vertexBuffer, vertexBufferMemory, indexBuffer, indexBufferMemory, 6 };
 }

@@ -214,8 +214,8 @@ void ProcessMesh(lvk::VkState & vk, Model& model, aiMesh* mesh, aiNode* node, co
     AABB aabb = { {mesh->mAABB.mMin.x, mesh->mAABB.mMin.y, mesh->mAABB.mMin.z},
                     {mesh->mAABB.mMax.x, mesh->mAABB.mMax.y, mesh->mAABB.mMax.z} };
     MeshEx m{};
-    CreateVertexBuffer<VertexDataPosUv>(vk, verts, m.m_VertexBuffer, m.m_VertexBufferMemory);
-    CreateIndexBuffer(vk, indices, m.m_IndexBuffer, m.m_IndexBufferMemory);
+    buffers::CreateVertexBuffer<VertexDataPosUv>(vk, verts, m.m_VertexBuffer, m.m_VertexBufferMemory);
+    buffers::CreateIndexBuffer(vk, indices, m.m_IndexBuffer, m.m_IndexBufferMemory);
     m.m_IndexCount = static_cast<uint32_t>(indices.size());
     m.m_AABB = aabb;
     model.m_Meshes.push_back(m);
@@ -295,8 +295,8 @@ void ProcessMeshWithNormals(lvk::VkState & vk, Model& model, aiMesh* mesh, aiNod
                 {mesh->mAABB.mMax.x, mesh->mAABB.mMax.y, mesh->mAABB.mMax.z} };
 
     MeshEx m{};
-    CreateVertexBuffer<VertexDataPosNormalUv>(vk, verts, m.m_VertexBuffer, m.m_VertexBufferMemory);
-    CreateIndexBuffer(vk, indices, m.m_IndexBuffer, m.m_IndexBufferMemory);
+    buffers::CreateVertexBuffer<VertexDataPosNormalUv>(vk, verts, m.m_VertexBuffer, m.m_VertexBufferMemory);
+    buffers::CreateIndexBuffer(vk, indices, m.m_IndexBuffer, m.m_IndexBufferMemory);
     m.m_IndexCount = static_cast<uint32_t>(indices.size());
     m.m_MaterialIndex = mesh->mMaterialIndex;
     m.m_AABB = aabb;
@@ -373,8 +373,8 @@ MeshEx BuildScreenSpaceQuad(lvk::VkState & vk, lvk::Vector <lvk::VertexDataPosUv
     VmaAllocation vertexBufferMemory;
     VkBuffer indexBuffer;
     VmaAllocation indexBufferMemory;
-    lvk::CreateVertexBuffer<lvk::VertexDataPosUv>(vk, verts, vertexBuffer, vertexBufferMemory);
-    CreateIndexBuffer(vk, indices, indexBuffer, indexBufferMemory);
+    lvk::buffers::CreateVertexBuffer<lvk::VertexDataPosUv>(vk, verts, vertexBuffer, vertexBufferMemory);
+    lvk::buffers::CreateIndexBuffer(vk, indices, indexBuffer, indexBufferMemory);
 
     return MeshEx{ vertexBuffer, vertexBufferMemory, indexBuffer, indexBufferMemory, {}, 6 };
 }
