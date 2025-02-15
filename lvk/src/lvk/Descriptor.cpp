@@ -1,7 +1,6 @@
 #include "lvk/Descriptor.h"
 #include "lvk/Macros.h"
 #include "spdlog/spdlog.h"
-#include "ThirdParty/spirv_reflect.h"
 
 using namespace lvk;
 
@@ -62,7 +61,7 @@ lvk::ShaderBindingType GetBindingType(const SpvReflectDescriptorBinding& binding
 }
 
 
-ShaderBufferMemberType GetTypeFromSpvReflect(SpvReflectTypeDescription* typeDescription)
+ShaderBufferMemberType lvk::GetTypeFromSpvReflect(SpvReflectTypeDescription* typeDescription)
 {
 
   if (typeDescription->type_flags & SPV_REFLECT_TYPE_FLAG_MATRIX)

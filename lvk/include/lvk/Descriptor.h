@@ -1,5 +1,6 @@
 #pragma once
 #include "lvk/Structs.h"
+#include "ThirdParty/spirv_reflect.h"
 
 namespace lvk {
 
@@ -8,4 +9,5 @@ namespace lvk {
     Vector<DescriptorSetLayoutData>     ReflectDescriptorSetLayouts(VkState& vk, StageBinary& stageBin);
     Vector<PushConstantBlock>           ReflectPushConstants(VkState& vk, StageBinary& stageBin);
     VkDescriptorSet                     CreateDescriptorSet(VkState& vk, DescriptorSetLayoutData& layoutData);
+    ShaderBufferMemberType              GetTypeFromSpvReflect(SpvReflectTypeDescription* typeDescription);
 }

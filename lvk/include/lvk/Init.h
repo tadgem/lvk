@@ -59,6 +59,7 @@ namespace init
   Vector<VkExtensionProperties>       GetDeviceAvailableExtensions(VkState& vk, VkPhysicalDevice physicalDevice);
 
   void                                CreateBuiltInRenderPasses(VkState& vk);
+  void                                Quit(VkState& vk) {vk.m_ShouldRun = false;}
 
 
   template<typename _BackendTy>

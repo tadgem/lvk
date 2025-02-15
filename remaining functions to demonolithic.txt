@@ -1,6 +1,0 @@
-GetTypeFromSpvReflect
-Start
-Quit
-BeginGraphicsCommands
-EndGraphicsCommands
-RecordGraphicsCommands
