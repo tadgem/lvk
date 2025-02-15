@@ -1,7 +1,6 @@
 #include "example-common.h"
-#include "lvk/Shader.h"
-#include "lvk/Material.h"
 #include <algorithm>
+#include "lvk/lvk.h"
 #include "Im3D/im3d_lvk.h"
 
 using namespace lvk;
@@ -9,12 +8,12 @@ using namespace lvk;
 static Transform g_Transform;
 static Camera g_Camera;
 
-void RecordCommandBuffersV2(VkSDL & vk,
+void RecordCommandBuffersV2(VkState & vk,
     VkPipeline& gbufferPipeline, VkPipelineLayout& gbufferPipelineLayout, VkRenderPass gbufferRenderPass, Vector<VkFramebuffer>& gbufferFramebuffers,
     VkPipeline& lightingPassPipeline, VkPipelineLayout& lightingPassPipelineLayout, VkRenderPass lightingPassRenderPass, Material& lightPassMaterial, Vector<VkFramebuffer>& lightingPassFramebuffers,
     RenderModel& model, Mesh& screenQuad, LvkIm3dState& im3dState, LvkIm3dViewState& im3dViewState)
 {
-    vk.RecordGraphicsCommands([&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
+    lvk::RecordGraphicsCommands(vk, [&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
         {
             Array<VkClearValue, 4> clearValues{};
             clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
@@ -111,7 +110,7 @@ void RecordCommandBuffersV2(VkSDL & vk,
         });
 }
 
-void UpdateUniformBuffer(VkSDL & vk, Material& renderItemMaterial, Material& lightPassMaterial, DeferredLightData& lightDataCpu)
+void UpdateUniformBuffer(VkState & vk, Material& renderItemMaterial, Material& lightPassMaterial, DeferredLightData& lightDataCpu)
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -138,12 +137,12 @@ void UpdateUniformBuffer(VkSDL & vk, Material& renderItemMaterial, Material& lig
         ubo.Proj[1][1] *= -1;
         g_Camera.Proj = ubo.Proj;
     }
-    renderItemMaterial.SetBuffer(vk.GetFrameIndex(), 0, 0, ubo);
-    lightPassMaterial.SetBuffer(vk.GetFrameIndex(), 0, 0, ubo);
-    lightPassMaterial.SetBuffer(vk.GetFrameIndex(), 0, 4, lightDataCpu);
+    renderItemMaterial.SetBuffer(vk.m_CurrentFrameIndex, 0, 0, ubo);
+    lightPassMaterial.SetBuffer(vk.m_CurrentFrameIndex, 0, 0, ubo);
+    lightPassMaterial.SetBuffer(vk.m_CurrentFrameIndex, 0, 4, lightDataCpu);
 }
 
-RenderModel CreateRenderModelGbuffer(VkAPI & vk, const String& modelPath, ShaderProgram& shader)
+RenderModel CreateRenderModelGbuffer(VkState & vk, const String& modelPath, ShaderProgram& shader)
 {
     Model model;
     LoadModelAssimp(vk, model, modelPath, true);
@@ -165,7 +164,7 @@ RenderModel CreateRenderModelGbuffer(VkAPI & vk, const String& modelPath, Shader
     return renderModel;
 }
 
-void OnImGui(VkAPI & vk, DeferredLightData& lightDataCpu)
+void OnImGui(VkState & vk, DeferredLightData& lightDataCpu)
 {
     if (ImGui::Begin("Debug"))
     {
@@ -252,9 +251,8 @@ void OnIm3D()
 }
 
 int main() {
-    VkSDL vk;
-    bool enableMSAA = true;
-    vk.Start("IM3D",1280, 720, enableMSAA);
+    VkState vk = init::Create<VkSDL>("Im3D Multiview", 1920, 1080, false);
+    bool enableMSAA = false;
     auto im3dState = LoadIm3D(vk);
     auto im3dViewState = AddIm3dForViewport(vk, im3dState, vk.m_SwapchainImageRenderPass, enableMSAA);
 
@@ -286,7 +284,7 @@ int main() {
 
     // create gbuffer pipeline
     VkPipelineLayout gbufferPipelineLayout;
-    VkPipeline gbufferPipeline = vk.CreateRasterPipeline(
+    VkPipeline gbufferPipeline = lvk::CreateRasterPipeline(vk,
         gbufferProg,
         Vector<VkVertexInputBindingDescription>{
             VertexDataPosNormalUv::GetBindingDescription()},
@@ -298,7 +296,7 @@ int main() {
     // create present graphics pipeline
     // Pipeline stage?
     VkPipelineLayout lightPassPipelineLayout;
-    VkPipeline pipeline = vk.CreateRasterPipeline(
+    VkPipeline pipeline = lvk::CreateRasterPipeline(vk,
         lightPassProg,
         Vector<VkVertexInputBindingDescription>{
             VertexDataPosUv::GetBindingDescription()},
@@ -312,9 +310,9 @@ int main() {
     // allocate materials instead of raw buffers etc.
     RenderModel m = CreateRenderModelGbuffer(vk, "assets/sponza/sponza.gltf", gbufferProg);
 
-    while (vk.ShouldRun())
+    while (vk.m_ShouldRun)
     {
-        vk.PreFrame();
+        vk.m_Backend->PreFrame(vk);
 
         Im3d::NewFrame();
 
@@ -347,7 +345,7 @@ int main() {
 
         OnImGui(vk, lightDataCpu);
 
-        vk.PostFrame();
+        vk.m_Backend->PostFrame(vk);
     }
     gbufferProg.Free(vk);
     lightPassProg.Free(vk);

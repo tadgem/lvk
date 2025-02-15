@@ -7,9 +7,9 @@ static std::vector<VmaAllocation>       uniformBuffersMemory;
 static std::vector<void*>               uniformBuffersMapped;
 static std::vector<VkDescriptorSet>     descriptorSets;
 
-void RecordCommandBuffers(VkSDL & vk, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout, Model& model)
+void RecordCommandBuffers(VkState & vk, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout, Model& model)
 {
-    vk.RecordGraphicsCommands([&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
+    lvk::RecordGraphicsCommands(vk, [&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
         // push to example
         std::array<VkClearValue, 2> clearValues{};
         clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
@@ -60,7 +60,7 @@ void RecordCommandBuffers(VkSDL & vk, VkPipeline& pipeline, VkPipelineLayout& pi
     });
 }
 
-void UpdateUniformBuffer(VkSDL & vk)
+void UpdateUniformBuffer(VkState & vk)
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -78,10 +78,10 @@ void UpdateUniformBuffer(VkSDL & vk)
         ubo.Proj[1][1] *= -1;
     }
 
-    memcpy(uniformBuffersMapped[vk.GetFrameIndex()], &ubo, sizeof(ubo));
+    memcpy(uniformBuffersMapped[vk.m_CurrentFrameIndex], &ubo, sizeof(ubo));
 }
 
-void CreateDescriptorSets(VkSDL & vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler)
+void CreateDescriptorSets(VkState & vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler)
 {
     std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -129,9 +129,8 @@ void CreateDescriptorSets(VkSDL & vk, VkDescriptorSetLayout& descriptorSetLayout
 
 int main()
 {
-    VkSDL vk;
-    bool enableMSAA = true;
-    vk.Start("MSAA", 1280, 720, enableMSAA);
+    VkState vk = init::Create<VkSDL>("Im3D Multiview", 1920, 1080, false);
+    bool enableMSAA = false;
 
 
     ShaderProgram prog = ShaderProgram::CreateFromBinaryPath(
@@ -141,13 +140,13 @@ int main()
     VkImage textureImage;
     VkImageView imageView;
     VkDeviceMemory textureMemory;
-    vk.CreateTexture("assets/viking_room.png", VK_FORMAT_R8G8B8A8_UNORM, textureImage, imageView, textureMemory, &mipLevels);
+    CreateTexture(vk, "assets/viking_room.png", VK_FORMAT_R8G8B8A8_UNORM, textureImage, imageView, textureMemory, &mipLevels);
     VkSampler imageSampler;
-    vk.CreateImageSampler(imageView, mipLevels, VK_FILTER_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, imageSampler);
+    CreateImageSampler(vk, imageView, mipLevels, VK_FILTER_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, imageSampler);
 
     VkPipelineLayout pipelineLayout;
 
-    VkPipeline pipeline = vk.CreateRasterPipeline(
+    VkPipeline pipeline = lvk::CreateRasterPipeline(vk,
         prog,
         Vector<VkVertexInputBindingDescription>{
             VertexDataPosUv::GetBindingDescription()},
@@ -162,13 +161,13 @@ int main()
     Model model;
     LoadModelAssimp(vk, model, "assets/viking_room.obj");
 
-    vk.CreateUniformBuffers<MvpData>(uniformBuffers, uniformBuffersMemory, uniformBuffersMapped);
+    CreateUniformBuffers<MvpData>(vk, uniformBuffers, uniformBuffersMemory, uniformBuffersMapped);
 
     CreateDescriptorSets(vk, prog.m_DescriptorSetLayout, imageView, imageSampler);
 
-    while (vk.ShouldRun())
+    while (vk.m_ShouldRun)
     {    
-        vk.PreFrame();
+        vk.m_Backend->PreFrame(vk);
         
         UpdateUniformBuffer(vk);
 
@@ -179,7 +178,7 @@ int main()
         ImGui::End();
         RecordCommandBuffers(vk, pipeline, pipelineLayout, model);
 
-        vk.PostFrame();
+        vk.m_Backend->PostFrame(vk);
     }
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {

@@ -11,7 +11,7 @@ static ShaderBufferFrameData lightsUniformData;
 static ForwardLightData lightDataCpu {};
 static std::vector<VkDescriptorSet>     descriptorSets;
 
-void CreateDescriptorSets(VkSDL & vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler)
+void CreateDescriptorSets(VkState & vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler)
 {
   std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
   VkDescriptorSetAllocateInfo allocInfo{};
@@ -71,9 +71,9 @@ void CreateDescriptorSets(VkSDL & vk, VkDescriptorSetLayout& descriptorSetLayout
 
 }
 
-void RecordCommandBuffers(VkSDL & vk, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout, Model& model)
+void RecordCommandBuffers(VkState & vk, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout, Model& model)
 {
-    vk.RecordGraphicsCommands([&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
+    lvk::RecordGraphicsCommands(vk, [&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
         // push to example
         std::array<VkClearValue, 2> clearValues{};
         clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
@@ -124,7 +124,7 @@ void RecordCommandBuffers(VkSDL & vk, VkPipeline& pipeline, VkPipelineLayout& pi
     });
 }
 
-void UpdateUniformBuffer(VkSDL & vk)
+void UpdateUniformBuffer(VkState & vk)
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
     
@@ -141,7 +141,7 @@ void UpdateUniformBuffer(VkSDL & vk)
         ubo.Proj = glm::perspective(glm::radians(45.0f), vk.m_SwapChainImageExtent.width / (float)vk.m_SwapChainImageExtent.height, 0.1f, 300.0f);
         ubo.Proj[1][1] *= -1;
     }
-    mvpUniformData.Set(vk.GetFrameIndex(), ubo);
+    mvpUniformData.Set(vk.m_CurrentFrameIndex, ubo);
 
     // light imgui
 
@@ -196,14 +196,13 @@ void UpdateUniformBuffer(VkSDL & vk)
     }
     ImGui::End();
 
-    lightsUniformData.Set(vk.GetFrameIndex(), lightDataCpu);
+    lightsUniformData.Set(vk.m_CurrentFrameIndex, lightDataCpu);
 }
 
 int main()
 {
-    VkSDL vk;
-    bool enableMSAA = true;
-    vk.Start("Forward Lights", 1280, 720, enableMSAA);
+    VkState vk = init::Create<VkSDL>("Forward Lights", 1920, 1080, false);
+    bool enableMSAA = false;
 
     // shader abstraction
 
@@ -217,13 +216,13 @@ int main()
     VkImage textureImage;
     VkImageView imageView;
     VkDeviceMemory textureMemory;
-    vk.CreateTexture("assets/viking_room.png", VK_FORMAT_R8G8B8A8_UNORM, textureImage, imageView, textureMemory, &mipLevels);
+    CreateTexture(vk, "assets/viking_room.png", VK_FORMAT_R8G8B8A8_UNORM, textureImage, imageView, textureMemory, &mipLevels);
     VkSampler imageSampler;
-    vk.CreateImageSampler(imageView, mipLevels, VK_FILTER_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, imageSampler);
+    CreateImageSampler(vk, imageView, mipLevels, VK_FILTER_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, imageSampler);
 
     // Pipeline stage?
     VkPipelineLayout pipelineLayout;
-    VkPipeline pipeline = vk.CreateRasterPipeline(
+    VkPipeline pipeline = lvk::CreateRasterPipeline(vk,
         lights_prog,
         Vector<VkVertexInputBindingDescription>{
             VertexDataPosNormalUv::GetBindingDescription()},
@@ -237,19 +236,19 @@ int main()
     LoadModelAssimp(vk, model, "assets/viking_room.obj", true);
 
     // Shader too probably
-    vk.CreateUniformBuffers<MvpData>(mvpUniformData);
-    vk.CreateUniformBuffers<FrameLightDataT<NUM_LIGHTS>>(lightsUniformData);
+    CreateUniformBuffers<MvpData>(vk, mvpUniformData);
+    CreateUniformBuffers<FrameLightDataT<NUM_LIGHTS>>(vk, lightsUniformData);
     CreateDescriptorSets(vk, lights_prog.m_DescriptorSetLayout, imageView, imageSampler);
 
-    while (vk.ShouldRun())
+    while (vk.m_ShouldRun)
     {    
-        vk.PreFrame();
+        vk.m_Backend->PreFrame(vk);
         
         UpdateUniformBuffer(vk);
 
         RecordCommandBuffers(vk, pipeline, pipelineLayout, model);
 
-        vk.PostFrame();
+        vk.m_Backend->PostFrame(vk);
     }
 
     mvpUniformData.Free(vk);
