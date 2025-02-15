@@ -1,4 +1,5 @@
 #include "lvk/Mesh.h"
+#include "lvk/Buffer.h"
 #include "volk.h"
 
 lvk::Mesh* lvk::Mesh::g_ScreenSpaceQuad = nullptr;
@@ -14,19 +15,19 @@ static lvk::Vector<uint32_t> g_ScreenSpaceQuadIndexData = {
     0, 1, 2, 2, 3, 0
 };
 
-void lvk::Mesh::InitBuiltInMeshes(lvk::VkAPI & vk)
+void lvk::Mesh::InitBuiltInMeshes(lvk::VkState & vk)
 {
     VkBuffer vertexBuffer;
     VmaAllocation vertexBufferMemory;
     VkBuffer indexBuffer;
     VmaAllocation indexBufferMemory;
-    vk.CreateVertexBuffer<VertexDataPosUv>(g_ScreenSpaceQuadVertexData, vertexBuffer, vertexBufferMemory);
-    vk.CreateIndexBuffer(g_ScreenSpaceQuadIndexData, indexBuffer, indexBufferMemory);
+    CreateVertexBuffer<VertexDataPosUv>(vk, g_ScreenSpaceQuadVertexData, vertexBuffer, vertexBufferMemory);
+    CreateIndexBuffer(vk, g_ScreenSpaceQuadIndexData, indexBuffer, indexBufferMemory);
 
     g_ScreenSpaceQuad = new Mesh { vertexBuffer, vertexBufferMemory, indexBuffer, indexBufferMemory, 6 };
 }
 
-void lvk::Mesh::FreeBuiltInMeshes(lvk::VkAPI & vk)
+void lvk::Mesh::FreeBuiltInMeshes(lvk::VkState & vk)
 {
     vkDestroyBuffer(vk.m_LogicalDevice, g_ScreenSpaceQuad->m_VertexBuffer, nullptr);
     vmaFreeMemory(vk.m_Allocator, g_ScreenSpaceQuad->m_VertexBufferMemory);
@@ -34,7 +35,7 @@ void lvk::Mesh::FreeBuiltInMeshes(lvk::VkAPI & vk)
     vmaFreeMemory(vk.m_Allocator, g_ScreenSpaceQuad->m_IndexBufferMemory);
 }
 
-void lvk::Mesh::Free (VkAPI & vk)
+void lvk::Mesh::Free (VkState & vk)
 {
     vkDestroyBuffer (vk.m_LogicalDevice, m_VertexBuffer, nullptr);
     vkDestroyBuffer (vk.m_LogicalDevice, m_IndexBuffer, nullptr);

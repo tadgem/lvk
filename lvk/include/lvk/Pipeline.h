@@ -37,7 +37,7 @@ namespace lvk
 
     	VkPipelineData() = default;
 
-    	void Free(VkAPI & vk)
+    	void Free(VkState & vk)
     	{
     		vkDestroyPipelineLayout (vk.m_LogicalDevice, m_PipelineLayout, nullptr);
     		vkDestroyPipeline(vk.m_LogicalDevice, m_Pipeline, nullptr);
@@ -57,7 +57,7 @@ namespace lvk
         Optional<Framebuffer*>              m_OutputFramebuffer;
         LvkIm3dViewState* m_Im3dState = nullptr;
 
-        Framebuffer* AddFramebuffer(VkAPI & vk)
+        Framebuffer* AddFramebuffer(VkState & vk)
         {
             m_FBs.push_back(new Framebuffer());
             return m_FBs[m_FBs.size() - 1];
@@ -77,25 +77,25 @@ namespace lvk
             return nullptr;
         }
 
-        Material* AddMaterial(VkAPI & vk, ShaderProgram& prog)
+        Material* AddMaterial(VkState & vk, ShaderProgram& prog)
         {
             m_PipelineMaterials.push_back(new Material(Material::Create(vk, prog)));
             return m_PipelineMaterials.back();
         }
 
-        VkPipelineData* AddPipeline(VkAPI & vk, VkPipeline pipeline, VkPipelineLayout layout)
+        VkPipelineData* AddPipeline(VkState & vk, VkPipeline pipeline, VkPipelineLayout layout)
         {
             m_PipelineDatas.emplace_back(new VkPipelineData(pipeline, layout));
             return m_PipelineDatas.back();
         }
 
-        LvkIm3dViewState* AddIm3d(VkAPI & vk, LvkIm3dState im3dState)
+        LvkIm3dViewState* AddIm3d(VkState & vk, LvkIm3dState im3dState)
         {
             m_Im3dState = new LvkIm3dViewState(AddIm3dForViewport(vk, im3dState, m_OutputFramebuffer.value()->m_RenderPass, false));
             return m_Im3dState;
         }
 
-    	void Free(VkAPI & vk)
+    	void Free(VkState & vk)
         {
         	if(m_Im3dState != nullptr) {
         		lvk::FreeIm3dViewport (vk,*m_Im3dState);
@@ -127,7 +127,7 @@ namespace lvk
 
         Optional<_Ty>   m_CommandCallback;
 
-        Framebuffer* AddFramebuffer(VkAPI & vk)
+        Framebuffer* AddFramebuffer(VkState & vk)
         {
             m_FBs.push_back(new Framebuffer());
             return m_FBs[m_FBs.size() - 1];
@@ -147,19 +147,19 @@ namespace lvk
             return nullptr;
         }
 
-        Material* AddMaterial(VkAPI & vk, ShaderProgram& prog)
+        Material* AddMaterial(VkState & vk, ShaderProgram& prog)
         {
             m_PipelineMaterials.push_back(new Material(Material::Create(vk, prog)));
             return m_PipelineMaterials.back();
         }
 
-        VkPipelineData* AddPipeline(VkAPI & vk, VkPipeline pipeline, VkPipelineLayout layout)
+        VkPipelineData* AddPipeline(VkState & vk, VkPipeline pipeline, VkPipelineLayout layout)
         {
             m_PipelineDatas.emplace_back(new VkPipelineData(pipeline, layout));
             return m_PipelineDatas.back();
         }
 
-        LvkIm3dViewState* AddIm3d(VkAPI & vk, LvkIm3dState im3dState)
+        LvkIm3dViewState* AddIm3d(VkState & vk, LvkIm3dState im3dState)
         {
             m_Im3dState = new LvkIm3dViewState(AddIm3dForViewport(vk, im3dState, m_OutputFramebuffer.value()->m_RenderPass, false));
             return m_Im3dState;

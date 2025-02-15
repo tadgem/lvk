@@ -4,8 +4,6 @@
 
 namespace lvk
 {
-    class VkAPI;
-
     // ty https://vkguide.dev/docs/new_chapter_4/descriptor_abstractions/
     class DescriptorSetAllocator
     {

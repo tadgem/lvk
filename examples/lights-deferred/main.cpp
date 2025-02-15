@@ -63,7 +63,7 @@ struct TransformEx {
 
 static TransformEx g_Transform; 
 
-void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
+void RecordCommandBuffersV2(VkSDL & vk,
     VkPipeline& gbufferPipeline , VkPipelineLayout& gbufferPipelineLayout, VkRenderPass gbufferRenderPass, Vector<VkDescriptorSet>& gbufferDescriptorSets, Vector<VkFramebuffer>& gbufferFramebuffers,
     VkPipeline& lightingPassPipeline, VkPipelineLayout& lightingPassPipelineLayout, VkRenderPass lightingPassRenderPass, Vector<VkDescriptorSet>& lightingPassDescriptorSets, Vector<VkFramebuffer>& lightingPassFramebuffers,
     RenderModel& model, MeshEx& screenQuad)
@@ -163,7 +163,7 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
         });
 }
 
-void UpdateUniformBuffer(VulkanAPI_SDL& vk, ShaderBufferFrameData& itemMvp, ShaderBufferFrameData lightsData, DeferredLightData& lightDataCpu)
+void UpdateUniformBuffer(VkSDL & vk, ShaderBufferFrameData& itemMvp, ShaderBufferFrameData lightsData, DeferredLightData& lightDataCpu)
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -185,7 +185,7 @@ void UpdateUniformBuffer(VulkanAPI_SDL& vk, ShaderBufferFrameData& itemMvp, Shad
     lightsData.Set(vk.GetFrameIndex(), lightDataCpu);
 }
 
-void UpdateUniformBufferMat(VulkanAPI_SDL& vk, Material& itemMat, ShaderBufferFrameData lightsData, DeferredLightData& lightDataCpu)
+void UpdateUniformBufferMat(VkSDL & vk, Material& itemMat, ShaderBufferFrameData lightsData, DeferredLightData& lightDataCpu)
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -254,7 +254,8 @@ void CreateGBufferDescriptorSets(VkAPI & vk, VkDescriptorSetLayout& descriptorSe
 
 }
 
-void CreateLightingPassDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSetLayout, FramebufferSetEx gbuffers, Vector<VkDescriptorSet>& descriptorSets, ShaderBufferFrameData& mvpUniformData, ShaderBufferFrameData& lightsUniformData)
+void CreateLightingPassDescriptorSets(
+    VkSDL & vk, VkDescriptorSetLayout& descriptorSetLayout, FramebufferSetEx gbuffers, Vector<VkDescriptorSet>& descriptorSets, ShaderBufferFrameData& mvpUniformData, ShaderBufferFrameData& lightsUniformData)
 {
     std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -340,7 +341,7 @@ void CreateLightingPassDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& 
 
 }
 
-void CreateGBufferRenderPass(VulkanAPI_SDL& vk, VkRenderPass& renderPass)
+void CreateGBufferRenderPass(VkSDL & vk, VkRenderPass& renderPass)
 {
     Vector<VkAttachmentDescription> colourAttachmentDescriptions{};
     Vector<VkAttachmentDescription> resolveAttachmentDescriptions{};
@@ -460,7 +461,7 @@ void OnImGui(VkAPI & vk, DeferredLightData& lightDataCpu)
 }
 int main()
 {
-    VulkanAPI_SDL vk;
+    VkSDL vk;
     bool enableMSAA = false;
     vk.Start("Deferred", 1280, 720, enableMSAA);
 

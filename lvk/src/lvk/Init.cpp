@@ -1,4 +1,7 @@
 #define VK_NO_PROTOTYPES
+#define VMA_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
+#include "ThirdParty/stb_image.h"
 #include "lvk/Init.h"
 #include "ImGui/imgui_impl_vulkan.h"
 #include "lvk/Commands.h"
@@ -188,7 +191,6 @@ void lvk::init::InitVulkan(VkState& vk, bool enableSwapchainMsaa)
   VK_CHECK(volkInitialize());
   CreateInstance(vk);
   SetupDebugOutput(vk);
-  // TODO: Renable on backkend rework
   vk.m_Backend->CreateSurface(vk);
   PickPhysicalDevice(vk);
   CreateLogicalDevice(vk);
@@ -223,8 +225,7 @@ void lvk::init::InitImGui(VkState& vk)
   style.Colors[ImGuiCol_ChildBg].w = 1.0f;
 
   // TODO : Reinit imgui backend on backend refactor
-  // InitImGuiBackend();
-
+  vk.m_Backend->InitImGuiBackend(vk);
   ImGui_ImplVulkan_InitInfo init_info = {};
 
   init_info.Instance = vk.m_Instance;
@@ -1117,4 +1118,7 @@ std::vector<VkExtensionProperties> lvk::init::GetDeviceAvailableExtensions(VkSta
   return availableExtensions;
 
 
+}
+void lvk::init::Quit(lvk::VkState &vk) {
+  vk.m_ShouldRun = false;
 }

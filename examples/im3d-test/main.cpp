@@ -9,7 +9,7 @@ using namespace lvk;
 static Transform g_Transform;
 static Camera g_Camera;
 
-void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
+void RecordCommandBuffersV2(VkSDL & vk,
     VkPipeline& gbufferPipeline, VkPipelineLayout& gbufferPipelineLayout, VkRenderPass gbufferRenderPass, Vector<VkFramebuffer>& gbufferFramebuffers,
     VkPipeline& lightingPassPipeline, VkPipelineLayout& lightingPassPipelineLayout, VkRenderPass lightingPassRenderPass, Material& lightPassMaterial, Vector<VkFramebuffer>& lightingPassFramebuffers,
     RenderModel& model, Mesh& screenQuad, LvkIm3dState& im3dState, LvkIm3dViewState& im3dViewState)
@@ -111,7 +111,7 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
         });
 }
 
-void UpdateUniformBuffer(VulkanAPI_SDL& vk, Material& renderItemMaterial, Material& lightPassMaterial, DeferredLightData& lightDataCpu)
+void UpdateUniformBuffer(VkSDL & vk, Material& renderItemMaterial, Material& lightPassMaterial, DeferredLightData& lightDataCpu)
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -252,7 +252,7 @@ void OnIm3D()
 }
 
 int main() {
-    VulkanAPI_SDL vk;
+    VkSDL vk;
     bool enableMSAA = true;
     vk.Start("IM3D",1280, 720, enableMSAA);
     auto im3dState = LoadIm3D(vk);

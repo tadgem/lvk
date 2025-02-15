@@ -9,7 +9,7 @@
 
 namespace lvk {
 
-  class VkAPI;
+  struct VkState;
 
   enum class ShaderBindingType {
     UniformBuffer,
@@ -75,7 +75,7 @@ namespace lvk {
     VmaAllocation m_GpuMemory;
     void *m_MappedAddr;
 
-    void Free(VkAPI &vk);
+    void Free(VkState &vk);
   };
 
   struct ShaderBufferFrameData {
@@ -96,7 +96,7 @@ namespace lvk {
       memcpy(addr, start, count);
     }
 
-    void Free(VkAPI &vk);
+    void Free(VkState &vk);
   };
 
   enum class ShaderStageType { Vertex, Fragment };

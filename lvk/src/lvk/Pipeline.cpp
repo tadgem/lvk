@@ -1,4 +1,5 @@
 #include "lvk/Pipeline.h"
+#include "spdlog/spdlog.h"
 
 VkPipeline lvk::CreateRasterPipeline(
     lvk::VkState &vk, lvk::ShaderProgram &shader,

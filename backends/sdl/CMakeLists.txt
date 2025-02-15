@@ -5,9 +5,10 @@ set(CMAKE_CXX_STANDARD 17)
 
 find_package(Vulkan REQUIRED)
 
-add_library(${PROJECT_NAME} STATIC src/VulkanAPI_SDL.cpp
+add_library(${PROJECT_NAME} STATIC
+        src/VkSDL.cpp
+        include/VkSDL.h
         src/ImGui/imgui_impl_sdl3.cpp
-        include/VulkanAPI_SDL.h
         include/ImGui/imgui_impl_sdl3.h
 )
 

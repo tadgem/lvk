@@ -12,7 +12,7 @@ static std::vector<VmaAllocation>       uniformBuffersMemory;
 static std::vector<void*>               uniformBuffersMapped;
 static std::vector<VkDescriptorSet>     descriptorSets;
 
-void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout, Model& model)
+void RecordCommandBuffers(VkSDL & vk, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout, Model& model)
 {
     vk.RecordGraphicsCommands([&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
         // push to example
@@ -65,7 +65,7 @@ void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkPipelineLay
     });
 }
 
-void UpdateUniformBuffer(VulkanAPI_SDL& vk)
+void UpdateUniformBuffer(VkSDL & vk)
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -83,7 +83,7 @@ void UpdateUniformBuffer(VulkanAPI_SDL& vk)
     memcpy(uniformBuffersMapped[vk.GetFrameIndex()], &ubo, sizeof(ubo));
 }
 
-void CreateDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler)
+void CreateDescriptorSets(VkSDL & vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler)
 {
     std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -131,7 +131,7 @@ void CreateDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSe
 
 int main()
 {
-    VulkanAPI_SDL vk;
+    VkSDL vk;
     vk.Start("Model Example", 1280, 720);
 
     ShaderProgram prog = ShaderProgram::CreateFromBinaryPath(

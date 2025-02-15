@@ -270,7 +270,7 @@ void UpdateViewData(VkAPI & vk, ViewData* view, DeferredLightData& lightData)
     view->m_Pipeline.m_PipelineMaterials[0]->SetBuffer(vk.GetFrameIndex(), 0, 3, lightData);
 }
 
-void RecordCommandBuffersV2(VulkanAPI_SDL& vk, Vector<ViewData*> views, RenderModel& model, Mesh& screenQuad, LvkIm3dState& im3dState, DeferredLightData& lightData)
+void RecordCommandBuffersV2(VkSDL & vk, Vector<ViewData*> views, RenderModel& model, Mesh& screenQuad, LvkIm3dState& im3dState, DeferredLightData& lightData)
 {
     static Vector<VertexDataPosUv> originalScreenQuadData = {
                     { { -1.0f, -1.0f , 0.0f}, { 0.0f, 0.0f } },
@@ -521,7 +521,7 @@ void OnIm3D()
 }
 
 int main() {
-    VulkanAPI_SDL vk;
+    VkSDL vk;
     bool enableMSAA = false;
     vk.Start("Pipeline Example",1920, 1080, enableMSAA);
     auto im3dState = LoadIm3D(vk);

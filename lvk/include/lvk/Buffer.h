@@ -7,6 +7,7 @@ namespace lvk {
   void  CreateBufferVMA(VkState& vk, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VmaAllocation& allocation);
   void  CopyBuffer(VkState& vk, VkBuffer& src, VkBuffer& dst, VkDeviceSize size);
   void  CreateIndexBuffer(VkState& vk, Vector<uint32_t> indices, VkBuffer& buffer, VmaAllocation& deviceMemory);
+
   template<typename _Ty>
   void                                CreateUniformBuffers(VkState& vk, Vector<VkBuffer>& uniformBuffersFrames, Vector<VmaAllocation>& uniformBuffersMemoryFrames, Vector<void*>& uniformBufferMappedMemoryFrames)
   {

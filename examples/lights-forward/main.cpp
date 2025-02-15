@@ -11,7 +11,7 @@ static ShaderBufferFrameData lightsUniformData;
 static ForwardLightData lightDataCpu {};
 static std::vector<VkDescriptorSet>     descriptorSets;
 
-void CreateDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler)
+void CreateDescriptorSets(VkSDL & vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler)
 {
   std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
   VkDescriptorSetAllocateInfo allocInfo{};
@@ -71,7 +71,7 @@ void CreateDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSe
 
 }
 
-void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout, Model& model)
+void RecordCommandBuffers(VkSDL & vk, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout, Model& model)
 {
     vk.RecordGraphicsCommands([&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
         // push to example
@@ -124,7 +124,7 @@ void RecordCommandBuffers(VulkanAPI_SDL& vk, VkPipeline& pipeline, VkPipelineLay
     });
 }
 
-void UpdateUniformBuffer(VulkanAPI_SDL& vk)
+void UpdateUniformBuffer(VkSDL & vk)
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
     
@@ -201,7 +201,7 @@ void UpdateUniformBuffer(VulkanAPI_SDL& vk)
 
 int main()
 {
-    VulkanAPI_SDL vk;
+    VkSDL vk;
     bool enableMSAA = true;
     vk.Start("Forward Lights", 1280, 720, enableMSAA);
 

@@ -1,7 +1,8 @@
 #include "lvk/Texture.h"
-#include "lvk/Utils.h"
+#include "ThirdParty/stb_image.h"
 #include "lvk/Buffer.h"
 #include "lvk/Commands.h"
+#include "lvk/Utils.h"
 #include "volk.h"
 
 lvk::Texture* lvk::Texture::g_DefaultTexture = nullptr;
@@ -262,18 +263,18 @@ static unsigned char p_DefaultTextureBytesPNG[] = {
   0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82
 };
 
-void lvk::Texture::InitDefaultTexture(lvk::VkAPI & vk)
+void lvk::Texture::InitDefaultTexture(lvk::VkState & vk)
 {
 	g_DefaultTexture = new Texture(Texture::CreateTextureFromMemory(vk, &p_DefaultTextureBytesPNG[0], p_DefaultTextureBytesPNG_Length, VK_FORMAT_R8G8B8A8_UNORM));
 }
 
-void lvk::Texture::FreeDefaultTexture(lvk::VkAPI & vk)
+void lvk::Texture::FreeDefaultTexture(lvk::VkState & vk)
 {
 	g_DefaultTexture->Free(vk);
 	delete g_DefaultTexture;
 }
 
-void lvk::Texture::Free(lvk::VkAPI & vk)
+void lvk::Texture::Free(lvk::VkState & vk)
 {
     vkDestroySampler(vk.m_LogicalDevice, m_Sampler, nullptr);
     vkDestroyImageView(vk.m_LogicalDevice, m_ImageView, nullptr);
@@ -704,4 +705,19 @@ void lvk::CopyBufferToImage(VkState& vk, VkBuffer& src, VkImage& image, uint32_t
     vkCmdCopyBufferToImage(commandBuffer, src, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
     EndSingleTimeCommands(vk, commandBuffer);
+}
+void lvk::CreateFramebuffer(lvk::VkState &vk,
+                            lvk::Vector<VkImageView> &attachments,
+                            VkRenderPass renderPass, VkExtent2D extent,
+                            VkFramebuffer &framebuffer) {
+    VkFramebufferCreateInfo framebufferCreateInfo{};
+    framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebufferCreateInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+    framebufferCreateInfo.pAttachments = attachments.data();
+    framebufferCreateInfo.layers = 1;
+    framebufferCreateInfo.renderPass = renderPass;
+    framebufferCreateInfo.height = extent.height;
+    framebufferCreateInfo.width = extent.width;
+
+    VK_CHECK (vkCreateFramebuffer(vk.m_LogicalDevice, &framebufferCreateInfo, nullptr, &framebuffer) != VK_SUCCESS)
 }

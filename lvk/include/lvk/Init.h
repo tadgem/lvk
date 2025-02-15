@@ -1,4 +1,5 @@
 #pragma once
+#include "Mesh.h"
 #include "lvk/Structs.h"
 
 namespace lvk {
@@ -59,7 +60,7 @@ namespace init
   Vector<VkExtensionProperties>       GetDeviceAvailableExtensions(VkState& vk, VkPhysicalDevice physicalDevice);
 
   void                                CreateBuiltInRenderPasses(VkState& vk);
-  void                                Quit(VkState& vk) {vk.m_ShouldRun = false;}
+  void                                Quit(VkState& vk);
 
 
   template<typename _BackendTy>
@@ -73,9 +74,10 @@ namespace init
     InitVulkan(vk, enableSwapchainMsaa);
     vk.m_MaxFramebufferExtent = vk.m_Backend->GetMaxFramebufferResolution(vk);
     InitImGui(vk);
+    Texture::InitDefaultTexture(vk);
+    Mesh::InitBuiltInMeshes(vk);
 
-    // todo: Texture::InitDefaultTexture(*this);
-    // todo: Mesh::InitBuiltInMeshes(*this);
+    return vk;
   }
 }
 

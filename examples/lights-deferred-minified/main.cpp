@@ -13,7 +13,7 @@ using DeferredLightData = FrameLightDataT<NUM_LIGHTS>;
 
 static Transform g_Transform;
 
-void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
+void RecordCommandBuffersV2(VkSDL & vk,
     VkPipeline& gbufferPipeline, VkPipelineLayout& gbufferPipelineLayout, VkRenderPass gbufferRenderPass, Vector<VkFramebuffer>& gbufferFramebuffers,
     VkPipeline& lightingPassPipeline, VkPipelineLayout& lightingPassPipelineLayout, VkRenderPass lightingPassRenderPass, Material& lightPassMaterial, Vector<VkFramebuffer>& lightingPassFramebuffers,
     RenderModel& model, Mesh& screenQuad)
@@ -111,7 +111,7 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
         });
 }
 
-void UpdateUniformBuffer(VulkanAPI_SDL& vk, Material& renderItemMaterial, Material& lightPassMaterial, DeferredLightData& lightDataCpu)
+void UpdateUniformBuffer(VkSDL & vk, Material& renderItemMaterial, Material& lightPassMaterial, DeferredLightData& lightDataCpu)
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -219,7 +219,7 @@ void OnImGui(VkAPI & vk, DeferredLightData& lightDataCpu)
 }
 
 int main() {
-    VulkanAPI_SDL vk;
+    VkSDL vk;
     bool enableMSAA = false;
     vk.Start("Deferred Minified",1280, 720, enableMSAA);
 

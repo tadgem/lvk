@@ -1,12 +1,14 @@
 #include "lvk/Shader.h"
+#include "lvk/Macros.h"
+#include "spdlog/spdlog.h"
 #include "volk.h"
 
-void lvk::ShaderProgram::Free(VkAPI & vk)
+void lvk::ShaderProgram::Free(VkState & vk)
 {
     vkDestroyDescriptorSetLayout(vk.m_LogicalDevice, m_DescriptorSetLayout, nullptr);
 }
 
-lvk::ShaderProgram lvk::ShaderProgram::CreateCompute(VkAPI & vk, const String& computePath)
+lvk::ShaderProgram lvk::ShaderProgram::CreateCompute(VkState & vk, const String& computePath)
 
 {
     ShaderStage comp = ShaderStage::CreateFromBinaryPath(
