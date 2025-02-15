@@ -1,9 +1,33 @@
 #pragma once
 #include "lvk/Material.h"
+#include "lvk/Shader.h"
 #include "Im3D/im3d_lvk.h"
 
 namespace lvk
 {
+namespace pipelines{
+
+    VkPipeline                          CreateComputePipeline(
+        VkState& vk,
+        StageBinary& comp,
+        VkDescriptorSetLayout& descriptorSetLayout,
+        uint32_t width, uint32_t height,
+        VkPipelineLayout& pipelineLayout);
+
+    VkPipeline                          CreateRasterPipeline(
+        VkState& vk,
+        ShaderProgram& shader,
+        Vector<VkVertexInputBindingDescription>& vertexBindingDescriptions,
+        Vector<VkVertexInputAttributeDescription>& vertexAttributeDescriptions,
+        VkRenderPass& pipelineRenderPass,
+        uint32_t width, uint32_t height,
+        VkPolygonMode polyMode,
+        VkCullModeFlags cullMode,
+        bool enableMultisampling,
+        VkCompareOp depthCompareOp,
+        VkPipelineLayout& pipelineLayout,
+        uint32_t colorAttachmentCount = 1);
+
     struct VkPipelineData
     {
         VkPipelineData(VkPipeline pipeline, VkPipelineLayout layout)
@@ -14,7 +38,7 @@ namespace lvk
 
     	VkPipelineData() = default;
 
-    	void Free(VulkanAPI& vk)
+    	void Free(VkState & vk)
     	{
     		vkDestroyPipelineLayout (vk.m_LogicalDevice, m_PipelineLayout, nullptr);
     		vkDestroyPipeline(vk.m_LogicalDevice, m_Pipeline, nullptr);
@@ -34,7 +58,7 @@ namespace lvk
         Optional<Framebuffer*>              m_OutputFramebuffer;
         LvkIm3dViewState* m_Im3dState = nullptr;
 
-        Framebuffer* AddFramebuffer(VulkanAPI& vk)
+        Framebuffer* AddFramebuffer(VkState & vk)
         {
             m_FBs.push_back(new Framebuffer());
             return m_FBs[m_FBs.size() - 1];
@@ -54,25 +78,25 @@ namespace lvk
             return nullptr;
         }
 
-        Material* AddMaterial(VulkanAPI& vk, ShaderProgram& prog)
+        Material* AddMaterial(VkState & vk, ShaderProgram& prog)
         {
             m_PipelineMaterials.push_back(new Material(Material::Create(vk, prog)));
             return m_PipelineMaterials.back();
         }
 
-        VkPipelineData* AddPipeline(VulkanAPI& vk, VkPipeline pipeline, VkPipelineLayout layout)
+        VkPipelineData* AddPipeline(VkState & vk, VkPipeline pipeline, VkPipelineLayout layout)
         {
             m_PipelineDatas.emplace_back(new VkPipelineData(pipeline, layout));
             return m_PipelineDatas.back();
         }
 
-        LvkIm3dViewState* AddIm3d(VulkanAPI& vk, LvkIm3dState im3dState)
+        LvkIm3dViewState* AddIm3d(VkState & vk, LvkIm3dState im3dState)
         {
             m_Im3dState = new LvkIm3dViewState(AddIm3dForViewport(vk, im3dState, m_OutputFramebuffer.value()->m_RenderPass, false));
             return m_Im3dState;
         }
 
-    	void Free(VulkanAPI& vk)
+    	void Free(VkState & vk)
         {
         	if(m_Im3dState != nullptr) {
         		lvk::FreeIm3dViewport (vk,*m_Im3dState);
@@ -104,7 +128,7 @@ namespace lvk
 
         Optional<_Ty>   m_CommandCallback;
 
-        Framebuffer* AddFramebuffer(VulkanAPI& vk)
+        Framebuffer* AddFramebuffer(VkState & vk)
         {
             m_FBs.push_back(new Framebuffer());
             return m_FBs[m_FBs.size() - 1];
@@ -124,19 +148,19 @@ namespace lvk
             return nullptr;
         }
 
-        Material* AddMaterial(VulkanAPI& vk, ShaderProgram& prog)
+        Material* AddMaterial(VkState & vk, ShaderProgram& prog)
         {
             m_PipelineMaterials.push_back(new Material(Material::Create(vk, prog)));
             return m_PipelineMaterials.back();
         }
 
-        VkPipelineData* AddPipeline(VulkanAPI& vk, VkPipeline pipeline, VkPipelineLayout layout)
+        VkPipelineData* AddPipeline(VkState & vk, VkPipeline pipeline, VkPipelineLayout layout)
         {
             m_PipelineDatas.emplace_back(new VkPipelineData(pipeline, layout));
             return m_PipelineDatas.back();
         }
 
-        LvkIm3dViewState* AddIm3d(VulkanAPI& vk, LvkIm3dState im3dState)
+        LvkIm3dViewState* AddIm3d(VkState & vk, LvkIm3dState im3dState)
         {
             m_Im3dState = new LvkIm3dViewState(AddIm3dForViewport(vk, im3dState, m_OutputFramebuffer.value()->m_RenderPass, false));
             return m_Im3dState;
@@ -147,4 +171,5 @@ namespace lvk
             m_CommandCallback = callback;
         }
     };
+}
 }

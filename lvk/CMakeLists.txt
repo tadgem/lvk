@@ -3,13 +3,21 @@ project(lvk)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_library(${PROJECT_NAME} STATIC src/lvk/VulkanAPI.cpp
+add_library(${PROJECT_NAME} STATIC
         src/lvk/Texture.cpp
         src/lvk/Framebuffer.cpp
         src/lvk/Mesh.cpp
         src/lvk/Material.cpp
         src/lvk/Shader.cpp
+        src/lvk/Structs.cpp
         src/lvk/DescriptorSetAllocator.cpp
+        src/lvk/Pipeline.cpp
+        src/lvk/Buffer.cpp
+        src/lvk/Commands.cpp
+        src/lvk/Utils.cpp
+        src/lvk/Init.cpp
+        src/lvk/Descriptor.cpp
+        src/lvk/RenderPass.cpp
         src/ThirdParty/spirv_reflect.c
         src/ImGui/imgui_impl_vulkan.cpp
         src/ImGui/imgui_draw.cpp
@@ -18,14 +26,22 @@ add_library(${PROJECT_NAME} STATIC src/lvk/VulkanAPI.cpp
         src/ImGui/imgui.cpp
         src/Im3D/im3d.cpp
         src/Im3D/im3d_lvk.cpp
-        include/lvk/VulkanAPI.h
+        include/lvk/lvk.h
         include/lvk/Texture.h
         include/lvk/Framebuffer.h
         include/lvk/Mesh.h
         include/lvk/Material.h
         include/lvk/Shader.h
+        include/lvk/Macros.h
         include/lvk/DescriptorSetAllocator.h
         include/lvk/Pipeline.h
+        include/lvk/Structs.h
+        include/lvk/Buffer.h
+        include/lvk/Commands.h
+        include/lvk/Utils.h
+        include/lvk/Init.h
+        include/lvk/Descriptor.h
+        include/lvk/RenderPass.h
         include/Alias.h
         include/ThirdParty/spirv_reflect.h
         include/ThirdParty/VulkanMemoryAllocator.h
@@ -52,11 +68,12 @@ set(LVK_INCLUDES    ${Vulkan_INCLUDE_DIRS}
                     ${CMAKE_CURRENT_SOURCE_DIR}/include CACHE INTERNAL "")
 target_include_directories(${PROJECT_NAME} PUBLIC ${LVK_INCLUDES})
 
-
+set(LVK_COMPILE_DEFS "/DIMGUI_IMPL_VULKAN_USE_VOLK")
 if (MSVC)
-    target_compile_options(${PROJECT_NAME} PRIVATE "/bigobj" "/MP" "/Zi")
+    set(${LVK_COMPILE_DEFS} ${LVK_COMPILE_DEFS} "/bigobj" "/MP" "/Zi")
     set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<$<CONFIG:Debug,Release>:ProgramDatabase>")
 endif ()
 
+target_compile_options(${PROJECT_NAME} PRIVATE ${LVK_COMPILE_DEFS})
 
 target_link_libraries(${PROJECT_NAME} volk spdlog shaderc shaderc_util)

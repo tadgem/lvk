@@ -1,4 +1,7 @@
 #pragma once
+#include "Macros.h"
+#include "RenderPass.h"
+#include "Utils.h"
 #include "lvk/Texture.h"
 
 namespace lvk
@@ -11,7 +14,7 @@ namespace lvk
         VkFormat                m_Format;
         VkSampleCountFlagBits   m_SampleCount;
 
-        void Free(VulkanAPI& vk)
+        void Free(VkState & vk)
         {
             for (auto& t : m_AttachmentSwapchainImages)
             {
@@ -19,7 +22,7 @@ namespace lvk
             }
         }
 
-        static Attachment CreateColourAttachment(lvk::VulkanAPI& vk, VkExtent2D resolution,
+        static Attachment CreateColourAttachment(lvk::VkState & vk, VkExtent2D resolution,
             uint32_t numMips, VkSampleCountFlagBits sampleCount,
             VkFormat format, VkImageUsageFlags usageFlags,
             VkMemoryPropertyFlagBits memoryFlags, VkImageAspectFlagBits imageAspect,
@@ -34,13 +37,13 @@ namespace lvk
             return a;
         }
 
-        static Attachment CreateDepthAttachment(lvk::VulkanAPI& vk, VkExtent2D resolution,
+        static Attachment CreateDepthAttachment(lvk::VkState & vk, VkExtent2D resolution,
             uint32_t numMips, VkSampleCountFlagBits sampleCount,
             VkImageUsageFlags usageFlags,
             VkMemoryPropertyFlagBits memoryFlags, VkImageAspectFlagBits imageAspect,
             VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
         {
-            Attachment a{ {}, vk.FindDepthFormat(), sampleCount };
+            Attachment a{ {}, utils::FindDepthFormat(vk), sampleCount };
             VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL;
             for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
             {
@@ -66,26 +69,26 @@ namespace lvk
         VkAttachmentLoadOp          m_AttachmentLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         VkExtent2D                  m_Resolution;
         
-        void AddColourAttachment(lvk::VulkanAPI& vk, ResolutionScale scale,
+        void AddColourAttachment(lvk::VkState & vk, ResolutionScale scale,
             uint32_t numMips, VkSampleCountFlagBits sampleCount,
             VkFormat format, VkImageUsageFlags usageFlags,
             VkMemoryPropertyFlagBits memoryFlags, VkImageAspectFlagBits imageAspect,
             VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
         {
-            VkExtent2D resolution = vk.GetMaxFramebufferExtent();
+            VkExtent2D resolution = vk.m_MaxFramebufferExtent;
             ResolveResolutionScale(scale, resolution.width, resolution.height, resolution.width, resolution.height);
             m_ColourAttachments.push_back(Attachment::CreateColourAttachment(vk,
                 resolution, numMips, sampleCount, format, usageFlags, memoryFlags, imageAspect, samplerFilter, samplerAddressMode));
             m_Resolution = resolution;
         }
 
-        void AddDepthAttachment(lvk::VulkanAPI& vk, ResolutionScale scale,
+        void AddDepthAttachment(lvk::VkState & vk, ResolutionScale scale,
             uint32_t numMips, VkSampleCountFlagBits sampleCount,
             VkImageUsageFlags usageFlags,
             VkMemoryPropertyFlagBits memoryFlags, VkImageAspectFlagBits imageAspect,
             VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
         {
-            VkExtent2D resolution = vk.GetMaxFramebufferExtent();
+            VkExtent2D resolution = vk.m_MaxFramebufferExtent;
             ResolveResolutionScale(scale, resolution.width, resolution.height, resolution.width, resolution.height);
             m_DepthAttachments.push_back(Attachment::CreateDepthAttachment(vk,
                 resolution, numMips, sampleCount, usageFlags, memoryFlags, imageAspect, samplerFilter, samplerAddressMode));
@@ -93,13 +96,13 @@ namespace lvk
 
         }
 
-        void AddResolveAttachment(lvk::VulkanAPI& vk, ResolutionScale scale,
+        void AddResolveAttachment(lvk::VkState & vk, ResolutionScale scale,
             uint32_t numMips, VkSampleCountFlagBits sampleCount,
             VkFormat format, VkImageUsageFlags usageFlags,
             VkMemoryPropertyFlagBits memoryFlags, VkImageAspectFlagBits imageAspect,
             VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
         {
-            VkExtent2D resolution = vk.GetMaxFramebufferExtent();
+            VkExtent2D resolution = vk.m_MaxFramebufferExtent;
             ResolveResolutionScale(scale, resolution.width, resolution.height, resolution.width, resolution.height);
             m_ResolveAttachments.push_back(Attachment::CreateColourAttachment(vk,
                 resolution, numMips, sampleCount, format, usageFlags, memoryFlags, imageAspect, samplerFilter, samplerAddressMode));
@@ -108,7 +111,7 @@ namespace lvk
         }
 
 
-        void Build(lvk::VulkanAPI& vk)
+        void Build(lvk::VkState & vk)
         {
             // build renderpass
             Vector<VkAttachmentDescription> colourAttachmentDescriptions{};
@@ -157,7 +160,7 @@ namespace lvk
                 depthAttachmentDescription.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             }
 
-            vk.CreateRenderPass(m_RenderPass,
+            render_passes::CreateRenderPass(vk, m_RenderPass,
                 colourAttachmentDescriptions, resolveAttachmentDescriptions, hasDepth,
                 depthAttachmentDescription, m_AttachmentLoadOp);
 
@@ -178,11 +181,11 @@ namespace lvk
                     framebufferAttachments.push_back(resolve.m_AttachmentSwapchainImages[i].m_ImageView);
                 }
                 VkFramebuffer fb;
-                vk.CreateFramebuffer(framebufferAttachments, m_RenderPass, m_Resolution, fb);
+                textures::CreateFramebuffer(vk, framebufferAttachments, m_RenderPass, m_Resolution, fb);
                 m_SwapchainFramebuffers.push_back(fb);
             }
         }
 
-        void Free(VulkanAPI& vk);
+        void Free(VkState & vk);
     };
 }

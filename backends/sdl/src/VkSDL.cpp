@@ -1,31 +1,33 @@
-#include "VulkanAPI_SDL.h"
-#include "spdlog/spdlog.h"
-#include "SDL3/SDL_vulkan.h"
 #include "ImGui/imgui_impl_sdl3.h"
 #include "ImGui/imgui_impl_vulkan.h"
+#include "SDL3/SDL_vulkan.h"
+#include "VkSDL.h"
+#include "lvk/Init.h"
+#include "spdlog/spdlog.h"
 #include "volk.h"
 #include <filesystem>
 
-lvk::VulkanAPI_SDL::~VulkanAPI_SDL()
+lvk::VkSDL::~VkSDL()
 {
 }
 
-void lvk::VulkanAPI_SDL::HandleSDLEvent(SDL_Event& sdl_event)
+void lvk::VkSDL::HandleSDLEvent(VkState& vk, SDL_Event& sdl_event)
 {
     if (sdl_event.type == SDL_EVENT_QUIT)
     {
-        p_ShouldRun = false;
+        vk.m_ShouldRun = false;
     }
 
     if (sdl_event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
-        RecreateSwapChain();
+        init::RecreateSwapChain(vk);
     }
     if (sdl_event.type == SDL_EVENT_WINDOW_MAXIMIZED) {
-        RecreateSwapChain();
+        init::RecreateSwapChain(vk);
     }
 
 }
-std::vector<const char*> lvk::VulkanAPI_SDL::GetRequiredExtensions()
+
+std::vector<const char*> lvk::VkSDL::GetRequiredExtensions(VkState& vk)
 {
     uint32_t extensionCount = 0;
 
@@ -38,11 +40,11 @@ std::vector<const char*> lvk::VulkanAPI_SDL::GetRequiredExtensions()
     }
     std::vector<const char*> extensionNames;
 
-    for(auto i = 0; i < extensionCount; i++)
+    for(uint32_t i = 0; i < extensionCount; i++)
     {
         extensionNames.push_back(extensionNamesC[i]);
     }
-    if (m_UseValidation)
+    if (vk.m_UseValidation)
     {
         extensionNames.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
@@ -50,21 +52,21 @@ std::vector<const char*> lvk::VulkanAPI_SDL::GetRequiredExtensions()
     return extensionNames;
 }
 
-void lvk::VulkanAPI_SDL::CreateSurface()
+void lvk::VkSDL::CreateSurface(VkState& vk)
 {
     // todo: do we want to provide an alloc callback to SDL?
     const VkAllocationCallbacks* alloc_callback = nullptr;
     if (!SDL_Vulkan_CreateSurface(
-            m_SdlHandle->m_SdlWindow, m_Instance,alloc_callback, &m_Surface))
+            m_SdlHandle->m_SdlWindow, vk.m_Instance,alloc_callback, &vk.m_Surface))
     {
         spdlog::error("Failed to create SDL Vulkan surface");
         std::cerr << "Failed to create SDL Vulkan surface";
     }
 }
 
-void lvk::VulkanAPI_SDL::CleanupWindow()
+void lvk::VkSDL::CleanupWindow(VkState& vk)
 {
-    VulkanAPIWindowHandle_SDL* derived = static_cast<VulkanAPIWindowHandle_SDL*>(m_WindowHandle);
+    VulkanAPIWindowHandle_SDL* derived = static_cast<VulkanAPIWindowHandle_SDL*>(vk.m_WindowHandle);
 
     if (derived == nullptr)
     {
@@ -75,20 +77,20 @@ void lvk::VulkanAPI_SDL::CleanupWindow()
     SDL_Quit();
 }
 
-bool lvk::VulkanAPI_SDL::ShouldRun()
+bool lvk::VkSDL::ShouldRun(VkState& vk)
 {
-    return p_ShouldRun;
+    return vk.m_ShouldRun;
 }
 
-void lvk::VulkanAPI_SDL::PreFrame()
+void lvk::VkSDL::PreFrame(VkState& vk)
 {
     uint64_t currentFrame = SDL_GetPerformanceCounter();
-    m_DeltaTime = (currentFrame - p_LastFrameTime) / (double)SDL_GetPerformanceFrequency();
-    p_LastFrameTime = currentFrame;
+    vk.m_DeltaTime = (currentFrame - vk.m_LastFrameTime) / (double)SDL_GetPerformanceFrequency();
+    vk.m_LastFrameTime = currentFrame;
     SDL_Event sdl_event;
-    while (SDL_PollEvent(&sdl_event) > 0)
+    while (SDL_PollEvent(&sdl_event))
     {
-        HandleSDLEvent(sdl_event);
+        HandleSDLEvent(vk, sdl_event);
         ImGui_ImplSDL3_ProcessEvent(&sdl_event);
     }
     ImGui_ImplVulkan_NewFrame();
@@ -96,57 +98,57 @@ void lvk::VulkanAPI_SDL::PreFrame()
     ImGui::NewFrame();
 }
 
-void lvk::VulkanAPI_SDL::PostFrame()
+void lvk::VkSDL::PostFrame(VkState& vk)
 {
-    DrawFrame(); 
+    init::DrawFrame(vk);
 
     ImGui::UpdatePlatformWindows();
     ImGui::RenderPlatformWindowsDefault();
 
-    if (vkDeviceWaitIdle(m_LogicalDevice) != VK_SUCCESS)
+    if (vkDeviceWaitIdle(vk.m_LogicalDevice) != VK_SUCCESS)
     {
         spdlog::error("Failed to wait for device idle");
         std::cerr << "Failed to wait for device idle" << std::endl;
     }
 
-    ClearCommandBuffers();
+    init::ClearCommandBuffers(vk);
 }
 
-void lvk::VulkanAPI_SDL::InitImGuiBackend()
+void lvk::VkSDL::InitImGuiBackend(VkState& vk)
 {
     ImGui_ImplSDL3_InitForVulkan(m_SdlHandle->m_SdlWindow);
 }
 
-void lvk::VulkanAPI_SDL::CleanupImGuiBackend()
+void lvk::VkSDL::CleanupImGuiBackend(VkState& vk)
 {
     ImGui_ImplSDL3_Shutdown();
 }
 
-void lvk::VulkanAPI_SDL::Run(std::function<void()> callback)
+void lvk::VkSDL::Run(VkState& vk, std::function<void()> callback)
 {
-    p_ShouldRun = true;
-    while (p_ShouldRun)
+    vk.m_ShouldRun = true;
+    while (vk.m_ShouldRun)
     {
         uint64_t currentFrame = SDL_GetPerformanceCounter();
-        m_DeltaTime = (currentFrame - p_LastFrameTime) / (double)SDL_GetPerformanceFrequency();
+        vk.m_DeltaTime = (currentFrame - vk.m_LastFrameTime) / (double)SDL_GetPerformanceFrequency();
         SDL_Event sdl_event;
         while (SDL_PollEvent(&sdl_event))
         {
-            HandleSDLEvent(sdl_event);
+            HandleSDLEvent(vk, sdl_event);
         }
 
         callback();
 
-        DrawFrame();
+        init::DrawFrame(vk);
     }
-    if (vkDeviceWaitIdle(m_LogicalDevice) != VK_SUCCESS)
+    if (vkDeviceWaitIdle(vk.m_LogicalDevice) != VK_SUCCESS)
     {
         spdlog::error("Failed to wait for device idle");
         std::cerr << "Failed to wait for device idle" << std::endl;
     }
 }
 
-VkExtent2D lvk::VulkanAPI_SDL::GetSurfaceExtent(VkSurfaceCapabilitiesKHR surface)
+VkExtent2D lvk::VkSDL::GetSurfaceExtent(VkState& vk, VkSurfaceCapabilitiesKHR surface)
 {
     SDL_DisplayID id = SDL_GetPrimaryDisplay();
     SDL_DisplayMode displayMode = *SDL_GetCurrentDisplayMode(id);
@@ -154,7 +156,7 @@ VkExtent2D lvk::VulkanAPI_SDL::GetSurfaceExtent(VkSurfaceCapabilitiesKHR surface
     return VkExtent2D();
 }
 
-VkExtent2D lvk::VulkanAPI_SDL::GetMaxFramebufferResolution()
+VkExtent2D lvk::VkSDL::GetMaxFramebufferResolution(VkState& vk)
 {
     int numDisplays = 0;
     SDL_DisplayID* ids = SDL_GetDisplays(&numDisplays);
@@ -181,7 +183,7 @@ VkExtent2D lvk::VulkanAPI_SDL::GetMaxFramebufferResolution()
     return res;
 }
 
-lvk::VulkanAPI_SDL::VulkanAPI_SDL(bool enableDebugValidation) : VulkanAPI(enableDebugValidation)
+lvk::VkSDL::VkSDL(bool enableDebugValidation)
 {
     spdlog::info("LVK : current working directory : {}", std::filesystem::current_path().string());
 }

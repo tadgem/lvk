@@ -13,7 +13,7 @@ public:
     Vector<Texture> m_Attachments;
     VkFramebuffer   m_FB;
 
-    void Free(VulkanAPI& vk)
+    void Free(VkState & vk)
     {
         for (auto& t : m_Attachments)
         {
@@ -27,7 +27,7 @@ class FramebufferSetEx {
 public:
     Array<FramebufferEx, MAX_FRAMES_IN_FLIGHT> m_Framebuffers;
 
-    void Free(VulkanAPI& vk)
+    void Free(VkState & vk)
     {
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
@@ -63,12 +63,12 @@ struct TransformEx {
 
 static TransformEx g_Transform; 
 
-void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
+void RecordCommandBuffersV2(VkState & vk,
     VkPipeline& gbufferPipeline , VkPipelineLayout& gbufferPipelineLayout, VkRenderPass gbufferRenderPass, Vector<VkDescriptorSet>& gbufferDescriptorSets, Vector<VkFramebuffer>& gbufferFramebuffers,
     VkPipeline& lightingPassPipeline, VkPipelineLayout& lightingPassPipelineLayout, VkRenderPass lightingPassRenderPass, Vector<VkDescriptorSet>& lightingPassDescriptorSets, Vector<VkFramebuffer>& lightingPassFramebuffers,
     RenderModel& model, MeshEx& screenQuad)
 {
-    vk.RecordGraphicsCommands([&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
+    lvk::commands::RecordGraphicsCommands(vk, [&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
         // push to example
         {
             std::array<VkClearValue, 4> clearValues{};
@@ -115,7 +115,7 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
 
                 vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, sizes);
                 vkCmdBindIndexBuffer(commandBuffer, mesh.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-                vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gbufferPipelineLayout, 0, 1, &model.m_RenderItems[i].m_Material.m_DescriptorSets[0].m_Sets[vk.GetFrameIndex()], 0, nullptr);
+                vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gbufferPipelineLayout, 0, 1, &model.m_RenderItems[i].m_Material.m_DescriptorSets[0].m_Sets[vk.m_CurrentFrameIndex], 0, nullptr);
                 vkCmdDrawIndexed(commandBuffer, mesh.m_IndexCount, 1, 0, 0, 0);
             }
             vkCmdEndRenderPass(commandBuffer);
@@ -163,7 +163,7 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
         });
 }
 
-void UpdateUniformBuffer(VulkanAPI_SDL& vk, ShaderBufferFrameData& itemMvp, ShaderBufferFrameData lightsData, DeferredLightData& lightDataCpu)
+void UpdateUniformBuffer(VkState & vk, ShaderBufferFrameData& itemMvp, ShaderBufferFrameData lightsData, DeferredLightData& lightDataCpu)
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -179,13 +179,13 @@ void UpdateUniformBuffer(VulkanAPI_SDL& vk, ShaderBufferFrameData& itemMvp, Shad
         ubo.Proj = glm::perspective(glm::radians(45.0f), vk.m_SwapChainImageExtent.width / (float)vk.m_SwapChainImageExtent.height, 0.1f, 1000.0f);
         ubo.Proj[1][1] *= -1;
     }
-    itemMvp.Set(vk.GetFrameIndex(), ubo);
+    itemMvp.Set(vk.m_CurrentFrameIndex, ubo);
 
 
-    lightsData.Set(vk.GetFrameIndex(), lightDataCpu);
+    lightsData.Set(vk.m_CurrentFrameIndex, lightDataCpu);
 }
 
-void UpdateUniformBufferMat(VulkanAPI_SDL& vk, Material& itemMat, ShaderBufferFrameData lightsData, DeferredLightData& lightDataCpu)
+void UpdateUniformBufferMat(VkState & vk, Material& itemMat, ShaderBufferFrameData lightsData, DeferredLightData& lightDataCpu)
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -201,13 +201,13 @@ void UpdateUniformBufferMat(VulkanAPI_SDL& vk, Material& itemMat, ShaderBufferFr
         ubo.Proj = glm::perspective(glm::radians(45.0f), vk.m_SwapChainImageExtent.width / (float)vk.m_SwapChainImageExtent.height, 0.1f, 1000.0f);
         ubo.Proj[1][1] *= -1;
     }
-    itemMat.SetBuffer(vk.GetFrameIndex(), 0, 0, ubo);
+    itemMat.SetBuffer(vk.m_CurrentFrameIndex, 0, 0, ubo);
 
 
-    lightsData.Set(vk.GetFrameIndex(), lightDataCpu);
+    lightsData.Set(vk.m_CurrentFrameIndex, lightDataCpu);
 }
 
-void CreateGBufferDescriptorSets(VulkanAPI& vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler, Vector<VkDescriptorSet>& descriptorSets, ShaderBufferFrameData& mvpUniformData)
+void CreateGBufferDescriptorSets(VkState & vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler, Vector<VkDescriptorSet>& descriptorSets, ShaderBufferFrameData& mvpUniformData)
 {
     std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -254,7 +254,8 @@ void CreateGBufferDescriptorSets(VulkanAPI& vk, VkDescriptorSetLayout& descripto
 
 }
 
-void CreateLightingPassDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& descriptorSetLayout, FramebufferSetEx gbuffers, Vector<VkDescriptorSet>& descriptorSets, ShaderBufferFrameData& mvpUniformData, ShaderBufferFrameData& lightsUniformData)
+void CreateLightingPassDescriptorSets(
+    VkState & vk, VkDescriptorSetLayout& descriptorSetLayout, FramebufferSetEx gbuffers, Vector<VkDescriptorSet>& descriptorSets, ShaderBufferFrameData& mvpUniformData, ShaderBufferFrameData& lightsUniformData)
 {
     std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -340,7 +341,7 @@ void CreateLightingPassDescriptorSets(VulkanAPI_SDL& vk, VkDescriptorSetLayout& 
 
 }
 
-void CreateGBufferRenderPass(VulkanAPI_SDL& vk, VkRenderPass& renderPass)
+void CreateGBufferRenderPass(VkState & vk, VkRenderPass& renderPass)
 {
     Vector<VkAttachmentDescription> colourAttachmentDescriptions{};
     Vector<VkAttachmentDescription> resolveAttachmentDescriptions{};
@@ -361,7 +362,7 @@ void CreateGBufferRenderPass(VulkanAPI_SDL& vk, VkRenderPass& renderPass)
     colourAttachmentDescriptions.push_back(positionNormalColourAttachment);
     colourAttachmentDescriptions.push_back(positionNormalColourAttachment);
 
-    depthAttachmentDescription.format = vk.FindDepthFormat();
+    depthAttachmentDescription.format = lvk::utils::FindDepthFormat(vk);
     depthAttachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;;
     depthAttachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     depthAttachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -370,10 +371,10 @@ void CreateGBufferRenderPass(VulkanAPI_SDL& vk, VkRenderPass& renderPass)
     depthAttachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     depthAttachmentDescription.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-    vk.CreateRenderPass(renderPass, colourAttachmentDescriptions, resolveAttachmentDescriptions, true, depthAttachmentDescription, VK_ATTACHMENT_LOAD_OP_CLEAR);
+    lvk::render_passes::CreateRenderPass(vk, renderPass, colourAttachmentDescriptions, resolveAttachmentDescriptions, true, depthAttachmentDescription, VK_ATTACHMENT_LOAD_OP_CLEAR);
 }
 
-RenderModel CreateRenderModelGbuffer(VulkanAPI& vk, const String& modelPath, ShaderProgram& shader)
+RenderModel CreateRenderModelGbuffer(VkState & vk, const String& modelPath, ShaderProgram& shader)
 {
     Model model;
     LoadModelAssimp(vk, model, modelPath, true);
@@ -395,7 +396,7 @@ RenderModel CreateRenderModelGbuffer(VulkanAPI& vk, const String& modelPath, Sha
     return renderModel;
 }
 
-void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu)
+void OnImGui(VkState & vk, DeferredLightData& lightDataCpu)
 {
     if (ImGui::Begin("Debug"))
     {
@@ -460,9 +461,8 @@ void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu)
 }
 int main()
 {
-    VulkanAPI_SDL vk;
+    VkState vk = init::Create<VkSDL>("Deferred", 1920, 1080, false);
     bool enableMSAA = false;
-    vk.Start("Deferred", 1280, 720, enableMSAA);
 
 
     ShaderBufferFrameData mvpUniformData;
@@ -484,28 +484,26 @@ int main()
 
     // create gbuffer pipeline
     VkPipelineLayout gbufferPipelineLayout;
-    VkPipeline gbufferPipeline = vk.CreateRasterizationGraphicsPipeline(
-        gbufferProg, Vector<VkVertexInputBindingDescription>{VertexDataPosNormalUv::GetBindingDescription() }, VertexDataPosNormalUv::GetAttributeDescriptions(),
-        gbufferRenderPass,
+    VkPipeline gbufferPipeline = lvk::pipelines::CreateRasterPipeline(vk,
+        gbufferProg,
+        Vector<VkVertexInputBindingDescription>{
+            VertexDataPosNormalUv::GetBindingDescription()},
+        VertexDataPosNormalUv::GetAttributeDescriptions(), gbufferRenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
-        VK_POLYGON_MODE_FILL,
-        VK_CULL_MODE_NONE,
-        false,
-        VK_COMPARE_OP_LESS,
-        gbufferPipelineLayout, 3
-    );
+        VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, false, VK_COMPARE_OP_LESS,
+        gbufferPipelineLayout, 3);
 
     // create present graphics pipeline
     // Pipeline stage?
     VkPipelineLayout lightPassPipelineLayout;
-    VkPipeline pipeline = vk.CreateRasterizationGraphicsPipeline(
-        lightPassProg, Vector<VkVertexInputBindingDescription>{VertexDataPosUv::GetBindingDescription() }, VertexDataPosUv::GetAttributeDescriptions(),
-        vk.m_SwapchainImageRenderPass,
-        vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
-        VK_POLYGON_MODE_FILL,
-        VK_CULL_MODE_NONE,
-        enableMSAA,
-        VK_COMPARE_OP_LESS,
+    VkPipeline pipeline = lvk::pipelines::CreateRasterPipeline(vk,
+        lightPassProg,
+        Vector<VkVertexInputBindingDescription>{
+            VertexDataPosUv::GetBindingDescription()},
+        VertexDataPosUv::GetAttributeDescriptions(),
+        vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent.width,
+        vk.m_SwapChainImageExtent.height, VK_POLYGON_MODE_FILL,
+        VK_CULL_MODE_NONE, enableMSAA, VK_COMPARE_OP_LESS,
         lightPassPipelineLayout);
 
     FramebufferSetEx gbufferSet{};
@@ -525,14 +523,14 @@ int main()
             VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
 
-        VkFormat depthFormat = vk.FindDepthFormat();
+        VkFormat depthFormat = utils::FindDepthFormat(vk);
         Texture depthAttachment = Texture::CreateAttachment(vk, vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height, 1,
             VK_SAMPLE_COUNT_1_BIT, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
 
         VkFramebuffer gbuffer;
         Vector<VkImageView> gbufferAttachments{ colourAttachment.m_ImageView, positionAttachment.m_ImageView, normalAttachment.m_ImageView, depthAttachment.m_ImageView };
-        vk.CreateFramebuffer(gbufferAttachments, gbufferRenderPass, vk.m_SwapChainImageExtent, gbuffer);
+        textures::CreateFramebuffer(vk, gbufferAttachments, gbufferRenderPass, vk.m_SwapChainImageExtent, gbuffer);
 
         Vector<Texture> textures{ colourAttachment, positionAttachment, normalAttachment, depthAttachment };
         FramebufferEx fb{ textures, gbuffer };
@@ -549,18 +547,17 @@ int main()
     Texture texture = Texture::CreateTexture(vk, "assets/viking_room.png", VK_FORMAT_R8G8B8A8_UNORM);
 
     // Shader too probably
-    vk.CreateUniformBuffers<FrameLightDataT<NUM_LIGHTS>>(lightsUniformData);
-    
-    vk.CreateUniformBuffers<MvpData>(mvpUniformData);
+    buffers::CreateUniformBuffers<FrameLightDataT<NUM_LIGHTS>>(vk, lightsUniformData);
+    buffers::CreateUniformBuffers<MvpData>(vk, mvpUniformData);
 
     CreateGBufferDescriptorSets(vk, gbufferProg.m_DescriptorSetLayout, texture.m_ImageView, texture.m_Sampler, gbufferDescriptorSets, mvpUniformData);
     CreateLightingPassDescriptorSets(vk, lightPassProg.m_DescriptorSetLayout, gbufferSet, lightPassDescriptorSets, mvpUniformData, lightsUniformData);
 
     Vector<VkFramebuffer> gbufferFramebuffers{ gbufferSet.m_Framebuffers[0].m_FB, gbufferSet.m_Framebuffers[1].m_FB };
 
-    while (vk.ShouldRun())
+    while (vk.m_ShouldRun)
     {
-        vk.PreFrame();
+        vk.m_Backend->PreFrame(vk);
 
         for (auto& item : m.m_RenderItems)
         {
@@ -576,7 +573,7 @@ int main()
 
         OnImGui(vk, lightDataCpu);
 
-        vk.PostFrame();
+        vk.m_Backend->PostFrame(vk);
     }
 
     mvpUniformData.Free(vk);

@@ -1,9 +1,22 @@
 #pragma once
-#include "lvk/VulkanAPI.h"
 #include "ImGui/imgui_impl_vulkan.h"
+#include "lvk/Structs.h"
+#include "lvk/Texture.h"
 
 namespace lvk
 {
+    namespace textures {
+    void  CreateImage(VkState& vk, uint32_t width, uint32_t height, uint32_t numMips, VkSampleCountFlagBits sampleCount, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, uint32_t depth = 1);
+    void  CreateImageView(VkState& vk, VkImage& image, VkFormat format, uint32_t numMips, VkImageAspectFlags aspectFlags, VkImageView& imageView, VkImageViewType imageViewType= VK_IMAGE_VIEW_TYPE_2D);
+    void  CreateImageSampler(VkState& vk, VkImageView& imageView, uint32_t numMips, VkFilter filterMode, VkSamplerAddressMode addressMode, VkSampler& sampler);
+    void  CreateFramebuffer(VkState& vk, Vector<VkImageView>& attachments, VkRenderPass renderPass, VkExtent2D extent, VkFramebuffer& framebuffer);
+    void  CreateTexture(VkState& vk, const String& path, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips = nullptr);
+    void  CreateTextureFromMemory(VkState& vk, unsigned char* tex_data, uint32_t dataSize, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips = nullptr);
+    void  CreateTexture3DFromMemory(VkState& vk, unsigned char* tex_data, VkExtent3D extent, uint32_t dataSize, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips = nullptr);
+    void  CopyBufferToImage(VkState& vk, VkBuffer& src, VkImage& image,  uint32_t width, uint32_t height);
+    void  GenerateMips(VkState& vk, VkImage image, VkFormat format, uint32_t imageWidth, uint32_t imageHeight, uint32_t numMips, VkFilter filterMethod);
+    void  TransitionImageLayout(VkState& vk, VkImage image, VkFormat format, uint32_t numMips, VkImageLayout oldLayout, VkImageLayout newLayout);
+    }
     enum class ResolutionScale
     {
         Full,
@@ -60,7 +73,7 @@ namespace lvk
 
         }
 
-        static Texture CreateAttachment(lvk::VulkanAPI& vk, uint32_t width, uint32_t height,
+        static Texture CreateAttachment(lvk::VkState & vk, uint32_t width, uint32_t height,
             uint32_t numMips, VkSampleCountFlagBits sampleCount,
             VkFormat format, VkImageTiling tiling, VkImageUsageFlags usageFlags,
             VkMemoryPropertyFlagBits memoryFlags, VkImageAspectFlagBits imageAspect,
@@ -70,9 +83,9 @@ namespace lvk
             VkImageView imageView;
             VkDeviceMemory memory;
             VkSampler sampler;
-            vk.CreateImage(width, height, numMips, sampleCount, format, tiling, usageFlags, memoryFlags, image, memory);
-            vk.CreateImageView(image, format, numMips, imageAspect, imageView);
-            vk.CreateImageSampler(imageView, numMips, samplerFilter, samplerAddressMode, sampler);
+            textures::CreateImage(vk,width, height, numMips, sampleCount, format, tiling, usageFlags, memoryFlags, image, memory);
+            textures::CreateImageView(vk,image, format, numMips, imageAspect, imageView);
+            textures::CreateImageSampler(vk,imageView, numMips, samplerFilter, samplerAddressMode, sampler);
 
             VkDescriptorSet imguiTextureHandle = VK_NULL_HANDLE;
             if (vk.m_UseImGui)
@@ -83,16 +96,16 @@ namespace lvk
             return Texture(image, imageView, memory, sampler, format, sampleCount, imguiTextureHandle);
         }
 
-        static Texture CreateTexture(lvk::VulkanAPI& vk, const lvk::String& path, VkFormat format, VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
+        static Texture CreateTexture(lvk::VkState & vk, const lvk::String& path, VkFormat format, VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
         {
             VkImage image;
             VkImageView imageView;
             VkDeviceMemory memory;
             // Texture abstraction
             uint32_t mipLevels;
-            vk.CreateTexture(path, format, image, imageView, memory, &mipLevels);
+            lvk::textures::CreateTexture(vk, path, format, image, imageView, memory, &mipLevels);
             VkSampler sampler;
-            vk.CreateImageSampler(imageView, mipLevels, samplerFilter, samplerAddressMode, sampler);
+            textures::CreateImageSampler(vk, imageView, mipLevels, samplerFilter, samplerAddressMode, sampler);
 
             VkDescriptorSet imguiTextureHandle = VK_NULL_HANDLE;
             if (vk.m_UseImGui)
@@ -103,16 +116,16 @@ namespace lvk
             return Texture(image, imageView, memory, sampler, format, VK_SAMPLE_COUNT_1_BIT, imguiTextureHandle);
         }
 
-        static Texture CreateTextureFromMemory(lvk::VulkanAPI& vk, unsigned char* tex_data, uint32_t length, VkFormat format, VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
+        static Texture CreateTextureFromMemory(lvk::VkState & vk, unsigned char* tex_data, uint32_t length, VkFormat format, VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
         {
             VkImage image;
             VkImageView imageView;
             VkDeviceMemory memory;
             // Texture abstraction
             uint32_t mipLevels;
-            vk.CreateTextureFromMemory(tex_data, length, format, image, imageView, memory, &mipLevels);
+            lvk::textures::CreateTextureFromMemory(vk, tex_data, length, format, image, imageView, memory, &mipLevels);
             VkSampler sampler;
-            vk.CreateImageSampler(imageView, mipLevels, samplerFilter, samplerAddressMode, sampler);
+            textures::CreateImageSampler(vk, imageView, mipLevels, samplerFilter, samplerAddressMode, sampler);
 
             VkDescriptorSet imguiTextureHandle = VK_NULL_HANDLE;
             if (vk.m_UseImGui)
@@ -123,16 +136,16 @@ namespace lvk
             return Texture(image, imageView, memory, sampler, format, VK_SAMPLE_COUNT_1_BIT, imguiTextureHandle);
         }
 
-        static Texture CreateTexture3DFromMemory(lvk::VulkanAPI& vk, VkExtent3D extent, unsigned char* tex_data, uint32_t length, VkFormat format, VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
+        static Texture CreateTexture3DFromMemory(lvk::VkState & vk, VkExtent3D extent, unsigned char* tex_data, uint32_t length, VkFormat format, VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
         {
             VkImage image;
             VkImageView imageView;
             VkDeviceMemory memory;
             // Texture abstraction
             uint32_t mipLevels;
-            vk.CreateTexture3DFromMemory(tex_data, extent, length, format, image, imageView, memory, &mipLevels);
+            lvk::textures::CreateTexture3DFromMemory(vk, tex_data, extent, length, format, image, imageView, memory, &mipLevels);
             VkSampler sampler;
-            vk.CreateImageSampler(imageView, mipLevels, samplerFilter, samplerAddressMode, sampler);
+            textures::CreateImageSampler(vk, imageView, mipLevels, samplerFilter, samplerAddressMode, sampler);
 
             VkDescriptorSet imguiTextureHandle = VK_NULL_HANDLE;
             if (vk.m_UseImGui)
@@ -143,9 +156,9 @@ namespace lvk
             return Texture(image, imageView, memory, sampler, format, VK_SAMPLE_COUNT_1_BIT, imguiTextureHandle);
         }
 
-        static void InitDefaultTexture(lvk::VulkanAPI& vk);
-        static void FreeDefaultTexture(lvk::VulkanAPI& vk);
+        static void InitDefaultTexture(lvk::VkState & vk);
+        static void FreeDefaultTexture(lvk::VkState & vk);
 
-        void Free(lvk::VulkanAPI& vk);
+        void Free(lvk::VkState & vk);
     };
 }

@@ -1,12 +1,13 @@
 #include "volk.h"
 #include "lvk/DescriptorSetAllocator.h"
-#include "lvk/VulkanAPI.h"
+#include "lvk/Macros.h"
+#include "spdlog/spdlog.h"
 
-void lvk::DescriptorSetAllocator::Init(VulkanAPI& vk, uint32_t initialSetAmount, Vector<PoolSizeRatio> ratios)
+void lvk::DescriptorSetAllocator::Init(VkDevice logical_device, uint32_t initialSetAmount, Vector<PoolSizeRatio> ratios)
 {
 	m_Ratios = ratios;
 
-	VkDescriptorPool pool = CreatePool(vk.m_LogicalDevice, initialSetAmount);
+	VkDescriptorPool pool = CreatePool(logical_device, initialSetAmount);
 
 	p_SetsPerPool = static_cast<uint32_t>(initialSetAmount * 1.5);
 	m_FreePool.push_back(pool);

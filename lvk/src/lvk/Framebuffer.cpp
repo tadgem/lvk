@@ -1,7 +1,7 @@
 #include "lvk/Framebuffer.h"
 #include "volk.h"
 
-void lvk::Framebuffer::Free(VulkanAPI& vk)
+void lvk::Framebuffer::Free(VkState & vk)
 {
     for (auto& t : m_ColourAttachments)
     {

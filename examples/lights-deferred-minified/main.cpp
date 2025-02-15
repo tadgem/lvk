@@ -13,12 +13,12 @@ using DeferredLightData = FrameLightDataT<NUM_LIGHTS>;
 
 static Transform g_Transform;
 
-void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
+void RecordCommandBuffersV2(VkState & vk,
     VkPipeline& gbufferPipeline, VkPipelineLayout& gbufferPipelineLayout, VkRenderPass gbufferRenderPass, Vector<VkFramebuffer>& gbufferFramebuffers,
     VkPipeline& lightingPassPipeline, VkPipelineLayout& lightingPassPipelineLayout, VkRenderPass lightingPassRenderPass, Material& lightPassMaterial, Vector<VkFramebuffer>& lightingPassFramebuffers,
     RenderModel& model, Mesh& screenQuad)
 {
-    vk.RecordGraphicsCommands([&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
+    lvk::commands::RecordGraphicsCommands(vk, [&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
         {
             Array<VkClearValue, 4> clearValues{};
             clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
@@ -111,7 +111,7 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk,
         });
 }
 
-void UpdateUniformBuffer(VulkanAPI_SDL& vk, Material& renderItemMaterial, Material& lightPassMaterial, DeferredLightData& lightDataCpu)
+void UpdateUniformBuffer(VkState & vk, Material& renderItemMaterial, Material& lightPassMaterial, DeferredLightData& lightDataCpu)
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -127,12 +127,12 @@ void UpdateUniformBuffer(VulkanAPI_SDL& vk, Material& renderItemMaterial, Materi
         ubo.Proj = glm::perspective(glm::radians(45.0f), vk.m_SwapChainImageExtent.width / (float)vk.m_SwapChainImageExtent.height, 0.1f, 1000.0f);
         ubo.Proj[1][1] *= -1;
     }
-    renderItemMaterial.SetBuffer(vk.GetFrameIndex(), 0, 0, ubo);
-    lightPassMaterial.SetBuffer(vk.GetFrameIndex(), 0, 0, ubo);
-    lightPassMaterial.SetBuffer(vk.GetFrameIndex(), 0, 4, lightDataCpu);
+    renderItemMaterial.SetBuffer(vk.m_CurrentFrameIndex, 0, 0, ubo);
+    lightPassMaterial.SetBuffer(vk.m_CurrentFrameIndex, 0, 0, ubo);
+    lightPassMaterial.SetBuffer(vk.m_CurrentFrameIndex, 0, 4, lightDataCpu);
 }
 
-RenderModel CreateRenderModelGbuffer(VulkanAPI& vk, const String& modelPath, ShaderProgram& shader)
+RenderModel CreateRenderModelGbuffer(VkState & vk, const String& modelPath, ShaderProgram& shader)
 {
     Model model;
     LoadModelAssimp(vk, model, modelPath, true);
@@ -154,7 +154,7 @@ RenderModel CreateRenderModelGbuffer(VulkanAPI& vk, const String& modelPath, Sha
     return renderModel;
 }
 
-void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu)
+void OnImGui(VkState & vk, DeferredLightData& lightDataCpu)
 {
     if (ImGui::Begin("Debug"))
     {
@@ -219,9 +219,8 @@ void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu)
 }
 
 int main() {
-    VulkanAPI_SDL vk;
+    VkState vk = init::Create<VkSDL>("Deferred Minified", 1920, 1080, false);
     bool enableMSAA = false;
-    vk.Start("Deferred Minified",1280, 720, enableMSAA);
 
     DeferredLightData lightDataCpu{};
     FillExampleLightData(lightDataCpu);
@@ -250,34 +249,35 @@ int main() {
 
     // create gbuffer pipeline
     VkPipelineLayout gbufferPipelineLayout;
-    VkPipeline gbufferPipeline = vk.CreateRasterizationGraphicsPipeline(
+    VkPipeline gbufferPipeline = lvk::pipelines::CreateRasterPipeline(vk,
         gbufferProg,
-        Vector<VkVertexInputBindingDescription>{VertexDataPosNormalUv::GetBindingDescription() },
-        VertexDataPosNormalUv::GetAttributeDescriptions(),
-        gbuffer.m_RenderPass,
+        Vector<VkVertexInputBindingDescription>{
+            VertexDataPosNormalUv::GetBindingDescription()},
+        VertexDataPosNormalUv::GetAttributeDescriptions(), gbuffer.m_RenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
-        VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, false,
-        VK_COMPARE_OP_LESS, gbufferPipelineLayout, 3);
+        VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, false, VK_COMPARE_OP_LESS,
+        gbufferPipelineLayout, 3);
 
     // create present graphics pipeline
     // Pipeline stage?
     VkPipelineLayout lightPassPipelineLayout;
-    VkPipeline pipeline = vk.CreateRasterizationGraphicsPipeline(
+    VkPipeline pipeline = lvk::pipelines::CreateRasterPipeline(vk,
         lightPassProg,
-        Vector<VkVertexInputBindingDescription>{VertexDataPosUv::GetBindingDescription() },
+        Vector<VkVertexInputBindingDescription>{
+            VertexDataPosUv::GetBindingDescription()},
         VertexDataPosUv::GetAttributeDescriptions(),
-        vk.m_SwapchainImageRenderPass,
-        vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
-        VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, enableMSAA,
-        VK_COMPARE_OP_LESS, lightPassPipelineLayout);
+        vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent.width,
+        vk.m_SwapChainImageExtent.height, VK_POLYGON_MODE_FILL,
+        VK_CULL_MODE_NONE, enableMSAA, VK_COMPARE_OP_LESS,
+        lightPassPipelineLayout);
 
     // create vertex and index buffer
     // allocate materials instead of raw buffers etc.
     RenderModel m = CreateRenderModelGbuffer(vk, "assets/sponza/sponza.gltf", gbufferProg);
 
-    while (vk.ShouldRun())
+    while (vk.m_ShouldRun)
     {
-        vk.PreFrame();
+        vk.m_Backend->PreFrame(vk);
 
         for (auto& item : m.m_RenderItems)
         {
@@ -291,7 +291,7 @@ int main() {
 
         OnImGui(vk, lightDataCpu);
 
-        vk.PostFrame();
+        vk.m_Backend->PostFrame(vk);
     }
 
     lightPassMat.Free(vk);

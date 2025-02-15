@@ -1,14 +1,17 @@
 #include "Im3D/im3d_lvk.h"
-#include "lvk/Mesh.h"
-#include "Im3D/shaders/im3d_lines.vert.spv.h"
-#include "Im3D/shaders/im3d_lines.frag.spv.h"
-#include "Im3D/shaders/im3d_tris.vert.spv.h"
-#include "Im3D/shaders/im3d_tris.frag.spv.h"
-#include "Im3D/shaders/im3d_points.vert.spv.h"
-#include "Im3D/shaders/im3d_points.frag.spv.h"
 #include "Im3D/im3d_math.h"
-#include "ImGui/imgui_internal.h"
+#include "Im3D/shaders/im3d_lines.frag.spv.h"
+#include "Im3D/shaders/im3d_lines.vert.spv.h"
+#include "Im3D/shaders/im3d_points.frag.spv.h"
+#include "Im3D/shaders/im3d_points.vert.spv.h"
+#include "Im3D/shaders/im3d_tris.frag.spv.h"
+#include "Im3D/shaders/im3d_tris.vert.spv.h"
 #include "ImGui/imgui.h"
+#include "ImGui/imgui_internal.h"
+#include "lvk/Buffer.h"
+#include "lvk/Mesh.h"
+#include "lvk/Pipeline.h"
+#include "spdlog/spdlog.h"
 #include "volk.h"
 
 namespace lvk
@@ -23,7 +26,7 @@ namespace lvk
         return chars;
     }
 
-    LvkIm3dState LoadIm3D(VulkanAPI& vk)
+    LvkIm3dState LoadIm3D(VkState & vk)
     {
         Vector<unsigned char> tris_vert_bin = ToVector(&im3d_tris_vert_spv_bin[0], (uint32_t)im3d_tris_vert_spv_bin_SIZE);
         ShaderStage tris_vert = ShaderStage::CreateFromBinary(
@@ -61,47 +64,38 @@ namespace lvk
 
         VkBuffer vertexBuffer;
         VmaAllocation vertexBufferMemory;
-        vk.CreateVertexBuffer<VertexDataPos4>(vertexData, vertexBuffer, vertexBufferMemory);
+        buffers::CreateVertexBuffer<VertexDataPos4>(vk, vertexData, vertexBuffer, vertexBufferMemory);
 
         return { tris_prog, points_prog, lines_prog, vertexBuffer, vertexBufferMemory };
     }
 
-    LvkIm3dViewState AddIm3dForViewport(VulkanAPI& vk, LvkIm3dState& state, VkRenderPass renderPass, bool enableMSAA)
+    LvkIm3dViewState AddIm3dForViewport(VkState & vk, LvkIm3dState& state, VkRenderPass renderPass, bool enableMSAA)
     {
         auto bindingDescriptions = Vector<VkVertexInputBindingDescription>{VertexDataPos4::GetBindingDescription() };
         auto attrbuteDescriptions = VertexDataPos4::GetAttributeDescriptions();
         VkPipelineLayout tris_layout;
-        VkPipeline tris_pipeline = vk.CreateRasterizationGraphicsPipeline(
-            state.m_TriProg,
-            bindingDescriptions,
-            attrbuteDescriptions,
-            renderPass,
-            vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
-            VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, enableMSAA,
-            VK_COMPARE_OP_LESS, tris_layout);
+        VkPipeline tris_pipeline = pipelines::CreateRasterPipeline(vk,
+            state.m_TriProg, bindingDescriptions, attrbuteDescriptions,
+            renderPass, vk.m_SwapChainImageExtent.width,
+            vk.m_SwapChainImageExtent.height, VK_POLYGON_MODE_FILL,
+            VK_CULL_MODE_NONE, enableMSAA, VK_COMPARE_OP_LESS, tris_layout);
         Material tris_material = Material::Create(vk, state.m_TriProg);
 
         VkPipelineLayout points_layout;
-        VkPipeline points_pipeline = vk.CreateRasterizationGraphicsPipeline(
-            state.m_PointsProg,
-            bindingDescriptions,
-            attrbuteDescriptions,
-            renderPass,
-            vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
-            VK_POLYGON_MODE_POINT, VK_CULL_MODE_NONE, enableMSAA,
-            VK_COMPARE_OP_LESS, points_layout);
+        VkPipeline points_pipeline = pipelines::CreateRasterPipeline(vk,
+            state.m_PointsProg, bindingDescriptions, attrbuteDescriptions,
+            renderPass, vk.m_SwapChainImageExtent.width,
+            vk.m_SwapChainImageExtent.height, VK_POLYGON_MODE_POINT,
+            VK_CULL_MODE_NONE, enableMSAA, VK_COMPARE_OP_LESS, points_layout);
         Material points_material = Material::Create(vk, state.m_PointsProg);
 
 
         VkPipelineLayout lines_layout;
-        VkPipeline lines_pipeline = vk.CreateRasterizationGraphicsPipeline(
-            state.m_LinesProg,
-            bindingDescriptions,
-            attrbuteDescriptions,
-            renderPass,
-            vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
-            VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE, enableMSAA,
-            VK_COMPARE_OP_LESS, lines_layout);
+        VkPipeline lines_pipeline = pipelines::CreateRasterPipeline(vk,
+            state.m_LinesProg, bindingDescriptions, attrbuteDescriptions,
+            renderPass, vk.m_SwapChainImageExtent.width,
+            vk.m_SwapChainImageExtent.height, VK_POLYGON_MODE_LINE,
+            VK_CULL_MODE_NONE, enableMSAA, VK_COMPARE_OP_LESS, lines_layout);
         Material lines_material = Material::Create(vk, state.m_LinesProg);
 
 
@@ -110,7 +104,7 @@ namespace lvk
                 tris_layout, points_layout, lines_layout };
     }
 
-    void FreeIm3dViewport(VulkanAPI& vk, LvkIm3dViewState& viewState)
+    void FreeIm3dViewport(VkState & vk, LvkIm3dViewState& viewState)
     {
         viewState.m_TrisMaterial.Free(vk);
         viewState.m_LinesMaterial.Free(vk);
@@ -134,7 +128,7 @@ namespace lvk
         return m;
     }
 
-    void FreeIm3d(VulkanAPI& vk, LvkIm3dState& state)
+    void FreeIm3d(VkState & vk, LvkIm3dState& state)
     {
         state.m_TriProg.Free(vk);
         state.m_LinesProg.Free(vk);
@@ -144,7 +138,7 @@ namespace lvk
         vmaFreeMemory(vk.m_Allocator, state.m_ScreenQuadMemory);
     }
 
-    void DrawIm3d(VulkanAPI& vk, VkCommandBuffer& buffer, uint32_t frameIndex, LvkIm3dState& state, LvkIm3dViewState& viewState, glm::mat4 _viewProj, uint32_t width, uint32_t height, bool drawText)
+    void DrawIm3d(VkState & vk, VkCommandBuffer& buffer, uint32_t frameIndex, LvkIm3dState& state, LvkIm3dViewState& viewState, glm::mat4 _viewProj, uint32_t width, uint32_t height, bool drawText)
     {
         auto& context = Im3d::GetContext();
 

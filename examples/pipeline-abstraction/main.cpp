@@ -16,14 +16,14 @@ using VkRecordCommandCallback = std::function<void(VkCommandBuffer&, uint32_t, V
 
 struct ViewData
 {
-    PipelineT<VkRecordCommandCallback>    m_Pipeline;
+    pipelines::PipelineT<VkRecordCommandCallback>    m_Pipeline;
     View        m_View;
     Mesh        m_ViewQuad;
 };
 
-PipelineT<VkRecordCommandCallback> CreateViewPipeline(VulkanAPI& vk, LvkIm3dState& im3dState, ShaderProgram& gbufferProg, ShaderProgram& lightPassProg)
+pipelines::PipelineT<VkRecordCommandCallback> CreateViewPipeline(VkState & vk, LvkIm3dState& im3dState, ShaderProgram& gbufferProg, ShaderProgram& lightPassProg)
 {
-    PipelineT<VkRecordCommandCallback> p{};
+    pipelines::PipelineT<VkRecordCommandCallback> p{};
     auto* gbuffer = p.AddFramebuffer(vk);
     gbuffer->AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
@@ -52,32 +52,28 @@ PipelineT<VkRecordCommandCallback> CreateViewPipeline(VulkanAPI& vk, LvkIm3dStat
     VkPipelineLayout gbufferPipelineLayout;
     auto gbufferBindingDescriptions = Vector<VkVertexInputBindingDescription>{VertexDataPosNormalUv::GetBindingDescription() };
     auto gbufferAttributeDescriptions = VertexDataPosNormalUv::GetAttributeDescriptions();
-    VkPipeline gbufferPipeline = vk.CreateRasterizationGraphicsPipeline(
-        gbufferProg,
-        gbufferBindingDescriptions,
-        gbufferAttributeDescriptions,
-        gbuffer->m_RenderPass,
-        vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
-        VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, false,
-        VK_COMPARE_OP_LESS, gbufferPipelineLayout, 3);
+    VkPipeline gbufferPipeline = lvk::pipelines::CreateRasterPipeline(vk,
+        gbufferProg, gbufferBindingDescriptions, gbufferAttributeDescriptions,
+        gbuffer->m_RenderPass, vk.m_SwapChainImageExtent.width,
+        vk.m_SwapChainImageExtent.height, VK_POLYGON_MODE_FILL,
+        VK_CULL_MODE_BACK_BIT, false, VK_COMPARE_OP_LESS, gbufferPipelineLayout,
+        3);
 
     // create present graphics pipeline
     // Pipeline stage?
     VkPipelineLayout lightPassPipelineLayout;
     auto lightPassBindingDescriptions = Vector<VkVertexInputBindingDescription>{VertexDataPosUv::GetBindingDescription() };
     auto lightPassAttributeDescriptions = VertexDataPosUv::GetAttributeDescriptions();
-    VkPipeline lightPassPipeline = vk.CreateRasterizationGraphicsPipeline(
-        lightPassProg,
-        lightPassBindingDescriptions,
-        lightPassAttributeDescriptions,
-        lightPassImage->m_RenderPass,
+    VkPipeline lightPassPipeline = lvk::pipelines::CreateRasterPipeline(vk,
+        lightPassProg, lightPassBindingDescriptions,
+        lightPassAttributeDescriptions, lightPassImage->m_RenderPass,
         vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
-        VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, false,
-        VK_COMPARE_OP_LESS, lightPassPipelineLayout);
+        VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, false, VK_COMPARE_OP_LESS,
+        lightPassPipelineLayout);
 
 
-    VkPipelineData* gbufferPipelineData = p.AddPipeline(vk, gbufferPipeline, gbufferPipelineLayout );
-    VkPipelineData* lightPassPipelineData = p.AddPipeline(vk, lightPassPipeline, lightPassPipelineLayout);
+    pipelines::VkPipelineData* gbufferPipelineData = p.AddPipeline(vk, gbufferPipeline, gbufferPipelineLayout );
+    pipelines::VkPipelineData* lightPassPipelineData = p.AddPipeline(vk, lightPassPipeline, lightPassPipelineLayout);
     auto* im3dViewState = p.AddIm3d(vk, im3dState);
 
     p.RecordCommands(
@@ -101,7 +97,7 @@ PipelineT<VkRecordCommandCallback> CreateViewPipeline(VulkanAPI& vk, LvkIm3dStat
 
             // update screen quad
             {
-                auto max = vk.GetMaxFramebufferResolution();
+                auto max = vk.m_MaxFramebufferExtent;
                 float w = static_cast<float>((float)viewExtent.width / (float)max.width);
                 float h = static_cast<float>((float)viewExtent.height / (float)max.height);
 
@@ -210,9 +206,9 @@ PipelineT<VkRecordCommandCallback> CreateViewPipeline(VulkanAPI& vk, LvkIm3dStat
     return p;
 }
 
-ViewData CreateView(VulkanAPI& vk, LvkIm3dState im3dState, ShaderProgram gbufferProg, ShaderProgram lightPassProg)
+ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferProg, ShaderProgram lightPassProg)
 {
-    PipelineT<VkRecordCommandCallback> pipeline = CreateViewPipeline(vk, im3dState, gbufferProg, lightPassProg);
+    pipelines::PipelineT<VkRecordCommandCallback> pipeline = CreateViewPipeline(vk, im3dState, gbufferProg, lightPassProg);
 
     static Vector<VertexDataPosUv> screenQuadVerts = {
                     { { -1.0f, -1.0f , 0.0f}, { 0.0f, 0.0f } },
@@ -227,11 +223,11 @@ ViewData CreateView(VulkanAPI& vk, LvkIm3dState im3dState, ShaderProgram gbuffer
 
     VkBuffer vertBuffer;
     VmaAllocation vertAlloc;
-    vk.CreateVertexBuffer<VertexDataPosUv>(screenQuadVerts, vertBuffer, vertAlloc);
+    buffers::CreateVertexBuffer<VertexDataPosUv>(vk, screenQuadVerts, vertBuffer, vertAlloc);
 
     VkBuffer indexBuffer;
     VmaAllocation indexAlloc;
-    vk.CreateIndexBuffer(screenQuadIndices, indexBuffer, indexAlloc);
+    buffers::CreateIndexBuffer(vk, screenQuadIndices, indexBuffer, indexAlloc);
 
     Mesh screenQuad{ vertBuffer, vertAlloc, indexBuffer, indexAlloc, 6 };
 
@@ -240,7 +236,7 @@ ViewData CreateView(VulkanAPI& vk, LvkIm3dState im3dState, ShaderProgram gbuffer
 
 static Transform g_Transform;
 
-void UpdateRenderItemUniformBuffer(VulkanAPI& vk, Material& renderItemMaterial)
+void UpdateRenderItemUniformBuffer(VkState & vk, Material& renderItemMaterial)
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -250,10 +246,10 @@ void UpdateRenderItemUniformBuffer(VulkanAPI& vk, Material& renderItemMaterial)
     MvpData2 ubo{};
     ubo.Model = g_Transform.to_mat4();
 
-    renderItemMaterial.SetBuffer(vk.GetFrameIndex(), 0, 0, ubo);
+    renderItemMaterial.SetBuffer(vk.m_CurrentFrameIndex, 0, 0, ubo);
 }
 
-void UpdateViewData(VulkanAPI& vk, ViewData* view, DeferredLightData& lightData)
+void UpdateViewData(VkState & vk, ViewData* view, DeferredLightData& lightData)
 {
     glm::quat qPitch = glm::angleAxis(glm::radians(-view->m_View.m_Camera.Rotation.x), glm::vec3(1, 0, 0));
     glm::quat qYaw = glm::angleAxis(glm::radians(view->m_View.m_Camera.Rotation.y), glm::vec3(0, 1, 0));
@@ -271,10 +267,10 @@ void UpdateViewData(VulkanAPI& vk, ViewData* view, DeferredLightData& lightData)
         view->m_View.m_Camera.Proj[1][1] *= -1;
     }
 
-    view->m_Pipeline.m_PipelineMaterials[0]->SetBuffer(vk.GetFrameIndex(), 0, 3, lightData);
+    view->m_Pipeline.m_PipelineMaterials[0]->SetBuffer(vk.m_CurrentFrameIndex, 0, 3, lightData);
 }
 
-void RecordCommandBuffersV2(VulkanAPI_SDL& vk, Vector<ViewData*> views, RenderModel& model, Mesh& screenQuad, LvkIm3dState& im3dState, DeferredLightData& lightData)
+void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderModel& model, Mesh& screenQuad, LvkIm3dState& im3dState, DeferredLightData& lightData)
 {
     static Vector<VertexDataPosUv> originalScreenQuadData = {
                     { { -1.0f, -1.0f , 0.0f}, { 0.0f, 0.0f } },
@@ -285,7 +281,7 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk, Vector<ViewData*> views, RenderMo
 
     
 
-    vk.RecordGraphicsCommands([&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
+    lvk::commands::RecordGraphicsCommands(vk, [&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
         {
             Array<VkClearValue, 4> clearValues{};
             clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
@@ -354,7 +350,7 @@ void RecordCommandBuffersV2(VulkanAPI_SDL& vk, Vector<ViewData*> views, RenderMo
     });
 }
 
-RenderModel CreateRenderModelGbuffer(VulkanAPI& vk, const String& modelPath, ShaderProgram& shader)
+RenderModel CreateRenderModelGbuffer(VkState & vk, const String& modelPath, ShaderProgram& shader)
 {
     Model model;
     LoadModelAssimp(vk, model, modelPath, true);
@@ -376,7 +372,7 @@ RenderModel CreateRenderModelGbuffer(VulkanAPI& vk, const String& modelPath, Sha
     return renderModel;
 }
 
-void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu, Vector<ViewData*> views)
+void OnImGui(VkState & vk, DeferredLightData& lightDataCpu, Vector<ViewData*> views)
 {
     if (ImGui::Begin("Statistics"))
     {
@@ -406,10 +402,10 @@ void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu, Vector<ViewData*> v
         // uv0 will likely always be 0,0
         // uv1 needs to be MaxResolution / CurrentResolution;
         auto extent = ImGui::GetContentRegionAvail();
-        auto max = vk.GetMaxFramebufferExtent();
+        auto max = vk.m_MaxFramebufferExtent;
         ImVec2 uv1 = { extent.x / max.width, extent.y / max.height };
         // auto& image = views[0]->m_LightPassFB.m_ColourAttachments[0].m_AttachmentSwapchainImages[vk.GetFrameIndex()];
-        auto& image = views[0]->m_Pipeline.GetOutputFramebuffer()->m_ColourAttachments[0].m_AttachmentSwapchainImages[vk.GetFrameIndex()];
+        auto& image = views[0]->m_Pipeline.GetOutputFramebuffer()->m_ColourAttachments[0].m_AttachmentSwapchainImages[vk.m_CurrentFrameIndex];
         ImGuiX::Image(image, extent, { 0,0 }, uv1);
         DrawIm3dTextListsImGuiAsChild(Im3d::GetTextDrawLists(), Im3d::GetTextDrawListCount(), (float)views[0]->m_View.m_CurrentResolution.width, (float)views[0]->m_View.m_CurrentResolution.height, views[0]->m_View.m_Camera.Proj * views[0]->m_View.m_Camera.View);
         views[0]->m_View.m_CurrentResolution = { (uint32_t)extent.x, (uint32_t)extent.y };
@@ -420,10 +416,10 @@ void OnImGui(VulkanAPI& vk, DeferredLightData& lightDataCpu, Vector<ViewData*> v
     if (ImGui::Begin("View 2"))
     {
         auto extent = ImGui::GetContentRegionAvail();
-        auto max = vk.GetMaxFramebufferExtent();
+        auto max = vk.m_MaxFramebufferExtent;
         ImVec2 uv1 = { extent.x / max.width, extent.y / max.height };
         // auto& image = views[0]->m_LightPassFB.m_ColourAttachments[0].m_AttachmentSwapchainImages[vk.GetFrameIndex()];
-        auto& image = views[1]->m_Pipeline.GetOutputFramebuffer()->m_ColourAttachments[0].m_AttachmentSwapchainImages[vk.GetFrameIndex()];
+        auto& image = views[1]->m_Pipeline.GetOutputFramebuffer()->m_ColourAttachments[0].m_AttachmentSwapchainImages[vk.m_CurrentFrameIndex];
         ImGuiX::Image(image, extent, { 0,0 }, uv1);
         DrawIm3dTextListsImGuiAsChild(Im3d::GetTextDrawLists(), Im3d::GetTextDrawListCount(), (float)views[1]->m_View.m_CurrentResolution.width, (float)views[1]->m_View.m_CurrentResolution.height, views[1]->m_View.m_Camera.Proj * views[1]->m_View.m_Camera.View);
         views[1]->m_View.m_CurrentResolution = { (uint32_t)extent.x, (uint32_t)extent.y };
@@ -525,9 +521,9 @@ void OnIm3D()
 }
 
 int main() {
-    VulkanAPI_SDL vk;
+    VkState vk = init::Create<VkSDL>("Im3D Multiview", 1920, 1080, false);
     bool enableMSAA = false;
-    vk.Start("Pipeline Example",1920, 1080, enableMSAA);
+
     auto im3dState = LoadIm3D(vk);
 
     DeferredLightData lightDataCpu{};
@@ -549,9 +545,9 @@ int main() {
     // allocate materials instead of raw buffers etc.
     RenderModel m = CreateRenderModelGbuffer(vk, "../assets/sponza/sponza.gltf", gbufferProg);
 
-    while (vk.ShouldRun())
+    while (vk.m_ShouldRun)
     {
-        vk.PreFrame();
+        vk.m_Backend->PreFrame(vk);
 
         Im3d::NewFrame();
 
@@ -574,7 +570,7 @@ int main() {
         RecordCommandBuffersV2(vk, views, m, *Mesh::g_ScreenSpaceQuad, im3dState, lightDataCpu);
 
 
-        vk.PostFrame();
+        vk.m_Backend->PostFrame(vk);
     }
     gbufferProg.Free(vk);
     lightPassProg.Free(vk);
