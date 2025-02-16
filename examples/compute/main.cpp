@@ -210,6 +210,8 @@ int main()
     ShaderProgram lights_prog = ShaderProgram::CreateGraphicsFromSourcePath(
         vk, "shaders/lights.vert", "shaders/lights.frag");
 
+    ShaderProgram particles_prog = ShaderProgram::CreateComputeFromSourcePath(vk, "shaders/particles.comp");
+
     FillExampleLightData(lightDataCpu);
 
     // Texture abstraction
