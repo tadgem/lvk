@@ -84,7 +84,19 @@ namespace lvk
             return CreateGraphics(vk, vert, frag);
         }
 
-        static ShaderProgram CreateCompute(VkState & vk, const String& computePath);
+        static ShaderProgram CreateCompute(VkState & vk, ShaderStage& compute);
+
+        static ShaderProgram CreateComputeFromBinaryPath(VkState& vk, const String& comp_path)
+        {
+            ShaderStage comp = ShaderStage::CreateFromBinaryPath(vk, comp_path, ShaderStageType::Compute);
+            return CreateCompute(vk, comp);
+        }
+
+        static ShaderProgram CreateComputeFromSourcePath(VkState& vk, const String& compute_src_path)
+        {
+            ShaderStage comp = ShaderStage::CreateFromSourcePath(vk, compute_src_path, ShaderStageType::Compute);
+            return CreateCompute(vk, comp);
+        }
     };
 
 }

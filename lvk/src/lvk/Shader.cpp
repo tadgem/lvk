@@ -10,16 +10,11 @@ void ShaderProgram::Free(VkState &vk) {
                                nullptr);
 }
 
-ShaderProgram ShaderProgram::CreateCompute(VkState &vk,
-                                           const String &computePath)
-
-{
-  ShaderStage comp = ShaderStage::CreateFromBinaryPath(
-      vk, computePath, ShaderStageType::Compute);
+ShaderProgram ShaderProgram::CreateCompute(VkState &vk, ShaderStage &compute) {
   VkDescriptorSetLayout layout;
 
   std::vector<VkDescriptorSetLayoutBinding> bindings;
-  for (auto &layout : comp.m_LayoutDatas) {
+  for (auto &layout : compute.m_LayoutDatas) {
     for (auto &binding : layout.m_Bindings) {
       bindings.push_back(binding);
     }
@@ -32,8 +27,9 @@ ShaderProgram ShaderProgram::CreateCompute(VkState &vk,
   VK_CHECK(vkCreateDescriptorSetLayout(vk.m_LogicalDevice, &layoutInfo, nullptr,
                                        &layout))
 
-  return {Vector<ShaderStage>{comp}, layout};
+  return {Vector<ShaderStage>{compute}, layout};
 }
+
 VkShaderModule CreateShaderModule(VkState &vk, const StageBinary &data) {
   VkShaderModuleCreateInfo createInfo{};
   createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
