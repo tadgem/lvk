@@ -99,7 +99,7 @@ namespace lvk {
     void Free(VkState &vk);
   };
 
-  enum class ShaderStageType { Vertex, Fragment };
+  enum class ShaderStageType { Vertex, Fragment, Compute };
 
   enum QueueFamilyType {
     GraphicsAndCompute = VK_QUEUE_GRAPHICS_BIT,

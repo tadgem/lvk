@@ -133,8 +133,8 @@ int main()
     bool enableMSAA = false;
 
 
-    ShaderProgram prog = ShaderProgram::CreateFromBinaryPath(
-      vk, "shaders/texture.vert.spv", "shaders/texture.frag.spv");
+    ShaderProgram prog = ShaderProgram::CreateGraphicsFromSourcePath(
+        vk, "shaders/texture.vert", "shaders/texture.frag");
 
     uint32_t mipLevels;
     VkImage textureImage;

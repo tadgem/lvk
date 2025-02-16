@@ -216,8 +216,24 @@ void CreateDescriptorSetLayout(VkState& vk, std::vector<DescriptorSetLayoutData>
 
 Vector<DescriptorSetLayoutData> ReflectDescriptorSetLayouts(VkState& vk, StageBinary& stageBin)
 {
+  return ReflectDescriptorSetLayoutsRaw(vk, (const char*) stageBin.data(), stageBin.size());
+}
+
+Vector<PushConstantBlock> ReflectPushConstants(VkState& vk, StageBinary& stageBin)
+{
+  return ReflectPushConstantsRaw(vk, (const char*) stageBin.data(), stageBin.size());
+}
+
+VkDescriptorSet CreateDescriptorSet(VkState& vk, DescriptorSetLayoutData& layoutData)
+{
+  return vk.m_DescriptorSetAllocator.Allocate(vk.m_LogicalDevice, layoutData.m_Layout, nullptr);
+}
+
+Vector<DescriptorSetLayoutData>
+ReflectDescriptorSetLayoutsRaw(VkState &vk, const char *stage_bin,
+                               size_t stage_size) {
   SpvReflectShaderModule shaderReflectModule;
-  SpvReflectResult result = spvReflectCreateShaderModule(stageBin.size(), stageBin.data(), &shaderReflectModule);
+  SpvReflectResult result = spvReflectCreateShaderModule(stage_size, stage_bin, &shaderReflectModule);
 
   uint32_t descriptorSetCount = 0;
   spvReflectEnumerateDescriptorSets(&shaderReflectModule, &descriptorSetCount, nullptr);
@@ -315,11 +331,11 @@ Vector<DescriptorSetLayoutData> ReflectDescriptorSetLayouts(VkState& vk, StageBi
   return layoutDatas;
 }
 
-Vector<PushConstantBlock> ReflectPushConstants(VkState& vk, StageBinary& stageBin)
-{
+Vector<PushConstantBlock>
+ReflectPushConstantsRaw(VkState &vk, const char *stage_bin, size_t stage_size) {
   Vector<PushConstantBlock> pushConstants{};
   SpvReflectShaderModule shaderReflectModule;
-  SpvReflectResult result = spvReflectCreateShaderModule(stageBin.size(), stageBin.data(), &shaderReflectModule);
+  SpvReflectResult result = spvReflectCreateShaderModule(stage_size, stage_bin, &shaderReflectModule);
 
   uint32_t pushConstantBlockCount = 0;
   spvReflectEnumeratePushConstantBlocks(&shaderReflectModule, &pushConstantBlockCount, nullptr);
@@ -335,11 +351,6 @@ Vector<PushConstantBlock> ReflectPushConstants(VkState& vk, StageBinary& stageBi
   }
 
   return pushConstants;
-}
-
-VkDescriptorSet CreateDescriptorSet(VkState& vk, DescriptorSetLayoutData& layoutData)
-{
-  return vk.m_DescriptorSetAllocator.Allocate(vk.m_LogicalDevice, layoutData.m_Layout, nullptr);
 }
 }
 }

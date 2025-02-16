@@ -206,8 +206,9 @@ int main()
 
     // shader abstraction
 
-    ShaderProgram lights_prog = ShaderProgram::CreateFromBinaryPath(
-        vk, "shaders/lights.vert.spv", "shaders/lights.frag.spv");
+
+    ShaderProgram lights_prog = ShaderProgram::CreateGraphicsFromSourcePath(
+        vk, "shaders/lights.vert", "shaders/lights.frag");
 
     FillExampleLightData(lightDataCpu);
 

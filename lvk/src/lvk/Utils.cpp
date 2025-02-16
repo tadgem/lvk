@@ -1,6 +1,7 @@
 #include "lvk/Utils.h"
 #include "spdlog/spdlog.h"
 #include <fstream>
+#include <sstream>
 
 uint32_t lvk::utils::FindMemoryType(VkState& vk, uint32_t typeFilter, VkMemoryPropertyFlags properties)
 {
@@ -64,4 +65,15 @@ lvk::StageBinary lvk::utils::LoadSpirvBinary(const String& path)
 
   file.close();
   return data;
+}
+
+lvk::String lvk::utils::LoadStringFromPath(const lvk::String &path) {
+  std::ifstream in(path);
+  std::stringstream stream;
+  if (!in.is_open()) {
+    return "";
+  }
+
+  stream << in.rdbuf();
+  return stream.str();
 }

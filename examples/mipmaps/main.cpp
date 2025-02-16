@@ -132,8 +132,8 @@ int main()
     VkState vk = init::Create<VkSDL>("Im3D Multiview", 1920, 1080, false);
     bool enableMSAA = false;
 
-    ShaderProgram tex_prog = ShaderProgram::CreateFromBinaryPath(
-        vk, "shaders/texture.vert.spv", "shaders/texture.frag.spv");
+    ShaderProgram tex_prog = ShaderProgram::CreateGraphicsFromSourcePath(
+        vk, "shaders/texture.vert", "shaders/texture.frag");
 
     uint32_t mipLevels;
     VkImage textureImage;

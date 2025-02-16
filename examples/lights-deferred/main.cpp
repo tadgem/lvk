@@ -474,10 +474,10 @@ int main()
     Vector<VkDescriptorSet>     lightPassDescriptorSets;
     Vector<VkDescriptorSet>     gbufferDescriptorSets;
 
-    ShaderProgram gbufferProg = ShaderProgram::CreateFromBinaryPath(
-        vk, "shaders/gbuffer.vert.spv", "shaders/gbuffer.frag.spv");
-    ShaderProgram lightPassProg = ShaderProgram::CreateFromBinaryPath(
-        vk, "shaders/lights.vert.spv", "shaders/lights.frag.spv");
+    ShaderProgram gbufferProg = ShaderProgram::CreateGraphicsFromSourcePath(
+        vk, "shaders/gbuffer.vert", "shaders/gbuffer.frag");
+    ShaderProgram lightPassProg = ShaderProgram::CreateGraphicsFromSourcePath(
+        vk, "shaders/lights.vert", "shaders/lights.frag");
 
     VkRenderPass gbufferRenderPass;
     CreateGBufferRenderPass(vk, gbufferRenderPass);
