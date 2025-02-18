@@ -3,6 +3,7 @@
 #include "SDL3/SDL_vulkan.h"
 #include "VkSDL.h"
 #include "lvk/Init.h"
+#include "lvk/Submission.h"
 #include "spdlog/spdlog.h"
 #include "volk.h"
 #include <filesystem>
@@ -100,7 +101,7 @@ void lvk::VkSDL::PreFrame(VkState& vk)
 
 void lvk::VkSDL::PostFrame(VkState& vk)
 {
-    init::DrawFrame(vk);
+    submission::SubmitFrame(vk);
 
     ImGui::UpdatePlatformWindows();
     ImGui::RenderPlatformWindowsDefault();
@@ -139,7 +140,7 @@ void lvk::VkSDL::Run(VkState& vk, std::function<void()> callback)
 
         callback();
 
-        init::DrawFrame(vk);
+        submission::SubmitFrame(vk);
     }
     if (vkDeviceWaitIdle(vk.m_LogicalDevice) != VK_SUCCESS)
     {

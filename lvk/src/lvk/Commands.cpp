@@ -7,7 +7,7 @@ VkCommandBuffer BeginSingleTimeCommands(VkState &vk) {
   VkCommandBufferAllocateInfo allocInfo{};
   allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
   allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-  allocInfo.commandPool = vk.m_GraphicsQueueCommandPool;
+  allocInfo.commandPool = vk.m_GraphicsComputeQueueCommandPool;
   allocInfo.commandBufferCount = 1;
 
   VkCommandBuffer commandBuffer;
@@ -33,39 +33,46 @@ void EndSingleTimeCommands(VkState &vk, VkCommandBuffer &commandBuffer) {
   vkQueueSubmit(vk.m_GraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
   vkQueueWaitIdle(vk.m_GraphicsQueue);
 
-  vkFreeCommandBuffers(vk.m_LogicalDevice, vk.m_GraphicsQueueCommandPool, 1,
+  vkFreeCommandBuffers(vk.m_LogicalDevice, vk.m_GraphicsComputeQueueCommandPool, 1,
                        &commandBuffer);
 }
 
-VkCommandBuffer &BeginGraphicsCommands(VkState &vk, uint32_t frameIndex) {
-  VkCommandBufferBeginInfo commandBufferBeginInfo{};
-  commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-  commandBufferBeginInfo.flags = 0;
-  commandBufferBeginInfo.pInheritanceInfo = nullptr;
-
-  VK_CHECK(vkBeginCommandBuffer(vk.m_CommandBuffers[frameIndex],
-                                &commandBufferBeginInfo));
-  return vk.m_CommandBuffers[frameIndex];
-}
-void EndGraphicsCommands(VkState &vk, uint32_t frameIndex) {
-  VK_CHECK(vkEndCommandBuffer(vk.m_CommandBuffers[frameIndex]));
-}
 void RecordGraphicsCommands(
     VkState &vk,
     std::function<void(VkCommandBuffer &, uint32_t)> graphicsCommandsCallback) {
-  for (uint32_t i = 0; i < vk.m_CommandBuffers.size(); i++) {
-    VkCommandBufferBeginInfo commandBufferBeginInfo{};
-    commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    commandBufferBeginInfo.flags = 0;
-    commandBufferBeginInfo.pInheritanceInfo = nullptr;
+    for (uint32_t i = 0; i < vk.m_GraphicsCommandBuffers.size(); i++) {
+      VkCommandBufferBeginInfo commandBufferBeginInfo{};
+      commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+      commandBufferBeginInfo.flags = 0;
+      commandBufferBeginInfo.pInheritanceInfo = nullptr;
 
-    VK_CHECK(
-        vkBeginCommandBuffer(vk.m_CommandBuffers[i], &commandBufferBeginInfo))
+      VK_CHECK(
+          vkBeginCommandBuffer(vk.m_GraphicsCommandBuffers[i], &commandBufferBeginInfo))
 
-    // Callback
-    graphicsCommandsCallback(vk.m_CommandBuffers[i], i);
+      // Callback
+      graphicsCommandsCallback(vk.m_GraphicsCommandBuffers[i], i);
 
-    VK_CHECK(vkEndCommandBuffer(vk.m_CommandBuffers[i]));
+      VK_CHECK(vkEndCommandBuffer(vk.m_GraphicsCommandBuffers[i]));
+  }
+}
+
+void RecordComputeCommands(
+    VkState &vk,
+    std::function<void(VkCommandBuffer &, uint32_t)> computeCommandsCallback) {
+  vk.m_RunComputeCommands = true;
+  for (uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+      VkCommandBufferBeginInfo commandBufferBeginInfo{};
+      commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+      commandBufferBeginInfo.flags = 0;
+      commandBufferBeginInfo.pInheritanceInfo = nullptr;
+
+      VK_CHECK(
+          vkBeginCommandBuffer(vk.m_ComputeCommandBuffers[i], &commandBufferBeginInfo))
+
+      // Callback
+      computeCommandsCallback(vk.m_ComputeCommandBuffers[i], i);
+
+      VK_CHECK(vkEndCommandBuffer(vk.m_ComputeCommandBuffers[i]));
   }
 }
 }

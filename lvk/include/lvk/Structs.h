@@ -151,14 +151,16 @@ namespace lvk {
     VkDevice                        m_LogicalDevice = VK_NULL_HANDLE;
     VkRenderPass                    m_SwapchainImageRenderPass;
     VkRenderPass                    m_ImGuiRenderPass;
-    VkCommandPool                   m_GraphicsQueueCommandPool;
+    VkCommandPool                   m_GraphicsComputeQueueCommandPool;
     VmaAllocator                    m_Allocator;
     DescriptorSetAllocator          m_DescriptorSetAllocator;
 
     Vector<VkSemaphore>             m_ImageAvailableSemaphores;
     Vector<VkSemaphore>             m_RenderFinishedSemaphores;
+    Vector<VkSemaphore>             m_ComputeFinishedSemaphores;
     Vector<VkFence>                 m_FrameInFlightFences;
-    Vector<VkFence>                 m_ImagesInFlight;
+    Vector<VkFence>                 m_ImagesInFlightFences;
+    Vector<VkFence>                 m_ComputeInFlightFences;
     QueueFamilyIndices              m_QueueFamilyIndices;
 
     VkQueue                         m_GraphicsQueue = VK_NULL_HANDLE;
@@ -170,7 +172,8 @@ namespace lvk {
     Vector<VkImage>                 m_SwapChainImages;
     Vector<VkImageView>             m_SwapChainImageViews;
     Vector<VkFramebuffer>           m_SwapChainFramebuffers;
-    Vector<VkCommandBuffer>         m_CommandBuffers;
+    Vector<VkCommandBuffer>         m_GraphicsCommandBuffers;
+    Vector<VkCommandBuffer>         m_ComputeCommandBuffers;
 
     VkFormat                        m_SwapChainImageFormat;
     VkExtent2D                      m_SwapChainImageExtent;
@@ -187,6 +190,7 @@ namespace lvk {
 
     double                          m_DeltaTime;
     bool                            m_ShouldRun = true;
+    bool                            m_RunComputeCommands = false;
     bool                            m_UseSwapchainMsaa = false;
     const bool                      m_UseValidation = true;
     const bool                      m_UseImGui      = true;

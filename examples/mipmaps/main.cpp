@@ -7,7 +7,7 @@ static std::vector<VmaAllocation>       uniformBuffersMemory;
 static std::vector<void*>               uniformBuffersMapped;
 static std::vector<VkDescriptorSet>     descriptorSets;
 
-void RecordCommandBuffers(VkState & vk, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout, Model& model)
+void RecordGraphicsCommandBuffers(VkState & vk, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout, Model& model)
 {
     lvk::commands::RecordGraphicsCommands(vk, [&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
         // push to example
@@ -176,7 +176,7 @@ int main()
 
         }
         ImGui::End();
-        RecordCommandBuffers(vk, pipeline, pipelineLayout, model);
+        RecordGraphicsCommandBuffers(vk, pipeline, pipelineLayout, model);
 
         vk.m_Backend->PostFrame(vk);
     }

@@ -3,8 +3,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "ThirdParty/stb_image.h"
 #include "lvk/Init.h"
-#include "ImGui/imgui_impl_vulkan.h"
-#include "lvk/Commands.h"
 #include "lvk/Macros.h"
 #include "lvk/RenderPass.h"
 #include "lvk/Texture.h"
@@ -182,8 +180,6 @@ void lvk::init::PopulateDebugMessengerCreateInfo(VkState& vk, VkDebugUtilsMessen
   // TODO: Find a way to quit on a debug error
 }
 
-
-
 void lvk::init::InitVulkan(VkState& vk, bool enableSwapchainMsaa)
 {
   vk.m_CurrentFrameIndex = 0;
@@ -246,31 +242,6 @@ void lvk::init::InitImGui(VkState& vk)
   }
   ImGui_ImplVulkan_Init(&init_info);
 
-}
-
-void lvk::init::RenderImGui(VkState& vk)
-{
-  ImGui::Render();
-  VkCommandBuffer imguiCommandBuffer = commands::BeginSingleTimeCommands(vk);
-
-  VkRenderPassBeginInfo renderPassInfo{};
-  renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-  renderPassInfo.renderPass = vk.m_ImGuiRenderPass;
-  renderPassInfo.framebuffer = vk.m_SwapChainFramebuffers[vk.m_CurrentFrameIndex];
-  renderPassInfo.renderArea.offset = { 0,0 };
-  renderPassInfo.renderArea.extent = vk.m_SwapChainImageExtent;
-
-  std::array<VkClearValue, 2> clearValues{};
-  clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
-  clearValues[1].depthStencil = { 1.0f, 0 };
-
-  renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-  renderPassInfo.pClearValues = clearValues.data();
-
-  vkCmdBeginRenderPass(imguiCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-  ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), imguiCommandBuffer);
-  vkCmdEndRenderPass(imguiCommandBuffer);
-  commands::EndSingleTimeCommands(vk, imguiCommandBuffer);
 }
 
 VkApplicationInfo lvk::init::CreateAppInfo(VkState& vk)
@@ -381,7 +352,7 @@ void lvk::init::CleanupVulkan(VkState& vk)
     vkDestroyFence(vk.m_LogicalDevice, vk.m_FrameInFlightFences[i], nullptr);
   }
 
-  vkDestroyCommandPool(vk.m_LogicalDevice, vk.m_GraphicsQueueCommandPool, nullptr);
+  vkDestroyCommandPool(vk.m_LogicalDevice, vk.m_GraphicsComputeQueueCommandPool, nullptr);
   vkDestroyRenderPass(vk.m_LogicalDevice, vk.m_SwapchainImageRenderPass, nullptr);
 
 
@@ -825,7 +796,7 @@ void lvk::init::CreateCommandPool(VkState& vk)
   createInfo.queueFamilyIndex     = vk.m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::GraphicsAndCompute];
   createInfo.flags                = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-  if(vkCreateCommandPool(vk.m_LogicalDevice, &createInfo, nullptr, &vk.m_GraphicsQueueCommandPool) != VK_SUCCESS)
+  if(vkCreateCommandPool(vk.m_LogicalDevice, &createInfo, nullptr, &vk.m_GraphicsComputeQueueCommandPool) != VK_SUCCESS)
   {
     spdlog::error("Failed to create Command Pool!");
     std::cerr << "Failed to create Command Pool!" << std::endl;
@@ -845,13 +816,16 @@ void lvk::init::CreateSemaphores(VkState& vk)
 {
   vk.m_ImageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
   vk.m_RenderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+  vk.m_ComputeFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+
   VkSemaphoreCreateInfo createInfo{};
   createInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
   for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
   {
     if (vkCreateSemaphore(vk.m_LogicalDevice, &createInfo, nullptr, &vk.m_ImageAvailableSemaphores[i]) != VK_SUCCESS ||
-        vkCreateSemaphore(vk.m_LogicalDevice, &createInfo, nullptr, &vk.m_RenderFinishedSemaphores[i]) != VK_SUCCESS)
+        vkCreateSemaphore(vk.m_LogicalDevice, &createInfo, nullptr, &vk.m_RenderFinishedSemaphores[i]) != VK_SUCCESS ||
+        vkCreateSemaphore(vk.m_LogicalDevice, &createInfo, nullptr, &vk.m_ComputeFinishedSemaphores[i]) != VK_SUCCESS)
     {
       spdlog::error("Failed to create semaphores!");
       std::cerr << "Failed to create semaphores!" << std::endl;
@@ -863,7 +837,8 @@ void lvk::init::CreateSemaphores(VkState& vk)
 void lvk::init::CreateFences(VkState& vk)
 {
   vk.m_FrameInFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
-  vk.m_ImagesInFlight.resize(vk.m_SwapChainImages.size(), VK_NULL_HANDLE);
+  vk.m_ImagesInFlightFences.resize(vk.m_SwapChainImages.size(), VK_NULL_HANDLE);
+  vk.m_ComputeInFlightFences.resize(vk.m_SwapChainImages.size());
 
   VkFenceCreateInfo createInfo{};
   createInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
@@ -871,7 +846,8 @@ void lvk::init::CreateFences(VkState& vk)
 
   for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
   {
-    if (vkCreateFence(vk.m_LogicalDevice, &createInfo, nullptr, &vk.m_FrameInFlightFences[i]) != VK_SUCCESS)
+    if (vkCreateFence(vk.m_LogicalDevice, &createInfo, nullptr, &vk.m_FrameInFlightFences[i]) != VK_SUCCESS ||
+        vkCreateFence(vk.m_LogicalDevice, &createInfo, nullptr, &vk.m_ComputeInFlightFences[i]) != VK_SUCCESS )
     {
       spdlog::error("Failed to create Fences!");
       std::cerr << "Failed to create Fences!" << std::endl;
@@ -879,95 +855,32 @@ void lvk::init::CreateFences(VkState& vk)
   }
 }
 
-void lvk::init::DrawFrame(VkState& vk)
-{
-  vkWaitForFences(vk.m_LogicalDevice, 1, &vk.m_FrameInFlightFences[vk.m_CurrentFrameIndex], VK_TRUE, UINT64_MAX);
-
-  uint32_t imageIndex;
-  VkResult result = vkAcquireNextImageKHR(vk.m_LogicalDevice, vk.m_SwapChain,
-          UINT64_MAX, vk.m_ImageAvailableSemaphores[vk.m_CurrentFrameIndex], VK_NULL_HANDLE, &imageIndex);
-
-  if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-    RecreateSwapChain(vk);
-    return;
-  }
-  else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-    spdlog::error("VulkanAPI : Failed to acquire swap chain image!");
-    return;
-  }
-
-  vkResetFences(vk.m_LogicalDevice, 1, &vk.m_FrameInFlightFences[vk.m_CurrentFrameIndex]);
-
-  vk.m_ImagesInFlight[imageIndex] = vk.m_FrameInFlightFences[vk.m_CurrentFrameIndex];
-
-  VkSubmitInfo submitInfo{};
-  submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-  VkSemaphore waitSemaphores[]        = { vk.m_ImageAvailableSemaphores[vk.m_CurrentFrameIndex]};
-  VkSemaphore signalSemaphores[]       = { vk.m_RenderFinishedSemaphores[vk.m_CurrentFrameIndex]};
-  VkPipelineStageFlags waitStages[]   = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-  submitInfo.waitSemaphoreCount       = 1;
-  submitInfo.pWaitSemaphores          = waitSemaphores;
-  submitInfo.pWaitDstStageMask        = waitStages;
-  submitInfo.commandBufferCount       = 1;
-  submitInfo.pCommandBuffers          = &vk.m_CommandBuffers[imageIndex];
-  submitInfo.signalSemaphoreCount     = 1;
-  submitInfo.pSignalSemaphores        = signalSemaphores;
-
-  vkResetFences(vk.m_LogicalDevice, 1, &vk.m_FrameInFlightFences[vk.m_CurrentFrameIndex]);
-
-  if (vkQueueSubmit(vk.m_GraphicsQueue, 1, &submitInfo, vk.m_FrameInFlightFences[vk.m_CurrentFrameIndex]) != VK_SUCCESS)
-  {
-    spdlog::error("VulkanAPI : Failed to submit draw command buffer!");
-  }
-
-  if (vk.m_UseImGui)
-  {
-    RenderImGui(vk);
-  }
-
-  VkPresentInfoKHR presentInfo{};
-  presentInfo.sType               = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-  presentInfo.waitSemaphoreCount  = 1;
-  presentInfo.pWaitSemaphores     = signalSemaphores;
-  presentInfo.swapchainCount      = 1;
-  VkSwapchainKHR swapchains[]     = { vk.m_SwapChain };
-  presentInfo.pSwapchains         = swapchains;
-  presentInfo.pImageIndices       = &imageIndex;
-  presentInfo.pResults            = nullptr;
-
-  result = vkQueuePresentKHR(vk.m_GraphicsQueue, &presentInfo);
-
-  if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-    RecreateSwapChain(vk);
-    return;
-  }
-  else if (result != VK_SUCCESS) {
-    spdlog::error("VulkanAPI : Error presenting swapchain image");
-  }
-
-  vk.m_CurrentFrameIndex = (vk.m_CurrentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
-}
-
 void lvk::init::CreateCommandBuffers(VkState& vk)
 {
-  vk.m_CommandBuffers.resize(vk.m_SwapChainFramebuffers.size());
+  vk.m_GraphicsCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+  vk.m_ComputeCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
   VkCommandBufferAllocateInfo allocateInfo{};
   allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-  allocateInfo.commandPool = vk.m_GraphicsQueueCommandPool;
+  allocateInfo.commandPool = vk.m_GraphicsComputeQueueCommandPool;
   allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-  allocateInfo.commandBufferCount = static_cast<uint32_t>(vk.m_CommandBuffers.size());
+  allocateInfo.commandBufferCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
-  VK_CHECK(vkAllocateCommandBuffers(vk.m_LogicalDevice, &allocateInfo, vk.m_CommandBuffers.data()))
+  VK_CHECK(vkAllocateCommandBuffers(vk.m_LogicalDevice, &allocateInfo, vk.m_GraphicsCommandBuffers.data()))
+  VK_CHECK(vkAllocateCommandBuffers(vk.m_LogicalDevice, &allocateInfo, vk.m_ComputeCommandBuffers.data()))
 
 }
 
 void lvk::init::ClearCommandBuffers(VkState& vk)
 {
-  for (uint32_t i = 0; i < vk.m_CommandBuffers.size(); i++)
+  for (uint32_t i = 0; i < vk.m_GraphicsCommandBuffers.size(); i++)
   {
-    vkResetCommandBuffer(vk.m_CommandBuffers[i], 0);
+    vkResetCommandBuffer(vk.m_GraphicsCommandBuffers[i], 0);
+  }
+
+  for (uint32_t i = 0; i < vk.m_ComputeCommandBuffers.size(); i++)
+  {
+    vkResetCommandBuffer(vk.m_ComputeCommandBuffers[i], 0);
   }
 }
 

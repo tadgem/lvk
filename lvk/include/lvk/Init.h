@@ -25,7 +25,6 @@ namespace init
   
   void                                InitVulkan(VkState& vk, bool enableSwapchainMsaa = false);
   void                                InitImGui(VkState& vk);
-  void                                RenderImGui(VkState& vk);
   VkApplicationInfo                   CreateAppInfo(VkState& vk);
   void                                CreateInstance(VkState& vk);
   void                                CleanupVulkan(VkState& vk);
@@ -50,7 +49,7 @@ namespace init
   void                                CreateDescriptorSetAllocator(VkState& vk);
   void                                CreateSemaphores(VkState& vk);
   void                                CreateFences(VkState& vk);
-  void                                DrawFrame(VkState& vk);
+
   void                                CreateCommandBuffers(VkState& vk);
   void                                ClearCommandBuffers(VkState& vk);
   void                                CreateVmaAllocator(VkState& vk);
@@ -73,6 +72,7 @@ namespace init
     vk.m_Backend->CreateWindowLVK(vk, width, height);
     InitVulkan(vk, enableSwapchainMsaa);
     vk.m_MaxFramebufferExtent = vk.m_Backend->GetMaxFramebufferResolution(vk);
+    vk.m_RunComputeCommands = false;
     InitImGui(vk);
     Texture::InitDefaultTexture(vk);
     Mesh::InitBuiltInMeshes(vk);

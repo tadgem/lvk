@@ -12,7 +12,8 @@ namespace lvk
     struct ShaderStage
     {
 
-        StageBinary m_StageBinary;
+        StageBinary     m_StageBinary;
+        VkShaderModule  m_Module;
         Vector<PushConstantBlock>       m_PushConstants;
         Vector<DescriptorSetLayoutData> m_LayoutDatas;
         ShaderStageType m_Type;
@@ -21,8 +22,9 @@ namespace lvk
         {
             auto stageLayoutDatas = descriptor::ReflectDescriptorSetLayouts(vk, binary);
             auto pushConstants = descriptor::ReflectPushConstants(vk, binary);
+            auto module = CreateShaderModule(vk, binary);
 
-            return { binary, pushConstants, stageLayoutDatas, type };
+            return { binary, module, pushConstants, stageLayoutDatas, type };
         }
 
         static ShaderStage
@@ -37,8 +39,9 @@ namespace lvk
             auto bin = CreateStageBinaryFromSource(vk, type, source);
             auto stageLayoutDatas = descriptor::ReflectDescriptorSetLayouts(vk, bin);
             auto pushConstants = descriptor::ReflectPushConstants(vk, bin);
+            auto module = CreateShaderModule(vk, bin);
 
-            return { bin, pushConstants, stageLayoutDatas, type };
+            return { bin, module, pushConstants, stageLayoutDatas, type };
         }
 
         static ShaderStage CreateFromSourcePath(VkState & vk, const String& path, const ShaderStageType& type)

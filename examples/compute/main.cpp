@@ -6,6 +6,20 @@ using namespace lvk;
 
 #define NUM_LIGHTS 16
 using ForwardLightData = FrameLightDataT<NUM_LIGHTS>;
+struct Particle
+{
+  glm::vec2 position;
+  glm::vec2 velocity;
+  glm::vec4 colour;
+};
+
+struct UBOData
+{
+  float delta;
+};
+
+constexpr size_t PARTICLE_COUNT = 8192;
+constexpr VkDeviceSize buffer_size = PARTICLE_COUNT * sizeof(Particle);
 
 static ShaderBufferFrameData mvpUniformData;
 static ShaderBufferFrameData lightsUniformData;
@@ -78,7 +92,17 @@ void CreateGraphicsDescriptorSets(VkState & vk, VkDescriptorSetLayout& descripto
 }
 
 
-void RecordCommandBuffers(VkState & vk, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout, Model& model)
+void RecordComputeCommandBuffers(VkState& vk, VkPipeline& p, VkPipelineLayout& layout, Vector<VkDescriptorSet> computeDescriptors)
+{
+  lvk::commands::RecordComputeCommands(vk, [&](VkCommandBuffer& cmd, uint32_t frameIndex)
+  {
+      vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, p);
+      vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 0, 1, &computeDescriptors[frameIndex], 0,0);
+      vkCmdDispatch(cmd, PARTICLE_COUNT / 256, 1, 1);
+  });
+}
+
+void RecordGraphicsCommandBuffers(VkState & vk, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout, Model& model)
 {
     lvk::commands::RecordGraphicsCommands(vk, [&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
         // push to example
@@ -130,6 +154,8 @@ void RecordCommandBuffers(VkState & vk, VkPipeline& pipeline, VkPipelineLayout& 
         vkCmdEndRenderPass(commandBuffer);
     });
 }
+
+
 
 void UpdateUniformBuffer(VkState & vk)
 {
@@ -205,22 +231,6 @@ void UpdateUniformBuffer(VkState & vk)
 
     lightsUniformData.Set(vk.m_CurrentFrameIndex, lightDataCpu);
 }
-
-struct Particle
-{
-    glm::vec2 position;
-    glm::vec2 velocity;
-    glm::vec4 colour;
-};
-
-struct UBOData
-{
-    float delta;
-};
-
-constexpr size_t PARTICLE_COUNT = 8192;
-constexpr VkDeviceSize buffer_size = PARTICLE_COUNT * sizeof(Particle);
-
 
 static void CreateComputeBuffers(VkState& vk, std::vector<VkBuffer>& uniformBuffers,
                                  std::vector<VmaAllocation>& uniformBuffersMemory,
@@ -309,7 +319,9 @@ VkDescriptorSetLayout CreateComputeDescriptorLayouts(VkState& vk)
     return layout;
 }
 
-void CreateComputeDescriptorSets(VkState& vk, VkDescriptorSetLayout layout)
+Vector<VkDescriptorSet> CreateComputeDescriptorSets(VkState& vk, VkDescriptorSetLayout layout,
+                                 std::vector<VkBuffer>& uniformBuffers,
+                                 std::vector<VkBuffer>& shaderStorageBuffers)
 {
 
     std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, layout);
@@ -322,13 +334,91 @@ void CreateComputeDescriptorSets(VkState& vk, VkDescriptorSetLayout layout)
     std::vector<VkDescriptorSet> sets {};
     sets.resize(MAX_FRAMES_IN_FLIGHT);
 
+    VK_CHECK(vkAllocateDescriptorSets(vk.m_LogicalDevice, &alloc, sets.data()));
+
+    for(uint32_t f = 0; f < MAX_FRAMES_IN_FLIGHT; f++)
+    {
+        VkDescriptorBufferInfo uniformBufferInfo{};
+        uniformBufferInfo.buffer = uniformBuffers[f];
+        uniformBufferInfo.offset = 0;
+        uniformBufferInfo.range = sizeof(UBOData);
+
+        std::array<VkWriteDescriptorSet, 3> descriptorWrites{};
+        descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[0].dstSet = sets[f];
+        descriptorWrites[0].dstBinding = 0;
+        descriptorWrites[0].dstArrayElement = 0;
+        descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrites[0].descriptorCount = 1;
+        descriptorWrites[0].pBufferInfo = &uniformBufferInfo;
+
+        auto last_index = (f - 1) % MAX_FRAMES_IN_FLIGHT;
+        VkDescriptorBufferInfo storageBufferInfoLastFrame{};
+        storageBufferInfoLastFrame.buffer = shaderStorageBuffers[last_index];
+        storageBufferInfoLastFrame.offset = 0;
+        storageBufferInfoLastFrame.range = sizeof(Particle) * PARTICLE_COUNT;
+
+        descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[1].dstSet = sets[f];
+        descriptorWrites[1].dstBinding = 1;
+        descriptorWrites[1].dstArrayElement = 0;
+        descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        descriptorWrites[1].descriptorCount = 1;
+        descriptorWrites[1].pBufferInfo = &storageBufferInfoLastFrame;
+
+        VkDescriptorBufferInfo storageBufferInfoCurrentFrame{};
+        storageBufferInfoCurrentFrame.buffer = shaderStorageBuffers[f];
+        storageBufferInfoCurrentFrame.offset = 0;
+        storageBufferInfoCurrentFrame.range = sizeof(Particle) * PARTICLE_COUNT;
+
+        descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[2].dstSet = sets[f];
+        descriptorWrites[2].dstBinding = 2;
+        descriptorWrites[2].dstArrayElement = 0;
+        descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        descriptorWrites[2].descriptorCount = 1;
+        descriptorWrites[2].pBufferInfo = &storageBufferInfoCurrentFrame;
+
+        vkUpdateDescriptorSets(vk.m_LogicalDevice, 3, descriptorWrites.data(), 0, nullptr);
+    }
+
+    return sets;
+
 }
 
 
+VkPipeline CreateComputePipeline(VkState& vk, VkDescriptorSetLayout& layout, ShaderProgram& computeProg)
+{
+    VkPipelineLayoutCreateInfo computeLayoutInfo {};
+    computeLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    computeLayoutInfo.setLayoutCount = 1;
+    computeLayoutInfo.pSetLayouts = &layout;
+
+    VkPipelineLayout computeLayout ;
+    VK_CHECK(vkCreatePipelineLayout(vk.m_LogicalDevice, &computeLayoutInfo, nullptr, & computeLayout));
+
+    VkPipelineShaderStageCreateInfo computeStageInfo {};
+    computeStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    computeStageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    computeStageInfo.module = computeProg.m_Stages.front().m_Module;
+    computeStageInfo.pName = "main";
+
+
+    VkComputePipelineCreateInfo create{};
+    create.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+    create.layout = computeLayout;
+    create.stage = computeStageInfo;
+
+    VkPipeline pipeline;
+    VK_CHECK(vkCreateComputePipelines(vk.m_LogicalDevice, VK_NULL_HANDLE, 1, &create, nullptr, &pipeline));
+
+    return pipeline;
+}
+
 int main()
 {
-    VkState vk = init::Create<VkSDL>("Forward Lights", 1920, 1080, false);
-    bool enableMSAA = false;
+    bool enableMSAA = true;
+    VkState vk = init::Create<VkSDL>("Forward Lights", 1920, 1080, true);
 
     // shader abstraction
 
@@ -346,13 +436,11 @@ int main()
                          shaderStorageBuffers, shaderStorageBuffersMemory);
 
     VkDescriptorSetLayout layout = CreateComputeDescriptorLayouts(vk);
+    Vector<VkDescriptorSet> computeDescriptors = CreateComputeDescriptorSets(vk, layout,  uniformBuffers, shaderStorageBuffers);
+    VkPipeline computePipeline = CreateComputePipeline(vk, layout, particles_prog);
 
-    for(auto f = 0; f < MAX_FRAMES_IN_FLIGHT; f++)
-    {
-    }
 
     FillExampleLightData(lightDataCpu);
-
     // Texture abstraction
     uint32_t mipLevels;
     VkImage textureImage;
@@ -389,7 +477,7 @@ int main()
         
         UpdateUniformBuffer(vk);
 
-        RecordCommandBuffers(vk, pipeline, pipelineLayout, model);
+        RecordGraphicsCommandBuffers(vk, pipeline, pipelineLayout, model);
 
         vk.m_Backend->PostFrame(vk);
     }

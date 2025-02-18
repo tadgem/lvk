@@ -20,6 +20,7 @@ set(LVK_SRCS
     src/lvk/Init.cpp
     src/lvk/Descriptor.cpp
     src/lvk/RenderPass.cpp
+    src/lvk/Submission.cpp
     src/ThirdParty/spirv_reflect.c
     src/ImGui/imgui_impl_vulkan.cpp
     src/ImGui/imgui_draw.cpp
@@ -44,6 +45,7 @@ set(LVK_SRCS
     include/lvk/Init.h
     include/lvk/Descriptor.h
     include/lvk/RenderPass.h
+    include/lvk/Submission.h
     include/Alias.h
     include/ThirdParty/spirv_reflect.h
     include/ThirdParty/VulkanMemoryAllocator.h

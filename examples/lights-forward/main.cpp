@@ -71,7 +71,7 @@ void CreateGraphicsDescriptorSets(VkState & vk, VkDescriptorSetLayout& descripto
 
 }
 
-void RecordCommandBuffers(VkState & vk, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout, Model& model)
+void RecordGraphicsCommandBuffers(VkState & vk, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout, Model& model)
 {
     lvk::commands::RecordGraphicsCommands(vk, [&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
         // push to example
@@ -248,7 +248,7 @@ int main()
         
         UpdateUniformBuffer(vk);
 
-        RecordCommandBuffers(vk, pipeline, pipelineLayout, model);
+        RecordGraphicsCommandBuffers(vk, pipeline, pipelineLayout, model);
 
         vk.m_Backend->PostFrame(vk);
     }
