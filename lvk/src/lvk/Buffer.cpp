@@ -5,7 +5,7 @@
 namespace lvk
 {
 namespace buffers {
-void CreateBufferVMA(VkState& vk, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VmaAllocation& allocation)
+void CreateBuffer(VkState& vk, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VmaAllocation& allocation)
 {
   VkBufferCreateInfo bufferInfo{};
   bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -49,7 +49,7 @@ void CreateIndexBuffer(VkState& vk, std::vector<uint32_t> indices, VkBuffer& buf
   // create a CPU side buffer to dump vertex data into
   VkBuffer stagingBuffer;
   VmaAllocation stagingBufferMemory;
-  CreateBufferVMA(vk, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+  CreateBuffer(vk, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
   // dump vert data
   void* data;
@@ -58,7 +58,7 @@ void CreateIndexBuffer(VkState& vk, std::vector<uint32_t> indices, VkBuffer& buf
   vmaUnmapMemory(vk.m_Allocator, stagingBufferMemory);
 
   // create GPU side buffer
-  CreateBufferVMA(vk, bufferSize,
+  CreateBuffer(vk, bufferSize,
                   VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                   buffer, deviceMemory);
@@ -71,7 +71,7 @@ void CreateIndexBuffer(VkState& vk, std::vector<uint32_t> indices, VkBuffer& buf
 
 void CreateMappedBuffer(VkState& vk, MappedBuffer& buf, VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags memoryProperties, uint32_t size)
 {
-  CreateBufferVMA(vk,VkDeviceSize{ size }, bufferUsage, memoryProperties, buf.m_GpuBuffer, buf.m_GpuMemory);
+  CreateBuffer(vk,VkDeviceSize{ size }, bufferUsage, memoryProperties, buf.m_GpuBuffer, buf.m_GpuMemory);
   VK_CHECK(vmaMapMemory(vk.m_Allocator, buf.m_GpuMemory, &buf.m_MappedAddr));
 }
 

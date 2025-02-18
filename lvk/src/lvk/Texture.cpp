@@ -394,7 +394,7 @@ void lvk::textures::CreateTexture(VkState& vk, const String& path, VkFormat form
     VmaAllocation stagingBufferMemory;
     constexpr VkBufferUsageFlags bufferUsageFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     constexpr VkMemoryPropertyFlags memoryPropertiesFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    buffers::CreateBufferVMA(vk,imageSize, bufferUsageFlags, memoryPropertiesFlags, stagingBuffer, stagingBufferMemory);
+    buffers::CreateBuffer(vk,imageSize, bufferUsageFlags, memoryPropertiesFlags, stagingBuffer, stagingBufferMemory);
 
     void* data;
     vmaMapMemory(vk.m_Allocator, stagingBufferMemory, &data);
@@ -445,7 +445,7 @@ void lvk::textures::CreateTextureFromMemory(VkState& vk, unsigned char* tex_data
     VmaAllocation stagingBufferMemory;
     constexpr VkBufferUsageFlags bufferUsageFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     constexpr VkMemoryPropertyFlags memoryPropertiesFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    buffers::CreateBufferVMA(vk,imageSize, bufferUsageFlags, memoryPropertiesFlags, stagingBuffer, stagingBufferMemory);
+    buffers::CreateBuffer(vk,imageSize, bufferUsageFlags, memoryPropertiesFlags, stagingBuffer, stagingBufferMemory);
 
     void* data;
     vmaMapMemory(vk.m_Allocator, stagingBufferMemory, &data);
@@ -496,7 +496,7 @@ void lvk::textures::CreateTexture3DFromMemory(VkState& vk, unsigned char* tex_da
     VmaAllocation stagingBufferMemory;
     constexpr VkBufferUsageFlags bufferUsageFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     constexpr VkMemoryPropertyFlags memoryPropertiesFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    buffers::CreateBufferVMA(vk,imageSize, bufferUsageFlags, memoryPropertiesFlags, stagingBuffer, stagingBufferMemory);
+    buffers::CreateBuffer(vk,imageSize, bufferUsageFlags, memoryPropertiesFlags, stagingBuffer, stagingBufferMemory);
 
     void* data;
     vmaMapMemory(vk.m_Allocator, stagingBufferMemory, &data);

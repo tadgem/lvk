@@ -5,7 +5,7 @@
 
 namespace lvk {
 namespace buffers {
-void CreateBufferVMA(VkState &vk, VkDeviceSize size, VkBufferUsageFlags usage,
+void CreateBuffer(VkState &vk, VkDeviceSize size, VkBufferUsageFlags usage,
                      VkMemoryPropertyFlags properties, VkBuffer &buffer,
                      VmaAllocation &allocation);
 void CopyBuffer(VkState &vk, VkBuffer &src, VkBuffer &dst, VkDeviceSize size);
@@ -23,7 +23,7 @@ void CreateUniformBuffers(VkState &vk, Vector<VkBuffer> &uniformBuffersFrames,
   uniformBufferMappedMemoryFrames.resize(MAX_FRAMES_IN_FLIGHT);
 
   for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-    CreateBufferVMA(vk, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+    CreateBuffer(vk, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                         VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                     uniformBuffersFrames[i], uniformBuffersMemoryFrames[i]);
@@ -52,7 +52,7 @@ void CreateVertexBuffer(VkState &vk, Vector<_Ty> verts, VkBuffer &buffer,
   // create a CPU side buffer to dump vertex data into
   VkBuffer stagingBuffer;
   VmaAllocation stagingBufferMemory;
-  CreateBufferVMA(vk, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+  CreateBuffer(vk, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                       VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                   stagingBuffer, stagingBufferMemory);
@@ -64,7 +64,7 @@ void CreateVertexBuffer(VkState &vk, Vector<_Ty> verts, VkBuffer &buffer,
   vmaUnmapMemory(vk.m_Allocator, stagingBufferMemory);
 
   // create GPU side buffer
-  CreateBufferVMA(vk, bufferSize,
+  CreateBuffer(vk, bufferSize,
                   VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
                       VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, buffer, deviceMemory);

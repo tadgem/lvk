@@ -11,7 +11,7 @@ static ShaderBufferFrameData lightsUniformData;
 static ForwardLightData lightDataCpu {};
 static std::vector<VkDescriptorSet>     descriptorSets;
 
-void CreateDescriptorSets(VkState & vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler)
+void CreateGraphicsDescriptorSets(VkState & vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler)
 {
   std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
   VkDescriptorSetAllocateInfo allocInfo{};
@@ -239,7 +239,8 @@ int main()
     // Shader too probably
     buffers::CreateUniformBuffers<MvpData>(vk, mvpUniformData);
     buffers::CreateUniformBuffers<FrameLightDataT<NUM_LIGHTS>>(vk, lightsUniformData);
-    CreateDescriptorSets(vk, lights_prog.m_DescriptorSetLayout, imageView, imageSampler);
+    CreateGraphicsDescriptorSets(vk, lights_prog.m_DescriptorSetLayout,
+                                 imageView, imageSampler);
 
     while (vk.m_ShouldRun)
     {    

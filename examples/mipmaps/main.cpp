@@ -81,7 +81,7 @@ void UpdateUniformBuffer(VkState & vk)
     memcpy(uniformBuffersMapped[vk.m_CurrentFrameIndex], &ubo, sizeof(ubo));
 }
 
-void CreateDescriptorSets(VkState & vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler)
+void CreateGraphicsDescriptorSets(VkState & vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler)
 {
     std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -162,7 +162,8 @@ int main()
 
     buffers::CreateUniformBuffers<MvpData>(vk, uniformBuffers, uniformBuffersMemory, uniformBuffersMapped);
 
-    CreateDescriptorSets(vk, tex_prog.m_DescriptorSetLayout, imageView, imageSampler);
+    CreateGraphicsDescriptorSets(vk, tex_prog.m_DescriptorSetLayout, imageView,
+                                 imageSampler);
 
     while (vk.m_ShouldRun)
     {    

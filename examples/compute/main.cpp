@@ -1,5 +1,7 @@
 #include "example-common.h"
 #include "lvk/Shader.h"
+#include <random>
+
 using namespace lvk;
 
 #define NUM_LIGHTS 16
@@ -9,19 +11,23 @@ static ShaderBufferFrameData mvpUniformData;
 static ShaderBufferFrameData lightsUniformData;
 
 static ForwardLightData lightDataCpu {};
-static std::vector<VkDescriptorSet>     descriptorSets;
+static std::vector<VkDescriptorSet> forwardPassDescriptorSets;
+static std::vector<VkDescriptorSet> computePassDescriptorSets;
 
-void CreateDescriptorSets(VkState & vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler)
+void CreateGraphicsDescriptorSets(VkState & vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler)
 {
-  std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
+  std::vector<VkDescriptorSetLayout> forward_layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
   VkDescriptorSetAllocateInfo allocInfo{};
   allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
   allocInfo.descriptorPool = vk.m_DescriptorSetAllocator.GetPool(vk.m_LogicalDevice);
   allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-  allocInfo.pSetLayouts = layouts.data();
+  allocInfo.pSetLayouts = forward_layouts.data();
 
-  descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-  VK_CHECK(vkAllocateDescriptorSets(vk.m_LogicalDevice, &allocInfo, descriptorSets.data()));
+  forwardPassDescriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
+  VK_CHECK(vkAllocateDescriptorSets(vk.m_LogicalDevice, &allocInfo,
+                                    forwardPassDescriptorSets.data()));
+
+
 
   for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
     VkDescriptorBufferInfo mvpBufferInfo{};
@@ -42,7 +48,7 @@ void CreateDescriptorSets(VkState & vk, VkDescriptorSetLayout& descriptorSetLayo
     std::array<VkWriteDescriptorSet, 3> descriptorWrites{};
 
     descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrites[0].dstSet = descriptorSets[i];
+    descriptorWrites[0].dstSet = forwardPassDescriptorSets[i];
     descriptorWrites[0].dstBinding = 0;
     descriptorWrites[0].dstArrayElement = 0;
     descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -50,7 +56,7 @@ void CreateDescriptorSets(VkState & vk, VkDescriptorSetLayout& descriptorSetLayo
     descriptorWrites[0].pBufferInfo = &mvpBufferInfo;
 
     descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrites[1].dstSet = descriptorSets[i];
+    descriptorWrites[1].dstSet = forwardPassDescriptorSets[i];
     descriptorWrites[1].dstBinding = 1;
     descriptorWrites[1].dstArrayElement = 0;
     descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -58,7 +64,7 @@ void CreateDescriptorSets(VkState & vk, VkDescriptorSetLayout& descriptorSetLayo
     descriptorWrites[1].pImageInfo = &imageInfo;
 
     descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrites[2].dstSet = descriptorSets[i];
+    descriptorWrites[2].dstSet = forwardPassDescriptorSets[i];
     descriptorWrites[2].dstBinding = 2;
     descriptorWrites[2].dstArrayElement = 0;
     descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -70,6 +76,7 @@ void CreateDescriptorSets(VkState & vk, VkDescriptorSetLayout& descriptorSetLayo
   }
 
 }
+
 
 void RecordCommandBuffers(VkState & vk, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout, Model& model)
 {
@@ -117,7 +124,7 @@ void RecordCommandBuffers(VkState & vk, VkPipeline& pipeline, VkPipelineLayout& 
             vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
             vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, sizes);
             vkCmdBindIndexBuffer(commandBuffer, mesh.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[frameIndex], 0, nullptr);
+            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &forwardPassDescriptorSets[frameIndex], 0, nullptr);
             vkCmdDrawIndexed(commandBuffer, mesh.m_IndexCount, 1, 0, 0, 0);
         }
         vkCmdEndRenderPass(commandBuffer);
@@ -199,6 +206,125 @@ void UpdateUniformBuffer(VkState & vk)
     lightsUniformData.Set(vk.m_CurrentFrameIndex, lightDataCpu);
 }
 
+struct Particle
+{
+    glm::vec2 position;
+    glm::vec2 velocity;
+    glm::vec4 colour;
+};
+
+struct UBOData
+{
+    float delta;
+};
+
+constexpr size_t PARTICLE_COUNT = 8192;
+constexpr VkDeviceSize buffer_size = PARTICLE_COUNT * sizeof(Particle);
+
+
+static void CreateComputeBuffers(VkState& vk, std::vector<VkBuffer>& uniformBuffers,
+                                 std::vector<VmaAllocation>& uniformBuffersMemory,
+
+                                 std::vector<VkBuffer>& shaderStorageBuffers,
+                                 std::vector<VmaAllocation>& shaderStorageBuffersMemory)
+{
+    uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+    uniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
+
+    shaderStorageBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+    shaderStorageBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
+
+    std::default_random_engine rndEngine((unsigned)time(nullptr));
+    std::uniform_real_distribution<float> rndDist(0.0f, 1.0f);
+
+    // Initial particle positions on a circle
+    std::vector<Particle> particles(PARTICLE_COUNT);
+    for (auto& particle : particles) {
+        float r = 0.25f * sqrt(rndDist(rndEngine));
+        float theta = rndDist(rndEngine) * 2 * 3.14159265358979323846;
+        float x = r * cos(theta) * vk.m_SwapChainImageExtent.height / vk.m_SwapChainImageExtent.width;
+        float y = r * sin(theta);
+        particle.position = glm::vec2(x, y);
+        particle.velocity = glm::normalize(glm::vec2(x,y)) * 0.00025f;
+        particle.colour = glm::vec4(rndDist(rndEngine), rndDist(rndEngine), rndDist(rndEngine), 1.0f);
+    }
+
+    VkBuffer stagingBuffer;
+    VmaAllocation stagingBufferMemory;
+    buffers::CreateBuffer(vk, buffer_size,
+                          VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                          stagingBuffer, stagingBufferMemory);
+
+    void* data;
+    vmaMapMemory(vk.m_Allocator, stagingBufferMemory, &data);
+    memcpy(data, particles.data(), buffer_size);
+    vmaUnmapMemory(vk.m_Allocator, stagingBufferMemory);
+    for(auto f = 0; f < MAX_FRAMES_IN_FLIGHT; f++)
+    {
+        buffers::CreateBuffer(vk, sizeof(UBOData),
+                              VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+                              uniformBuffers[f], uniformBuffersMemory[f]);
+
+        buffers::CreateBuffer(vk, buffer_size,
+                              VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                                  VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                                  VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                              shaderStorageBuffers[f], shaderStorageBuffersMemory[f]);
+        buffers::CopyBuffer(vk, stagingBuffer, shaderStorageBuffers[f], buffer_size);
+
+
+    }
+}
+
+VkDescriptorSetLayout CreateComputeDescriptorLayouts(VkState& vk)
+{
+    VkDescriptorSetLayout layout {};
+    std::array<VkDescriptorSetLayoutBinding, 3> bindings{};
+    bindings[0].binding = 0;
+    bindings[0].descriptorCount = 1;
+    bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    bindings[0].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+    bindings[0].pImmutableSamplers = nullptr;
+
+    bindings[1].binding = 1;
+    bindings[1].descriptorCount = 1;
+    bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    bindings[1].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+    bindings[1].pImmutableSamplers = nullptr;
+
+    bindings[2].binding = 2;
+    bindings[2].descriptorCount = 1;
+    bindings[2].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    bindings[2].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT ;
+    bindings[2].pImmutableSamplers = nullptr;
+
+    VkDescriptorSetLayoutCreateInfo create {};
+    create.bindingCount = 3;
+    create.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    create.pBindings = bindings.data();
+
+    VK_CHECK(vkCreateDescriptorSetLayout(vk.m_LogicalDevice, &create, nullptr, &layout));
+    return layout;
+}
+
+void CreateComputeDescriptorSets(VkState& vk, VkDescriptorSetLayout layout)
+{
+
+    std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, layout);
+    VkDescriptorSetAllocateInfo alloc {};
+    alloc.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    alloc.descriptorPool = vk.m_DescriptorSetAllocator.GetPool(vk.m_LogicalDevice);
+    alloc.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+    alloc.pSetLayouts= layouts.data();
+
+    std::vector<VkDescriptorSet> sets {};
+    sets.resize(MAX_FRAMES_IN_FLIGHT);
+
+}
+
+
 int main()
 {
     VkState vk = init::Create<VkSDL>("Forward Lights", 1920, 1080, false);
@@ -211,6 +337,19 @@ int main()
         vk, "shaders/lights.vert", "shaders/lights.frag");
 
     ShaderProgram particles_prog = ShaderProgram::CreateComputeFromSourcePath(vk, "shaders/particles.comp");
+
+    std::vector<VkBuffer> uniformBuffers;
+    std::vector<VmaAllocation> uniformBuffersMemory;
+    std::vector<VkBuffer> shaderStorageBuffers;
+    std::vector<VmaAllocation> shaderStorageBuffersMemory;
+    CreateComputeBuffers(vk, uniformBuffers, uniformBuffersMemory,
+                         shaderStorageBuffers, shaderStorageBuffersMemory);
+
+    VkDescriptorSetLayout layout = CreateComputeDescriptorLayouts(vk);
+
+    for(auto f = 0; f < MAX_FRAMES_IN_FLIGHT; f++)
+    {
+    }
 
     FillExampleLightData(lightDataCpu);
 
@@ -241,7 +380,8 @@ int main()
     // Shader too probably
     buffers::CreateUniformBuffers<MvpData>(vk, mvpUniformData);
     buffers::CreateUniformBuffers<FrameLightDataT<NUM_LIGHTS>>(vk, lightsUniformData);
-    CreateDescriptorSets(vk, lights_prog.m_DescriptorSetLayout, imageView, imageSampler);
+    CreateGraphicsDescriptorSets(vk, lights_prog.m_DescriptorSetLayout,
+                                 imageView, imageSampler);
 
     while (vk.m_ShouldRun)
     {    
