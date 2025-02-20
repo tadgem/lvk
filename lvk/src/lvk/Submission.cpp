@@ -46,10 +46,10 @@ void lvk::submission::SubmitFrame(VkState& vk)
   VkSubmitInfo submitInfo{};
   submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-  VkSemaphore waitSemaphores[]        = { vk.m_ImageAvailableSemaphores[vk.m_CurrentFrameIndex]};
+  VkSemaphore waitSemaphores[]        = { vk.m_ImageAvailableSemaphores[vk.m_CurrentFrameIndex], vk.m_ComputeFinishedSemaphores[vk.m_CurrentFrameIndex]};
   VkSemaphore signalSemaphores[]       = { vk.m_RenderFinishedSemaphores[vk.m_CurrentFrameIndex]};
-  VkPipelineStageFlags waitStages[]   = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-  submitInfo.waitSemaphoreCount       = 1;
+  VkPipelineStageFlags waitStages[]   = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT };
+  submitInfo.waitSemaphoreCount       = 2;
   submitInfo.pWaitSemaphores          = waitSemaphores;
   submitInfo.pWaitDstStageMask        = waitStages;
   submitInfo.commandBufferCount       = 1;

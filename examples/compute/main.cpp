@@ -92,7 +92,7 @@ void CreateGraphicsDescriptorSets(VkState & vk, VkDescriptorSetLayout& descripto
 }
 
 
-void RecordComputeCommandBuffers(VkState& vk, VkPipeline& p, VkPipelineLayout& layout, Vector<VkDescriptorSet> computeDescriptors)
+void RecordComputeCommandBuffers(VkState& vk, VkPipeline& p, VkPipelineLayout& layout, Vector<VkDescriptorSet>& computeDescriptors)
 {
   lvk::commands::RecordComputeCommands(vk, [&](VkCommandBuffer& cmd, uint32_t frameIndex)
   {
@@ -387,14 +387,13 @@ Vector<VkDescriptorSet> CreateComputeDescriptorSets(VkState& vk, VkDescriptorSet
 }
 
 
-VkPipeline CreateComputePipeline(VkState& vk, VkDescriptorSetLayout& layout, ShaderProgram& computeProg)
+VkPipeline CreateComputePipeline(VkState& vk, VkDescriptorSetLayout& layout, ShaderProgram& computeProg, VkPipelineLayout& computeLayout)
 {
     VkPipelineLayoutCreateInfo computeLayoutInfo {};
     computeLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     computeLayoutInfo.setLayoutCount = 1;
     computeLayoutInfo.pSetLayouts = &layout;
 
-    VkPipelineLayout computeLayout ;
     VK_CHECK(vkCreatePipelineLayout(vk.m_LogicalDevice, &computeLayoutInfo, nullptr, & computeLayout));
 
     VkPipelineShaderStageCreateInfo computeStageInfo {};
@@ -437,7 +436,8 @@ int main()
 
     VkDescriptorSetLayout layout = CreateComputeDescriptorLayouts(vk);
     Vector<VkDescriptorSet> computeDescriptors = CreateComputeDescriptorSets(vk, layout,  uniformBuffers, shaderStorageBuffers);
-    VkPipeline computePipeline = CreateComputePipeline(vk, layout, particles_prog);
+    VkPipelineLayout computePipelineLayout;
+    VkPipeline computePipeline = CreateComputePipeline(vk, layout, particles_prog, computePipelineLayout);
 
 
     FillExampleLightData(lightDataCpu);
@@ -477,6 +477,7 @@ int main()
         
         UpdateUniformBuffer(vk);
 
+        RecordComputeCommandBuffers(vk, computePipeline, computePipelineLayout, computeDescriptors);
         RecordGraphicsCommandBuffers(vk, pipeline, pipelineLayout, model);
 
         vk.m_Backend->PostFrame(vk);
