@@ -11,6 +11,22 @@ struct Particle
   glm::vec2 position;
   glm::vec2 velocity;
   glm::vec4 colour;
+
+  static std::array<VkVertexInputAttributeDescription, 2> GetAttributeDescriptions()
+  {
+    std::array<VkVertexInputAttributeDescription, 2> attrs {};
+    attrs[0].binding = 0;
+    attrs[0].location = 0;
+    attrs[0].offset = offsetof(Particle, position);
+    attrs[0].format = VK_FORMAT_R32G32_SFLOAT;
+
+    attrs[0].binding = 0;
+    attrs[0].location = 1;
+    attrs[0].offset = offsetof(Particle, colour);
+    attrs[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+
+    return attrs;
+  }
 };
 
 struct UBOData
@@ -452,13 +468,11 @@ int main()
 
     // Pipeline stage?
     VkPipelineLayout pipelineLayout;
+    auto vertexDescription = VertexDataPosNormalUv::GetVertexDescription();
     VkPipeline pipeline = lvk::pipelines::CreateRasterPipeline(vk,
         lights_prog,
-        Vector<VkVertexInputBindingDescription>{
-            VertexDataPosNormalUv::GetBindingDescription()},
-        VertexDataPosNormalUv::GetAttributeDescriptions(),
-        vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent.width,
-        vk.m_SwapChainImageExtent.height, VK_POLYGON_MODE_FILL,
+        vertexDescription,vk.m_SwapchainImageRenderPass,
+        vk.m_SwapChainImageExtent, VK_POLYGON_MODE_FILL,
         VK_CULL_MODE_NONE, enableMSAA, VK_COMPARE_OP_LESS, pipelineLayout);
 
     // create vertex and index buffer

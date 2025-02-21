@@ -223,14 +223,12 @@ int main()
 
     // Pipeline stage?
     VkPipelineLayout pipelineLayout;
+    auto vertexDescription = VertexDataPosNormalUv::GetVertexDescription();
     VkPipeline pipeline = lvk::pipelines::CreateRasterPipeline(vk,
-        lights_prog,
-        Vector<VkVertexInputBindingDescription>{
-            VertexDataPosNormalUv::GetBindingDescription()},
-        VertexDataPosNormalUv::GetAttributeDescriptions(),
-        vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent.width,
-        vk.m_SwapChainImageExtent.height, VK_POLYGON_MODE_FILL,
-        VK_CULL_MODE_NONE, enableMSAA, VK_COMPARE_OP_LESS, pipelineLayout);
+        lights_prog,vertexDescription,
+        vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent,
+        VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE,
+        enableMSAA, VK_COMPARE_OP_LESS, pipelineLayout);
 
     // create vertex and index buffer
     Model model;

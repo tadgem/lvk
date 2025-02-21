@@ -10,7 +10,16 @@ namespace lvk
         glm::vec3 Colour;
         glm::vec2 UV;
 
-        static VkVertexInputBindingDescription GetBindingDescription();
+        static VkVertexInputBindingDescription GetBindingDescription()
+        {
+          VkVertexInputBindingDescription bindingDescription{};
+
+          bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+          bindingDescription.stride = sizeof(VertexDataPosColUv);
+          bindingDescription.binding = 0;
+
+          return bindingDescription;
+        }
 
         static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions() {
             std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
@@ -34,6 +43,8 @@ namespace lvk
 
             return attributeDescriptions;
         }
+
+        static VertexDescription GetVertexDescription();
     };
 
     struct VertexDataPos4
@@ -62,6 +73,9 @@ namespace lvk
 
             return attributeDescriptions;
         }
+
+        static VertexDescription GetVertexDescription();
+
     };
 
     struct VertexDataPosUv
@@ -96,6 +110,9 @@ namespace lvk
 
             return attributeDescriptions;
         }
+
+        static VertexDescription GetVertexDescription();
+
     };
 
     struct VertexDataPosNormalUv
@@ -136,6 +153,9 @@ namespace lvk
 
             return attributeDescriptions;
         }
+
+        static VertexDescription GetVertexDescription();
+
     };
 
     class Mesh

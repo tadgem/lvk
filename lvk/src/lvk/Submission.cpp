@@ -45,13 +45,21 @@ void lvk::submission::SubmitFrame(VkState& vk)
 
   VkSubmitInfo submitInfo{};
   submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+  Vector<VkSemaphore> waitSemaphores {};
+  Vector<VkPipelineStageFlags> waitStages;
 
-  VkSemaphore waitSemaphores[]        = { vk.m_ImageAvailableSemaphores[vk.m_CurrentFrameIndex], vk.m_ComputeFinishedSemaphores[vk.m_CurrentFrameIndex]};
+  waitSemaphores.push_back(vk.m_ImageAvailableSemaphores[vk.m_CurrentFrameIndex]);
+  waitStages.push_back(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+  if(vk.m_RunComputeCommands)
+  {
+    waitSemaphores.push_back(vk.m_ComputeFinishedSemaphores[vk.m_CurrentFrameIndex]);
+    waitStages.push_back(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+  }
+
   VkSemaphore signalSemaphores[]       = { vk.m_RenderFinishedSemaphores[vk.m_CurrentFrameIndex]};
-  VkPipelineStageFlags waitStages[]   = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT };
-  submitInfo.waitSemaphoreCount       = 2;
-  submitInfo.pWaitSemaphores          = waitSemaphores;
-  submitInfo.pWaitDstStageMask        = waitStages;
+  submitInfo.waitSemaphoreCount       = waitSemaphores.size();
+  submitInfo.pWaitSemaphores          = waitSemaphores.data();
+  submitInfo.pWaitDstStageMask        = waitStages.data();
   submitInfo.commandBufferCount       = 1;
   submitInfo.pCommandBuffers          = &vk.m_GraphicsCommandBuffers[imageIndex];
   submitInfo.signalSemaphoreCount     = 1;

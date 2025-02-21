@@ -50,26 +50,21 @@ pipelines::PipelineT<VkRecordCommandCallback> CreateViewPipeline(VkState & vk, L
 
     // create gbuffer pipeline
     VkPipelineLayout gbufferPipelineLayout;
-    auto gbufferBindingDescriptions = Vector<VkVertexInputBindingDescription>{VertexDataPosNormalUv::GetBindingDescription() };
-    auto gbufferAttributeDescriptions = VertexDataPosNormalUv::GetAttributeDescriptions();
+    auto vertexDescription = VertexDataPosNormalUv::GetVertexDescription();
     VkPipeline gbufferPipeline = lvk::pipelines::CreateRasterPipeline(vk,
-        gbufferProg, gbufferBindingDescriptions, gbufferAttributeDescriptions,
-        gbuffer->m_RenderPass, vk.m_SwapChainImageExtent.width,
-        vk.m_SwapChainImageExtent.height, VK_POLYGON_MODE_FILL,
+        gbufferProg, vertexDescription,
+        gbuffer->m_RenderPass, vk.m_SwapChainImageExtent, VK_POLYGON_MODE_FILL,
         VK_CULL_MODE_BACK_BIT, false, VK_COMPARE_OP_LESS, gbufferPipelineLayout,
         3);
 
     // create present graphics pipeline
     // Pipeline stage?
     VkPipelineLayout lightPassPipelineLayout;
-    auto lightPassBindingDescriptions = Vector<VkVertexInputBindingDescription>{VertexDataPosUv::GetBindingDescription() };
-    auto lightPassAttributeDescriptions = VertexDataPosUv::GetAttributeDescriptions();
+    auto presentVertexDescription = VertexDataPosUv::GetVertexDescription();
     VkPipeline lightPassPipeline = lvk::pipelines::CreateRasterPipeline(vk,
-        lightPassProg, lightPassBindingDescriptions,
-        lightPassAttributeDescriptions, lightPassImage->m_RenderPass,
-        vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
-        VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, false, VK_COMPARE_OP_LESS,
-        lightPassPipelineLayout);
+        lightPassProg, presentVertexDescription, lightPassImage->m_RenderPass,
+        vk.m_SwapChainImageExtent, VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE,
+        false, VK_COMPARE_OP_LESS, lightPassPipelineLayout);
 
 
     pipelines::VkPipelineData* gbufferPipelineData = p.AddPipeline(vk, gbufferPipeline, gbufferPipelineLayout );

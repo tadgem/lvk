@@ -53,3 +53,15 @@ void lvk::Renderable::RecordGraphicsCommands(VkCommandBuffer& commandBuffer)
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSet, 0, nullptr);
     vkCmdDrawIndexed(commandBuffer, m_Mesh.m_IndexCount, 1, 0, 0, 0);
 }
+lvk::VertexDescription lvk::VertexDataPosColUv::GetVertexDescription() {
+    return VertexDescription {{GetBindingDescription()}, GetAttributeDescriptions()};
+}
+lvk::VertexDescription lvk::VertexDataPos4::GetVertexDescription() {
+    return VertexDescription {{GetBindingDescription()}, GetAttributeDescriptions()};
+}
+lvk::VertexDescription lvk::VertexDataPosUv::GetVertexDescription() {
+    return VertexDescription {{GetBindingDescription()}, GetAttributeDescriptions()};
+}
+lvk::VertexDescription lvk::VertexDataPosNormalUv::GetVertexDescription() {
+    return VertexDescription {{GetBindingDescription()}, GetAttributeDescriptions()};
+}

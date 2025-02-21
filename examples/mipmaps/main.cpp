@@ -144,16 +144,11 @@ int main()
     textures::CreateImageSampler(vk, imageView, mipLevels, VK_FILTER_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, imageSampler);
 
     VkPipelineLayout pipelineLayout;
-
+    auto vertexDescription = VertexDataPosUv::GetVertexDescription();
     VkPipeline pipeline = lvk::pipelines::CreateRasterPipeline(vk,
-        tex_prog,
-        Vector<VkVertexInputBindingDescription>{
-            VertexDataPosUv::GetBindingDescription()},
-        VertexDataPosUv::GetAttributeDescriptions(),
-        vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent.width,
-        vk.m_SwapChainImageExtent.height, VK_POLYGON_MODE_FILL,
-        VK_CULL_MODE_NONE,
-        false, // no msaa atm
+        tex_prog, vertexDescription,
+        vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent,
+        VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, false, // no msaa atm
         VK_COMPARE_OP_LESS, pipelineLayout);
 
     // create vertex and index buffer

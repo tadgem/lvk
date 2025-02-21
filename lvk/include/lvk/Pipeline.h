@@ -11,16 +11,14 @@ namespace pipelines{
         VkState& vk,
         StageBinary& comp,
         VkDescriptorSetLayout& descriptorSetLayout,
-        uint32_t width, uint32_t height,
         VkPipelineLayout& pipelineLayout);
 
     VkPipeline                          CreateRasterPipeline(
         VkState& vk,
         ShaderProgram& shader,
-        Vector<VkVertexInputBindingDescription>& vertexBindingDescriptions,
-        Vector<VkVertexInputAttributeDescription>& vertexAttributeDescriptions,
+        VertexDescription& vertexDescription,
         VkRenderPass& pipelineRenderPass,
-        uint32_t width, uint32_t height,
+        VkExtent2D resolution,
         VkPolygonMode polyMode,
         VkCullModeFlags cullMode,
         bool enableMultisampling,

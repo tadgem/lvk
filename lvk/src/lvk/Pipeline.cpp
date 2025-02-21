@@ -5,9 +5,8 @@ namespace lvk::pipelines {
 
 VkPipeline CreateRasterPipeline(
     VkState &vk, ShaderProgram &shader,
-    Vector<VkVertexInputBindingDescription> &vertexBindingDescriptions,
-    Vector<VkVertexInputAttributeDescription> &vertexAttributeDescriptions,
-    VkRenderPass &pipelineRenderPass, uint32_t width, uint32_t height,
+    VertexDescription& vertexDescription,
+    VkRenderPass &pipelineRenderPass, VkExtent2D resolution,
     VkPolygonMode polyMode, VkCullModeFlags cullMode, bool enableMultisampling,
     VkCompareOp depthCompareOp, VkPipelineLayout &pipelineLayout,
     uint32_t colorAttachmentCount) {
@@ -40,12 +39,12 @@ VkPipeline CreateRasterPipeline(
   vertexInputInfo.sType =
       VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
   vertexInputInfo.vertexBindingDescriptionCount =
-      static_cast<uint32_t>(vertexBindingDescriptions.size());
-  vertexInputInfo.pVertexBindingDescriptions = vertexBindingDescriptions.data();
+      static_cast<uint32_t>(vertexDescription.m_BindingDescriptions.size());
+  vertexInputInfo.pVertexBindingDescriptions = vertexDescription.m_BindingDescriptions.data();
   vertexInputInfo.vertexAttributeDescriptionCount =
-      static_cast<uint32_t>(vertexAttributeDescriptions.size());
+      static_cast<uint32_t>(vertexDescription.m_AttributeDescriptions.size());
   vertexInputInfo.pVertexAttributeDescriptions =
-      vertexAttributeDescriptions.data();
+      vertexDescription.m_AttributeDescriptions.data();
 
   VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo{};
   inputAssemblyInfo.sType =
@@ -56,14 +55,14 @@ VkPipeline CreateRasterPipeline(
   VkViewport viewport{};
   viewport.x = 0.0f;
   viewport.x = 0.0f;
-  viewport.width = static_cast<float>(width);
-  viewport.height = static_cast<float>(height);
+  viewport.width = static_cast<float>(resolution.width);
+  viewport.height = static_cast<float>(resolution.height);
   viewport.minDepth = 0.0f;
   viewport.maxDepth = 1.0f;
 
   VkRect2D scissor{};
   scissor.offset = {0, 0};
-  scissor.extent = VkExtent2D{width, height};
+  scissor.extent = VkExtent2D{resolution.width, resolution.height};
 
   VkPipelineViewportStateCreateInfo viewportInfo{};
   viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -255,7 +254,6 @@ VkPipeline CreateRasterPipeline(
 VkPipeline
 CreateComputePipeline(VkState &vk, StageBinary &comp,
                            VkDescriptorSetLayout &descriptorSetLayout,
-                           uint32_t width, uint32_t height,
                            VkPipelineLayout &pipelineLayout) {
 
   auto compStage = CreateShaderModule(vk, comp);

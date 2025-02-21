@@ -251,7 +251,7 @@ void OnIm3D()
 }
 
 int main() {
-    VkState vk = init::Create<VkSDL>("Im3D Multiview", 1920, 1080, false);
+    VkState vk = init::Create<VkSDL>("Im3D Test", 1920, 1080, false);
     bool enableMSAA = false;
     auto im3dState = LoadIm3D(vk);
     auto im3dViewState = AddIm3dForViewport(vk, im3dState, vk.m_SwapchainImageRenderPass, enableMSAA);
@@ -284,25 +284,19 @@ int main() {
 
     // create gbuffer pipeline
     VkPipelineLayout gbufferPipelineLayout;
+    auto vertexDescription = VertexDataPosNormalUv::GetVertexDescription();
     VkPipeline gbufferPipeline = lvk::pipelines::CreateRasterPipeline(vk,
-        gbufferProg,
-        Vector<VkVertexInputBindingDescription>{
-            VertexDataPosNormalUv::GetBindingDescription()},
-        VertexDataPosNormalUv::GetAttributeDescriptions(), gbuffer.m_RenderPass,
-        vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height,
-        VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, false, VK_COMPARE_OP_LESS,
-        gbufferPipelineLayout, 3);
+        gbufferProg,vertexDescription, gbuffer.m_RenderPass,
+        vk.m_SwapChainImageExtent, VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT,
+        false, VK_COMPARE_OP_LESS, gbufferPipelineLayout, 3);
 
     // create present graphics pipeline
     // Pipeline stage?
     VkPipelineLayout lightPassPipelineLayout;
+    auto presentVertexDescription = VertexDataPosUv::GetVertexDescription();
     VkPipeline pipeline = lvk::pipelines::CreateRasterPipeline(vk,
-        lightPassProg,
-        Vector<VkVertexInputBindingDescription>{
-            VertexDataPosUv::GetBindingDescription()},
-        VertexDataPosUv::GetAttributeDescriptions(),
-        vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent.width,
-        vk.m_SwapChainImageExtent.height, VK_POLYGON_MODE_FILL,
+        lightPassProg,presentVertexDescription, vk.m_SwapchainImageRenderPass,
+        vk.m_SwapChainImageExtent, VK_POLYGON_MODE_FILL,
         VK_CULL_MODE_NONE, enableMSAA, VK_COMPARE_OP_LESS,
         lightPassPipelineLayout);
 

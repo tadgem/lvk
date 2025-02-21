@@ -74,30 +74,26 @@ namespace lvk
 
     LvkIm3dViewState AddIm3dForViewport(VkState & vk, LvkIm3dState& state, VkRenderPass renderPass, bool enableMSAA)
     {
-        auto bindingDescriptions = Vector<VkVertexInputBindingDescription>{VertexDataPos4::GetBindingDescription() };
-        auto attrbuteDescriptions = VertexDataPos4::GetAttributeDescriptions();
+        auto vertexDescription = VertexDataPos4::GetVertexDescription();
         VkPipelineLayout tris_layout;
         VkPipeline tris_pipeline = pipelines::CreateRasterPipeline(vk,
-            state.m_TriProg, bindingDescriptions, attrbuteDescriptions,
-            renderPass, vk.m_SwapChainImageExtent.width,
-            vk.m_SwapChainImageExtent.height, VK_POLYGON_MODE_FILL,
+            state.m_TriProg, vertexDescription,
+            renderPass, vk.m_SwapChainImageExtent, VK_POLYGON_MODE_FILL,
             VK_CULL_MODE_NONE, enableMSAA, VK_COMPARE_OP_LESS, tris_layout);
         Material tris_material = Material::Create(vk, state.m_TriProg);
 
         VkPipelineLayout points_layout;
         VkPipeline points_pipeline = pipelines::CreateRasterPipeline(vk,
-            state.m_PointsProg, bindingDescriptions, attrbuteDescriptions,
-            renderPass, vk.m_SwapChainImageExtent.width,
-            vk.m_SwapChainImageExtent.height, VK_POLYGON_MODE_POINT,
+            state.m_PointsProg, vertexDescription,
+            renderPass, vk.m_SwapChainImageExtent, VK_POLYGON_MODE_POINT,
             VK_CULL_MODE_NONE, enableMSAA, VK_COMPARE_OP_LESS, points_layout);
         Material points_material = Material::Create(vk, state.m_PointsProg);
 
 
         VkPipelineLayout lines_layout;
         VkPipeline lines_pipeline = pipelines::CreateRasterPipeline(vk,
-            state.m_LinesProg, bindingDescriptions, attrbuteDescriptions,
-            renderPass, vk.m_SwapChainImageExtent.width,
-            vk.m_SwapChainImageExtent.height, VK_POLYGON_MODE_LINE,
+            state.m_LinesProg, vertexDescription,
+            renderPass, vk.m_SwapChainImageExtent, VK_POLYGON_MODE_LINE,
             VK_CULL_MODE_NONE, enableMSAA, VK_COMPARE_OP_LESS, lines_layout);
         Material lines_material = Material::Create(vk, state.m_LinesProg);
 

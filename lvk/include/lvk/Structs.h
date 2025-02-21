@@ -99,6 +99,12 @@ namespace lvk {
     void Free(VkState &vk);
   };
 
+  struct VertexDescription
+  {
+    Vector<VkVertexInputBindingDescription>   m_BindingDescriptions;
+    Vector<VkVertexInputAttributeDescription> m_AttributeDescriptions;
+  };
+
   enum class ShaderStageType { Vertex, Fragment, Compute };
 
   enum QueueFamilyType {
