@@ -12,24 +12,40 @@ struct Particle
   glm::vec2 velocity;
   glm::vec4 colour;
 
-  static std::array<VkVertexInputAttributeDescription, 2> GetAttributeDescriptions()
+  static lvk::Vector<VkVertexInputAttributeDescription> GetAttributeDescriptions()
   {
-    std::array<VkVertexInputAttributeDescription, 2> attrs {};
+    Vector<VkVertexInputAttributeDescription> attrs {};
+    attrs.resize(2);
     attrs[0].binding = 0;
     attrs[0].location = 0;
     attrs[0].offset = offsetof(Particle, position);
     attrs[0].format = VK_FORMAT_R32G32_SFLOAT;
 
-    attrs[0].binding = 0;
-    attrs[0].location = 1;
-    attrs[0].offset = offsetof(Particle, colour);
-    attrs[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    attrs[1].binding = 0;
+    attrs[1].location = 1;
+    attrs[1].offset = offsetof(Particle, colour);
+    attrs[1].format = VK_FORMAT_R32G32B32A32_SFLOAT;
 
     return attrs;
   }
+
+  static VertexDescription GetVertexDescription()
+  {
+    VertexDescription desc {};
+    VkVertexInputBindingDescription binding {};
+    binding.binding = 0;
+    binding.stride = sizeof(Particle);
+    binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    desc.m_BindingDescriptions = {binding};
+    desc.m_AttributeDescriptions = GetAttributeDescriptions();
+    return desc;
+  }
+
+
 };
 
-struct UBOData
+struct ParticlesUBOData
 {
   float delta;
 };
@@ -39,6 +55,7 @@ constexpr VkDeviceSize buffer_size = PARTICLE_COUNT * sizeof(Particle);
 
 static ShaderBufferFrameData mvpUniformData;
 static ShaderBufferFrameData lightsUniformData;
+static ShaderBufferFrameData particleDeltaUniformData;
 
 static ForwardLightData lightDataCpu {};
 static std::vector<VkDescriptorSet> forwardPassDescriptorSets;
@@ -118,7 +135,10 @@ void RecordComputeCommandBuffers(VkState& vk, VkPipeline& p, VkPipelineLayout& l
   });
 }
 
-void RecordGraphicsCommandBuffers(VkState & vk, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout, Model& model)
+void RecordGraphicsCommandBuffers(VkState & vk,
+                                  VkPipeline& pipeline, VkPipelineLayout& pipelineLayout,
+                                  VkPipeline& particlePipeline, VkPipelineLayout & particlePipelineLayout,
+                                  std::vector<VkBuffer>& particleBuffers, Model& model)
 {
     lvk::commands::RecordGraphicsCommands(vk, [&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
         // push to example
@@ -135,42 +155,31 @@ void RecordGraphicsCommandBuffers(VkState & vk, VkPipeline& pipeline, VkPipeline
 
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
         renderPassInfo.pClearValues = clearValues.data();
-
+        VkDeviceSize sizes[] = { 0 };
         vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+        VkViewport viewport{};
+        viewport.x = 0.0f;
+        viewport.x = 0.0f;
+        viewport.width = static_cast<float>(vk.m_SwapChainImageExtent.width);
+        viewport.height = static_cast<float>(vk.m_SwapChainImageExtent.height);
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
 
-        for (int i = 0; i < model.m_Meshes.size(); i++)
-        {
-            MeshEx& mesh = model.m_Meshes[i];
-            VkBuffer vertexBuffers[]{ mesh.m_VertexBuffer};
-            VkDeviceSize sizes[] = { 0 };
+        VkRect2D scissor{};
+        scissor.offset = { 0,0 };
+        scissor.extent = VkExtent2D{
+            static_cast<uint32_t>(vk.m_SwapChainImageExtent.width) ,
+            static_cast<uint32_t>(vk.m_SwapChainImageExtent.height)
+        };
 
-            VkViewport viewport{};
-            viewport.x = 0.0f;
-            viewport.x = 0.0f;
-            viewport.width = static_cast<float>(vk.m_SwapChainImageExtent.width);
-            viewport.height = static_cast<float>(vk.m_SwapChainImageExtent.height);
-            viewport.minDepth = 0.0f;
-            viewport.maxDepth = 1.0f;
-
-            VkRect2D scissor{};
-            scissor.offset = { 0,0 };
-            scissor.extent = VkExtent2D{ 
-                static_cast<uint32_t>(vk.m_SwapChainImageExtent.width) , 
-                static_cast<uint32_t>(vk.m_SwapChainImageExtent.height)
-            };
-
-            vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-            vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-            vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, sizes);
-            vkCmdBindIndexBuffer(commandBuffer, mesh.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &forwardPassDescriptorSets[frameIndex], 0, nullptr);
-            vkCmdDrawIndexed(commandBuffer, mesh.m_IndexCount, 1, 0, 0, 0);
-        }
+        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, particlePipeline);
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &particleBuffers[frameIndex], sizes);
+        vkCmdDraw(commandBuffer, PARTICLE_COUNT, 1, 0,0);
         vkCmdEndRenderPass(commandBuffer);
     });
 }
-
 
 
 void UpdateUniformBuffer(VkState & vk)
@@ -191,6 +200,8 @@ void UpdateUniformBuffer(VkState & vk)
         ubo.Proj[1][1] *= -1;
     }
     mvpUniformData.Set(vk.m_CurrentFrameIndex, ubo);
+    particleDeltaUniformData.Set(vk.m_CurrentFrameIndex,
+                                 ParticlesUBOData{static_cast<float>(vk.m_DeltaTime)});
 
     // light imgui
 
@@ -288,7 +299,7 @@ static void CreateComputeBuffers(VkState& vk, std::vector<VkBuffer>& uniformBuff
     vmaUnmapMemory(vk.m_Allocator, stagingBufferMemory);
     for(auto f = 0; f < MAX_FRAMES_IN_FLIGHT; f++)
     {
-        buffers::CreateBuffer(vk, sizeof(UBOData),
+        buffers::CreateBuffer(vk, sizeof(ParticlesUBOData),
                               VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
                               uniformBuffers[f], uniformBuffersMemory[f]);
@@ -355,9 +366,9 @@ Vector<VkDescriptorSet> CreateComputeDescriptorSets(VkState& vk, VkDescriptorSet
     for(uint32_t f = 0; f < MAX_FRAMES_IN_FLIGHT; f++)
     {
         VkDescriptorBufferInfo uniformBufferInfo{};
-        uniformBufferInfo.buffer = uniformBuffers[f];
+        uniformBufferInfo.buffer = particleDeltaUniformData.m_UniformBuffers[f].m_GpuBuffer;
         uniformBufferInfo.offset = 0;
-        uniformBufferInfo.range = sizeof(UBOData);
+        uniformBufferInfo.range = sizeof(ParticlesUBOData);
 
         std::array<VkWriteDescriptorSet, 3> descriptorWrites{};
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -437,11 +448,11 @@ int main()
 
     // shader abstraction
 
-
+    ShaderProgram particles_prog = ShaderProgram::CreateComputeFromSourcePath(vk, "shaders/particles.comp");
     ShaderProgram lights_prog = ShaderProgram::CreateGraphicsFromSourcePath(
         vk, "shaders/lights.vert", "shaders/lights.frag");
-
-    ShaderProgram particles_prog = ShaderProgram::CreateComputeFromSourcePath(vk, "shaders/particles.comp");
+    ShaderProgram draw_particles = ShaderProgram::CreateGraphicsFromSourcePath(
+        vk, "shaders/draw_particle.vert", "shaders/draw_particle.frag");
 
     std::vector<VkBuffer> uniformBuffers;
     std::vector<VmaAllocation> uniformBuffersMemory;
@@ -449,6 +460,10 @@ int main()
     std::vector<VmaAllocation> shaderStorageBuffersMemory;
     CreateComputeBuffers(vk, uniformBuffers, uniformBuffersMemory,
                          shaderStorageBuffers, shaderStorageBuffersMemory);
+
+
+    ParticlesUBOData particleUboData { 0.0f};
+    buffers::CreateUniformBuffers<ParticlesUBOData>(vk, particleDeltaUniformData);
 
     VkDescriptorSetLayout layout = CreateComputeDescriptorLayouts(vk);
     Vector<VkDescriptorSet> computeDescriptors = CreateComputeDescriptorSets(vk, layout,  uniformBuffers, shaderStorageBuffers);
@@ -467,12 +482,22 @@ int main()
     textures::CreateImageSampler(vk, imageView, mipLevels, VK_FILTER_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, imageSampler);
 
     // Pipeline stage?
-    VkPipelineLayout pipelineLayout;
+    VkPipelineLayout forwardPipelineLayout;
     auto vertexDescription = VertexDataPosNormalUv::GetVertexDescription();
-    VkPipeline pipeline = lvk::pipelines::CreateRasterPipeline(vk,
+    VkPipeline forwardPipeline = lvk::pipelines::CreateRasterPipeline(vk,
         lights_prog, vertexDescription,
         defaults::CullNoneRasterStateMSAA, defaults::DefaultRasterPipelineState,
-        vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent, pipelineLayout);
+        vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent, forwardPipelineLayout);
+
+    VkPipelineLayout particlePipelineLayout;
+    RasterPipelineState rps {};
+    rps.m_InputAssemblyTopology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+    rps.m_DepthCompareOp = VK_COMPARE_OP_LESS;
+
+    auto particleVertexDescription = Particle::GetVertexDescription();
+    VkPipeline particlePipeline = lvk::pipelines::CreateRasterPipeline(
+        vk, draw_particles, particleVertexDescription, defaults::CullNoneRasterStateMSAA,
+        rps, vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent, particlePipelineLayout);
 
     // create vertex and index buffer
     Model model;
@@ -491,21 +516,24 @@ int main()
         UpdateUniformBuffer(vk);
 
         RecordComputeCommandBuffers(vk, computePipeline, computePipelineLayout, computeDescriptors);
-        RecordGraphicsCommandBuffers(vk, pipeline, pipelineLayout, model);
+        RecordGraphicsCommandBuffers(vk,
+          forwardPipeline, forwardPipelineLayout,
+          particlePipeline, particlePipelineLayout, shaderStorageBuffers, model);
 
         vk.m_Backend->PostFrame(vk);
     }
 
     mvpUniformData.Free(vk);
     lightsUniformData.Free(vk);
+    particleDeltaUniformData.Free(vk);
 
     FreeModel(vk, model);
     vkDestroySampler(vk.m_LogicalDevice, imageSampler, nullptr);
     vkDestroyImageView(vk.m_LogicalDevice, imageView, nullptr);
     vkDestroyImage(vk.m_LogicalDevice, textureImage, nullptr);
     vkFreeMemory(vk.m_LogicalDevice, textureMemory, nullptr);
-    vkDestroyPipelineLayout(vk.m_LogicalDevice, pipelineLayout, nullptr);
-    vkDestroyPipeline(vk.m_LogicalDevice, pipeline, nullptr);
+    vkDestroyPipelineLayout(vk.m_LogicalDevice, forwardPipelineLayout, nullptr);
+    vkDestroyPipeline(vk.m_LogicalDevice, forwardPipeline, nullptr);
 
     return 0;
 }

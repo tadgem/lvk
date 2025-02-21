@@ -28,16 +28,16 @@ namespace pipelines{
     {
         VkPipelineData(VkPipeline pipeline, VkPipelineLayout layout)
         {
-            m_Pipeline = pipeline;
-            m_PipelineLayout = layout;
+          m_Pipeline = pipeline;
+          m_PipelineLayout = layout;
         }
 
     	VkPipelineData() = default;
 
     	void Free(VkState & vk)
     	{
-    		vkDestroyPipelineLayout (vk.m_LogicalDevice, m_PipelineLayout, nullptr);
-    		vkDestroyPipeline(vk.m_LogicalDevice, m_Pipeline, nullptr);
+          vkDestroyPipelineLayout (vk.m_LogicalDevice, m_PipelineLayout, nullptr);
+          vkDestroyPipeline(vk.m_LogicalDevice, m_Pipeline, nullptr);
     	}
 
         VkPipeline          m_Pipeline = VK_NULL_HANDLE;
