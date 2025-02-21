@@ -46,6 +46,7 @@ set(LVK_SRCS
     include/lvk/Descriptor.h
     include/lvk/RenderPass.h
     include/lvk/Submission.h
+    include/lvk/Defaults.h
     include/Alias.h
     include/ThirdParty/spirv_reflect.h
     include/ThirdParty/VulkanMemoryAllocator.h

@@ -14,3 +14,4 @@
 #include "lvk/Shader.h"
 #include "lvk/Texture.h"
 #include "lvk/Utils.h"
+#include "lvk/Defaults.h"

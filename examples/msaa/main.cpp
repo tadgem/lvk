@@ -129,9 +129,8 @@ void CreateGraphicsDescriptorSets(VkState & vk, VkDescriptorSetLayout& descripto
 
 int main()
 {
-    VkState vk = init::Create<VkSDL>("MSAA Example", 1920, 1080, false);
-    bool enableMSAA = false;
-
+    bool enableMSAA = true;
+    VkState vk = init::Create<VkSDL>("MSAA Example", 1920, 1080, enableMSAA);
 
     ShaderProgram prog = ShaderProgram::CreateGraphicsFromSourcePath(
         vk, "shaders/texture.vert", "shaders/texture.frag");
@@ -147,9 +146,8 @@ int main()
     VkPipelineLayout pipelineLayout;
     auto vertexDescription = VertexDataPosUv::GetVertexDescription();
     VkPipeline pipeline = lvk::pipelines::CreateRasterPipeline(vk,
-        prog, vertexDescription,
+        prog, vertexDescription, defaults::CullNoneRasterStateMSAA,
         vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent,
-        VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, enableMSAA, // msaa time babyyyyyy
         VK_COMPARE_OP_LESS, pipelineLayout);
 
     // create vertex and index buffer

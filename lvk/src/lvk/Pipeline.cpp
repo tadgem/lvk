@@ -6,8 +6,8 @@ namespace lvk::pipelines {
 VkPipeline CreateRasterPipeline(
     VkState &vk, ShaderProgram &shader,
     VertexDescription& vertexDescription,
+    RasterState& rasterState,
     VkRenderPass &pipelineRenderPass, VkExtent2D resolution,
-    VkPolygonMode polyMode, VkCullModeFlags cullMode, bool enableMultisampling,
     VkCompareOp depthCompareOp, VkPipelineLayout &pipelineLayout,
     uint32_t colorAttachmentCount) {
   VkShaderModule vertShaderModule =
@@ -78,7 +78,7 @@ VkPipeline CreateRasterPipeline(
 
   rasterizerInfo.rasterizerDiscardEnable = VK_FALSE;
   // using anything other than FILL requires enableing a gpu feature.
-  rasterizerInfo.polygonMode = polyMode;
+  rasterizerInfo.polygonMode = rasterState.m_PolygonMode;
   // thickness of lines in terms of pixels. > 1.0f requires wide lines gpu feature.
   rasterizerInfo.lineWidth = 1.0f;
 
@@ -87,7 +87,7 @@ VkPipeline CreateRasterPipeline(
   //// for faces to be considered front-facing and can be clockwise or counterclockwise. / ??
   rasterizerInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
 
-  rasterizerInfo.cullMode = cullMode;
+  rasterizerInfo.cullMode = rasterState.m_CullMode;
   rasterizerInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 
   rasterizerInfo.depthBiasEnable = VK_FALSE;
@@ -97,7 +97,7 @@ VkPipeline CreateRasterPipeline(
 
   VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT;
 
-  if (enableMultisampling) {
+  if (rasterState.m_EnableMSAA) {
     sampleCount = vk.m_MaxMsaaSamples;
   }
 
@@ -106,7 +106,7 @@ VkPipeline CreateRasterPipeline(
   multisampleInfo.sType =
       VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
   multisampleInfo.sampleShadingEnable =
-      static_cast<VkBool32>(enableMultisampling);
+      static_cast<VkBool32>(rasterState.m_EnableMSAA);
   multisampleInfo.rasterizationSamples = sampleCount;
   multisampleInfo.minSampleShading = .2f;
   multisampleInfo.pSampleMask = nullptr;

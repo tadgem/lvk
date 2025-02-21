@@ -105,6 +105,13 @@ namespace lvk {
     Vector<VkVertexInputAttributeDescription> m_AttributeDescriptions;
   };
 
+  struct RasterState
+  {
+    VkPolygonMode     m_PolygonMode;
+    VkCullModeFlags   m_CullMode;
+    bool              m_EnableMSAA;
+  };
+
   enum class ShaderStageType { Vertex, Fragment, Compute };
 
   enum QueueFamilyType {

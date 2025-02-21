@@ -57,12 +57,12 @@ void lvk::submission::SubmitFrame(VkState& vk)
   }
 
   VkSemaphore signalSemaphores[]       = { vk.m_RenderFinishedSemaphores[vk.m_CurrentFrameIndex]};
-  submitInfo.waitSemaphoreCount       = waitSemaphores.size();
+  submitInfo.waitSemaphoreCount       = static_cast<uint32_t>(waitSemaphores.size());
   submitInfo.pWaitSemaphores          = waitSemaphores.data();
   submitInfo.pWaitDstStageMask        = waitStages.data();
-  submitInfo.commandBufferCount       = 1;
+  submitInfo.commandBufferCount       = 1u;
   submitInfo.pCommandBuffers          = &vk.m_GraphicsCommandBuffers[imageIndex];
-  submitInfo.signalSemaphoreCount     = 1;
+  submitInfo.signalSemaphoreCount     = 1u;
   submitInfo.pSignalSemaphores        = signalSemaphores;
 
   vkResetFences(vk.m_LogicalDevice, 1, &vk.m_FrameInFlightFences[vk.m_CurrentFrameIndex]);

@@ -17,11 +17,9 @@ namespace pipelines{
         VkState& vk,
         ShaderProgram& shader,
         VertexDescription& vertexDescription,
+        RasterState& rasterState,
         VkRenderPass& pipelineRenderPass,
         VkExtent2D resolution,
-        VkPolygonMode polyMode,
-        VkCullModeFlags cullMode,
-        bool enableMultisampling,
         VkCompareOp depthCompareOp,
         VkPipelineLayout& pipelineLayout,
         uint32_t colorAttachmentCount = 1);
