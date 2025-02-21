@@ -105,12 +105,18 @@ namespace lvk {
     Vector<VkVertexInputAttributeDescription> m_AttributeDescriptions;
   };
 
-  struct RasterState
-  {
+  struct RasterizationState {
     VkPolygonMode     m_PolygonMode;
     VkCullModeFlags   m_CullMode;
     bool              m_EnableMSAA;
   };
+
+  struct RasterPipelineState
+  {
+    VkCompareOp           m_DepthCompareOp;
+    VkPrimitiveTopology   m_InputAssemblyTopology;
+  };
+
 
   enum class ShaderStageType { Vertex, Fragment, Compute };
 

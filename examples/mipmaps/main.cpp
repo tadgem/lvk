@@ -146,9 +146,8 @@ int main()
     VkPipelineLayout pipelineLayout;
     auto vertexDescription = VertexDataPosUv::GetVertexDescription();
     VkPipeline pipeline = lvk::pipelines::CreateRasterPipeline(vk,
-        tex_prog, vertexDescription, defaults::CullNoneRasterState,
-        vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent,
-        VK_COMPARE_OP_LESS, pipelineLayout);
+        tex_prog, vertexDescription, defaults::CullNoneRasterState, defaults::DefaultRasterPipelineState,
+        vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent, pipelineLayout);
 
     // create vertex and index buffer
     Model model;

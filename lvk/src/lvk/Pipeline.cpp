@@ -6,10 +6,11 @@ namespace lvk::pipelines {
 VkPipeline CreateRasterPipeline(
     VkState &vk, ShaderProgram &shader,
     VertexDescription& vertexDescription,
-    RasterState& rasterState,
+    RasterizationState & rasterState,
+    RasterPipelineState& pipelineState,
     VkRenderPass &pipelineRenderPass, VkExtent2D resolution,
-    VkCompareOp depthCompareOp, VkPipelineLayout &pipelineLayout,
-    uint32_t colorAttachmentCount) {
+    VkPipelineLayout &pipelineLayout, uint32_t colorAttachmentCount) {
+
   VkShaderModule vertShaderModule =
       CreateShaderModule(vk, shader.m_Stages[0].m_StageBinary);
   VkShaderModule fragShaderModule =
@@ -49,7 +50,7 @@ VkPipeline CreateRasterPipeline(
   VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo{};
   inputAssemblyInfo.sType =
       VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-  inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+  inputAssemblyInfo.topology = pipelineState.m_InputAssemblyTopology;
   inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
 
   VkViewport viewport{};
@@ -211,7 +212,7 @@ VkPipeline CreateRasterPipeline(
       VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
   depthStencil.depthTestEnable = VK_TRUE;
   depthStencil.depthWriteEnable = VK_TRUE;
-  depthStencil.depthCompareOp = depthCompareOp;
+  depthStencil.depthCompareOp = pipelineState.m_DepthCompareOp;
   depthStencil.depthBoundsTestEnable = VK_FALSE;
   depthStencil.minDepthBounds = 0.0f; // Optional
   depthStencil.maxDepthBounds = 1.0f; // Optional

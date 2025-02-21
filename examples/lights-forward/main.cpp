@@ -201,9 +201,8 @@ void UpdateUniformBuffer(VkState & vk)
 
 int main()
 {
-    VkState vk = init::Create<VkSDL>("Forward Lights", 1920, 1080, false);
-    bool enableMSAA = false;
-
+    bool enableMSAA = true;
+    VkState vk = init::Create<VkSDL>("Forward Lights", 1920, 1080, enableMSAA);
     // shader abstraction
 
 
@@ -225,9 +224,8 @@ int main()
     VkPipelineLayout pipelineLayout;
     auto vertexDescription = VertexDataPosNormalUv::GetVertexDescription();
     VkPipeline pipeline = lvk::pipelines::CreateRasterPipeline(vk,
-        lights_prog,vertexDescription, defaults::CullNoneRasterState,
-        vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent,
-        VK_COMPARE_OP_LESS, pipelineLayout);
+        lights_prog,vertexDescription, defaults::CullNoneRasterStateMSAA, defaults::DefaultRasterPipelineState,
+        vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent, pipelineLayout);
 
     // create vertex and index buffer
     Model model;

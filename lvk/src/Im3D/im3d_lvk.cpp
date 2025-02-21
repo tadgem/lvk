@@ -11,6 +11,7 @@
 #include "lvk/Buffer.h"
 #include "lvk/Mesh.h"
 #include "lvk/Pipeline.h"
+#include "lvk/Defaults.h"
 #include "spdlog/spdlog.h"
 #include "volk.h"
 
@@ -76,25 +77,25 @@ namespace lvk
     {
         auto vertexDescription = VertexDataPos4::GetVertexDescription();
         VkPipelineLayout tris_layout;
-        RasterState tris_raster_state {VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, enableMSAA};
+        RasterizationState tris_raster_state {VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, enableMSAA};
         VkPipeline tris_pipeline = pipelines::CreateRasterPipeline(vk,
-            state.m_TriProg, vertexDescription, tris_raster_state,
-            renderPass, vk.m_SwapChainImageExtent, VK_COMPARE_OP_LESS, tris_layout);
+            state.m_TriProg, vertexDescription, tris_raster_state, defaults::DefaultRasterPipelineState,
+            renderPass, vk.m_SwapChainImageExtent, tris_layout);
         Material tris_material = Material::Create(vk, state.m_TriProg);
 
         VkPipelineLayout points_layout;
-        RasterState points_raster_state {VK_POLYGON_MODE_POINT, VK_CULL_MODE_NONE, enableMSAA};
+        RasterizationState points_raster_state {VK_POLYGON_MODE_POINT, VK_CULL_MODE_NONE, enableMSAA};
         VkPipeline points_pipeline = pipelines::CreateRasterPipeline(vk,
-            state.m_PointsProg, vertexDescription, points_raster_state,
-            renderPass, vk.m_SwapChainImageExtent, VK_COMPARE_OP_LESS, points_layout);
+            state.m_PointsProg, vertexDescription, points_raster_state, defaults::DefaultRasterPipelineState,
+            renderPass, vk.m_SwapChainImageExtent, points_layout);
         Material points_material = Material::Create(vk, state.m_PointsProg);
 
 
         VkPipelineLayout lines_layout;
-        RasterState lines_raster_state {VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE, enableMSAA};
+        RasterizationState lines_raster_state {VK_POLYGON_MODE_LINE, VK_CULL_MODE_NONE, enableMSAA};
         VkPipeline lines_pipeline = pipelines::CreateRasterPipeline(vk,
-            state.m_LinesProg, vertexDescription, lines_raster_state,
-            renderPass, vk.m_SwapChainImageExtent, VK_COMPARE_OP_LESS, lines_layout);
+            state.m_LinesProg, vertexDescription, lines_raster_state, defaults::DefaultRasterPipelineState,
+            renderPass, vk.m_SwapChainImageExtent, lines_layout);
         Material lines_material = Material::Create(vk, state.m_LinesProg);
 
 

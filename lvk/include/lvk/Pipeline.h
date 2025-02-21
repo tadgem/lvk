@@ -17,10 +17,10 @@ namespace pipelines{
         VkState& vk,
         ShaderProgram& shader,
         VertexDescription& vertexDescription,
-        RasterState& rasterState,
+        RasterizationState & rasterState,
+        RasterPipelineState& pipelineState,
         VkRenderPass& pipelineRenderPass,
         VkExtent2D resolution,
-        VkCompareOp depthCompareOp,
         VkPipelineLayout& pipelineLayout,
         uint32_t colorAttachmentCount = 1);
 

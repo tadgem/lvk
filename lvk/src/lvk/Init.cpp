@@ -95,6 +95,7 @@ bool lvk::init::CheckDeviceExtensionSupport(VkState& vk, VkPhysicalDevice device
 
   uint32_t requiredExtensionsFound = 0;
 
+
   for (auto const& extension : availableExtensions)
   {
     for (auto const& requiredExtensionName : s_DeviceExtensions)
@@ -450,6 +451,7 @@ uint32_t lvk::init::AssessDeviceSuitability(VkState& vk,VkPhysicalDevice m_Physi
   score += deviceFeatures.geometryShader;
   score += deviceFeatures.shaderStorageImageMultisample;
   score += deviceFeatures.multiViewport;
+  score += deviceFeatures.wideLines;
 
   return score;
 }

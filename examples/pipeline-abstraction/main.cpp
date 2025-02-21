@@ -52,18 +52,16 @@ pipelines::PipelineT<VkRecordCommandCallback> CreateViewPipeline(VkState & vk, L
     VkPipelineLayout gbufferPipelineLayout;
     auto vertexDescription = VertexDataPosNormalUv::GetVertexDescription();
     VkPipeline gbufferPipeline = lvk::pipelines::CreateRasterPipeline(vk,
-        gbufferProg, vertexDescription, defaults::DefaultRasterState,
-        gbuffer->m_RenderPass, vk.m_SwapChainImageExtent, VK_COMPARE_OP_LESS, gbufferPipelineLayout,
-        3);
+        gbufferProg, vertexDescription, defaults::DefaultRasterState, defaults::DefaultRasterPipelineState,
+        gbuffer->m_RenderPass, vk.m_SwapChainImageExtent, gbufferPipelineLayout, 3);
 
     // create present graphics pipeline
     // Pipeline stage?
     VkPipelineLayout lightPassPipelineLayout;
     auto presentVertexDescription = VertexDataPosUv::GetVertexDescription();
     VkPipeline lightPassPipeline = lvk::pipelines::CreateRasterPipeline(vk,
-        lightPassProg, presentVertexDescription,defaults::CullNoneRasterState,
-        lightPassImage->m_RenderPass, vk.m_SwapChainImageExtent,
-        VK_COMPARE_OP_LESS, lightPassPipelineLayout);
+        lightPassProg, presentVertexDescription,defaults::CullNoneRasterState,defaults::DefaultRasterPipelineState,
+        lightPassImage->m_RenderPass, vk.m_SwapChainImageExtent, lightPassPipelineLayout);
 
 
     pipelines::VkPipelineData* gbufferPipelineData = p.AddPipeline(vk, gbufferPipeline, gbufferPipelineLayout );
