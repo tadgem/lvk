@@ -201,7 +201,7 @@ void UpdateUniformBuffer(VkState & vk)
     }
     mvpUniformData.Set(vk.m_CurrentFrameIndex, ubo);
     particleDeltaUniformData.Set(vk.m_CurrentFrameIndex,
-                                 ParticlesUBOData{static_cast<float>(vk.m_DeltaTime)});
+                                 ParticlesUBOData{static_cast<float>(std::clamp(vk.m_DeltaTime, 0.0, 0.5))});
 
     // light imgui
 
@@ -281,7 +281,7 @@ static void CreateComputeBuffers(VkState& vk, std::vector<VkBuffer>& uniformBuff
         float theta = rndDist(rndEngine) * 2 * 3.14159265358979323846;
         float x = r * cos(theta) * vk.m_SwapChainImageExtent.height / vk.m_SwapChainImageExtent.width;
         float y = r * sin(theta);
-        particle.position = glm::vec2(x, y);
+        particle.position = glm::vec2(0.0f, 0.0f);
         particle.velocity = glm::normalize(glm::vec2(x,y)) * 0.00025f;
         particle.colour = glm::vec4(rndDist(rndEngine), rndDist(rndEngine), rndDist(rndEngine), 1.0f);
     }

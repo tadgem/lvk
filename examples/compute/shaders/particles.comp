@@ -28,6 +28,17 @@ void main()
 {
     uint index = gl_GlobalInvocationID.x;
     out_particles[index].position += in_particles[index].position + in_particles[index].velocity * ubo.delta_time;
-    out_particles[index].velocity = in_particles[index].velocity;
+    vec2 new_velocity = in_particles[index].velocity;
+    if(in_particles[index].position.x > 1.0 || in_particles[index].position.x < -1.0f)
+    {
+        new_velocity.x = 0.0 - new_velocity.x;
+    }
+
+    if(in_particles[index].position.y > 1.0 || in_particles[index].position.y < -1.0f)
+    {
+        new_velocity.y = 0.0 - new_velocity.y;
+    }
+
+    out_particles[index].velocity = new_velocity;
     out_particles[index].colour = in_particles[index].colour;
 }
