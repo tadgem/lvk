@@ -47,3 +47,4 @@ vs33/
 /.idea
 doodle.log
 /cmake-build-release-visual-studio
+/cmake-build-relwithdebinfo-visual-studio

@@ -81,6 +81,7 @@ set(LVK_INCLUDES    ${Vulkan_INCLUDE_DIRS}
                     ${GLM_INCLUDES}
                     ${SHADERC_INCLUDES}
                     ${SHADERC_UTIL_INCLUDES}
+                    ${CPPTRACE_INCLUDES}
                     ${CMAKE_CURRENT_SOURCE_DIR}/include CACHE INTERNAL "")
 target_include_directories(${PROJECT_NAME} PUBLIC ${LVK_INCLUDES})
 
@@ -91,4 +92,4 @@ endif ()
 
 target_compile_options(${PROJECT_NAME} PRIVATE ${LVK_COMPILE_DEFS})
 
-target_link_libraries(${PROJECT_NAME} volk spdlog shaderc shaderc_util)
+target_link_libraries(${PROJECT_NAME} volk spdlog shaderc shaderc_util cpptrace-lib)

@@ -109,6 +109,7 @@ namespace lvk {
     VkPolygonMode     m_PolygonMode;
     VkCullModeFlags   m_CullMode;
     bool              m_EnableMSAA;
+    bool              m_EnableDepthTest;
   };
 
   struct RasterPipelineState
@@ -211,6 +212,7 @@ namespace lvk {
     bool                            m_ShouldRun = true;
     bool                            m_RunComputeCommands = false;
     bool                            m_UseSwapchainMsaa = false;
+    bool                            m_WaitForVerticalSync = false;
     const bool                      m_UseValidation = true;
     const bool                      m_UseImGui      = true;
     uint64_t                        m_LastFrameTime;

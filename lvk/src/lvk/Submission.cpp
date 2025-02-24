@@ -104,24 +104,28 @@ void lvk::submission::SubmitFrame(VkState& vk)
 void lvk::submission::RenderImGui(VkState& vk)
 {
   ImGui::Render();
-  VkCommandBuffer imguiCommandBuffer = commands::BeginSingleTimeCommands(vk);
+  for(auto f = 0; f < MAX_FRAMES_IN_FLIGHT; f++)
+  {
+    VkCommandBuffer imguiCommandBuffer = commands::BeginSingleTimeCommands(vk);
 
-  VkRenderPassBeginInfo renderPassInfo{};
-  renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-  renderPassInfo.renderPass = vk.m_ImGuiRenderPass;
-  renderPassInfo.framebuffer = vk.m_SwapChainFramebuffers[vk.m_CurrentFrameIndex];
-  renderPassInfo.renderArea.offset = { 0,0 };
-  renderPassInfo.renderArea.extent = vk.m_SwapChainImageExtent;
+    VkRenderPassBeginInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = vk.m_ImGuiRenderPass;
+    renderPassInfo.framebuffer = vk.m_SwapChainFramebuffers[f];
+    renderPassInfo.renderArea.offset = { 0,0 };
+    renderPassInfo.renderArea.extent = vk.m_SwapChainImageExtent;
 
-  std::array<VkClearValue, 2> clearValues{};
-  clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
-  clearValues[1].depthStencil = { 1.0f, 0 };
+    std::array<VkClearValue, 2> clearValues{};
+    clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
+    clearValues[1].depthStencil = { 1.0f, 0 };
 
-  renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-  renderPassInfo.pClearValues = clearValues.data();
+    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+    renderPassInfo.pClearValues = clearValues.data();
 
-  vkCmdBeginRenderPass(imguiCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-  ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), imguiCommandBuffer);
-  vkCmdEndRenderPass(imguiCommandBuffer);
-  commands::EndSingleTimeCommands(vk, imguiCommandBuffer);
+    vkCmdBeginRenderPass(imguiCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), imguiCommandBuffer);
+    vkCmdEndRenderPass(imguiCommandBuffer);
+    commands::EndSingleTimeCommands(vk, imguiCommandBuffer);
+  }
+
 }

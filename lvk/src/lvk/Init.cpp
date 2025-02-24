@@ -8,6 +8,8 @@
 #include "lvk/Texture.h"
 #include "lvk/Utils.h"
 #include "spdlog/spdlog.h"
+#include "cpptrace/cpptrace.hpp"
+
 
 static const bool QUIT_ON_ERROR = false;
 
@@ -17,10 +19,10 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
     void* pUserData) {
 
-  //std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
   if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
   {
-    spdlog::warn("VL: {}", pCallbackData->pMessage);
+    spdlog::warn("VL: {}\n Stacktrace:\n", pCallbackData->pMessage);
+    cpptrace::generate_trace().print();
   }
   if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
   {
@@ -28,11 +30,8 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
   }
   if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
   {
-    spdlog::error("VL: {}", pCallbackData->pMessage);
-    if (!QUIT_ON_ERROR)
-    {
-      return VK_FALSE;
-    }
+    spdlog::error("VL: {}\n Stacktrace:\n", pCallbackData->pMessage);
+    cpptrace::generate_trace().print();
   }
   return VK_FALSE;
 }
@@ -585,6 +584,10 @@ VkSurfaceFormatKHR lvk::init::ChooseSwapChainSurfaceFormat(VkState& vk, std::vec
 
 VkPresentModeKHR lvk::init::ChooseSwapChainPresentMode(VkState& vk, std::vector<VkPresentModeKHR> availableModes)
 {
+  if(vk.m_WaitForVerticalSync)
+  {
+    return VK_PRESENT_MODE_FIFO_KHR;
+  }
   for (auto const& presentMode : availableModes)
   {
     if (presentMode == VK_PRESENT_MODE_MAILBOX_KHR)

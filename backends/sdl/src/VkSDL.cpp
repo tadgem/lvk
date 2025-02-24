@@ -101,10 +101,10 @@ void lvk::VkSDL::PreFrame(VkState& vk)
 
 void lvk::VkSDL::PostFrame(VkState& vk)
 {
-    submission::SubmitFrame(vk);
-
+    ImGui::EndFrame();
     ImGui::UpdatePlatformWindows();
     ImGui::RenderPlatformWindowsDefault();
+    submission::SubmitFrame(vk);
 
     if (vkDeviceWaitIdle(vk.m_LogicalDevice) != VK_SUCCESS)
     {

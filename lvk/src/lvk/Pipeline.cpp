@@ -58,9 +58,10 @@ VkPipeline CreateRasterPipeline(
   viewport.x = 0.0f;
   viewport.width = static_cast<float>(resolution.width);
   viewport.height = static_cast<float>(resolution.height);
-  viewport.minDepth = 0.0f;
-  viewport.maxDepth = 1.0f;
-
+  if(rasterState.m_EnableDepthTest) {
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+  }
   VkRect2D scissor{};
   scissor.offset = {0, 0};
   scissor.extent = VkExtent2D{resolution.width, resolution.height};
@@ -230,10 +231,17 @@ VkPipeline CreateRasterPipeline(
   pipelineCreateInfo.pViewportState = &viewportInfo;
   pipelineCreateInfo.pRasterizationState = &rasterizerInfo;
   pipelineCreateInfo.pMultisampleState = &multisampleInfo;
-  pipelineCreateInfo.pDepthStencilState = nullptr;
   pipelineCreateInfo.pColorBlendState = &colorBlendStateInfo;
   pipelineCreateInfo.pDynamicState = &dynamicStateInfo;
-  pipelineCreateInfo.pDepthStencilState = &depthStencil;
+
+  if(rasterState.m_EnableDepthTest)
+  {
+    pipelineCreateInfo.pDepthStencilState = &depthStencil;
+  }
+  else
+  {
+    pipelineCreateInfo.pDepthStencilState = nullptr;
+  }
 
   pipelineCreateInfo.layout = pipelineLayout;
 

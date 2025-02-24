@@ -27,18 +27,9 @@ layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
 void main()
 {
     uint index = gl_GlobalInvocationID.x;
-    out_particles[index].position += in_particles[index].position + in_particles[index].velocity * ubo.delta_time;
     vec2 new_velocity = in_particles[index].velocity;
-    if(in_particles[index].position.x > 1.0 || in_particles[index].position.x < -1.0f)
-    {
-        new_velocity.x = 0.0 - new_velocity.x;
-    }
-
-    if(in_particles[index].position.y > 1.0 || in_particles[index].position.y < -1.0f)
-    {
-        new_velocity.y = 0.0 - new_velocity.y;
-    }
-
+    vec2 new_position = in_particles[index].position;
+    out_particles[index].position = new_position + (new_velocity * ubo.delta_time);
     out_particles[index].velocity = new_velocity;
     out_particles[index].colour = in_particles[index].colour;
 }

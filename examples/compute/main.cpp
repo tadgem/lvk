@@ -136,9 +136,8 @@ void RecordComputeCommandBuffers(VkState& vk, VkPipeline& p, VkPipelineLayout& l
 }
 
 void RecordGraphicsCommandBuffers(VkState & vk,
-                                  VkPipeline& pipeline, VkPipelineLayout& pipelineLayout,
                                   VkPipeline& particlePipeline, VkPipelineLayout & particlePipelineLayout,
-                                  std::vector<VkBuffer>& particleBuffers, Model& model)
+                                  std::vector<VkBuffer>& particleBuffers)
 {
     lvk::commands::RecordGraphicsCommands(vk, [&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
         // push to example
@@ -184,79 +183,9 @@ void RecordGraphicsCommandBuffers(VkState & vk,
 
 void UpdateUniformBuffer(VkState & vk)
 {
-    static auto startTime = std::chrono::high_resolution_clock::now();
-    
-
-    auto currentTime = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
-    time = 0.0f;
-    MvpData ubo{};
-    ubo.Model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.View = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    if (vk.m_SwapChainImageExtent.width > 0 || vk.m_SwapChainImageExtent.height)
-    {
-        ubo.Proj = glm::perspective(glm::radians(45.0f), vk.m_SwapChainImageExtent.width / (float)vk.m_SwapChainImageExtent.height, 0.1f, 300.0f);
-        ubo.Proj[1][1] *= -1;
-    }
-    mvpUniformData.Set(vk.m_CurrentFrameIndex, ubo);
     particleDeltaUniformData.Set(vk.m_CurrentFrameIndex,
                                  ParticlesUBOData{static_cast<float>(std::clamp(vk.m_DeltaTime, 0.0, 0.5))});
 
-    // light imgui
-
-    if (ImGui::Begin("Lights"))
-    {
-        ImGui::Text("FPSS : %f", 1.0 / vk.m_DeltaTime);
-        ImGui::DragFloat3("Directional Light Dir", &lightDataCpu.m_DirectionalLight.Direction[0]);
-        ImGui::DragFloat4("Directional Light Colour", &lightDataCpu.m_DirectionalLight.Colour[0]);
-        ImGui::DragFloat4("Directional Light Ambient Colour", &lightDataCpu.m_DirectionalLight.Ambient[0]);
-
-        if(ImGui::TreeNode("Point Lights"))
-        {
-            for (int i = 0; i < NUM_LIGHTS; i++)
-            {
-                ImGui::PushID(i);
-                if (ImGui::TreeNode("Point Light"))
-                {
-                    ImGui::DragFloat3("Position", &lightDataCpu.m_PointLights[i].PositionRadius[0]);
-                    ImGui::DragFloat("Radius", &lightDataCpu.m_PointLights[i].PositionRadius[3]);
-                    ImGui::DragFloat4("Colour", &lightDataCpu.m_PointLights[i].Colour[0]);
-                    ImGui::DragFloat4("Ambient Colour", &lightDataCpu.m_PointLights[i].Ambient[0]);
-
-                    ImGui::TreePop();
-                }                
-
-                ImGui::PopID();
-            }
-            ImGui::TreePop();
-        }
-
-        if (ImGui::TreeNode("Spot Lights"))
-        {
-            for (int i = 0; i < NUM_LIGHTS; i++)
-            {
-                ImGui::PushID(NUM_LIGHTS + i);
-                if (ImGui::TreeNode("Spot Light"))
-                {
-                    ImGui::DragFloat3("Position", &lightDataCpu.m_SpotLights[i].PositionRadius[0]);
-                    ImGui::DragFloat("Radius", &lightDataCpu.m_SpotLights[i].PositionRadius[3]);
-                    ImGui::DragFloat3("Direction", &lightDataCpu.m_SpotLights[i].DirectionAngle[0]);
-                    ImGui::DragFloat("Angle", &lightDataCpu.m_SpotLights[i].DirectionAngle[3]);
-                    ImGui::DragFloat4("Colour", &lightDataCpu.m_SpotLights[i].Colour[0]);
-                    ImGui::DragFloat4("Ambient Colour", &lightDataCpu.m_SpotLights[i].Ambient[0]);
-
-                    ImGui::TreePop();
-                }
-
-                ImGui::PopID();
-            }
-            ImGui::TreePop();
-        }
-    }
-    ImGui::End();
-
-    lightsUniformData.Set(vk.m_CurrentFrameIndex, lightDataCpu);
 }
 
 static void CreateComputeBuffers(VkState& vk, std::vector<VkBuffer>& uniformBuffers,
@@ -281,8 +210,8 @@ static void CreateComputeBuffers(VkState& vk, std::vector<VkBuffer>& uniformBuff
         float theta = rndDist(rndEngine) * 2 * 3.14159265358979323846;
         float x = r * cos(theta) * vk.m_SwapChainImageExtent.height / vk.m_SwapChainImageExtent.width;
         float y = r * sin(theta);
-        particle.position = glm::vec2(0.0f, 0.0f);
-        particle.velocity = glm::normalize(glm::vec2(x,y)) * 0.00025f;
+        particle.position = glm::vec2(x, y);
+        particle.velocity = glm::normalize(glm::vec2(x,y)) * 0.25f;
         particle.colour = glm::vec4(rndDist(rndEngine), rndDist(rndEngine), rndDist(rndEngine), 1.0f);
     }
 
@@ -443,14 +372,12 @@ VkPipeline CreateComputePipeline(VkState& vk, VkDescriptorSetLayout& layout, Sha
 
 int main()
 {
-    bool enableMSAA = true;
-    VkState vk = init::Create<VkSDL>("Forward Lights", 1920, 1080, true);
+    bool enableMSAA = false;
+    VkState vk = init::Create<VkSDL>("Forward Lights", 1920, 1080, enableMSAA);
 
     // shader abstraction
 
     ShaderProgram particles_prog = ShaderProgram::CreateComputeFromSourcePath(vk, "shaders/particles.comp");
-    ShaderProgram lights_prog = ShaderProgram::CreateGraphicsFromSourcePath(
-        vk, "shaders/lights.vert", "shaders/lights.frag");
     ShaderProgram draw_particles = ShaderProgram::CreateGraphicsFromSourcePath(
         vk, "shaders/draw_particle.vert", "shaders/draw_particle.frag");
 
@@ -471,43 +398,18 @@ int main()
     VkPipeline computePipeline = CreateComputePipeline(vk, layout, particles_prog, computePipelineLayout);
 
 
-    FillExampleLightData(lightDataCpu);
-    // Texture abstraction
-    uint32_t mipLevels;
-    VkImage textureImage;
-    VkImageView imageView;
-    VkDeviceMemory textureMemory;
-    textures::CreateTexture(vk, "assets/viking_room.png", VK_FORMAT_R8G8B8A8_UNORM, textureImage, imageView, textureMemory, &mipLevels);
-    VkSampler imageSampler;
-    textures::CreateImageSampler(vk, imageView, mipLevels, VK_FILTER_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, imageSampler);
-
-    // Pipeline stage?
-    VkPipelineLayout forwardPipelineLayout;
-    auto vertexDescription = VertexDataPosNormalUv::GetVertexDescription();
-    VkPipeline forwardPipeline = lvk::pipelines::CreateRasterPipeline(vk,
-        lights_prog, vertexDescription,
-        defaults::CullNoneRasterStateMSAA, defaults::DefaultRasterPipelineState,
-        vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent, forwardPipelineLayout);
-
     VkPipelineLayout particlePipelineLayout;
     RasterPipelineState rps {};
     rps.m_InputAssemblyTopology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-    rps.m_DepthCompareOp = VK_COMPARE_OP_LESS;
+    rps.m_DepthCompareOp = VK_COMPARE_OP_ALWAYS ;
+
+    RasterizationState rasterState = {VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, false, true};
 
     auto particleVertexDescription = Particle::GetVertexDescription();
     VkPipeline particlePipeline = lvk::pipelines::CreateRasterPipeline(
-        vk, draw_particles, particleVertexDescription, defaults::CullNoneRasterStateMSAA,
+        vk, draw_particles, particleVertexDescription, rasterState,
         rps, vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent, particlePipelineLayout);
 
-    // create vertex and index buffer
-    Model model;
-    LoadModelAssimp(vk, model, "assets/viking_room.obj", true);
-
-    // Shader too probably
-    buffers::CreateUniformBuffers<MvpData>(vk, mvpUniformData);
-    buffers::CreateUniformBuffers<FrameLightDataT<NUM_LIGHTS>>(vk, lightsUniformData);
-    CreateGraphicsDescriptorSets(vk, lights_prog.m_DescriptorSetLayout,
-                                 imageView, imageSampler);
 
     while (vk.m_ShouldRun)
     {    
@@ -517,23 +419,12 @@ int main()
 
         RecordComputeCommandBuffers(vk, computePipeline, computePipelineLayout, computeDescriptors);
         RecordGraphicsCommandBuffers(vk,
-          forwardPipeline, forwardPipelineLayout,
-          particlePipeline, particlePipelineLayout, shaderStorageBuffers, model);
+          particlePipeline, particlePipelineLayout, shaderStorageBuffers);
 
         vk.m_Backend->PostFrame(vk);
     }
 
-    mvpUniformData.Free(vk);
-    lightsUniformData.Free(vk);
     particleDeltaUniformData.Free(vk);
-
-    FreeModel(vk, model);
-    vkDestroySampler(vk.m_LogicalDevice, imageSampler, nullptr);
-    vkDestroyImageView(vk.m_LogicalDevice, imageView, nullptr);
-    vkDestroyImage(vk.m_LogicalDevice, textureImage, nullptr);
-    vkFreeMemory(vk.m_LogicalDevice, textureMemory, nullptr);
-    vkDestroyPipelineLayout(vk.m_LogicalDevice, forwardPipelineLayout, nullptr);
-    vkDestroyPipeline(vk.m_LogicalDevice, forwardPipeline, nullptr);
 
     return 0;
 }
