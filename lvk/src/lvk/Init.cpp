@@ -1,4 +1,3 @@
-#define VK_NO_PROTOTYPES
 #define VMA_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #include "ThirdParty/stb_image.h"
@@ -104,9 +103,19 @@ bool lvk::init::CheckDeviceExtensionSupport(VkState& vk, VkPhysicalDevice device
         requiredExtensionsFound++;
       }
     }
+
+    for(auto const& desiredExtensionName : vk.m_DesiredDeviceExtensions)
+    {
+      if(strcmp(desiredExtensionName, extension.extensionName) == 0)
+      {
+        requiredExtensionsFound++;
+      }
+    }
   }
 
-  return requiredExtensionsFound >= s_DeviceExtensions.size();
+  auto requiredCount = s_DeviceExtensions.size() + vk.m_DesiredDeviceExtensions.size();
+
+  return requiredExtensionsFound >= requiredCount;
 
 }
 
@@ -156,9 +165,10 @@ void lvk::init::ListDeviceExtensions(VkState& vk, VkPhysicalDevice physicalDevic
 
   VkPhysicalDeviceProperties deviceProperties{};
   vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
+  spdlog::info("Selected device {} supports the following extensions:", &deviceProperties.deviceName[0]);
   for (int i = 0; i < extensions.size(); i++)
   {
-    spdlog::info("Physical Device : {} : {}", &deviceProperties.deviceName[0], &extensions[i].extensionName[0]);
+    spdlog::info("    - {}", &extensions[i].extensionName[0]);
   }
 }
 
@@ -253,7 +263,7 @@ VkApplicationInfo lvk::init::CreateAppInfo(VkState& vk)
   appInfo.applicationVersion = VK_MAKE_VERSION(0, 1, 0);
   appInfo.pEngineName = "None";
   appInfo.engineVersion = VK_MAKE_VERSION(0, 1, 0);
-  appInfo.apiVersion = VK_API_VERSION_1_3;
+  appInfo.apiVersion = VK_API_VERSION_1_2;
 
   return appInfo;
 }
@@ -268,7 +278,7 @@ void lvk::init::CreateInstance(VkState& vk)
 
   VkApplicationInfo appInfo = CreateAppInfo(vk);
 
-  std::vector<const char*> extensionNames = vk.m_Backend->GetRequiredExtensions(vk);
+  std::vector<const char*> extensionNames = vk.m_Backend->GetRequiredInstanceExtensions(vk);
 
   if(vk.m_UseValidation) {
     for (const auto &extension: extensionNames) {
@@ -532,8 +542,16 @@ void lvk::init::CreateLogicalDevice(VkState& vk)
   createInfo.queueCreateInfoCount     = static_cast<uint32_t>(queueCreateInfos.size());
   createInfo.pEnabledFeatures         = &physicalDeviceFeatures;
 
-  createInfo.enabledExtensionCount    = static_cast<uint32_t>(s_DeviceExtensions.size());
-  createInfo.ppEnabledExtensionNames  = s_DeviceExtensions.data();
+  VkPhysicalDeviceDynamicRenderingFeaturesKHR  dynamicRenderingInfo {};
+  dynamicRenderingInfo.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;;
+  dynamicRenderingInfo.dynamicRendering = VK_TRUE;
+
+  auto extensions = s_DeviceExtensions;
+  extensions.push_back("VK_KHR_dynamic_rendering");
+
+  createInfo.enabledExtensionCount    = static_cast<uint32_t>(extensions.size());
+  createInfo.ppEnabledExtensionNames  = extensions.data();
+  createInfo.pNext = &dynamicRenderingInfo;
 
   if (vk.m_UseValidation)
   {

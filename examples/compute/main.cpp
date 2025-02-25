@@ -50,7 +50,7 @@ struct ParticlesUBOData
   float delta;
 };
 
-constexpr size_t PARTICLE_COUNT = 8192;
+constexpr size_t PARTICLE_COUNT = 262144;
 constexpr VkDeviceSize buffer_size = PARTICLE_COUNT * sizeof(Particle);
 
 static ShaderBufferFrameData mvpUniformData;
@@ -342,6 +342,13 @@ Vector<VkDescriptorSet> CreateComputeDescriptorSets(VkState& vk, VkDescriptorSet
 
 }
 
+void OnImGui(VkState& vk)
+{
+    if (ImGui::Begin("Lights")) {
+        ImGui::Text("FPS : %f", 1.0 / vk.m_DeltaTime);
+    }
+    ImGui::End();
+}
 
 VkPipeline CreateComputePipeline(VkState& vk, VkDescriptorSetLayout& layout, ShaderProgram& computeProg, VkPipelineLayout& computeLayout)
 {
@@ -416,6 +423,8 @@ int main()
         vk.m_Backend->PreFrame(vk);
         
         UpdateUniformBuffer(vk);
+
+        OnImGui(vk);
 
         RecordComputeCommandBuffers(vk, computePipeline, computePipelineLayout, computeDescriptors);
         RecordGraphicsCommandBuffers(vk,

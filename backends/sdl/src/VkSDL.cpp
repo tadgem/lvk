@@ -28,7 +28,7 @@ void lvk::VkSDL::HandleSDLEvent(VkState& vk, SDL_Event& sdl_event)
 
 }
 
-std::vector<const char*> lvk::VkSDL::GetRequiredExtensions(VkState& vk)
+std::vector<const char*> lvk::VkSDL::GetRequiredInstanceExtensions(VkState& vk)
 {
     uint32_t extensionCount = 0;
 

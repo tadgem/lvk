@@ -57,6 +57,7 @@ namespace init
 
 
   Vector<VkExtensionProperties>       GetDeviceAvailableExtensions(VkState& vk, VkPhysicalDevice physicalDevice);
+  void                                EnableCommonExtensions(VkState& vk);
 
   void                                CreateBuiltInRenderPasses(VkState& vk);
   void                                Quit(VkState& vk);

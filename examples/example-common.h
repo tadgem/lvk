@@ -355,6 +355,15 @@ void LoadModelAssimp(lvk::VkState & vk, Model& model, const lvk::String& path, b
         aiMaterial* meshMaterial = scene->mMaterials[i];
 
         uint32_t diffuseCount = aiGetMaterialTextureCount(meshMaterial, aiTextureType_DIFFUSE);
+        if(diffuseCount == 0)
+        {
+            diffuseCount = aiGetMaterialTextureCount(meshMaterial, aiTextureType_BASE_COLOR);
+        }
+
+        if(diffuseCount == 0)
+        {
+            diffuseCount = aiGetMaterialTextureCount(meshMaterial, aiTextureType_UNKNOWN);
+        }
 
         if (diffuseCount > 0)
         {

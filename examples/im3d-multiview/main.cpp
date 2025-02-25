@@ -24,6 +24,8 @@ struct ViewData
     Mesh        m_ViewQuad;
 };
 
+static Transform g_Transform;
+
 ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferProg, ShaderProgram lightPassProg)
 {
     Framebuffer gbuffer{};
@@ -93,8 +95,6 @@ void FreeView(VkState & vk, ViewData& view)
 {
     FreeIm3dViewport(vk, view.m_Im3dState);
 }
-
-static Transform g_Transform;
 
 void UpdateRenderItemUniformBuffer(VkState & vk, Material& renderItemMaterial)
 {
@@ -332,7 +332,6 @@ RenderModel CreateRenderModelGbuffer(VkState & vk, const String& modelPath, Shad
 
 void OnImGui(VkState & vk, DeferredLightData& lightDataCpu, Vector<ViewData*> views)
 {
-
     if (ImGui::Begin("View 1"))
     {
         // size needs to be the current resolution

@@ -145,7 +145,7 @@ namespace lvk {
   class VkBackend
   {
   public:
-    virtual Vector<const char*>         GetRequiredExtensions(VkState& vk) = 0;
+    virtual Vector<const char*>         GetRequiredInstanceExtensions(VkState& vk) = 0;
     virtual void                        CreateSurface(VkState& vk) = 0;
     virtual void                        CreateWindowLVK(VkState& vk, uint32_t width, uint32_t height) = 0;
     virtual void                        CleanupWindow(VkState& vk) = 0;
@@ -207,12 +207,14 @@ namespace lvk {
     VkImageView                     m_SwapChainDepthImageView;
 
     VkSampleCountFlagBits           m_MaxMsaaSamples;
+    Vector<const char*>             m_DesiredDeviceExtensions;
 
     double                          m_DeltaTime;
     bool                            m_ShouldRun = true;
     bool                            m_RunComputeCommands = false;
     bool                            m_UseSwapchainMsaa = false;
     bool                            m_WaitForVerticalSync = false;
+    bool                            m_UseDynamicRendering = false;
     const bool                      m_UseValidation = true;
     const bool                      m_UseImGui      = true;
     uint64_t                        m_LastFrameTime;

@@ -16,7 +16,8 @@ namespace lvk {
           virtual ~VkSDL();
           void 							HandleSDLEvent(VkState& vk, SDL_Event& sdl_event);
           // Inherited via VulkanAPI
-          virtual std::vector<const char*> 	                GetRequiredExtensions(VkState& vk) override;
+          virtual std::vector<const char*>
+          GetRequiredInstanceExtensions(VkState& vk) override;
           virtual void 						CreateSurface(VkState& vk) override;
           virtual void 						CreateWindowLVK(VkState& vk, uint32_t width, uint32_t height) override
           {
