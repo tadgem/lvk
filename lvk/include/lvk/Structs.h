@@ -106,18 +106,12 @@ namespace lvk {
   };
 
   struct RasterizationState {
-    VkPolygonMode     m_PolygonMode;
-    VkCullModeFlags   m_CullMode;
-    bool              m_EnableMSAA;
-    bool              m_EnableDepthTest;
-  };
-
-  struct RasterPipelineState
-  {
+    VkPolygonMode         m_PolygonMode;
+    VkCullModeFlags       m_CullMode;
+    bool                  m_EnableMSAA;
     VkCompareOp           m_DepthCompareOp;
     VkPrimitiveTopology   m_InputAssemblyTopology;
   };
-
 
   enum class ShaderStageType { Vertex, Fragment, Compute };
 
@@ -221,6 +215,13 @@ namespace lvk {
     int                             m_CurrentFrameIndex;
     VkExtent2D                      m_MaxFramebufferExtent;
     String                          m_AppName;
+  };
+
+  struct VkViewportData
+  {
+    VkViewport                          m_Viewport;
+    VkRect2D                            m_Scissor;
+    VkPipelineViewportStateCreateInfo   m_CreateInfo;
   };
 
 }

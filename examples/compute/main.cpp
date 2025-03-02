@@ -406,16 +406,12 @@ int main()
 
 
     VkPipelineLayout particlePipelineLayout;
-    RasterPipelineState rps {};
-    rps.m_InputAssemblyTopology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-    rps.m_DepthCompareOp = VK_COMPARE_OP_ALWAYS ;
-
-    RasterizationState rasterState = {VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, false, true};
+    RasterizationState rasterState = {VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, false, VK_COMPARE_OP_ALWAYS,VK_PRIMITIVE_TOPOLOGY_POINT_LIST };
 
     auto particleVertexDescription = Particle::GetVertexDescription();
     VkPipeline particlePipeline = lvk::pipelines::CreateRasterPipeline(
         vk, draw_particles, particleVertexDescription, rasterState,
-        rps, vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent, particlePipelineLayout);
+        vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent, particlePipelineLayout);
 
 
     while (vk.m_ShouldRun)

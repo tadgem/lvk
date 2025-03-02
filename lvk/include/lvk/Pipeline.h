@@ -18,7 +18,6 @@ namespace pipelines{
         ShaderProgram& shader,
         VertexDescription& vertexDescription,
         RasterizationState & rasterState,
-        RasterPipelineState& pipelineState,
         VkExtent2D resolution,
         VkPipelineLayout& pipelineLayout,
         uint32_t colorAttachmentCount = 1
@@ -29,7 +28,6 @@ namespace pipelines{
         ShaderProgram& shader,
         VertexDescription& vertexDescription,
         RasterizationState & rasterState,
-        RasterPipelineState& pipelineState,
         VkRenderPass& pipelineRenderPass,
         VkExtent2D resolution,
         VkPipelineLayout& pipelineLayout,

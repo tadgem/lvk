@@ -286,7 +286,7 @@ int main() {
     VkPipelineLayout gbufferPipelineLayout;
     auto vertexDescription = VertexDataPosNormalUv::GetVertexDescription();
     VkPipeline gbufferPipeline = lvk::pipelines::CreateRasterPipeline(vk,
-        gbufferProg,vertexDescription, defaults::DefaultRasterState, defaults::DefaultRasterPipelineState,
+        gbufferProg,vertexDescription, defaults::DefaultRasterState,
         gbuffer.m_RenderPass, vk.m_SwapChainImageExtent, gbufferPipelineLayout, 3);
 
     // create present graphics pipeline
@@ -294,7 +294,7 @@ int main() {
     VkPipelineLayout lightPassPipelineLayout;
     auto presentVertexDescription = VertexDataPosUv::GetVertexDescription();
     VkPipeline pipeline = lvk::pipelines::CreateRasterPipeline(vk,
-        lightPassProg,presentVertexDescription, defaults::CullNoneRasterState, defaults::DefaultRasterPipelineState,
+        lightPassProg,presentVertexDescription, defaults::CullNoneRasterState,
         vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent, lightPassPipelineLayout);
 
     // create vertex and index buffer

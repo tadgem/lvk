@@ -28,7 +28,7 @@ VkPipelineVertexInputStateCreateInfo CreatePipelineVertexInputState(lvk::VertexD
   return vertexInputInfo;
 }
 
-VkPipelineInputAssemblyStateCreateInfo CreatePipelineInputAssemblyState(lvk::RasterPipelineState& pipelineState)
+VkPipelineInputAssemblyStateCreateInfo CreatePipelineInputAssemblyState(lvk::RasterizationState& pipelineState)
 {
   VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo{};
   inputAssemblyInfo.sType =
@@ -38,13 +38,41 @@ VkPipelineInputAssemblyStateCreateInfo CreatePipelineInputAssemblyState(lvk::Ras
   return inputAssemblyInfo;
 }
 
+lvk::VkViewportData CreateViewportData(VkExtent2D resolution, lvk::RasterizationState rasterState)
+{
+  using namespace lvk;
+  VkViewport viewport{};
+  viewport.x = 0.0f;
+  viewport.x = 0.0f;
+  viewport.width = static_cast<float>(resolution.width);
+  viewport.height = static_cast<float>(resolution.height);
+  if(rasterState.m_DepthCompareOp != VK_COMPARE_OP_NEVER) {
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+  }
+  VkRect2D scissor{};
+  scissor.offset = {0, 0};
+  scissor.extent = VkExtent2D{resolution.width, resolution.height};
+
+  auto data = VkViewportData { viewport, scissor, {} };
+
+  VkPipelineViewportStateCreateInfo viewportInfo{};
+  viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+  viewportInfo.viewportCount = 1;
+  viewportInfo.pViewports = &data.m_Viewport;
+  viewportInfo.scissorCount = 1;
+  viewportInfo.pScissors = &data.m_Scissor;
+
+  data.m_CreateInfo = viewportInfo;
+  return data;
+}
+
 namespace lvk::pipelines {
 
 VkPipeline CreateRasterPipeline(
     VkState &vk, ShaderProgram &shader,
     VertexDescription& vertexDescription,
     RasterizationState & rasterState,
-    RasterPipelineState& pipelineState,
     VkRenderPass &pipelineRenderPass, VkExtent2D resolution,
     VkPipelineLayout &pipelineLayout, uint32_t colorAttachmentCount) {
 
@@ -62,29 +90,13 @@ VkPipeline CreateRasterPipeline(
   std::vector<VkPipelineShaderStageCreateInfo> shaderStageCreateInfos = {
       vertexShaderStageInfo, fragShaderStageInfo};
 
-  VkPipelineVertexInputStateCreateInfo vertexInputInfo = CreatePipelineVertexInputState(vertexDescription);
+  VkPipelineVertexInputStateCreateInfo vertexInputInfo =
+      CreatePipelineVertexInputState(vertexDescription);
 
-  VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo = CreatePipelineInputAssemblyState(pipelineState);
+  VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo =
+      CreatePipelineInputAssemblyState(rasterState);
 
-  VkViewport viewport{};
-  viewport.x = 0.0f;
-  viewport.x = 0.0f;
-  viewport.width = static_cast<float>(resolution.width);
-  viewport.height = static_cast<float>(resolution.height);
-  if(rasterState.m_EnableDepthTest) {
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-  }
-  VkRect2D scissor{};
-  scissor.offset = {0, 0};
-  scissor.extent = VkExtent2D{resolution.width, resolution.height};
-
-  VkPipelineViewportStateCreateInfo viewportInfo{};
-  viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-  viewportInfo.viewportCount = 1;
-  viewportInfo.pViewports = &viewport;
-  viewportInfo.scissorCount = 1;
-  viewportInfo.pScissors = &scissor;
+  VkViewportData viewport = CreateViewportData(resolution, rasterState);
 
   VkPipelineRasterizationStateCreateInfo rasterizerInfo{};
   rasterizerInfo.sType =
@@ -221,7 +233,7 @@ VkPipeline CreateRasterPipeline(
       VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
   depthStencil.depthTestEnable = VK_TRUE;
   depthStencil.depthWriteEnable = VK_TRUE;
-  depthStencil.depthCompareOp = pipelineState.m_DepthCompareOp;
+  depthStencil.depthCompareOp = rasterState.m_DepthCompareOp;
   depthStencil.depthBoundsTestEnable = VK_FALSE;
   depthStencil.minDepthBounds = 0.0f; // Optional
   depthStencil.maxDepthBounds = 1.0f; // Optional
@@ -236,13 +248,13 @@ VkPipeline CreateRasterPipeline(
 
   pipelineCreateInfo.pVertexInputState = &vertexInputInfo;
   pipelineCreateInfo.pInputAssemblyState = &inputAssemblyInfo;
-  pipelineCreateInfo.pViewportState = &viewportInfo;
+  pipelineCreateInfo.pViewportState = &viewport.m_CreateInfo;
   pipelineCreateInfo.pRasterizationState = &rasterizerInfo;
   pipelineCreateInfo.pMultisampleState = &multisampleInfo;
   pipelineCreateInfo.pColorBlendState = &colorBlendStateInfo;
   pipelineCreateInfo.pDynamicState = &dynamicStateInfo;
 
-  if(rasterState.m_EnableDepthTest)
+  if(rasterState.m_DepthCompareOp != VK_COMPARE_OP_NEVER)
   {
     pipelineCreateInfo.pDepthStencilState = &depthStencil;
   }
@@ -304,7 +316,6 @@ CreateComputePipeline(VkState &vk, StageBinary &comp,
 VkPipeline CreateDynamicRasterPipeline(VkState &vk, ShaderProgram &shader,
                                        VertexDescription &vertexDescription,
                                        RasterizationState &rasterState,
-                                       RasterPipelineState &pipelineState,
                                        VkExtent2D resolution,
                                        VkPipelineLayout &pipelineLayout,
                                        uint32_t colorAttachmentCount) {

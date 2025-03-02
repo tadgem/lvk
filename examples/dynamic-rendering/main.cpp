@@ -54,7 +54,7 @@ ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferP
     VkPipelineLayout gbufferPipelineLayout;
     auto vertexDescription = VertexDataPosNormalUv::GetVertexDescription();
     VkPipeline gbufferPipeline = lvk::pipelines::CreateRasterPipeline(vk,
-        gbufferProg,vertexDescription, defaults::DefaultRasterState, defaults::DefaultRasterPipelineState,
+        gbufferProg,vertexDescription, defaults::DefaultRasterState,
         gbuffer.m_RenderPass, vk.m_SwapChainImageExtent, gbufferPipelineLayout, 3);
 
     // create present graphics pipeline
@@ -62,7 +62,7 @@ ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferP
     VkPipelineLayout lightPassPipelineLayout;
     auto presentVertexDescription = VertexDataPosUv::GetVertexDescription();
     VkPipeline pipeline = lvk::pipelines::CreateRasterPipeline(vk,
-        lightPassProg, presentVertexDescription, defaults::CullNoneRasterState, defaults::DefaultRasterPipelineState,
+        lightPassProg, presentVertexDescription, defaults::CullNoneRasterState,
         finalImage.m_RenderPass, vk.m_SwapChainImageExtent, lightPassPipelineLayout);
 
     auto im3dViewState = AddIm3dForViewport(vk, im3dState, finalImage.m_RenderPass, false);
