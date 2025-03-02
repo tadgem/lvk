@@ -1,6 +1,43 @@
 #include "lvk/Pipeline.h"
 #include "spdlog/spdlog.h"
 
+VkPipelineShaderStageCreateInfo CreateShaderStageInfo(VkShaderStageFlagBits shaderStage, VkShaderModule& module)
+{
+  VkPipelineShaderStageCreateInfo shaderStageInfo{};
+  shaderStageInfo.sType =
+      VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+  shaderStageInfo.stage = shaderStage;
+  shaderStageInfo.module = module;
+  shaderStageInfo.pName = "main";
+  return shaderStageInfo;
+}
+
+VkPipelineVertexInputStateCreateInfo CreatePipelineVertexInputState(lvk::VertexDescription& vertexDescription)
+{
+  VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+  vertexInputInfo.sType =
+      VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+  vertexInputInfo.vertexBindingDescriptionCount =
+      static_cast<uint32_t>(vertexDescription.m_BindingDescriptions.size());
+  vertexInputInfo.pVertexBindingDescriptions = vertexDescription.m_BindingDescriptions.data();
+  vertexInputInfo.vertexAttributeDescriptionCount =
+      static_cast<uint32_t>(vertexDescription.m_AttributeDescriptions.size());
+  vertexInputInfo.pVertexAttributeDescriptions =
+      vertexDescription.m_AttributeDescriptions.data();
+
+  return vertexInputInfo;
+}
+
+VkPipelineInputAssemblyStateCreateInfo CreatePipelineInputAssemblyState(lvk::RasterPipelineState& pipelineState)
+{
+  VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo{};
+  inputAssemblyInfo.sType =
+      VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+  inputAssemblyInfo.topology = pipelineState.m_InputAssemblyTopology;
+  inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
+  return inputAssemblyInfo;
+}
+
 namespace lvk::pipelines {
 
 VkPipeline CreateRasterPipeline(
@@ -16,42 +53,18 @@ VkPipeline CreateRasterPipeline(
   VkShaderModule fragShaderModule =
       CreateShaderModule(vk, shader.m_Stages[1].m_StageBinary);
 
-  spdlog::info("Loaded vertex and fragment shaders & created shader modules");
+  VkPipelineShaderStageCreateInfo vertexShaderStageInfo = CreateShaderStageInfo(
+      VK_SHADER_STAGE_VERTEX_BIT, vertShaderModule);
 
-  // ..
-  VkPipelineShaderStageCreateInfo vertexShaderStageInfo{};
-  vertexShaderStageInfo.sType =
-      VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-  vertexShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-  vertexShaderStageInfo.module = vertShaderModule;
-  vertexShaderStageInfo.pName = "main";
-
-  VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
-  fragShaderStageInfo.sType =
-      VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-  fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-  fragShaderStageInfo.module = fragShaderModule;
-  fragShaderStageInfo.pName = "main";
+  VkPipelineShaderStageCreateInfo fragShaderStageInfo = CreateShaderStageInfo(
+      VK_SHADER_STAGE_FRAGMENT_BIT, fragShaderModule );
 
   std::vector<VkPipelineShaderStageCreateInfo> shaderStageCreateInfos = {
       vertexShaderStageInfo, fragShaderStageInfo};
 
-  VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
-  vertexInputInfo.sType =
-      VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-  vertexInputInfo.vertexBindingDescriptionCount =
-      static_cast<uint32_t>(vertexDescription.m_BindingDescriptions.size());
-  vertexInputInfo.pVertexBindingDescriptions = vertexDescription.m_BindingDescriptions.data();
-  vertexInputInfo.vertexAttributeDescriptionCount =
-      static_cast<uint32_t>(vertexDescription.m_AttributeDescriptions.size());
-  vertexInputInfo.pVertexAttributeDescriptions =
-      vertexDescription.m_AttributeDescriptions.data();
+  VkPipelineVertexInputStateCreateInfo vertexInputInfo = CreatePipelineVertexInputState(vertexDescription);
 
-  VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo{};
-  inputAssemblyInfo.sType =
-      VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-  inputAssemblyInfo.topology = pipelineState.m_InputAssemblyTopology;
-  inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
+  VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo = CreatePipelineInputAssemblyState(pipelineState);
 
   VkViewport viewport{};
   viewport.x = 0.0f;
@@ -83,11 +96,6 @@ VkPipeline CreateRasterPipeline(
   rasterizerInfo.polygonMode = rasterState.m_PolygonMode;
   // thickness of lines in terms of pixels. > 1.0f requires wide lines gpu feature.
   rasterizerInfo.lineWidth = 1.0f;
-
-  // rasterizerInfo.cullMode = VK_CULL_MODE_NONE;
-  //// From vk-tutorial: The frontFace variable specifies the vertex order
-  //// for faces to be considered front-facing and can be clockwise or counterclockwise. / ??
-  rasterizerInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
 
   rasterizerInfo.cullMode = rasterState.m_CullMode;
   rasterizerInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
@@ -245,6 +253,9 @@ VkPipeline CreateRasterPipeline(
 
   pipelineCreateInfo.layout = pipelineLayout;
 
+  VkPipelineRenderingCreateInfoKHR dynRenderingCreateInfo {};
+  dynRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
+
   pipelineCreateInfo.renderPass = pipelineRenderPass;
   pipelineCreateInfo.subpass = 0;
 
@@ -289,5 +300,14 @@ CreateComputePipeline(VkState &vk, StageBinary &comp,
   }
 
   return VK_NULL_HANDLE;
+}
+VkPipeline CreateDynamicRasterPipeline(VkState &vk, ShaderProgram &shader,
+                                       VertexDescription &vertexDescription,
+                                       RasterizationState &rasterState,
+                                       RasterPipelineState &pipelineState,
+                                       VkExtent2D resolution,
+                                       VkPipelineLayout &pipelineLayout,
+                                       uint32_t colorAttachmentCount) {
+  return nullptr;
 }
 }

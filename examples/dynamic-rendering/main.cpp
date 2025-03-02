@@ -153,8 +153,6 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderModel& 
             spdlog::info("vkCmdBeginRenderingKHR : addr : {}", (void*) *vkCmdBeginRenderingKHR);
             spdlog::info("vkCmdEndRenderingKHR : addr : {}", (void*) *vkCmdEndRenderingKHR);
 
-            auto beginRendering = vkCmdBeginRenderingKHR;
-            auto endRendering = vkCmdEndRenderingKHR;
             vkCmdBeginRenderingKHR(commandBuffer, &renderingInfo);
             vkCmdEndRenderingKHR(commandBuffer);
 
@@ -475,13 +473,8 @@ int main() {
     bool enableMSAA = false;
     VkState vk = init::Create<VkSDL>("Im3D Multiview", 1920, 1080, enableMSAA);
 
-    vkCmdBeginRenderingKHR = (PFN_vkCmdBeginRenderingKHR) vkGetInstanceProcAddr(vk.m_Instance, "vkCmdBeginRenderingKHR");
-    vkCmdEndRenderingKHR = (PFN_vkCmdEndRenderingKHR) vkGetInstanceProcAddr(vk.m_Instance, "vkCmdEndRenderingKHR");
     spdlog::info("vkCmdBeginRenderingKHR : addr : {}", (void*) *vkCmdBeginRenderingKHR);
     spdlog::info("vkCmdEndRenderingKHR : addr : {}", (void*) *vkCmdEndRenderingKHR);
-
-    spdlog::info("vkCmdBeginRenderPass : addr : {}", (void*) *vkCmdBeginRenderPass);
-    spdlog::info("vkCmdEndRenderPass : addr : {}", (void*) *vkCmdEndRenderPass);
 
     auto im3dState = LoadIm3D(vk);
 

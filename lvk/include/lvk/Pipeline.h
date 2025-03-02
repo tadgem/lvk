@@ -13,6 +13,17 @@ namespace pipelines{
         VkDescriptorSetLayout& descriptorSetLayout,
         VkPipelineLayout& pipelineLayout);
 
+    VkPipeline                          CreateDynamicRasterPipeline(
+        VkState& vk,
+        ShaderProgram& shader,
+        VertexDescription& vertexDescription,
+        RasterizationState & rasterState,
+        RasterPipelineState& pipelineState,
+        VkExtent2D resolution,
+        VkPipelineLayout& pipelineLayout,
+        uint32_t colorAttachmentCount = 1
+        );
+
     VkPipeline                          CreateRasterPipeline(
         VkState& vk,
         ShaderProgram& shader,

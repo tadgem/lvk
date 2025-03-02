@@ -96,7 +96,7 @@ bool lvk::init::CheckDeviceExtensionSupport(VkState& vk, VkPhysicalDevice device
 
   for (auto const& extension : availableExtensions)
   {
-    for (auto const& requiredExtensionName : s_DeviceExtensions)
+    for (auto const& requiredExtensionName : s_RequiredDeviceExtensions)
     {
       if (strcmp(requiredExtensionName, extension.extensionName) == 0)
       {
@@ -113,7 +113,8 @@ bool lvk::init::CheckDeviceExtensionSupport(VkState& vk, VkPhysicalDevice device
     }
   }
 
-  auto requiredCount = s_DeviceExtensions.size() + vk.m_DesiredDeviceExtensions.size();
+  auto requiredCount =
+      s_RequiredDeviceExtensions.size() + vk.m_DesiredDeviceExtensions.size();
 
   return requiredExtensionsFound >= requiredCount;
 
@@ -542,16 +543,11 @@ void lvk::init::CreateLogicalDevice(VkState& vk)
   createInfo.queueCreateInfoCount     = static_cast<uint32_t>(queueCreateInfos.size());
   createInfo.pEnabledFeatures         = &physicalDeviceFeatures;
 
-  VkPhysicalDeviceDynamicRenderingFeaturesKHR  dynamicRenderingInfo {};
-  dynamicRenderingInfo.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;;
-  dynamicRenderingInfo.dynamicRendering = VK_TRUE;
-
-  auto extensions = s_DeviceExtensions;
+  auto extensions = s_RequiredDeviceExtensions;
   extensions.push_back("VK_KHR_dynamic_rendering");
 
   createInfo.enabledExtensionCount    = static_cast<uint32_t>(extensions.size());
   createInfo.ppEnabledExtensionNames  = extensions.data();
-  createInfo.pNext = &dynamicRenderingInfo;
 
   if (vk.m_UseValidation)
   {

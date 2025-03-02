@@ -9,7 +9,7 @@ namespace init
   const Vector<const char*>   s_ValidationLayers = {
       "VK_LAYER_KHRONOS_validation"
   };
-  const Vector<const char*>   s_DeviceExtensions = {
+  const Vector<const char*> s_RequiredDeviceExtensions = {
       "VK_KHR_swapchain"
   };
 
