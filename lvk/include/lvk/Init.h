@@ -21,21 +21,23 @@ namespace init
   void                                SetupDebugOutput(VkState& vk);
   void                                CleanupDebugOutput(VkState& vk);
   void                                ListDeviceExtensions(VkState& vk, VkPhysicalDevice physicalDevice);
-  void                                PopulateDebugMessengerCreateInfo(VkState& vk,VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+  void PopulateDebugMessengerCreateInfo(
+      VkDebugUtilsMessengerCreateInfoEXT &createInfo);
   
   void                                InitVulkan(VkState& vk, bool enableSwapchainMsaa = false);
   void                                InitImGui(VkState& vk);
-  VkApplicationInfo                   CreateAppInfo(VkState& vk);
+  VkApplicationInfo CreateAppInfo();
   void                                CreateInstance(VkState& vk);
   void                                CleanupVulkan(VkState& vk);
   QueueFamilyIndices                  FindQueueFamilies(VkState& vk,VkPhysicalDevice physicalDevice);
   SwapChainSupportDetais              GetSwapChainSupportDetails(VkState& vk, VkPhysicalDevice physicalDevice);
   bool                                IsDeviceSuitable(VkState& vk, VkPhysicalDevice physicalDevice);
-  uint32_t                            AssessDeviceSuitability(VkState& vk, VkPhysicalDevice physicalDevice);
+  uint32_t AssessDeviceSuitability(VkPhysicalDevice physicalDevice);
   void                                PickPhysicalDevice(VkState& vk);
   void                                CreateLogicalDevice(VkState& vk);
   void                                GetQueueHandles(VkState& vk);
-  VkSurfaceFormatKHR                  ChooseSwapChainSurfaceFormat(VkState& vk,Vector<VkSurfaceFormatKHR> availableFormats);
+  VkSurfaceFormatKHR ChooseSwapChainSurfaceFormat(
+      std::vector<VkSurfaceFormatKHR> availableFormats);
   VkPresentModeKHR                    ChooseSwapChainPresentMode(VkState& vk, Vector<VkPresentModeKHR> availableModes);
   void                                CreateSwapChain(VkState& vk);
   void                                CreateSwapChainFramebuffers(VkState& vk);
@@ -55,8 +57,8 @@ namespace init
   void                                CreateVmaAllocator(VkState& vk);
   void                                GetMaxUsableSampleCount(VkState& vk);
 
-
-  Vector<VkExtensionProperties>       GetDeviceAvailableExtensions(VkState& vk, VkPhysicalDevice physicalDevice);
+  std::vector<VkExtensionProperties>
+  GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice);
   void                                EnableCommonExtensions(VkState& vk);
 
   void                                CreateBuiltInRenderPasses(VkState& vk);

@@ -67,37 +67,8 @@ lvk::VkViewportData CreateViewportData(VkExtent2D resolution, lvk::Rasterization
   return data;
 }
 
-namespace lvk::pipelines {
-
-VkPipeline CreateRasterPipeline(
-    VkState &vk, ShaderProgram &shader,
-    VertexDescription& vertexDescription,
-    RasterizationState & rasterState,
-    VkRenderPass &pipelineRenderPass, VkExtent2D resolution,
-    VkPipelineLayout &pipelineLayout, uint32_t colorAttachmentCount) {
-
-  VkShaderModule vertShaderModule =
-      CreateShaderModule(vk, shader.m_Stages[0].m_StageBinary);
-  VkShaderModule fragShaderModule =
-      CreateShaderModule(vk, shader.m_Stages[1].m_StageBinary);
-
-  VkPipelineShaderStageCreateInfo vertexShaderStageInfo = CreateShaderStageInfo(
-      VK_SHADER_STAGE_VERTEX_BIT, vertShaderModule);
-
-  VkPipelineShaderStageCreateInfo fragShaderStageInfo = CreateShaderStageInfo(
-      VK_SHADER_STAGE_FRAGMENT_BIT, fragShaderModule );
-
-  std::vector<VkPipelineShaderStageCreateInfo> shaderStageCreateInfos = {
-      vertexShaderStageInfo, fragShaderStageInfo};
-
-  VkPipelineVertexInputStateCreateInfo vertexInputInfo =
-      CreatePipelineVertexInputState(vertexDescription);
-
-  VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo =
-      CreatePipelineInputAssemblyState(rasterState);
-
-  VkViewportData viewport = CreateViewportData(resolution, rasterState);
-
+VkPipelineRasterizationStateCreateInfo CreateRasterizationState(lvk::RasterizationState rasterState)
+{
   VkPipelineRasterizationStateCreateInfo rasterizerInfo{};
   rasterizerInfo.sType =
       VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -107,16 +78,20 @@ VkPipeline CreateRasterPipeline(
   // using anything other than FILL requires enableing a gpu feature.
   rasterizerInfo.polygonMode = rasterState.m_PolygonMode;
   // thickness of lines in terms of pixels. > 1.0f requires wide lines gpu feature.
-  rasterizerInfo.lineWidth = 1.0f;
+  rasterizerInfo.lineWidth = rasterState.m_LineWidth;
 
   rasterizerInfo.cullMode = rasterState.m_CullMode;
-  rasterizerInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+  rasterizerInfo.frontFace = rasterState.m_FrontFace;
 
   rasterizerInfo.depthBiasEnable = VK_FALSE;
   rasterizerInfo.depthBiasConstantFactor = 0.0f;
   rasterizerInfo.depthBiasClamp = 0.0f;
   rasterizerInfo.depthBiasSlopeFactor = 0.0f;
+  return rasterizerInfo;
+}
 
+VkPipelineMultisampleStateCreateInfo CreateMultiSampleInfo(lvk::VkState& vk, lvk::RasterizationState rasterState)
+{
   VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT;
 
   if (rasterState.m_EnableMSAA) {
@@ -134,10 +109,14 @@ VkPipeline CreateRasterPipeline(
   multisampleInfo.pSampleMask = nullptr;
   multisampleInfo.alphaToCoverageEnable = VK_FALSE;
   multisampleInfo.alphaToOneEnable = VK_FALSE;
+  return multisampleInfo;
+}
 
-  Vector<VkPipelineColorBlendAttachmentState> colorAttachmentBlendStates;
-
-  for (uint32_t i = 0; i < colorAttachmentCount; i++) {
+lvk::PipelineAttachmentState CreateAttachmentState(uint32_t colourAttachmentCount)
+{
+  using namespace lvk;
+  PipelineAttachmentState state {};
+  for (uint32_t i = 0; i < colourAttachmentCount; i++) {
     VkPipelineColorBlendAttachmentState colorBlendAttachment{};
     colorBlendAttachment.colorWriteMask =
         VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
@@ -150,84 +129,37 @@ VkPipeline CreateRasterPipeline(
     colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
     colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
 
-    colorAttachmentBlendStates.push_back(colorBlendAttachment);
+    state.m_ColourAttachmentStates.push_back(colorBlendAttachment);
   }
 
-  VkPipelineColorBlendStateCreateInfo colorBlendStateInfo{};
-  colorBlendStateInfo.sType =
+  state.m_BlendStateInfo.sType =
       VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-  colorBlendStateInfo.logicOpEnable = VK_FALSE;
-  colorBlendStateInfo.logicOp = VK_LOGIC_OP_COPY;
-  colorBlendStateInfo.attachmentCount =
-      static_cast<uint32_t>(colorAttachmentBlendStates.size());
-  colorBlendStateInfo.pAttachments = colorAttachmentBlendStates.data();
+  state.m_BlendStateInfo.logicOpEnable = VK_FALSE;
+  state.m_BlendStateInfo.logicOp = VK_LOGIC_OP_COPY;
+  state.m_BlendStateInfo.attachmentCount =
+      static_cast<uint32_t>(state.m_ColourAttachmentStates.size());
+  state.m_BlendStateInfo.pAttachments = state.m_ColourAttachmentStates.data();
+  return state;
+}
 
-  VkDynamicState dynamicStates[] = {
-      VK_DYNAMIC_STATE_VIEWPORT,
-      VK_DYNAMIC_STATE_SCISSOR,
-  };
+lvk::PipelineDynamicState CreateDynamicStateInfo()
+{
+  using namespace lvk;
+  PipelineDynamicState dynamicState {};
+  dynamicState.m_DynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
+  dynamicState.m_DynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR);
 
-  VkPipelineDynamicStateCreateInfo dynamicStateInfo{};
-  dynamicStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-  dynamicStateInfo.dynamicStateCount =
-      sizeof(dynamicStates) / sizeof(VkDynamicState);
-  dynamicStateInfo.pDynamicStates = dynamicStates;
 
-  VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-  pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-  pipelineLayoutInfo.setLayoutCount = 1;
-  pipelineLayoutInfo.pSetLayouts = &shader.m_DescriptorSetLayout;
+  dynamicState.m_DynamicStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+  dynamicState.m_DynamicStateInfo.dynamicStateCount =
+      static_cast<uint32_t>(dynamicState.m_DynamicStates.size());
+  dynamicState.m_DynamicStateInfo.pDynamicStates = dynamicState.m_DynamicStates.data();
 
-  // update
-  // valid combos:
-  // 1 stage has 1 push constant block
-  // both stages share the same push constant block
-  // each stage has a separate push constant block
-  // e.g. only ever 1 block per stage
+  return dynamicState;
+}
 
-  Vector<VkPushConstantRange> pushConstantRanges{};
-
-  for (auto &stage : shader.m_Stages) {
-    if (stage.m_PushConstants.empty()) {
-      continue;
-    }
-
-    if (stage.m_PushConstants.size() > 1) {
-      spdlog::error(
-          "VulkanAPI : CreateRasterizationPipeline : Supplied stage has more than 1 push constant block, this is not allowed.");
-      continue;
-    }
-
-    PushConstantBlock &block = stage.m_PushConstants[0];
-
-    bool skip = false;
-
-    for (auto &range : pushConstantRanges) {
-      if (block.m_Offset == range.offset && block.m_Size == range.size) {
-        range.stageFlags |= block.m_Stage;
-      }
-    }
-
-    if (skip) {
-      continue;
-    }
-
-    VkPushConstantRange range{};
-    range.offset = block.m_Offset;
-    range.size = block.m_Size;
-    range.stageFlags = block.m_Stage;
-
-    pushConstantRanges.push_back(range);
-  }
-
-  pipelineLayoutInfo.pushConstantRangeCount =
-      static_cast<uint32_t>(pushConstantRanges.size());
-  pipelineLayoutInfo.pPushConstantRanges =
-      pushConstantRanges.size() > 0 ? pushConstantRanges.data() : 0;
-
-  VK_CHECK(vkCreatePipelineLayout(vk.m_LogicalDevice, &pipelineLayoutInfo,
-                                  nullptr, &pipelineLayout))
-
+VkPipelineDepthStencilStateCreateInfo CreateDepthStencilState(lvk::RasterizationState& rasterState)
+{
   VkPipelineDepthStencilStateCreateInfo depthStencil{};
   depthStencil.sType =
       VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
@@ -241,6 +173,63 @@ VkPipeline CreateRasterPipeline(
   depthStencil.front = {}; // Optional
   depthStencil.back = {};  // Optional
 
+  return depthStencil;
+}
+
+namespace lvk::pipelines {
+
+VkPipeline CreateRasterPipeline(
+    VkState &vk, ShaderProgram &shader,
+    VertexDescription& vertexDescription,
+    RasterizationState & rasterState,
+    VkRenderPass &pipelineRenderPass, VkExtent2D resolution,
+    VkPipelineLayout &pipelineLayout, uint32_t colorAttachmentCount) {
+
+  VkShaderModule vertShaderModule =
+      CreateShaderModule(vk, shader.m_Stages[0].m_StageBinary);
+  VkShaderModule fragShaderModule =
+      CreateShaderModule(vk, shader.m_Stages[1].m_StageBinary);
+
+  VkPipelineShaderStageCreateInfo vertexShaderStageInfo =
+      CreateShaderStageInfo(VK_SHADER_STAGE_VERTEX_BIT, vertShaderModule);
+
+  VkPipelineShaderStageCreateInfo fragShaderStageInfo =
+      CreateShaderStageInfo(VK_SHADER_STAGE_FRAGMENT_BIT, fragShaderModule);
+
+  std::vector<VkPipelineShaderStageCreateInfo> shaderStageCreateInfos = {
+      vertexShaderStageInfo, fragShaderStageInfo
+  };
+
+  VkPipelineVertexInputStateCreateInfo vertexInputInfo =
+      CreatePipelineVertexInputState(vertexDescription);
+
+  VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo =
+      CreatePipelineInputAssemblyState(rasterState);
+
+  VkViewportData viewport = CreateViewportData(resolution, rasterState);
+
+  VkPipelineRasterizationStateCreateInfo rasterizerInfo=
+      CreateRasterizationState(rasterState);
+
+
+  VkPipelineMultisampleStateCreateInfo multisampleInfo =
+      CreateMultiSampleInfo(vk, rasterState);
+
+  PipelineAttachmentState attachmentState =
+      CreateAttachmentState(colorAttachmentCount);
+
+  PipelineDynamicState dynamicState = CreateDynamicStateInfo();
+
+  VkPipelineDepthStencilStateCreateInfo depthStencil =
+      CreateDepthStencilState(rasterState);
+
+  VkPipelineLayoutCreateInfo pipelineLayoutInfo =
+      shader.GetPipelineLayoutCreateInfo();
+
+  VK_CHECK(vkCreatePipelineLayout(vk.m_LogicalDevice, &pipelineLayoutInfo,
+                                  nullptr, &pipelineLayout))
+
+
   VkGraphicsPipelineCreateInfo pipelineCreateInfo{};
   pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
   pipelineCreateInfo.stageCount = 2;
@@ -251,23 +240,15 @@ VkPipeline CreateRasterPipeline(
   pipelineCreateInfo.pViewportState = &viewport.m_CreateInfo;
   pipelineCreateInfo.pRasterizationState = &rasterizerInfo;
   pipelineCreateInfo.pMultisampleState = &multisampleInfo;
-  pipelineCreateInfo.pColorBlendState = &colorBlendStateInfo;
-  pipelineCreateInfo.pDynamicState = &dynamicStateInfo;
+  pipelineCreateInfo.pColorBlendState = &attachmentState.m_BlendStateInfo;
+  pipelineCreateInfo.pDynamicState = &dynamicState.m_DynamicStateInfo;
 
-  if(rasterState.m_DepthCompareOp != VK_COMPARE_OP_NEVER)
-  {
-    pipelineCreateInfo.pDepthStencilState = &depthStencil;
-  }
-  else
-  {
+  rasterState.m_DepthCompareOp != VK_COMPARE_OP_NEVER ?
+    pipelineCreateInfo.pDepthStencilState = &depthStencil :
     pipelineCreateInfo.pDepthStencilState = nullptr;
-  }
+
 
   pipelineCreateInfo.layout = pipelineLayout;
-
-  VkPipelineRenderingCreateInfoKHR dynRenderingCreateInfo {};
-  dynRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
-
   pipelineCreateInfo.renderPass = pipelineRenderPass;
   pipelineCreateInfo.subpass = 0;
 
@@ -277,8 +258,6 @@ VkPipeline CreateRasterPipeline(
 
   vkDestroyShaderModule(vk.m_LogicalDevice, vertShaderModule, nullptr);
   vkDestroyShaderModule(vk.m_LogicalDevice, fragShaderModule, nullptr);
-
-  spdlog::info("Destroyed vertex and fragment shader modules");
 
   return pipeline;
 }
@@ -319,6 +298,8 @@ VkPipeline CreateDynamicRasterPipeline(VkState &vk, ShaderProgram &shader,
                                        VkExtent2D resolution,
                                        VkPipelineLayout &pipelineLayout,
                                        uint32_t colorAttachmentCount) {
+  VkPipelineRenderingCreateInfoKHR dynRenderingCreateInfo {};
+  dynRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
   return nullptr;
 }
 }

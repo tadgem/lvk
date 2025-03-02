@@ -89,7 +89,8 @@ bool lvk::init::CheckValidationLayerSupport(VkState& vk)
 
 bool lvk::init::CheckDeviceExtensionSupport(VkState& vk, VkPhysicalDevice device)
 {
-  std::vector<VkExtensionProperties> availableExtensions = GetDeviceAvailableExtensions(vk, device);
+  std::vector<VkExtensionProperties> availableExtensions =
+      GetDeviceAvailableExtensions(device);
 
   uint32_t requiredExtensionsFound = 0;
 
@@ -125,7 +126,7 @@ void lvk::init::SetupDebugOutput(VkState& vk)
   if (!vk.m_UseValidation) return;
 
   VkDebugUtilsMessengerCreateInfoEXT createInfo{};
-  PopulateDebugMessengerCreateInfo(vk, createInfo);
+  PopulateDebugMessengerCreateInfo(createInfo);
 
   PFN_vkVoidFunction rawFunction = vkGetInstanceProcAddr(vk.m_Instance, "vkCreateDebugUtilsMessengerEXT");
   PFN_vkCreateDebugUtilsMessengerEXT function = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(rawFunction);
@@ -162,7 +163,8 @@ void lvk::init::CleanupDebugOutput(VkState& vk)
 
 void lvk::init::ListDeviceExtensions(VkState& vk, VkPhysicalDevice physicalDevice)
 {
-  std::vector<VkExtensionProperties> extensions = GetDeviceAvailableExtensions(vk, physicalDevice);
+  std::vector<VkExtensionProperties> extensions =
+      GetDeviceAvailableExtensions(physicalDevice);
 
   VkPhysicalDeviceProperties deviceProperties{};
   vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
@@ -173,8 +175,8 @@ void lvk::init::ListDeviceExtensions(VkState& vk, VkPhysicalDevice physicalDevic
   }
 }
 
-void lvk::init::PopulateDebugMessengerCreateInfo(VkState& vk, VkDebugUtilsMessengerCreateInfoEXT& createInfo)
-{
+void lvk::init::PopulateDebugMessengerCreateInfo(
+    VkDebugUtilsMessengerCreateInfoEXT &createInfo) {
   createInfo = {};
   createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
 
@@ -255,8 +257,7 @@ void lvk::init::InitImGui(VkState& vk)
 
 }
 
-VkApplicationInfo lvk::init::CreateAppInfo(VkState& vk)
-{
+VkApplicationInfo lvk::init::CreateAppInfo() {
   VkApplicationInfo appInfo{};
   // each struct needs to explicitly be told its type
   appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -277,7 +278,7 @@ void lvk::init::CreateInstance(VkState& vk)
     std::cerr << "Validation layers requested but not available.";
   }
 
-  VkApplicationInfo appInfo = CreateAppInfo(vk);
+  VkApplicationInfo appInfo = CreateAppInfo();
 
   std::vector<const char*> extensionNames = vk.m_Backend->GetRequiredInstanceExtensions(vk);
 
@@ -327,7 +328,7 @@ void lvk::init::CreateInstance(VkState& vk)
     createInfo.enabledLayerCount = (uint32_t)s_ValidationLayers.size();
     createInfo.ppEnabledLayerNames = s_ValidationLayers.data();
 
-    PopulateDebugMessengerCreateInfo(vk, debugMessengerCreateInfo);
+    PopulateDebugMessengerCreateInfo(debugMessengerCreateInfo);
     createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugMessengerCreateInfo;
   }
   else
@@ -443,8 +444,7 @@ bool lvk::init::IsDeviceSuitable(VkState& vk,VkPhysicalDevice physicalDevice)
   return indices.IsComplete() && extensionsSupported && swapChainSupport && supportedFeatures.samplerAnisotropy && supportedFeatures.wideLines;
 }
 
-uint32_t lvk::init::AssessDeviceSuitability(VkState& vk,VkPhysicalDevice m_PhysicalDevice)
-{
+uint32_t lvk::init::AssessDeviceSuitability(VkPhysicalDevice m_PhysicalDevice) {
   uint32_t score = 0;
 
   VkPhysicalDeviceProperties deviceProperties;
@@ -484,7 +484,7 @@ void lvk::init::PickPhysicalDevice(VkState& vk)
 
   for (int i = 0; i < physicalDevices.size(); i++)
   {
-    uint32_t score = AssessDeviceSuitability(vk, physicalDevices[i]);
+    uint32_t score = AssessDeviceSuitability(physicalDevices[i]);
     if (IsDeviceSuitable(vk, physicalDevices[i]) && score > bestScore)
     {
       physicalDeviceCandidate = physicalDevices[i];
@@ -575,8 +575,8 @@ void lvk::init::GetQueueHandles(VkState& vk)
   vkGetDeviceQueue(vk.m_LogicalDevice, vk.m_QueueFamilyIndices.m_QueueFamilies[QueueFamilyType::Present],               0, &vk.m_PresentQueue);
 }
 
-VkSurfaceFormatKHR lvk::init::ChooseSwapChainSurfaceFormat(VkState& vk, std::vector<VkSurfaceFormatKHR> availableFormats)
-{
+VkSurfaceFormatKHR lvk::init::ChooseSwapChainSurfaceFormat(
+    std::vector<VkSurfaceFormatKHR> availableFormats) {
   if (availableFormats.size() == 0)
   {
     spdlog::error("Could not find any suitable Swapchain Surface Format in provided collection!");
@@ -616,7 +616,8 @@ void lvk::init::CreateSwapChain(VkState& vk)
 {
   SwapChainSupportDetais swapChainDetails = GetSwapChainSupportDetails(vk, vk.m_PhysicalDevice);
 
-  VkSurfaceFormatKHR format       = ChooseSwapChainSurfaceFormat(vk, swapChainDetails.m_SupportedFormats);
+  VkSurfaceFormatKHR format       =
+      ChooseSwapChainSurfaceFormat(swapChainDetails.m_SupportedFormats);
   VkPresentModeKHR presentMode    = ChooseSwapChainPresentMode(vk, swapChainDetails.m_SupportedPresentModes);
   VkExtent2D surfaceExtent        = ChooseSwapExtent(vk, swapChainDetails.m_Capabilities);
   // request one more than minimum supported number of images in swap chain
@@ -1038,9 +1039,8 @@ void lvk::init::CreateBuiltInRenderPasses(lvk::VkState &vk) {
   }
 }
 
-
-std::vector<VkExtensionProperties> lvk::init::GetDeviceAvailableExtensions(VkState& vk, VkPhysicalDevice physicalDevice)
-{
+std::vector<VkExtensionProperties>
+lvk::init::GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice) {
   uint32_t extensionCount;
   vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
 

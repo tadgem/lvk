@@ -13,7 +13,7 @@ namespace descriptor{
 
     Vector<PushConstantBlock>           ReflectPushConstants(VkState& vk, StageBinary& stageBin);
     Vector<PushConstantBlock>           ReflectPushConstantsRaw(VkState& vk, const char* stage_bin, size_t stage_size);
-
+    
     VkDescriptorSet                     CreateDescriptorSet(VkState& vk, DescriptorSetLayoutData& layoutData);
     ShaderBufferMemberType              GetTypeFromSpvReflect(SpvReflectTypeDescription* typeDescription);
 }

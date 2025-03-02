@@ -53,11 +53,16 @@ namespace lvk
 
     struct ShaderProgram
     {
-        Vector<ShaderStage> m_Stages;
+        ShaderProgram(Vector<ShaderStage> shaderStages, VkDescriptorSetLayout layout);
+        Vector<ShaderStage>         m_Stages;
 
-        VkDescriptorSetLayout m_DescriptorSetLayout;
+        VkDescriptorSetLayout       m_DescriptorSetLayout;
+        Vector<VkPushConstantRange> m_PushConstantRanges;
 
-        void Free(VkState & vk);
+        void                        Free(VkState & vk);
+        void                        BuildPushConstantRanges();
+        uint32_t                    GetPushConstantRangeCount();
+        VkPipelineLayoutCreateInfo  GetPipelineLayoutCreateInfo();
 
         static ShaderProgram CreateGraphics(VkState & vk, ShaderStage& vert, ShaderStage& frag)
         {

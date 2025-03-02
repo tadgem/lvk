@@ -111,6 +111,20 @@ namespace lvk {
     bool                  m_EnableMSAA;
     VkCompareOp           m_DepthCompareOp;
     VkPrimitiveTopology   m_InputAssemblyTopology;
+    VkFrontFace           m_FrontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    float                 m_LineWidth = 1.0f;
+  };
+
+  struct PipelineAttachmentState
+  {
+    Vector<VkPipelineColorBlendAttachmentState> m_ColourAttachmentStates;
+    VkPipelineColorBlendStateCreateInfo         m_BlendStateInfo;
+  };
+
+  struct PipelineDynamicState
+  {
+    Vector<VkDynamicState>            m_DynamicStates;
+    VkPipelineDynamicStateCreateInfo  m_DynamicStateInfo;
   };
 
   enum class ShaderStageType { Vertex, Fragment, Compute };

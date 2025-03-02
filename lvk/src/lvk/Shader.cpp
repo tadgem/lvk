@@ -29,6 +29,67 @@ ShaderProgram ShaderProgram::CreateCompute(VkState &vk, ShaderStage &compute) {
 
   return {Vector<ShaderStage>{compute}, layout};
 }
+ShaderProgram::ShaderProgram(Vector<ShaderStage> shaderStages,
+                             VkDescriptorSetLayout layout) :
+ m_DescriptorSetLayout(layout), m_Stages(std::move(shaderStages))
+{
+  BuildPushConstantRanges();
+}
+void ShaderProgram::BuildPushConstantRanges() {
+  // update
+  // valid combos:
+  // 1 stage has 1 push constant block
+  // both stages share the same push constant block
+  // each stage has a separate push constant block
+  // e.g. only ever 1 block per stage
+  for (auto &stage : m_Stages) {
+    if (stage.m_PushConstants.empty()) {
+      continue;
+    }
+
+    if (stage.m_PushConstants.size() > 1) {
+      spdlog::error(
+          "VulkanAPI : CreateRasterizationPipeline : Supplied stage has more than 1 push constant block, this is not allowed.");
+      continue;
+    }
+
+    PushConstantBlock &block = stage.m_PushConstants[0];
+
+    bool skip = false;
+
+    for (auto &range : m_PushConstantRanges) {
+      if (block.m_Offset == range.offset && block.m_Size == range.size) {
+        range.stageFlags |= block.m_Stage;
+      }
+    }
+
+    if (skip) {
+      continue;
+    }
+
+    VkPushConstantRange range{};
+    range.offset = block.m_Offset;
+    range.size = block.m_Size;
+    range.stageFlags = block.m_Stage;
+
+    m_PushConstantRanges.push_back(range);
+  }
+}
+uint32_t ShaderProgram::GetPushConstantRangeCount() {
+  return static_cast<uint32_t>(m_PushConstantRanges.size());
+}
+VkPipelineLayoutCreateInfo ShaderProgram::GetPipelineLayoutCreateInfo() {
+  VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+  pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+  pipelineLayoutInfo.setLayoutCount = 1;
+  pipelineLayoutInfo.pSetLayouts = &m_DescriptorSetLayout;
+  pipelineLayoutInfo.pushConstantRangeCount = GetPushConstantRangeCount();
+  pipelineLayoutInfo.pPushConstantRanges = !m_PushConstantRanges.empty() ?
+                                            m_PushConstantRanges.data() :
+                                            nullptr;
+
+  return pipelineLayoutInfo;
+}
 
 VkShaderModule CreateShaderModule(VkState &vk, const StageBinary &data) {
   VkShaderModuleCreateInfo createInfo{};
@@ -62,7 +123,7 @@ VkShaderModule CreateShaderModuleRaw(VkState &vk, const char *data,
   return shaderModule;
 }
 
-shaderc_shader_kind get_shaderc_type_from_lvk(lvk::ShaderStageType type)
+shaderc_shader_kind GetShadercShaderKind(lvk::ShaderStageType type)
 {
   switch(type)
   {
@@ -85,7 +146,7 @@ StageBinary CreateStageBinaryFromSource(VkState &vk, ShaderStageType type,
   auto result = shaderc_compile_into_spv(c,
                           source.c_str(),
                           source.size(),
-                          get_shaderc_type_from_lvk(type),
+                          GetShadercShaderKind(type),
                           "shadername",
                           "main",
                            opt);
