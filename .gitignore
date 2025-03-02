@@ -48,3 +48,4 @@ vs33/
 doodle.log
 /cmake-build-release-visual-studio
 /cmake-build-relwithdebinfo-visual-studio
+/.VSCodeCounter

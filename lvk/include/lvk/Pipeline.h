@@ -20,7 +20,7 @@ namespace pipelines{
         RasterizationState & rasterState,
         VkExtent2D resolution,
         VkPipelineLayout& pipelineLayout,
-        uint32_t colorAttachmentCount = 1
+        Vector<VkFormat> colourAttachments
         );
 
     VkPipeline                          CreateRasterPipeline(
