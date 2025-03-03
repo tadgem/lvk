@@ -7,15 +7,18 @@
 
 using namespace lvk;
 
+struct RenderData
+{
+  VkPipeline          m_GBufferPipeline, m_LightPassPipeline;
+  VkPipelineLayout    m_GBufferPipelineLayout, m_LightPassPipelineLayour;
+};
+
 struct ViewData
 {
     // most of this can be encapsulated in a view pipeline
     Framebuffer m_GBuffer;
     Framebuffer m_LightPassFB;
     Material    m_LightPassMaterial;
-
-    VkPipeline          m_GBufferPipeline, m_LightPassPipeline;
-    VkPipelineLayout    m_GBufferPipelineLayout, m_LightPassPipelineLayour;
 
     LvkIm3dViewState m_Im3dState;
     VkExtent2D  m_CurrentResolution{ 1920, 1080 };
@@ -50,22 +53,8 @@ ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferP
     lightPassMat.SetColourAttachment(vk, "normalBufferSampler", gbuffer, 2);
     lightPassMat.SetColourAttachment(vk, "colourBufferSampler", gbuffer, 0);
 
-    // create gbuffer pipeline
-    VkPipelineLayout gbufferPipelineLayout;
-    auto vertexDescription = VertexDataPosNormalUv::GetVertexDescription();
-    VkPipeline gbufferPipeline = lvk::pipelines::CreateRasterPipeline(vk,
-        gbufferProg,vertexDescription, defaults::DefaultRasterState,
-        gbuffer.m_RenderPass, vk.m_SwapChainImageExtent, gbufferPipelineLayout, 3);
 
-    // create present graphics pipeline
-    // Pipeline stage?
-    VkPipelineLayout lightPassPipelineLayout;
-    auto presentVertexDescription = VertexDataPosUv::GetVertexDescription();
-    VkPipeline pipeline = lvk::pipelines::CreateRasterPipeline(vk,
-        lightPassProg, presentVertexDescription, defaults::CullNoneRasterState,
-        finalImage.m_RenderPass, vk.m_SwapChainImageExtent, lightPassPipelineLayout);
-
-    auto im3dViewState = AddIm3dForViewport(vk, im3dState, finalImage.m_RenderPass, false);
+    auto im3dViewState = AddIm3dForViewport(vk, im3dState, finalImage.m_RenderPassInfo.m_RenderPass, false, true);
 
     static Vector<VertexDataPosUv> screenQuadVerts = {
                     { { -1.0f, -1.0f , 0.0f}, { 0.0f, 0.0f } },
@@ -88,7 +77,35 @@ ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferP
 
     Mesh screenQuad{ vertBuffer, vertAlloc, indexBuffer, indexAlloc, 6 };
 
-    return { gbuffer, finalImage, lightPassMat, gbufferPipeline, pipeline, gbufferPipelineLayout, lightPassPipelineLayout, im3dViewState , {1920, 1080}, {},  screenQuad };
+    return { gbuffer, finalImage, lightPassMat, im3dViewState , {1920, 1080}, {},  screenQuad };
+}
+
+RenderData CreateRenderData(VkState& vk, ShaderProgram gbufferProg, ShaderProgram lightPassProg)
+{
+
+
+    VkPipelineLayout gbufferPipelineLayout;
+    auto vertexDescription = VertexDataPosNormalUv::GetVertexDescription();
+    VkPipeline gbufferPipeline = lvk::pipelines::CreateDynamicRasterPipeline(vk,
+        gbufferProg,vertexDescription,
+        defaults::DefaultRasterState,
+        vk.m_SwapChainImageExtent,
+        gbufferPipelineLayout,
+         {
+             VK_FORMAT_R16G16B16A16_SFLOAT,
+             VK_FORMAT_R16G16B16A16_SFLOAT,
+             VK_FORMAT_R16G16B16A16_SFLOAT
+         });
+
+    // create present graphics pipeline
+    // Pipeline stage?
+    VkPipelineLayout lightPassPipelineLayout;
+    auto presentVertexDescription = VertexDataPosUv::GetVertexDescription();
+    VkPipeline pipeline = lvk::pipelines::CreateDynamicRasterPipeline(vk,
+       lightPassProg, presentVertexDescription, defaults::CullNoneRasterState,
+       vk.m_SwapChainImageExtent, lightPassPipelineLayout, {VK_FORMAT_R8G8B8A8_UNORM});
+
+    return {gbufferPipeline, pipeline, gbufferPipelineLayout, lightPassPipelineLayout};
 }
 
 void FreeView(VkState & vk, ViewData& view)
@@ -130,7 +147,7 @@ void UpdateViewData(VkState & vk, ViewData* view, DeferredLightData& lightData)
     view->m_LightPassMaterial.SetBuffer(vk.m_CurrentFrameIndex, 0, 3, lightData);
 }
 
-void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderModel& model, Mesh& screenQuad, LvkIm3dState& im3dState, DeferredLightData& lightData)
+void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderData& renderData, RenderModel& model, Mesh& screenQuad, LvkIm3dState& im3dState, DeferredLightData& lightData)
 {
     static Vector<VertexDataPosUv> originalScreenQuadData = {
                     { { -1.0f, -1.0f , 0.0f}, { 0.0f, 0.0f } },
@@ -145,16 +162,6 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderModel& 
             clearValues[1].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
             clearValues[2].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
             clearValues[3].depthStencil = { 1.0f, 0 };
-
-            VkRenderingInfoKHR renderingInfo{};
-            renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
-            renderingInfo.colorAttachmentCount = 0;
-
-            spdlog::info("vkCmdBeginRenderingKHR : addr : {}", (void*) *vkCmdBeginRenderingKHR);
-            spdlog::info("vkCmdEndRenderingKHR : addr : {}", (void*) *vkCmdEndRenderingKHR);
-
-            vkCmdBeginRenderingKHR(commandBuffer, &renderingInfo);
-            vkCmdEndRenderingKHR(commandBuffer);
 
             VkRenderPassBeginInfo renderPassInfo{};
             renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -216,24 +223,9 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderModel& 
             }
 
             {
-                Array<VkClearValue, 4> clearValues{};
-                clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
-                clearValues[1].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
-                clearValues[2].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
-                clearValues[3].depthStencil = { 1.0f, 0 };
-
-                VkRenderPassBeginInfo renderPassInfo{};
-                renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-                renderPassInfo.renderPass = view->m_GBuffer.m_RenderPass;
-                renderPassInfo.framebuffer = view->m_GBuffer.m_SwapchainFramebuffers[frameIndex];
-                renderPassInfo.renderArea.offset = { 0,0 };
-                renderPassInfo.renderArea.extent = viewExtent;
-
-                renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-                renderPassInfo.pClearValues = clearValues.data();
-
-                vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, view->m_GBufferPipeline);
+                // vkCmdBeginRenderingKHR(commandBuffer, &view->m_GBuffer.m_DynamicRenderingInfo.m_RenderingInfos[frameIndex]);
+                view->m_GBuffer.BeginDynamicRendering(vk, commandBuffer, frameIndex);
+                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderData.m_GBufferPipeline);
                 VkViewport viewport{};
                 viewport.x = 0.0f;
                 viewport.x = 0.0f;
@@ -251,7 +243,7 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderModel& 
 
                 vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
                 vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-                vkCmdPushConstants(commandBuffer, view->m_GBufferPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PCViewData), &pcData);
+                vkCmdPushConstants(commandBuffer, renderData.m_GBufferPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PCViewData), &pcData);
 
                 for (int i = 0; i < model.m_RenderItems.size(); i++)
                 {
@@ -262,29 +254,17 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderModel& 
 
                     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, sizes);
                     vkCmdBindIndexBuffer(commandBuffer, mesh.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-                    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, view->m_GBufferPipelineLayout, 0, 1, &model.m_RenderItems[i].m_Material.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
+                    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderData.m_GBufferPipelineLayout, 0, 1, &model.m_RenderItems[i].m_Material.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
                     vkCmdDrawIndexed(commandBuffer, mesh.m_IndexCount, 1, 0, 0, 0);
                 }
-                vkCmdEndRenderPass(commandBuffer);
+                vkCmdEndRenderingKHR(commandBuffer);
+
             }
 
-            Array<VkClearValue, 2> clearValues{};
-            clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
-            clearValues[1].depthStencil = { 1.0f, 0 };
+            //vkCmdBeginRenderingKHR(commandBuffer, &view->m_LightPassFB.m_DynamicRenderingInfo.m_RenderingInfos[frameIndex]);
+            view->m_LightPassFB.BeginDynamicRendering(vk, commandBuffer, frameIndex);
 
-            VkRenderPassBeginInfo renderPassInfo{};
-            renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-            renderPassInfo.renderPass = view->m_LightPassFB.m_RenderPass;
-            renderPassInfo.framebuffer = view->m_LightPassFB.m_SwapchainFramebuffers[frameIndex];
-            renderPassInfo.renderArea.offset = { 0,0 };
-            renderPassInfo.renderArea.extent = viewExtent;
-
-            renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-            renderPassInfo.pClearValues = clearValues.data();
-
-            vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, view->m_LightPassPipeline);
+            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderData.m_LightPassPipeline);
             VkViewport viewport{};
             viewport.x = 0.0f;
             viewport.x = 0.0f;
@@ -304,15 +284,15 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderModel& 
             // meaning the entire buffer will be resampled
             vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
             vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-            vkCmdPushConstants(commandBuffer, view->m_LightPassPipelineLayour, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PCViewData), &pcData);
+            vkCmdPushConstants(commandBuffer, renderData.m_LightPassPipelineLayour, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PCViewData), &pcData);
             VkDeviceSize sizes[] = { 0 };
             vkCmdBindVertexBuffers(commandBuffer, 0, 1, &view->m_ViewQuad.m_VertexBuffer, sizes);
             vkCmdBindIndexBuffer(commandBuffer, view->m_ViewQuad.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, view->m_LightPassPipelineLayour, 0, 1, &view->m_LightPassMaterial.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
+            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderData.m_LightPassPipelineLayour, 0, 1, &view->m_LightPassMaterial.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
             vkCmdDrawIndexed(commandBuffer, view->m_ViewQuad.m_IndexCount, 1, 0, 0, 0);
 
             DrawIm3d(vk, commandBuffer, frameIndex, im3dState, view->m_Im3dState, view->m_Camera.Proj * view->m_Camera.View, viewExtent.width, viewExtent.height);
-            vkCmdEndRenderPass(commandBuffer);
+            vkCmdEndRenderingKHR(commandBuffer);
         }
         }
     );
@@ -492,7 +472,7 @@ int main() {
     viewB.m_Camera.Position = { 30.0, 0.0f, -20.0f };
 
     Vector<ViewData*> views{ &viewA, &viewB };
-
+    RenderData renderData = CreateRenderData(vk, gbufferProg, lightPassProg);
     // create vertex and index buffer
     // allocate materials instead of raw buffers etc.
     RenderModel m = CreateRenderModelGbuffer(vk, "assets/Sponza/sponza.gltf", gbufferProg);
@@ -518,7 +498,7 @@ int main() {
 
         Im3d::EndFrame();
 
-        RecordCommandBuffersV2(vk, views, m, *Mesh::g_ScreenSpaceQuad, im3dState, lightDataCpu);
+        RecordCommandBuffersV2(vk, views, renderData, m, *Mesh::g_ScreenSpaceQuad, im3dState, lightDataCpu);
 
         OnImGui(vk, lightDataCpu, views);
 

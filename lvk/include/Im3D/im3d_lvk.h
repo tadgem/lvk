@@ -33,7 +33,7 @@ namespace lvk
     };
 
     LvkIm3dState LoadIm3D(VkState & vk);
-    LvkIm3dViewState AddIm3dForViewport(VkState & vk, LvkIm3dState& state, VkRenderPass renderPass, bool enableMSAA);
+    LvkIm3dViewState AddIm3dForViewport(VkState & vk, LvkIm3dState& state, VkRenderPass renderPass, bool enableMSAA, bool enableDynamicRendering = false);
     void FreeIm3dViewport(VkState & vk, LvkIm3dViewState& viewState);
     void FreeIm3d(VkState & vk, LvkIm3dState& state);
     void DrawIm3d(VkState & vk, VkCommandBuffer& buffer, uint32_t frameIndex, LvkIm3dState& state, LvkIm3dViewState& viewState, glm::mat4 _viewProj, uint32_t width, uint32_t height, bool drawText = false);

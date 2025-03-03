@@ -97,7 +97,7 @@ namespace pipelines{
 
         LvkIm3dViewState* AddIm3d(VkState & vk, LvkIm3dState im3dState)
         {
-            m_Im3dState = new LvkIm3dViewState(AddIm3dForViewport(vk, im3dState, m_OutputFramebuffer.value()->m_RenderPass, false));
+            m_Im3dState = new LvkIm3dViewState(AddIm3dForViewport(vk, im3dState, m_OutputFramebuffer.value()->m_RenderPassInfo.m_RenderPass, false));
             return m_Im3dState;
         }
 
@@ -167,7 +167,7 @@ namespace pipelines{
 
         LvkIm3dViewState* AddIm3d(VkState & vk, LvkIm3dState im3dState)
         {
-            m_Im3dState = new LvkIm3dViewState(AddIm3dForViewport(vk, im3dState, m_OutputFramebuffer.value()->m_RenderPass, false));
+            m_Im3dState = new LvkIm3dViewState(AddIm3dForViewport(vk, im3dState, m_OutputFramebuffer.value()->m_RenderPassInfo.m_RenderPass, false));
             return m_Im3dState;
         }
 

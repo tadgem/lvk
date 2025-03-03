@@ -1,6 +1,6 @@
 #pragma once
-#include "Macros.h"
-#include "RenderPass.h"
+#include "lvk/Macros.h"
+#include "lvk/RenderPass.h"
 #include "Utils.h"
 #include "lvk/Texture.h"
 
@@ -57,15 +57,14 @@ namespace lvk
     class Framebuffer
     {
     public:
-        Vector<Attachment> m_ColourAttachments;
-        Vector<Attachment> m_DepthAttachments;
-        Vector<Attachment> m_ResolveAttachments;
+        Vector<Attachment>  m_ColourAttachments;
+        Vector<Attachment>  m_DepthAttachments;
+        Vector<Attachment>  m_ResolveAttachments;
 
-        Vector<VkFramebuffer>   m_SwapchainFramebuffers;
-        VkRenderPass            m_RenderPass;
+        // Render pass
+        RenderPassInfo        m_RenderPassInfo;
 
-
-        Vector <VkClearColorValue>  m_ClearValues;
+        Vector <VkClearValue>       m_ClearValues;
         VkAttachmentLoadOp          m_AttachmentLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         VkExtent2D                  m_Resolution;
         
@@ -79,6 +78,10 @@ namespace lvk
             ResolveResolutionScale(scale, resolution.width, resolution.height, resolution.width, resolution.height);
             m_ColourAttachments.push_back(Attachment::CreateColourAttachment(vk,
                 resolution, numMips, sampleCount, format, usageFlags, memoryFlags, imageAspect, samplerFilter, samplerAddressMode));
+            for(auto& img : m_ColourAttachments.back().m_AttachmentSwapchainImages)
+            {
+                textures::TransitionImageLayout(vk, img.m_Image, format, numMips, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
+            }
             m_Resolution = resolution;
         }
 
@@ -92,6 +95,10 @@ namespace lvk
             ResolveResolutionScale(scale, resolution.width, resolution.height, resolution.width, resolution.height);
             m_DepthAttachments.push_back(Attachment::CreateDepthAttachment(vk,
                 resolution, numMips, sampleCount, usageFlags, memoryFlags, imageAspect, samplerFilter, samplerAddressMode));
+            for(auto& img : m_DepthAttachments.back().m_AttachmentSwapchainImages)
+            {
+                textures::TransitionImageLayout(vk, img.m_Image, utils::FindDepthFormat(vk), numMips, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+            }
             m_Resolution = resolution;
 
         }
@@ -106,86 +113,20 @@ namespace lvk
             ResolveResolutionScale(scale, resolution.width, resolution.height, resolution.width, resolution.height);
             m_ResolveAttachments.push_back(Attachment::CreateColourAttachment(vk,
                 resolution, numMips, sampleCount, format, usageFlags, memoryFlags, imageAspect, samplerFilter, samplerAddressMode));
+            for(auto& img : m_ResolveAttachments.back().m_AttachmentSwapchainImages)
+            {
+                textures::TransitionImageLayout(vk, img.m_Image, utils::FindDepthFormat(vk), numMips, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
+            }
             m_Resolution = resolution;
 
         }
 
-
-        void Build(lvk::VkState & vk)
-        {
-            // build renderpass
-            Vector<VkAttachmentDescription> colourAttachmentDescriptions{};
-            for (auto& col : m_ColourAttachments)
-            {
-                VkAttachmentDescription colourAttachment{};
-                colourAttachment.format = col.m_Format;
-                colourAttachment.samples = col.m_SampleCount;
-                colourAttachment.loadOp = m_AttachmentLoadOp;
-                colourAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-                colourAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-                colourAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-                colourAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                colourAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                colourAttachmentDescriptions.push_back(colourAttachment);
-            }
-
-            Vector<VkAttachmentDescription> resolveAttachmentDescriptions{};
-
-            for (auto& col : m_ResolveAttachments)
-            {
-                VkAttachmentDescription resolveAttachment{};
-                resolveAttachment.format = col.m_Format;
-                resolveAttachment.samples = col.m_SampleCount;
-                resolveAttachment.loadOp = m_AttachmentLoadOp;
-                resolveAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-                resolveAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-                resolveAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-                resolveAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                resolveAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                resolveAttachmentDescriptions.push_back(resolveAttachment);
-            }
-
-            VkAttachmentDescription depthAttachmentDescription{};
-            bool hasDepth = m_DepthAttachments.size() > 0;
-            if (hasDepth)
-            {
-                Attachment& depth = m_DepthAttachments[0];
-                depthAttachmentDescription.format = depth.m_Format;
-                depthAttachmentDescription.samples = depth.m_SampleCount;
-                depthAttachmentDescription.loadOp = m_AttachmentLoadOp;
-                depthAttachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-                depthAttachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-                depthAttachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-                depthAttachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                depthAttachmentDescription.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-            }
-
-            render_passes::CreateRenderPass(vk, m_RenderPass,
-                colourAttachmentDescriptions, resolveAttachmentDescriptions, hasDepth,
-                depthAttachmentDescription, m_AttachmentLoadOp);
-
-            for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-            {
-                bool hasDepth = m_DepthAttachments.size() > 0;
-                Vector<VkImageView> framebufferAttachments;
-                for (auto& colour : m_ColourAttachments)
-                {
-                    framebufferAttachments.push_back(colour.m_AttachmentSwapchainImages[i].m_ImageView);
-                }
-                if (hasDepth)
-                {
-                    framebufferAttachments.push_back(m_DepthAttachments[0].m_AttachmentSwapchainImages[i].m_ImageView);
-                }
-                for (auto& resolve : m_ResolveAttachments)
-                {
-                    framebufferAttachments.push_back(resolve.m_AttachmentSwapchainImages[i].m_ImageView);
-                }
-                VkFramebuffer fb;
-                textures::CreateFramebuffer(vk, framebufferAttachments, m_RenderPass, m_Resolution, fb);
-                m_SwapchainFramebuffers.push_back(fb);
-            }
-        }
+        void Build(lvk::VkState & vk);
+        void BeginDynamicRendering(lvk::VkState& vk, VkCommandBuffer& cmd, uint32_t frameIndex);
 
         void Free(VkState & vk);
+      private:
+
+        void BuildRenderPasses(lvk::VkState& vk);
     };
 }

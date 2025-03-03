@@ -5,7 +5,7 @@
 #include "ThirdParty/VulkanMemoryAllocator.h"
 #include "Alias.h"
 #include "lvk/DescriptorSetAllocator.h"
-
+#include "lvk/Macros.h"
 
 namespace lvk {
 
@@ -125,6 +125,22 @@ namespace lvk {
   {
     Vector<VkDynamicState>            m_DynamicStates;
     VkPipelineDynamicStateCreateInfo  m_DynamicStateInfo;
+  };
+
+  struct RenderPassInfo
+  {
+    Vector<VkFramebuffer>           m_SwapchainFramebuffers;
+    VkRenderPass                    m_RenderPass;
+    Vector<VkRenderPassBeginInfo>   m_RenderPassInfos;
+  };
+
+  struct DynamicRenderingInfo
+  {
+    Array<Vector<VkRenderingAttachmentInfoKHR>, MAX_FRAMES_IN_FLIGHT>  m_ColourAttachmentInfos;
+    Array<Vector<VkRenderingAttachmentInfoKHR>, MAX_FRAMES_IN_FLIGHT>  m_DepthAttachmentInfos;
+    Array<Vector<VkRenderingAttachmentInfoKHR>, MAX_FRAMES_IN_FLIGHT>  m_ResolveAttachmentInfos;
+
+    Vector<VkRenderingInfoKHR>            m_RenderingInfos;
   };
 
   enum class ShaderStageType { Vertex, Fragment, Compute };

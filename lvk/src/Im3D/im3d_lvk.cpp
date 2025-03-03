@@ -73,7 +73,7 @@ namespace lvk
         return { tris_prog, points_prog, lines_prog, vertexBuffer, vertexBufferMemory };
     }
 
-    LvkIm3dViewState AddIm3dForViewport(VkState & vk, LvkIm3dState& state, VkRenderPass renderPass, bool enableMSAA)
+    LvkIm3dViewState AddIm3dForViewport(VkState & vk, LvkIm3dState& state, VkRenderPass renderPass, bool enableMSAA, bool enableDynamicRendering)
     {
         auto vertexDescription = VertexDataPos4::GetVertexDescription();
         VkPipelineLayout tris_layout;
@@ -85,9 +85,15 @@ namespace lvk
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
         };
 
-        VkPipeline tris_pipeline = pipelines::CreateRasterPipeline(vk,
+        VkPipeline tris_pipeline = !enableDynamicRendering ?
+            pipelines::CreateRasterPipeline(vk,
             state.m_TriProg, vertexDescription, tris_raster_state,
-            renderPass, vk.m_SwapChainImageExtent, tris_layout);
+            renderPass, vk.m_SwapChainImageExtent, tris_layout)   :
+
+            pipelines::CreateDynamicRasterPipeline(vk,
+            state.m_TriProg, vertexDescription, tris_raster_state,
+            vk.m_SwapChainImageExtent, tris_layout, {VK_FORMAT_R8G8B8A8_UNORM});
+
         Material tris_material = Material::Create(vk, state.m_TriProg);
 
         VkPipelineLayout points_layout;
@@ -99,9 +105,15 @@ namespace lvk
             VK_COMPARE_OP_LESS,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
         };
-        VkPipeline points_pipeline = pipelines::CreateRasterPipeline(vk,
+        VkPipeline points_pipeline = !enableDynamicRendering ?
+            pipelines::CreateRasterPipeline(vk,
             state.m_PointsProg, vertexDescription, points_raster_state,
-            renderPass, vk.m_SwapChainImageExtent, points_layout);
+            renderPass, vk.m_SwapChainImageExtent, points_layout) :
+
+            pipelines::CreateDynamicRasterPipeline(vk,
+            state.m_PointsProg, vertexDescription, points_raster_state,
+            vk.m_SwapChainImageExtent, points_layout, {VK_FORMAT_R8G8B8A8_UNORM});
+
         Material points_material = Material::Create(vk, state.m_PointsProg);
 
 
@@ -113,9 +125,15 @@ namespace lvk
             VK_COMPARE_OP_LESS,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
         };
-        VkPipeline lines_pipeline = pipelines::CreateRasterPipeline(vk,
+        VkPipeline lines_pipeline = !enableDynamicRendering ?
+            pipelines::CreateRasterPipeline(vk,
             state.m_LinesProg, vertexDescription, lines_raster_state,
-            renderPass, vk.m_SwapChainImageExtent, lines_layout);
+            renderPass, vk.m_SwapChainImageExtent, lines_layout) :
+
+           pipelines::CreateDynamicRasterPipeline(vk,
+           state.m_LinesProg, vertexDescription, lines_raster_state,
+           vk.m_SwapChainImageExtent, lines_layout, {VK_FORMAT_R8G8B8A8_UNORM});
+
         Material lines_material = Material::Create(vk, state.m_LinesProg);
 
 

@@ -21,7 +21,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
   if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
   {
     spdlog::warn("VL: {}\n Stacktrace:\n", pCallbackData->pMessage);
-    cpptrace::generate_trace().print();
+    //cpptrace::generate_trace().print();
   }
   if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
   {
@@ -30,7 +30,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
   if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
   {
     spdlog::error("VL: {}\n Stacktrace:\n", pCallbackData->pMessage);
-    cpptrace::generate_trace().print();
+    //cpptrace::generate_trace().print();
   }
   return VK_FALSE;
 }
@@ -545,6 +545,7 @@ void lvk::init::CreateLogicalDevice(VkState& vk)
 
   auto extensions = s_RequiredDeviceExtensions;
   extensions.push_back("VK_KHR_dynamic_rendering");
+  extensions.push_back("VK_KHR_synchronization2");
 
   createInfo.enabledExtensionCount    = static_cast<uint32_t>(extensions.size());
   createInfo.ppEnabledExtensionNames  = extensions.data();
@@ -554,10 +555,22 @@ void lvk::init::CreateLogicalDevice(VkState& vk)
     createInfo.enabledLayerCount    = static_cast<uint32_t>(s_ValidationLayers.size());
     createInfo.ppEnabledLayerNames  = s_ValidationLayers.data();
   }
-  else
-  {
-    createInfo.enabledLayerCount    = 0;
+  else {
+    createInfo.enabledLayerCount = 0;
   }
+  VkPhysicalDeviceSynchronization2FeaturesKHR sync2Extension {
+      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR,
+      nullptr,
+      VK_TRUE,
+  };
+
+  VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingExtension {
+      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR,
+      static_cast<void*>(&sync2Extension),
+      VK_TRUE,
+  };
+
+  createInfo.pNext = &dynamicRenderingExtension;
 
   if (vkCreateDevice(vk.m_PhysicalDevice, &createInfo, nullptr, &vk.m_LogicalDevice))
   {
