@@ -55,7 +55,7 @@ ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferP
     auto vertexDescription = VertexDataPosNormalUv::GetVertexDescription();
     VkPipeline gbufferPipeline = lvk::pipelines::CreateRasterPipeline(vk,
         gbufferProg,vertexDescription, defaults::DefaultRasterState,
-        gbuffer.m_RenderPass, vk.m_SwapChainImageExtent, gbufferPipelineLayout, 3);
+        gbuffer.m_RenderPassInfo.m_RenderPass, vk.m_SwapChainImageExtent, gbufferPipelineLayout, 3);
 
     // create present graphics pipeline
     // Pipeline stage?
@@ -63,9 +63,9 @@ ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferP
     auto presentVertexDescription = VertexDataPosUv::GetVertexDescription();
     VkPipeline pipeline = lvk::pipelines::CreateRasterPipeline(vk,
         lightPassProg, presentVertexDescription, defaults::CullNoneRasterState,
-        finalImage.m_RenderPass, vk.m_SwapChainImageExtent, lightPassPipelineLayout);
+        finalImage.m_RenderPassInfo.m_RenderPass, vk.m_SwapChainImageExtent, lightPassPipelineLayout);
 
-    auto im3dViewState = AddIm3dForViewport(vk, im3dState, finalImage.m_RenderPass, false);
+    auto im3dViewState = AddIm3dForViewport(vk, im3dState, finalImage.m_RenderPassInfo.m_RenderPass, false);
 
     static Vector<VertexDataPosUv> screenQuadVerts = {
                     { { -1.0f, -1.0f , 0.0f}, { 0.0f, 0.0f } },
@@ -214,8 +214,8 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderModel& 
 
                 VkRenderPassBeginInfo renderPassInfo{};
                 renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-                renderPassInfo.renderPass = view->m_GBuffer.m_RenderPass;
-                renderPassInfo.framebuffer = view->m_GBuffer.m_SwapchainFramebuffers[frameIndex];
+                renderPassInfo.renderPass = view->m_GBuffer.m_RenderPassInfo.m_RenderPass;
+                renderPassInfo.framebuffer = view->m_GBuffer.m_RenderPassInfo.m_SwapchainFramebuffers[frameIndex];
                 renderPassInfo.renderArea.offset = { 0,0 };
                 renderPassInfo.renderArea.extent = viewExtent;
 
@@ -264,8 +264,8 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderModel& 
 
             VkRenderPassBeginInfo renderPassInfo{};
             renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-            renderPassInfo.renderPass = view->m_LightPassFB.m_RenderPass;
-            renderPassInfo.framebuffer = view->m_LightPassFB.m_SwapchainFramebuffers[frameIndex];
+            renderPassInfo.renderPass = view->m_LightPassFB.m_RenderPassInfo.m_RenderPass;
+            renderPassInfo.framebuffer = view->m_LightPassFB.m_RenderPassInfo.m_SwapchainFramebuffers[frameIndex];
             renderPassInfo.renderArea.offset = { 0,0 };
             renderPassInfo.renderArea.extent = viewExtent;
 
