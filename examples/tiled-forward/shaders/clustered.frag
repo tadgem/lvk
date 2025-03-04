@@ -1,5 +1,9 @@
 #version 450
 
+#include "include/Defs.glsl"
+#include "include/Lights.glsl"
+#include "include/Helpers.glsl"
+
 layout(location = 0) in vec3 Position;
 layout(location = 1) in vec3 Normal;
 layout(location = 2) in vec2 UV;
@@ -8,33 +12,6 @@ layout(location = 4) in vec4 LastClipPos;
 
 layout(location = 0) out vec4 outColor;
 layout(location = 1) out vec4 outPacking;
-
-
-#define MAX_NUM_EACH_LIGHTS 512
-#define ATTENUATION_CONSTANT 1.0
-#define ATTENUATION_LINEAR_CONSTANT 4.5
-#define ATTENUATION_QUADRATIC_CONSTANT 75.0
-
-struct DirectionalLight {
-    vec3 Direction;
-    vec3 Ambient;
-    vec3 Colour;
-    mat4 LightSpaceMatrix;
-};
-
-struct PointLight {
-    vec4 PositionRadius;
-    vec4 Ambient;
-    vec4 Colour;
-};
-
-struct SpotLight {
-    vec4 PositionRadius;
-    vec4 DirectionAngle;
-    vec4 Ambient;
-    vec4 Colour;
-};
-
 
 layout(set = 0, binding = 0) uniform InstanceUBO {
     mat4 u_model;
@@ -69,18 +46,7 @@ layout(binding = 7) uniform sampler2D u_ao;
 // depth to reconstruct last frame position
 layout(binding = 8) uniform sampler2D u_previous_depth_map;
 
-vec3 ReconstructPositionFromDepth(float depth, vec2 uv, mat4 inverseView, mat4 inverseProjection)
-{
-    return vec3(0.0);
-}
 
-vec3 UnpackNormalMap( vec3 TextureSample )
-{
-    vec2 NormalXY = TextureSample.rg;
-    NormalXY = NormalXY * vec2(2.0,2.0) - vec2(1.0,1.0);
-    float NormalZ = sqrt( clamp(( 1.0f - dot( NormalXY, NormalXY ) ),0.0,1.0));
-    return vec3( NormalXY.xy, NormalZ);
-}
 
 vec3 getNormalFromMap() {
     vec3 tangentNormal = texture(u_normal_map, UV).xyz * 2.0 - 1.0;

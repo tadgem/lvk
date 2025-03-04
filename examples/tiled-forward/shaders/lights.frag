@@ -1,32 +1,9 @@
 #version 450
 
-#define MAX_NUM_EACH_LIGHTS 512
 
-#define ATTENUATION_CONSTANT 1.0
-#define ATTENUATION_LINEAR_CONSTANT 4.5
-#define ATTENUATION_QUADRATIC_CONSTANT 75.0
-
-struct DirectionalLight
-{
-    vec4 Direction;
-    vec4 Ambient;
-    vec4 Colour;
-};
-
-struct PointLight
-{
-    vec4 PositionRadius;
-    vec4 Ambient;
-    vec4 Colour;
-};
-
-struct SpotLight
-{
-    vec4 PositionRadius;
-    vec4 DirectionAngle;
-    vec4 Ambient;
-    vec4 Colour;
-};
+#include "include/Defs.glsl"
+#include "include/Lights.glsl"
+#include "include/Helpers.glsl"
 
 layout(location = 0) in vec2 UV;
 

@@ -178,7 +178,7 @@ StageBinary CreateStageBinaryFromSource(VkState &vk, ShaderStageType type,
 
 void RecurseStringInclude(String inputDir, String& output, const String& path)
 {
-  String input = utils::LoadStringFromPath(path);
+  String input = utils::LoadStringFromPath(inputDir + "/" + path);
   String dir = std::filesystem::path(path).parent_path().u8string();
   std::istringstream iss(input);
   std::regex include_dir_regex("\\\"(.*)\\\"");
@@ -192,8 +192,9 @@ void RecurseStringInclude(String inputDir, String& output, const String& path)
         for (std::sregex_iterator i = words_begin; i != words_end; ++i)
         {
           const std::smatch& match = *i;
-          std::string include_dir = match.str();
-          spdlog::info("Include Dir : {}", include_dir);
+          // remove first and last ""
+          std::string include_dir = match.str().substr(1, match.str().size() - 2);
+          RecurseStringInclude(inputDir, output, include_dir);
         }
 
         RecurseStringInclude(dir, output, input);
@@ -207,8 +208,9 @@ void RecurseStringInclude(String inputDir, String& output, const String& path)
 
 String ShaderStage::LoadShaderSource(const String &path) {
   String final_shader_src {};
-  RecurseStringInclude(std::filesystem::path(path).parent_path().u8string(),
-                       final_shader_src, path);
+  std::filesystem::path inputPath(path);
+  RecurseStringInclude(inputPath.parent_path().u8string(),
+                       final_shader_src, inputPath.filename().u8string());
   // do includes
   return final_shader_src;
 }
