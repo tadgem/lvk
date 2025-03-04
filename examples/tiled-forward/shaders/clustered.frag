@@ -11,7 +11,7 @@ layout(location = 3) in vec4 ClipPos;
 layout(location = 4) in vec4 LastClipPos;
 
 layout(location = 0) out vec4 outColor;
-layout(location = 1) out vec4 outPacking;
+layout(location = 1) out uvec4 outPacking;
 
 layout(set = 0, binding = 0) uniform InstanceUBO {
     mat4 u_model;

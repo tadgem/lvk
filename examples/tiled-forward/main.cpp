@@ -80,7 +80,7 @@ ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferP
     return { gbuffer, finalImage, lightPassMat, im3dViewState , {1920, 1080}, {},  screenQuad };
 }
 
-RenderData CreateRenderData(VkState& vk, ShaderProgram gbufferProg, ShaderProgram lightPassProg)
+RenderData CreateRenderData(VkState& vk, ShaderProgram gbufferProg, ShaderProgram lightPassProg, ShaderProgram tiledForward)
 {
     VkPipelineLayout gbufferPipelineLayout;
     auto vertexDescription = VertexDataPosNormalUv::GetVertexDescription();
@@ -94,6 +94,16 @@ RenderData CreateRenderData(VkState& vk, ShaderProgram gbufferProg, ShaderProgra
              VK_FORMAT_R16G16B16A16_SFLOAT,
              VK_FORMAT_R16G16B16A16_SFLOAT
          });
+    VkPipelineLayout tiledForwardPipelineLayout;
+    VkPipeline tiledForwardPipeline = lvk::pipelines::CreateDynamicRasterPipeline(vk,
+       tiledForward,vertexDescription,
+       defaults::DefaultRasterState,
+       vk.m_SwapChainImageExtent,
+       tiledForwardPipelineLayout,
+       {
+            VK_FORMAT_A2B10G10R10_UNORM_PACK32,
+            VK_FORMAT_R16G16B16A16_UINT
+       });
 
     // create present graphics pipeline
     // Pipeline stage?
@@ -475,7 +485,7 @@ int main() {
     viewB.m_Camera.Position = { 30.0, 0.0f, -20.0f };
 
     Vector<ViewData*> views{ &viewA, &viewB };
-    RenderData renderData = CreateRenderData(vk, gbufferProg, lightPassProg);
+    RenderData renderData = CreateRenderData(vk, gbufferProg, lightPassProg, tiledForwardProg);
     // create vertex and index buffer
     // allocate materials instead of raw buffers etc.
     RenderModel m = CreateRenderModelGbuffer(vk, "assets/Sponza/sponza.gltf", gbufferProg);
