@@ -39,12 +39,14 @@
             "id": "0044f041a055a1b9",
             "type": "leaf",
             "state": {
-              "type": "pdf",
+              "type": "markdown",
               "state": {
-                "file": "Papers/Screen Space Indirect Lighting with Visibility Bitmask.pdf"
+                "file": "Tidbits.md",
+                "mode": "source",
+                "source": false
               },
-              "icon": "lucide-file-text",
-              "title": "Screen Space Indirect Lighting with Visibility Bitmask"
+              "icon": "lucide-file",
+              "title": "Tidbits"
             }
           }
         ],
@@ -67,7 +69,8 @@
             "state": {
               "type": "file-explorer",
               "state": {
-                "sortOrder": "alphabetical"
+                "sortOrder": "alphabetical",
+                "autoReveal": false
               },
               "icon": "lucide-folder-closed",
               "title": "Files"
@@ -178,8 +181,8 @@
             "state": {
               "type": "calendar",
               "state": {},
-              "icon": "calendar-with-checkmark",
-              "title": "Calendar"
+              "icon": "lucide-file",
+              "title": "Plugin no longer active"
             }
           }
         ]
@@ -202,11 +205,15 @@
   },
   "active": "0044f041a055a1b9",
   "lastOpenFiles": [
-    "Debugging/Im3D Debugging.md",
-    "Images/Pasted image 20240618183938.png",
-    "Images/Pasted image 20240618184022.png",
-    "Papers/Screen Space Indirect Lighting with Visibility Bitmask.pdf",
+    "Papers/Efficient Unit Vector Packing.pdf",
     "Papers/RadianceCascades.pdf",
+    "Papers/Screen Space Indirect Lighting with Visibility Bitmask.pdf",
+    "Notes/Tiled Forward . Forward+ Write Up.md",
+    "Notes/Octahedral Normal Encoding.md",
+    "Debugging/Im3D Debugging.md",
+    "Notes",
+    "Images/Pasted image 20240618184022.png",
+    "Images/Pasted image 20240618183938.png",
     "LVK.md",
     "Resources.md",
     "Tidbits.md",
