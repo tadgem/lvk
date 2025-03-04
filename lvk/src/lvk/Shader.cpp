@@ -3,6 +3,9 @@
 #include "spdlog/spdlog.h"
 #include "volk.h"
 #include "shaderc/shaderc.h"
+#include <filesystem>
+#include <sstream>
+#include <regex>
 
 namespace lvk {
 void ShaderProgram::Free(VkState &vk) {
@@ -139,7 +142,7 @@ shaderc_shader_kind GetShadercShaderKind(lvk::ShaderStageType type)
 }
 
 StageBinary CreateStageBinaryFromSource(VkState &vk, ShaderStageType type,
-                                    const std::string &source) {
+                                    const std::string &source, const std::string& shaderName) {
   shaderc_compiler* c = shaderc_compiler_initialize();
   shaderc_compile_options_t opt {};
 
@@ -147,14 +150,20 @@ StageBinary CreateStageBinaryFromSource(VkState &vk, ShaderStageType type,
                           source.c_str(),
                           source.size(),
                           GetShadercShaderKind(type),
-                          "shadername",
+                          shaderName.c_str(),
                           "main",
                            opt);
 
   const char* spirv_bytes = shaderc_result_get_bytes(result);
   size_t      spirv_size  = shaderc_result_get_length(result);
-
   StageBinary bin {};
+  if(shaderc_result_get_num_errors(result) != 0)
+  {
+      spdlog::error("Failed to compile shader : {}",
+                    shaderc_result_get_error_message(result));
+      return bin;
+  }
+
   bin.resize(spirv_size);
   for(auto i = 0; i < spirv_size; i++)
   {
@@ -167,4 +176,40 @@ StageBinary CreateStageBinaryFromSource(VkState &vk, ShaderStageType type,
   return bin;
 }
 
+void RecurseStringInclude(String inputDir, String& output, const String& path)
+{
+  String input = utils::LoadStringFromPath(path);
+  String dir = std::filesystem::path(path).parent_path().u8string();
+  std::istringstream iss(input);
+  std::regex include_dir_regex("\\\"(.*)\\\"");
+  for (std::string line; std::getline(iss, line); )
+  {
+      if(line.find("#include") != String::npos)
+      {
+        auto words_begin =
+            std::sregex_iterator(line.begin(), line.end(), include_dir_regex);
+        auto words_end = std::sregex_iterator();
+        for (std::sregex_iterator i = words_begin; i != words_end; ++i)
+        {
+          const std::smatch& match = *i;
+          std::string include_dir = match.str();
+          spdlog::info("Include Dir : {}", include_dir);
+        }
+
+        RecurseStringInclude(dir, output, input);
+      }
+      else
+      {
+        output += line + "\n";
+      }
+  }
+}
+
+String ShaderStage::LoadShaderSource(const String &path) {
+  String final_shader_src {};
+  RecurseStringInclude(std::filesystem::path(path).parent_path().u8string(),
+                       final_shader_src, path);
+  // do includes
+  return final_shader_src;
+}
 }

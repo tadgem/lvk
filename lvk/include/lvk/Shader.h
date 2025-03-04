@@ -7,7 +7,8 @@ namespace lvk
     VkShaderModule CreateShaderModule(VkState& vk, const StageBinary& data);
     VkShaderModule CreateShaderModuleRaw(VkState& vk, const char* data, size_t length);
 
-    StageBinary CreateStageBinaryFromSource(VkState& vk, ShaderStageType type, const String& source);
+    StageBinary CreateStageBinaryFromSource(VkState& vk,
+      ShaderStageType type, const String& sourc, const String& shaderName);
 
     struct ShaderStage
     {
@@ -17,6 +18,8 @@ namespace lvk
         Vector<PushConstantBlock>       m_PushConstants;
         Vector<DescriptorSetLayoutData> m_LayoutDatas;
         ShaderStageType m_Type;
+
+        static String      LoadShaderSource(const String& path);
 
         static ShaderStage CreateFromBinary(VkState & vk, Vector<unsigned char>& binary, const ShaderStageType& type)
         {
@@ -34,9 +37,13 @@ namespace lvk
             return CreateFromBinary(vk, stageBin, stageType);
         }
 
-        static ShaderStage CreateFromSource(VkState & vk, const String& source, const ShaderStageType& type)
+        static ShaderStage CreateFromSource(VkState & vk, const String& source, const ShaderStageType& type, const String& path = "")
         {
-            auto bin = CreateStageBinaryFromSource(vk, type, source);
+            auto bin = CreateStageBinaryFromSource(vk, type, source, path);
+            if(bin.empty())
+            {
+              return {};
+            }
             auto stageLayoutDatas = descriptor::ReflectDescriptorSetLayouts(vk, bin);
             auto pushConstants = descriptor::ReflectPushConstants(vk, bin);
             auto module = CreateShaderModule(vk, bin);
@@ -46,8 +53,8 @@ namespace lvk
 
         static ShaderStage CreateFromSourcePath(VkState & vk, const String& path, const ShaderStageType& type)
         {
-            auto source = utils::LoadStringFromPath(path);
-            return CreateFromSource(vk, source, type);
+            auto source = LoadShaderSource(path);
+            return CreateFromSource(vk, source, type, path);
         }
     };
 

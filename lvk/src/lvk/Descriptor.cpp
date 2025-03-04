@@ -20,6 +20,7 @@ std::vector<VkDescriptorSetLayoutBinding> CleanDescriptorSetLayout(std::vector<V
     }
 
     int start = static_cast<int>(clean.size() - 1);
+    bool updated = false;
     for (int i = start; i >= 0; i--)
     {
       auto& newLayoutSet = clean[i];
@@ -28,14 +29,16 @@ std::vector<VkDescriptorSetLayoutBinding> CleanDescriptorSetLayout(std::vector<V
         if (newLayoutSet.descriptorCount == layoutSetData.descriptorCount &&
             newLayoutSet.descriptorType == layoutSetData.descriptorType)
         {
-          newLayoutSet.stageFlags = layoutSetData.stageFlags + newLayoutSet.stageFlags;
-          continue;
+          clean[i].stageFlags = layoutSetData.stageFlags + newLayoutSet.stageFlags;
+          updated = true;
+          break;
         }
       }
+    }
 
+    if(!updated)
+    {
       clean.push_back(layoutSetData);
-      break;
-
     }
   }
 
