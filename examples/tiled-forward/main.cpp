@@ -9,16 +9,14 @@ using namespace lvk;
 
 struct RenderData
 {
-  VkPipeline          m_GBufferPipeline, m_LightPassPipeline;
-  VkPipelineLayout    m_GBufferPipelineLayout, m_LightPassPipelineLayour;
+  VkPipeline          m_TiledPipeline;
+  VkPipelineLayout    m_TiledPipelineLayout;
 };
 
 struct ViewData
 {
     // most of this can be encapsulated in a view pipeline
     Framebuffer m_GBuffer;
-    Framebuffer m_LightPassFB;
-    Material    m_LightPassMaterial;
 
     LvkIm3dViewState m_Im3dState;
     VkExtent2D  m_CurrentResolution{ 1920, 1080 };
@@ -27,34 +25,32 @@ struct ViewData
     Mesh        m_ViewQuad;
 };
 
+struct InstanceUBO {
+    glm::mat4 u_model;
+    glm::mat4 u_last_model;
+    glm::mat4 u_normal;
+    uint32_t  u_entity_index;
+} instance_ubo;
+
+struct SceneViewUBO {
+    glm::mat4    u_vp;
+    glm::mat4    u_last_vp;
+    int     u_frame_index;
+    glm::vec2    u_resolution;
+} scene_view_ubo;
+
 static Transform g_Transform;
 
 ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferProg, ShaderProgram lightPassProg)
 {
     Framebuffer gbuffer{};
-    gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+    gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_A2B10G10R10_UNORM_PACK32, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
-    gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+    gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R32G32B32_UINT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
-    gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
-    gbuffer.AddDepthAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
     gbuffer.Build(vk);
 
-    Framebuffer finalImage{};
-    finalImage.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
-    finalImage.Build(vk);
-
-    Material lightPassMat = Material::Create(vk, lightPassProg);
-
-    lightPassMat.SetColourAttachment(vk, "positionBufferSampler", gbuffer, 1);
-    lightPassMat.SetColourAttachment(vk, "normalBufferSampler", gbuffer, 2);
-    lightPassMat.SetColourAttachment(vk, "colourBufferSampler", gbuffer, 0);
-
-
-    auto im3dViewState = AddIm3dForViewport(vk, im3dState, finalImage.m_RenderPassInfo.m_RenderPass, false, true);
+    auto im3dViewState = AddIm3dForViewport(vk, im3dState, vk.m_SwapchainImageRenderPass, false, true);
 
     static Vector<VertexDataPosUv> screenQuadVerts = {
                     { { -1.0f, -1.0f , 0.0f}, { 0.0f, 0.0f } },
@@ -77,23 +73,12 @@ ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferP
 
     Mesh screenQuad{ vertBuffer, vertAlloc, indexBuffer, indexAlloc, 6 };
 
-    return { gbuffer, finalImage, lightPassMat, im3dViewState , {1920, 1080}, {},  screenQuad };
+    return { gbuffer, im3dViewState , {1920, 1080}, {},  screenQuad };
 }
 
 RenderData CreateRenderData(VkState& vk, ShaderProgram gbufferProg, ShaderProgram lightPassProg, ShaderProgram tiledForward)
 {
-    VkPipelineLayout gbufferPipelineLayout;
     auto vertexDescription = VertexDataPosNormalUv::GetVertexDescription();
-    VkPipeline gbufferPipeline = lvk::pipelines::CreateDynamicRasterPipeline(vk,
-        gbufferProg,vertexDescription,
-        defaults::DefaultRasterState,
-        vk.m_SwapChainImageExtent,
-        gbufferPipelineLayout,
-         {
-             VK_FORMAT_R16G16B16A16_SFLOAT,
-             VK_FORMAT_R16G16B16A16_SFLOAT,
-             VK_FORMAT_R16G16B16A16_SFLOAT
-         });
     VkPipelineLayout tiledForwardPipelineLayout;
     VkPipeline tiledForwardPipeline = lvk::pipelines::CreateDynamicRasterPipeline(vk,
        tiledForward,vertexDescription,
@@ -102,18 +87,9 @@ RenderData CreateRenderData(VkState& vk, ShaderProgram gbufferProg, ShaderProgra
        tiledForwardPipelineLayout,
        {
             VK_FORMAT_A2B10G10R10_UNORM_PACK32,
-            VK_FORMAT_R16G16B16A16_UINT
+            VK_FORMAT_R32G32B32_UINT
        });
-
-    // create present graphics pipeline
-    // Pipeline stage?
-    VkPipelineLayout lightPassPipelineLayout;
-    auto presentVertexDescription = VertexDataPosUv::GetVertexDescription();
-    VkPipeline pipeline = lvk::pipelines::CreateDynamicRasterPipeline(vk,
-       lightPassProg, presentVertexDescription, defaults::CullNoneRasterState,
-       vk.m_SwapChainImageExtent, lightPassPipelineLayout, {VK_FORMAT_R8G8B8A8_UNORM});
-
-    return {gbufferPipeline, pipeline, gbufferPipelineLayout, lightPassPipelineLayout};
+    return {tiledForwardPipeline, tiledForwardPipelineLayout};
 }
 
 void FreeView(VkState & vk, ViewData& view)
@@ -152,7 +128,7 @@ void UpdateViewData(VkState & vk, ViewData* view, DeferredLightData& lightData)
         view->m_Camera.Proj[1][1] *= -1;
     }
 
-    view->m_LightPassMaterial.SetBuffer(vk.m_CurrentFrameIndex, 0, 3, lightData);
+    // view->m_LightPassMaterial.SetBuffer(vk.m_CurrentFrameIndex, 0, 3, lightData);
 }
 
 void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderData& renderData, RenderModel& model, Mesh& screenQuad, LvkIm3dState& im3dState, DeferredLightData& lightData)
@@ -167,9 +143,7 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderData& r
         {
             Array<VkClearValue, 4> clearValues{};
             clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
-            clearValues[1].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
-            clearValues[2].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
-            clearValues[3].depthStencil = { 1.0f, 0 };
+            clearValues[1].color = { {0.0f, 0.0f, 0.0f} };
 
             VkRenderPassBeginInfo renderPassInfo{};
             renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;

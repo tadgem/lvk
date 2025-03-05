@@ -52,8 +52,7 @@ struct AABB
 
 
 
-struct MeshEx
-{
+struct MeshEx {
     VkBuffer m_VertexBuffer;
     VmaAllocation m_VertexBufferMemory;
     VkBuffer m_IndexBuffer;
@@ -63,6 +62,13 @@ struct MeshEx
 
     uint32_t m_IndexCount;
     uint32_t m_MaterialIndex;
+
+    void Bind(VkCommandBuffer &cmd)
+    {
+      const VkDeviceSize sizes[] = { 0 };
+      vkCmdBindVertexBuffers(cmd, 0, 1, &m_VertexBuffer, sizes);
+      vkCmdBindIndexBuffer(cmd, m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+    }
 };
 
 struct MaterialEx

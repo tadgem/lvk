@@ -41,12 +41,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Resources.md",
+                "file": "Notes/glReadPixels equivalent in vulkan.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Resources"
+              "title": "glReadPixels equivalent in vulkan"
             }
           }
         ],
@@ -205,6 +205,10 @@
   },
   "active": "0044f041a055a1b9",
   "lastOpenFiles": [
+    "Pasted image 20250305123832.png",
+    "Debugging/Blend Attachments Dynamic Error.md",
+    "Notes/glReadPixels equivalent in vulkan.md",
+    "Resources.md",
     "Tidbits.md",
     "Papers/Efficient Unit Vector Packing.pdf",
     "Papers/RadianceCascades.pdf",
@@ -216,7 +220,6 @@
     "Images/Pasted image 20240618184022.png",
     "Images/Pasted image 20240618183938.png",
     "LVK.md",
-    "Resources.md",
     "Images",
     "Debugging",
     "Untitled.canvas"

@@ -12,7 +12,6 @@ namespace lvk
 
     struct ShaderStage
     {
-
         StageBinary     m_StageBinary;
         VkShaderModule  m_Module;
         Vector<PushConstantBlock>       m_PushConstants;

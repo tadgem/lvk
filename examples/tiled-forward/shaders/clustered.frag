@@ -46,8 +46,6 @@ layout(binding = 7) uniform sampler2D u_ao;
 // depth to reconstruct last frame position
 layout(binding = 8) uniform sampler2D u_previous_depth_map;
 
-
-
 vec3 getNormalFromMap() {
     vec3 tangentNormal = texture(u_normal_map, UV).xyz * 2.0 - 1.0;
 

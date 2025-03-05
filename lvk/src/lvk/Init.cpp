@@ -441,7 +441,12 @@ bool lvk::init::IsDeviceSuitable(VkState& vk,VkPhysicalDevice physicalDevice)
   VkPhysicalDeviceFeatures supportedFeatures;
   vkGetPhysicalDeviceFeatures(physicalDevice, &supportedFeatures);
 
-  return indices.IsComplete() && extensionsSupported && swapChainSupport && supportedFeatures.samplerAnisotropy && supportedFeatures.wideLines;
+  return indices.IsComplete() &&
+          extensionsSupported &&
+          swapChainSupport &&
+          supportedFeatures.samplerAnisotropy &&
+          supportedFeatures.wideLines &&
+          supportedFeatures.independentBlend;
 }
 
 uint32_t lvk::init::AssessDeviceSuitability(VkPhysicalDevice m_PhysicalDevice) {
@@ -462,6 +467,7 @@ uint32_t lvk::init::AssessDeviceSuitability(VkPhysicalDevice m_PhysicalDevice) {
   score += deviceFeatures.shaderStorageImageMultisample;
   score += deviceFeatures.multiViewport;
   score += deviceFeatures.wideLines;
+  score += deviceFeatures.independentBlend;
 
   return score;
 }
@@ -536,6 +542,7 @@ void lvk::init::CreateLogicalDevice(VkState& vk)
   physicalDeviceFeatures.sampleRateShading = VK_TRUE;
   physicalDeviceFeatures.fillModeNonSolid = VK_TRUE;
   physicalDeviceFeatures.wideLines = VK_TRUE;
+  physicalDeviceFeatures.independentBlend = VK_TRUE;
 
   VkDeviceCreateInfo createInfo{};
   createInfo.sType                    = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

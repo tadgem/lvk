@@ -255,3 +255,7 @@ void lvk::Material::Free(VkState & vk)
 
 
 }
+bool lvk::Material::SetSampler(lvk::VkState &vk, const lvk::String &name,
+                               lvk::Texture &texture) {
+    return SetSampler(vk, name, texture.m_ImageView, texture.m_Sampler, false);
+}
