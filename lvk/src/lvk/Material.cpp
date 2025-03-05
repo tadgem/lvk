@@ -4,7 +4,7 @@
 #include "lvk/Buffer.h"
 #include "volk.h"
 
-static auto collect_uniform_data = [](lvk::ShaderStage& stage, lvk::Material &mat, lvk::VkState & vk)
+static auto reflect_descriptor_info = [](lvk::ShaderStage& stage, lvk::Material &mat, lvk::VkState & vk)
     {
         using namespace lvk;
 
@@ -63,23 +63,20 @@ lvk::Material lvk::Material::Create(VkState & vk, ShaderProgram& shader)
 {
     Material mat{};
 
+    // Create Descriptors
     mat.m_DescriptorSets.push_back(FrameDescriptorSets{});
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
         mat.m_DescriptorSets.front().m_Sets[i] = vk.m_DescriptorSetAllocator.Allocate(vk.m_LogicalDevice, shader.m_DescriptorSetLayout, nullptr);
     }
-    
+
+    // Collect
     for (auto& stage : shader.m_Stages)
     {
-        collect_uniform_data(stage, mat, vk);
+        reflect_descriptor_info(stage, mat, vk);
     }
     
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-
-        for (int i = 0; i < mat.m_PushConstants.size(); i++)
-        {
-        }
-
 
         // write buffers to descriptor set + default texture for any samplers
         Vector<VkDescriptorBufferInfo>  bufferWriteInfos;

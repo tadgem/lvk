@@ -69,13 +69,22 @@ namespace lvk {
     Vector<DescriptorSetLayoutBindingData> m_BindingDatas;
   };
 
-  // reuse this for generic cpu dynamic buffer
-  struct MappedBuffer {
-    VkBuffer m_GpuBuffer;
-    VmaAllocation m_GpuMemory;
-    void *m_MappedAddr;
+  class Buffer
+  {
+  public:
 
-    void Free(VkState &vk);
+    VkBuffer        m_GpuBuffer = VK_NULL_HANDLE;
+    VmaAllocation   m_GpuMemory = VK_NULL_HANDLE;
+
+    virtual void Free(VkState& vk);
+  };
+
+  // reuse this for generic cpu dynamic buffer
+  class MappedBuffer : public Buffer {
+  public:
+    void *m_MappedAddr = nullptr;
+
+    void Free(VkState &vk) override;
   };
 
   struct ShaderBufferFrameData {

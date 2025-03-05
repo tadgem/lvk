@@ -115,8 +115,6 @@ namespace lvk
 
         Material points_material = Material::Create(vk, state.m_PointsProg);
 
-
-        VkPipelineLayout lines_layout;
         RasterizationState lines_raster_state {
             VK_POLYGON_MODE_LINE,
             VK_CULL_MODE_NONE,

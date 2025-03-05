@@ -7,9 +7,9 @@ bool lvk::QueueFamilyIndices::IsComplete() {
 }
 void lvk::MappedBuffer::Free(lvk::VkState &vk) {
   vmaUnmapMemory(vk.m_Allocator, m_GpuMemory);
-  vkDestroyBuffer(vk.m_LogicalDevice, m_GpuBuffer, nullptr);
-  vmaFreeMemory(vk.m_Allocator, m_GpuMemory);
+  Buffer::Free(vk);
 }
+
 void lvk::ShaderBufferFrameData::Free(lvk::VkState &vk) {
   for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
     m_UniformBuffers[i].Free(vk);
@@ -21,4 +21,8 @@ void lvk::VkPipelineData::Free(lvk::VkState &vk) const
 {
   vkDestroyPipelineLayout (vk.m_LogicalDevice, m_PipelineLayout, nullptr);
   vkDestroyPipeline(vk.m_LogicalDevice, m_Pipeline, nullptr);
+}
+void lvk::Buffer::Free(lvk::VkState &vk) {
+  vkDestroyBuffer(vk.m_LogicalDevice, m_GpuBuffer, nullptr);
+  vmaFreeMemory(vk.m_Allocator, m_GpuMemory);
 }
