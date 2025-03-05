@@ -37,17 +37,18 @@ layout(set = 0, binding = 2) uniform LightsUBO{
     uint                u_SpotLightsActive;
 } lights_ubo;
 
+#define DIFFUSE_INDEX 0
+#define NORMAL_INDEX 1
+#define METALLIC_INDEX 2
+#define ROUGHNESS_INDEX 3
+#define AO_INDEX 4
 
-layout(binding = 3) uniform sampler2D u_diffuse;
-layout(binding = 4) uniform sampler2D u_normal_map;
-layout(binding = 5) uniform sampler2D u_metallic;
-layout(binding = 6) uniform sampler2D u_roughness;
-layout(binding = 7) uniform sampler2D u_ao;
+layout(binding = 3) uniform sampler2D u_maps[5];
 // depth to reconstruct last frame position
-layout(binding = 8) uniform sampler2D u_previous_depth_map;
+layout(binding = 4) uniform sampler2D u_previous_depth_map;
 
 vec3 getNormalFromMap() {
-    vec3 tangentNormal = texture(u_normal_map, UV).xyz * 2.0 - 1.0;
+    vec3 tangentNormal = texture(u_maps[NORMAL_INDEX], UV).xyz * 2.0 - 1.0;
 
     if(abs(tangentNormal.z) < 0.0001) {
         tangentNormal = UnpackNormalMap(tangentNormal);
@@ -69,7 +70,7 @@ vec3 getNormalFromMap() {
 
 
 void main() {
-    vec4 inDiffuse = texture(u_diffuse, UV);
+    vec4 inDiffuse = texture(u_maps[DIFFUSE_INDEX], UV);
     if(inDiffuse.w < 0.25)
     {
         discard;
@@ -89,14 +90,14 @@ void main() {
 
     // velocity
     vec2 Velocity = currentPosNDC - previousPosNDC;
-    float metallic = texture(u_metallic, UV).r;
+    float metallic = texture(u_maps[METALLIC_INDEX], UV).r;
 
     float roughness = 1.0;
-    if(textureSize(u_roughness, 0).x > 0)
+    if(textureSize(u_maps[ROUGHNESS_INDEX], 0).x > 0)
     {
-        roughness = texture(u_roughness, UV).g;
+        roughness = texture(u_maps[ROUGHNESS_INDEX], UV).g;
     }
 
-    float ao = texture(u_ao, UV).r;
+    float ao = texture(u_maps[AO_INDEX], UV).r;
     vec3 PBR = vec3(metallic, roughness, ao);
 }
