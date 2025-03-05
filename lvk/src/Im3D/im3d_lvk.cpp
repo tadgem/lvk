@@ -76,7 +76,7 @@ namespace lvk
     LvkIm3dViewState AddIm3dForViewport(VkState & vk, LvkIm3dState& state, VkRenderPass renderPass, bool enableMSAA, bool enableDynamicRendering)
     {
         auto vertexDescription = VertexDataPos4::GetVertexDescription();
-        VkPipelineLayout tris_layout;
+
         RasterizationState tris_raster_state {
             VK_POLYGON_MODE_FILL,
             VK_CULL_MODE_NONE,
@@ -85,18 +85,17 @@ namespace lvk
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
         };
 
-        VkPipeline tris_pipeline = !enableDynamicRendering ?
+        VkPipelineData tris_pipeline = !enableDynamicRendering ?
             pipelines::CreateRasterPipeline(vk,
             state.m_TriProg, vertexDescription, tris_raster_state,
-            renderPass, vk.m_SwapChainImageExtent, tris_layout)   :
+            renderPass, vk.m_SwapChainImageExtent)   :
 
             pipelines::CreateDynamicRasterPipeline(vk,
             state.m_TriProg, vertexDescription, tris_raster_state,
-            vk.m_SwapChainImageExtent, tris_layout, {VK_FORMAT_R8G8B8A8_UNORM});
+            vk.m_SwapChainImageExtent, {VK_FORMAT_R8G8B8A8_UNORM});
 
         Material tris_material = Material::Create(vk, state.m_TriProg);
 
-        VkPipelineLayout points_layout;
         RasterizationState points_raster_state
         {
             VK_POLYGON_MODE_POINT,
@@ -105,14 +104,14 @@ namespace lvk
             VK_COMPARE_OP_LESS,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
         };
-        VkPipeline points_pipeline = !enableDynamicRendering ?
+        VkPipelineData points_pipeline = !enableDynamicRendering ?
             pipelines::CreateRasterPipeline(vk,
             state.m_PointsProg, vertexDescription, points_raster_state,
-            renderPass, vk.m_SwapChainImageExtent, points_layout) :
+            renderPass, vk.m_SwapChainImageExtent) :
 
             pipelines::CreateDynamicRasterPipeline(vk,
             state.m_PointsProg, vertexDescription, points_raster_state,
-            vk.m_SwapChainImageExtent, points_layout, {VK_FORMAT_R8G8B8A8_UNORM});
+            vk.m_SwapChainImageExtent, {VK_FORMAT_R8G8B8A8_UNORM});
 
         Material points_material = Material::Create(vk, state.m_PointsProg);
 
@@ -125,21 +124,20 @@ namespace lvk
             VK_COMPARE_OP_LESS,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
         };
-        VkPipeline lines_pipeline = !enableDynamicRendering ?
+        VkPipelineData lines_pipeline = !enableDynamicRendering ?
             pipelines::CreateRasterPipeline(vk,
             state.m_LinesProg, vertexDescription, lines_raster_state,
-            renderPass, vk.m_SwapChainImageExtent, lines_layout) :
+            renderPass, vk.m_SwapChainImageExtent) :
 
            pipelines::CreateDynamicRasterPipeline(vk,
            state.m_LinesProg, vertexDescription, lines_raster_state,
-           vk.m_SwapChainImageExtent, lines_layout, {VK_FORMAT_R8G8B8A8_UNORM});
+           vk.m_SwapChainImageExtent, {VK_FORMAT_R8G8B8A8_UNORM});
 
         Material lines_material = Material::Create(vk, state.m_LinesProg);
 
 
         return { tris_material, points_material, lines_material,
-                tris_pipeline, points_pipeline, lines_pipeline,
-                tris_layout, points_layout, lines_layout };
+                tris_pipeline, points_pipeline, lines_pipeline };
     }
 
     void FreeIm3dViewport(VkState & vk, LvkIm3dViewState& viewState)
@@ -148,13 +146,9 @@ namespace lvk
         viewState.m_LinesMaterial.Free(vk);
         viewState.m_PointsMaterial.Free(vk);
 
-        vkDestroyPipelineLayout(vk.m_LogicalDevice, viewState.m_TrisPipelineLayout, nullptr);
-        vkDestroyPipelineLayout(vk.m_LogicalDevice, viewState.m_LinesPipelineLayout, nullptr);
-        vkDestroyPipelineLayout(vk.m_LogicalDevice, viewState.m_PointsPipelineLayout, nullptr);
-
-        vkDestroyPipeline(vk.m_LogicalDevice, viewState.m_TrisPipeline, nullptr);
-        vkDestroyPipeline(vk.m_LogicalDevice, viewState.m_LinesPipeline, nullptr);
-        vkDestroyPipeline(vk.m_LogicalDevice, viewState.m_PointsPipeline, nullptr);
+        viewState.m_TrisPipeline.Free(vk);
+        viewState.m_LinesPipeline.Free(vk);
+        viewState.m_PointsPipeline.Free(vk);
     }
 
     Im3d::Mat4 ToIm3D(const glm::mat4& _m) {
@@ -193,22 +187,22 @@ namespace lvk
             {
             case Im3d::DrawPrimitiveType::DrawPrimitive_Triangles:
                 shader = &state.m_TriProg;
-                pipelineLayout = &viewState.m_TrisPipelineLayout;
-                pipeline = &viewState.m_TrisPipeline;
+                pipelineLayout = &viewState.m_TrisPipeline.m_PipelineLayout;
+                pipeline = &viewState.m_TrisPipeline.m_Pipeline;
                 mat = &viewState.m_TrisMaterial;
                 primVertexCount = 3;
                 break;
             case Im3d::DrawPrimitiveType::DrawPrimitive_Lines:
                 shader = &state.m_LinesProg;
-                pipelineLayout = &viewState.m_LinesPipelineLayout;
-                pipeline = &viewState.m_LinesPipeline;
+                pipelineLayout = &viewState.m_LinesPipeline.m_PipelineLayout;
+                pipeline = &viewState.m_LinesPipeline.m_Pipeline;
                 mat = &viewState.m_LinesMaterial;
                 primVertexCount = 2;
                 break;
             case Im3d::DrawPrimitiveType::DrawPrimitive_Points:
                 shader = &state.m_PointsProg;
-                pipelineLayout = &viewState.m_PointsPipelineLayout;
-                pipeline = &viewState.m_PointsPipeline;
+                pipelineLayout = &viewState.m_PointsPipeline.m_PipelineLayout;
+                pipeline = &viewState.m_PointsPipeline.m_Pipeline;
                 mat = &viewState.m_PointsMaterial;
                 primVertexCount = 1;
                 break;

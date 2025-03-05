@@ -9,8 +9,7 @@ using namespace lvk;
 
 struct RenderData
 {
-  VkPipeline          m_GBufferPipeline, m_LightPassPipeline;
-  VkPipelineLayout    m_GBufferPipelineLayout, m_LightPassPipelineLayour;
+  VkPipelineData          m_GBufferPipeline, m_LightPassPipeline;
 };
 
 struct ViewData
@@ -86,11 +85,10 @@ RenderData CreateRenderData(VkState& vk, ShaderProgram gbufferProg, ShaderProgra
 
     VkPipelineLayout gbufferPipelineLayout;
     auto vertexDescription = VertexDataPosNormalUv::GetVertexDescription();
-    VkPipeline gbufferPipeline = lvk::pipelines::CreateDynamicRasterPipeline(vk,
+    VkPipelineData gbufferPipeline = lvk::pipelines::CreateDynamicRasterPipeline(vk,
         gbufferProg,vertexDescription,
         defaults::DefaultRasterState,
         vk.m_SwapChainImageExtent,
-        gbufferPipelineLayout,
          {
              VK_FORMAT_R16G16B16A16_SFLOAT,
              VK_FORMAT_R16G16B16A16_SFLOAT,
@@ -99,13 +97,12 @@ RenderData CreateRenderData(VkState& vk, ShaderProgram gbufferProg, ShaderProgra
 
     // create present graphics pipeline
     // Pipeline stage?
-    VkPipelineLayout lightPassPipelineLayout;
     auto presentVertexDescription = VertexDataPosUv::GetVertexDescription();
-    VkPipeline pipeline = lvk::pipelines::CreateDynamicRasterPipeline(vk,
+    VkPipelineData pipeline = lvk::pipelines::CreateDynamicRasterPipeline(vk,
        lightPassProg, presentVertexDescription, defaults::CullNoneRasterState,
-       vk.m_SwapChainImageExtent, lightPassPipelineLayout, {VK_FORMAT_R8G8B8A8_UNORM});
+       vk.m_SwapChainImageExtent,  {VK_FORMAT_R8G8B8A8_UNORM});
 
-    return {gbufferPipeline, pipeline, gbufferPipelineLayout, lightPassPipelineLayout};
+    return {gbufferPipeline, pipeline};
 }
 
 void FreeView(VkState & vk, ViewData& view)
@@ -225,7 +222,7 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderData& r
             {
                 // vkCmdBeginRenderingKHR(commandBuffer, &view->m_GBuffer.m_DynamicRenderingInfo.m_RenderingInfos[frameIndex]);
                 view->m_GBuffer.BeginDynamicRendering(vk, commandBuffer, frameIndex);
-                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderData.m_GBufferPipeline);
+                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderData.m_GBufferPipeline.m_Pipeline);
                 VkViewport viewport{};
                 viewport.x = 0.0f;
                 viewport.x = 0.0f;
@@ -243,7 +240,7 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderData& r
 
                 vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
                 vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-                vkCmdPushConstants(commandBuffer, renderData.m_GBufferPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PCViewData), &pcData);
+                vkCmdPushConstants(commandBuffer, renderData.m_GBufferPipeline.m_PipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PCViewData), &pcData);
 
                 for (int i = 0; i < model.m_RenderItems.size(); i++)
                 {
@@ -254,7 +251,7 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderData& r
 
                     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, sizes);
                     vkCmdBindIndexBuffer(commandBuffer, mesh.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-                    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderData.m_GBufferPipelineLayout, 0, 1, &model.m_RenderItems[i].m_Material.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
+                    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderData.m_GBufferPipeline.m_PipelineLayout, 0, 1, &model.m_RenderItems[i].m_Material.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
                     vkCmdDrawIndexed(commandBuffer, mesh.m_IndexCount, 1, 0, 0, 0);
                 }
                 vkCmdEndRenderingKHR(commandBuffer);
@@ -264,7 +261,7 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderData& r
             //vkCmdBeginRenderingKHR(commandBuffer, &view->m_LightPassFB.m_DynamicRenderingInfo.m_RenderingInfos[frameIndex]);
             view->m_LightPassFB.BeginDynamicRendering(vk, commandBuffer, frameIndex);
 
-            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderData.m_LightPassPipeline);
+            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderData.m_LightPassPipeline.m_Pipeline);
             VkViewport viewport{};
             viewport.x = 0.0f;
             viewport.x = 0.0f;
@@ -284,11 +281,11 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderData& r
             // meaning the entire buffer will be resampled
             vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
             vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-            vkCmdPushConstants(commandBuffer, renderData.m_LightPassPipelineLayour, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PCViewData), &pcData);
+            vkCmdPushConstants(commandBuffer, renderData.m_LightPassPipeline.m_PipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PCViewData), &pcData);
             VkDeviceSize sizes[] = { 0 };
             vkCmdBindVertexBuffers(commandBuffer, 0, 1, &view->m_ViewQuad.m_VertexBuffer, sizes);
             vkCmdBindIndexBuffer(commandBuffer, view->m_ViewQuad.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderData.m_LightPassPipelineLayour, 0, 1, &view->m_LightPassMaterial.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
+            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderData.m_LightPassPipeline.m_PipelineLayout, 0, 1, &view->m_LightPassMaterial.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
             vkCmdDrawIndexed(commandBuffer, view->m_ViewQuad.m_IndexCount, 1, 0, 0, 0);
 
             DrawIm3d(vk, commandBuffer, frameIndex, im3dState, view->m_Im3dState, view->m_Camera.Proj * view->m_Camera.View, viewExtent.width, viewExtent.height);

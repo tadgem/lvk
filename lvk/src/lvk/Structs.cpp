@@ -17,3 +17,8 @@ void lvk::ShaderBufferFrameData::Free(lvk::VkState &vk) {
 
   m_UniformBuffers.clear();
 }
+void lvk::VkPipelineData::Free(lvk::VkState &vk) const
+{
+  vkDestroyPipelineLayout (vk.m_LogicalDevice, m_PipelineLayout, nullptr);
+  vkDestroyPipeline(vk.m_LogicalDevice, m_Pipeline, nullptr);
+}

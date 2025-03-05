@@ -136,7 +136,7 @@ void RecordComputeCommandBuffers(VkState& vk, VkPipeline& p, VkPipelineLayout& l
 }
 
 void RecordGraphicsCommandBuffers(VkState & vk,
-                                  VkPipeline& particlePipeline, VkPipelineLayout & particlePipelineLayout,
+                                  VkPipelineData& particlePipeline,
                                   std::vector<VkBuffer>& particleBuffers)
 {
     lvk::commands::RecordGraphicsCommands(vk, [&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
@@ -173,7 +173,7 @@ void RecordGraphicsCommandBuffers(VkState & vk,
 
         vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, particlePipeline);
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, particlePipeline.m_Pipeline);
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, &particleBuffers[frameIndex], sizes);
         vkCmdDraw(commandBuffer, PARTICLE_COUNT, 1, 0,0);
         vkCmdEndRenderPass(commandBuffer);
@@ -405,13 +405,12 @@ int main()
     VkPipeline computePipeline = CreateComputePipeline(vk, layout, particles_prog, computePipelineLayout);
 
 
-    VkPipelineLayout particlePipelineLayout;
     RasterizationState rasterState = {VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, false, VK_COMPARE_OP_ALWAYS,VK_PRIMITIVE_TOPOLOGY_POINT_LIST };
 
     auto particleVertexDescription = Particle::GetVertexDescription();
-    VkPipeline particlePipeline = lvk::pipelines::CreateRasterPipeline(
+    VkPipelineData particlePipeline = lvk::pipelines::CreateRasterPipeline(
         vk, draw_particles, particleVertexDescription, rasterState,
-        vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent, particlePipelineLayout);
+        vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent);
 
 
     while (vk.m_ShouldRun)
@@ -424,7 +423,7 @@ int main()
 
         RecordComputeCommandBuffers(vk, computePipeline, computePipelineLayout, computeDescriptors);
         RecordGraphicsCommandBuffers(vk,
-          particlePipeline, particlePipelineLayout, shaderStorageBuffers);
+          particlePipeline, shaderStorageBuffers);
 
         vk.m_Backend->PostFrame(vk);
     }

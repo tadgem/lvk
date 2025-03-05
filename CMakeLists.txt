@@ -38,8 +38,6 @@ set_target_properties(spdlog PROPERTIES FOLDER "ThirdParty/spdlog")
 
 add_subdirectory(lvk)
 add_subdirectory(backends/sdl)
-add_subdirectory(examples/model)
-add_subdirectory(examples/mipmaps)
 add_subdirectory(examples/msaa)
 add_subdirectory(examples/lights-forward)
 add_subdirectory(examples/im3d-multiview)

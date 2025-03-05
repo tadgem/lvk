@@ -23,13 +23,9 @@ namespace lvk
         Material m_PointsMaterial;
         Material m_LinesMaterial;
 
-        VkPipeline m_TrisPipeline;
-        VkPipeline m_PointsPipeline;
-        VkPipeline m_LinesPipeline;
-
-        VkPipelineLayout m_TrisPipelineLayout;
-        VkPipelineLayout m_PointsPipelineLayout;
-        VkPipelineLayout m_LinesPipelineLayout;
+        VkPipelineData m_TrisPipeline;
+        VkPipelineData m_PointsPipeline;
+        VkPipelineData m_LinesPipeline;
     };
 
     LvkIm3dState LoadIm3D(VkState & vk);

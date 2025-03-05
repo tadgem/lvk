@@ -14,11 +14,9 @@ struct ViewData
     Framebuffer m_LightPassFB;
     Material    m_LightPassMaterial;
 
-    VkPipeline          m_GBufferPipeline, m_LightPassPipeline;
-    VkPipelineLayout    m_GBufferPipelineLayout, m_LightPassPipelineLayour;
-
-    LvkIm3dViewState m_Im3dState;
-    VkExtent2D  m_CurrentResolution{ 1920, 1080 };
+    VkPipelineData    m_GBufferPipeline, m_LightPassPipeline;
+    LvkIm3dViewState  m_Im3dState;
+    VkExtent2D        m_CurrentResolution{ 1920, 1080 };
 
     Camera      m_Camera;
     Mesh        m_ViewQuad;
@@ -51,19 +49,17 @@ ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferP
     lightPassMat.SetColourAttachment(vk, "colourBufferSampler", gbuffer, 0);
 
     // create gbuffer pipeline
-    VkPipelineLayout gbufferPipelineLayout;
     auto vertexDescription = VertexDataPosNormalUv::GetVertexDescription();
-    VkPipeline gbufferPipeline = lvk::pipelines::CreateRasterPipeline(vk,
+    VkPipelineData gbufferPipeline = lvk::pipelines::CreateRasterPipeline(vk,
         gbufferProg,vertexDescription, defaults::DefaultRasterState,
-        gbuffer.m_RenderPassInfo.m_RenderPass, vk.m_SwapChainImageExtent, gbufferPipelineLayout, 3);
+        gbuffer.m_RenderPassInfo.m_RenderPass, vk.m_SwapChainImageExtent, 3);
 
     // create present graphics pipeline
     // Pipeline stage?
-    VkPipelineLayout lightPassPipelineLayout;
     auto presentVertexDescription = VertexDataPosUv::GetVertexDescription();
-    VkPipeline pipeline = lvk::pipelines::CreateRasterPipeline(vk,
+    VkPipelineData pipeline = lvk::pipelines::CreateRasterPipeline(vk,
         lightPassProg, presentVertexDescription, defaults::CullNoneRasterState,
-        finalImage.m_RenderPassInfo.m_RenderPass, vk.m_SwapChainImageExtent, lightPassPipelineLayout);
+        finalImage.m_RenderPassInfo.m_RenderPass, vk.m_SwapChainImageExtent);
 
     auto im3dViewState = AddIm3dForViewport(vk, im3dState, finalImage.m_RenderPassInfo.m_RenderPass, false);
 
@@ -88,7 +84,7 @@ ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferP
 
     Mesh screenQuad{ vertBuffer, vertAlloc, indexBuffer, indexAlloc, 6 };
 
-    return { gbuffer, finalImage, lightPassMat, gbufferPipeline, pipeline, gbufferPipelineLayout, lightPassPipelineLayout, im3dViewState , {1920, 1080}, {},  screenQuad };
+    return { gbuffer, finalImage, lightPassMat, gbufferPipeline, pipeline,  im3dViewState , {1920, 1080}, {},  screenQuad };
 }
 
 void FreeView(VkState & vk, ViewData& view)
@@ -223,7 +219,7 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderModel& 
                 renderPassInfo.pClearValues = clearValues.data();
 
                 vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, view->m_GBufferPipeline);
+                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, view->m_GBufferPipeline.m_Pipeline);
                 VkViewport viewport{};
                 viewport.x = 0.0f;
                 viewport.x = 0.0f;
@@ -241,7 +237,7 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderModel& 
 
                 vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
                 vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-                vkCmdPushConstants(commandBuffer, view->m_GBufferPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PCViewData), &pcData);
+                vkCmdPushConstants(commandBuffer, view->m_GBufferPipeline.m_PipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PCViewData), &pcData);
 
                 for (int i = 0; i < model.m_RenderItems.size(); i++)
                 {
@@ -252,7 +248,7 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderModel& 
 
                     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, sizes);
                     vkCmdBindIndexBuffer(commandBuffer, mesh.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-                    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, view->m_GBufferPipelineLayout, 0, 1, &model.m_RenderItems[i].m_Material.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
+                    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, view->m_GBufferPipeline.m_PipelineLayout, 0, 1, &model.m_RenderItems[i].m_Material.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
                     vkCmdDrawIndexed(commandBuffer, mesh.m_IndexCount, 1, 0, 0, 0);
                 }
                 vkCmdEndRenderPass(commandBuffer);
@@ -274,7 +270,7 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderModel& 
 
             vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, view->m_LightPassPipeline);
+            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, view->m_LightPassPipeline.m_Pipeline);
             VkViewport viewport{};
             viewport.x = 0.0f;
             viewport.x = 0.0f;
@@ -294,11 +290,11 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderModel& 
             // meaning the entire buffer will be resampled
             vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
             vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-            vkCmdPushConstants(commandBuffer, view->m_LightPassPipelineLayour, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PCViewData), &pcData);
+            vkCmdPushConstants(commandBuffer, view->m_LightPassPipeline.m_PipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PCViewData), &pcData);
             VkDeviceSize sizes[] = { 0 };
             vkCmdBindVertexBuffers(commandBuffer, 0, 1, &view->m_ViewQuad.m_VertexBuffer, sizes);
             vkCmdBindIndexBuffer(commandBuffer, view->m_ViewQuad.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, view->m_LightPassPipelineLayour, 0, 1, &view->m_LightPassMaterial.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
+            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, view->m_LightPassPipeline.m_PipelineLayout, 0, 1, &view->m_LightPassMaterial.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
             vkCmdDrawIndexed(commandBuffer, view->m_ViewQuad.m_IndexCount, 1, 0, 0, 0);
 
             DrawIm3d(vk, commandBuffer, frameIndex, im3dState, view->m_Im3dState, view->m_Camera.Proj * view->m_Camera.View, viewExtent.width, viewExtent.height);

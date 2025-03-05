@@ -6,18 +6,18 @@ using namespace lvk;
 using ForwardLightData = FrameLightDataT<NUM_LIGHTS>;
 static ForwardLightData lightDataCpu {};
 
-void RecordGraphicsCommandBuffers(VkState & vk, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout, Model& model, Material& mat)
+void RecordGraphicsCommandBuffers(VkState & vk, VkPipelineData& pipeline, Model& model, Material& mat)
 {
     lvk::commands::RecordGraphicsCommands(vk, [&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
 
         render_passes::BeginSwapchainRenderPass(vk, commandBuffer);
 
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.m_Pipeline);
 
         for (MeshEx& mesh : model.m_Meshes)
         {
             mesh.Bind(commandBuffer);
-            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &mat.m_DescriptorSets.front().m_Sets[frameIndex], 0, nullptr);
+            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.m_PipelineLayout, 0, 1, &mat.m_DescriptorSets.front().m_Sets[frameIndex], 0, nullptr);
             vkCmdDrawIndexed(commandBuffer, mesh.m_IndexCount, 1, 0, 0, 0);
         }
         vkCmdEndRenderPass(commandBuffer);
@@ -110,11 +110,10 @@ int main()
     Material m = Material::Create(vk, lights_prog);
 
     // Pipeline stage?
-    VkPipelineLayout pipelineLayout;
     auto vertexDescription = VertexDataPosNormalUv::GetVertexDescription();
-    VkPipeline pipeline = lvk::pipelines::CreateRasterPipeline(vk,
+    VkPipelineData pipeline = lvk::pipelines::CreateRasterPipeline(vk,
         lights_prog,vertexDescription, defaults::CullNoneRasterStateMSAA,
-        vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent, pipelineLayout);
+        vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent);
 
     // create vertex and index buffer
     Model model;
@@ -130,14 +129,13 @@ int main()
         vk.m_Backend->PreFrame(vk);
         OnLightsImGui(vk);
         UpdateUniformBuffer(vk, m);
-        RecordGraphicsCommandBuffers(vk, pipeline, pipelineLayout, model, m);
+        RecordGraphicsCommandBuffers(vk, pipeline, model, m);
         vk.m_Backend->PostFrame(vk);
     }
 
     FreeModel(vk, model);
     m.Free(vk);
-    vkDestroyPipelineLayout(vk.m_LogicalDevice, pipelineLayout, nullptr);
-    vkDestroyPipeline(vk.m_LogicalDevice, pipeline, nullptr);
+    pipeline.Free(vk);
 
     return 0;
 }

@@ -9,8 +9,7 @@ using namespace lvk;
 
 struct RenderData
 {
-  VkPipeline          m_TiledPipeline;
-  VkPipelineLayout    m_TiledPipelineLayout;
+  VkPipelineData          m_TiledPipeline;
 };
 
 struct ViewData
@@ -79,17 +78,15 @@ ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferP
 RenderData CreateRenderData(VkState& vk, ShaderProgram gbufferProg, ShaderProgram lightPassProg, ShaderProgram tiledForward)
 {
     auto vertexDescription = VertexDataPosNormalUv::GetVertexDescription();
-    VkPipelineLayout tiledForwardPipelineLayout;
-    VkPipeline tiledForwardPipeline = lvk::pipelines::CreateDynamicRasterPipeline(vk,
+    VkPipelineData tiledForwardPipeline = lvk::pipelines::CreateDynamicRasterPipeline(vk,
        tiledForward,vertexDescription,
        defaults::DefaultRasterState,
        vk.m_SwapChainImageExtent,
-       tiledForwardPipelineLayout,
        {
             VK_FORMAT_A2B10G10R10_UNORM_PACK32,
             VK_FORMAT_R32G32B32_UINT
        });
-    return {tiledForwardPipeline, tiledForwardPipelineLayout};
+    return {tiledForwardPipeline};
 }
 
 void FreeView(VkState & vk, ViewData& view)
@@ -207,7 +204,7 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderData& r
             {
                 // vkCmdBeginRenderingKHR(commandBuffer, &view->m_GBuffer.m_DynamicRenderingInfo.m_RenderingInfos[frameIndex]);
                 view->m_GBuffer.BeginDynamicRendering(vk, commandBuffer, frameIndex);
-                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderData.m_GBufferPipeline);
+                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderData.m_TiledPipeline.m_Pipeline);
                 VkViewport viewport{};
                 viewport.x = 0.0f;
                 viewport.x = 0.0f;
@@ -225,7 +222,7 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderData& r
 
                 vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
                 vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-                vkCmdPushConstants(commandBuffer, renderData.m_GBufferPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PCViewData), &pcData);
+                vkCmdPushConstants(commandBuffer, renderData.m_TiledPipeline.m_PipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PCViewData), &pcData);
 
                 for (int i = 0; i < model.m_RenderItems.size(); i++)
                 {
@@ -236,45 +233,14 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderData& r
 
                     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, sizes);
                     vkCmdBindIndexBuffer(commandBuffer, mesh.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-                    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderData.m_GBufferPipelineLayout, 0, 1, &model.m_RenderItems[i].m_Material.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
+                    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderData.m_TiledPipeline.m_PipelineLayout, 0, 1, &model.m_RenderItems[i].m_Material.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
                     vkCmdDrawIndexed(commandBuffer, mesh.m_IndexCount, 1, 0, 0, 0);
                 }
+                DrawIm3d(vk, commandBuffer, frameIndex, im3dState, view->m_Im3dState, view->m_Camera.Proj * view->m_Camera.View, viewExtent.width, viewExtent.height);
+
                 vkCmdEndRenderingKHR(commandBuffer);
 
             }
-
-            //vkCmdBeginRenderingKHR(commandBuffer, &view->m_LightPassFB.m_DynamicRenderingInfo.m_RenderingInfos[frameIndex]);
-            view->m_LightPassFB.BeginDynamicRendering(vk, commandBuffer, frameIndex);
-
-            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderData.m_LightPassPipeline);
-            VkViewport viewport{};
-            viewport.x = 0.0f;
-            viewport.x = 0.0f;
-            viewport.width = static_cast<float>(viewExtent.width);
-            viewport.height = static_cast<float>(viewExtent.height);
-            viewport.minDepth = 0.0f;
-            viewport.maxDepth = 1.0f;
-
-            VkRect2D scissor{};
-            scissor.offset = { 0,0 };
-            scissor.extent = VkExtent2D{
-                static_cast<uint32_t>(viewExtent.width) ,
-                static_cast<uint32_t>(viewExtent.height)
-            };
-
-            // issue with lighting pass is that uvs are just 0,0 -> 1,1
-            // meaning the entire buffer will be resampled
-            vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-            vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-            vkCmdPushConstants(commandBuffer, renderData.m_LightPassPipelineLayour, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PCViewData), &pcData);
-            VkDeviceSize sizes[] = { 0 };
-            vkCmdBindVertexBuffers(commandBuffer, 0, 1, &view->m_ViewQuad.m_VertexBuffer, sizes);
-            vkCmdBindIndexBuffer(commandBuffer, view->m_ViewQuad.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderData.m_LightPassPipelineLayour, 0, 1, &view->m_LightPassMaterial.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
-            vkCmdDrawIndexed(commandBuffer, view->m_ViewQuad.m_IndexCount, 1, 0, 0, 0);
-
-            DrawIm3d(vk, commandBuffer, frameIndex, im3dState, view->m_Im3dState, view->m_Camera.Proj * view->m_Camera.View, viewExtent.width, viewExtent.height);
-            vkCmdEndRenderingKHR(commandBuffer);
         }
         }
     );
@@ -312,7 +278,7 @@ void OnImGui(VkState & vk, DeferredLightData& lightDataCpu, Vector<ViewData*> vi
         auto extent = ImGui::GetContentRegionAvail();
         auto max = vk.m_MaxFramebufferExtent;
         ImVec2 uv1 = { extent.x / max.width, extent.y / max.height };
-        auto& image = views[0]->m_LightPassFB.m_ColourAttachments[0].m_AttachmentSwapchainImages[vk.m_CurrentFrameIndex];
+        auto& image = views[0]->m_GBuffer.m_ColourAttachments[0].m_AttachmentSwapchainImages[vk.m_CurrentFrameIndex];
 
         ImGuiX::Image(image, extent, { 0,0 }, uv1);
         DrawIm3dTextListsImGuiAsChild(Im3d::GetTextDrawLists(), Im3d::GetTextDrawListCount(), (float)views[0]->m_CurrentResolution.width, (float)views[0]->m_CurrentResolution.height, views[0]->m_Camera.Proj * views[0]->m_Camera.View);
@@ -329,7 +295,7 @@ void OnImGui(VkState & vk, DeferredLightData& lightDataCpu, Vector<ViewData*> vi
         auto extent = ImGui::GetContentRegionAvail();
         auto max = vk.m_MaxFramebufferExtent;
         ImVec2 uv1 = { extent.x / max.width, extent.y / max.height };
-        auto& image = views[1]->m_LightPassFB.m_ColourAttachments[0].m_AttachmentSwapchainImages[vk.m_CurrentFrameIndex];
+        auto& image = views[1]->m_GBuffer.m_ColourAttachments[0].m_AttachmentSwapchainImages[vk.m_CurrentFrameIndex];
 
         ImGuiX::Image(image, extent, { 0,0 }, uv1);
         DrawIm3dTextListsImGuiAsChild(Im3d::GetTextDrawLists(), Im3d::GetTextDrawListCount(), (float)views[1]->m_CurrentResolution.width, (float)views[1]->m_CurrentResolution.height, views[1]->m_Camera.Proj * views[1]->m_Camera.View);

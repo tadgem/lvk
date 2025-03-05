@@ -7,7 +7,7 @@ static std::vector<VmaAllocation>       uniformBuffersMemory;
 static std::vector<void*>               uniformBuffersMapped;
 static std::vector<VkDescriptorSet>     descriptorSets;
 
-void RecordGraphicsCommandBuffers(VkState & vk, VkPipeline& pipeline, VkPipelineLayout& pipelineLayout, Model& model)
+void RecordGraphicsCommandBuffers(VkState & vk, VkPipelineData& pipeline,  Model& model)
 {
     lvk::commands::RecordGraphicsCommands(vk, [&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
         // push to example
@@ -26,7 +26,7 @@ void RecordGraphicsCommandBuffers(VkState & vk, VkPipeline& pipeline, VkPipeline
         renderPassInfo.pClearValues = clearValues.data();
 
         vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.m_Pipeline);
 
         for (int i = 0; i < model.m_Meshes.size(); i++)
         {
@@ -53,7 +53,7 @@ void RecordGraphicsCommandBuffers(VkState & vk, VkPipeline& pipeline, VkPipeline
             vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
             vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, sizes);
             vkCmdBindIndexBuffer(commandBuffer, mesh.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[frameIndex], 0, nullptr);
+            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.m_PipelineLayout, 0, 1, &descriptorSets[frameIndex], 0, nullptr);
             vkCmdDrawIndexed(commandBuffer, mesh.m_IndexCount, 1, 0, 0, 0);
         }
         vkCmdEndRenderPass(commandBuffer);
@@ -143,11 +143,10 @@ int main()
     textures::CreateTexture(vk, "assets/viking_room.png", VK_FORMAT_R8G8B8A8_UNORM, textureImage, imageView, textureMemory, &mipLevels);
     textures::CreateImageSampler(vk, imageView, mipLevels, VK_FILTER_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, imageSampler);
 
-    VkPipelineLayout pipelineLayout;
     auto vertexDescription = VertexDataPosUv::GetVertexDescription();
-    VkPipeline pipeline = lvk::pipelines::CreateRasterPipeline(vk,
+    VkPipelineData pipeline = lvk::pipelines::CreateRasterPipeline(vk,
         prog, vertexDescription, defaults::CullNoneRasterStateMSAA,
-        vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent, pipelineLayout);
+        vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent);
 
     // create vertex and index buffer
     Model model;
@@ -169,7 +168,7 @@ int main()
 
         }
         ImGui::End();
-        RecordGraphicsCommandBuffers(vk, pipeline, pipelineLayout, model);
+        RecordGraphicsCommandBuffers(vk, pipeline, model);
 
         vk.m_Backend->PostFrame(vk);
     }
@@ -185,8 +184,7 @@ int main()
     vkDestroyImageView(vk.m_LogicalDevice, imageView, nullptr);
     vkDestroyImage(vk.m_LogicalDevice, textureImage, nullptr);
     vkFreeMemory(vk.m_LogicalDevice, textureMemory, nullptr);
-    vkDestroyPipelineLayout(vk.m_LogicalDevice, pipelineLayout, nullptr);
-    vkDestroyPipeline(vk.m_LogicalDevice, pipeline, nullptr);
+    pipeline.Free(vk);
 
     return 0;
 }

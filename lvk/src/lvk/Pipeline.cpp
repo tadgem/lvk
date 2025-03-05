@@ -180,12 +180,11 @@ VkPipelineDepthStencilStateCreateInfo CreateDepthStencilState(lvk::Rasterization
 
 namespace lvk::pipelines {
 
-VkPipeline CreateRasterPipeline(
+VkPipelineData CreateRasterPipeline(
     VkState &vk, ShaderProgram &shader,
     VertexDescription& vertexDescription,
     RasterizationState & rasterState,
-    VkRenderPass &pipelineRenderPass, VkExtent2D resolution,
-    VkPipelineLayout &pipelineLayout, uint32_t colorAttachmentCount) {
+    VkRenderPass &pipelineRenderPass, VkExtent2D resolution, uint32_t colorAttachmentCount) {
 
   VkShaderModule vertShaderModule =
       CreateShaderModule(vk, shader.m_Stages[0].m_StageBinary);
@@ -228,6 +227,7 @@ VkPipeline CreateRasterPipeline(
   VkPipelineLayoutCreateInfo pipelineLayoutInfo =
       shader.GetPipelineLayoutCreateInfo();
 
+  VkPipelineLayout pipelineLayout;
   VK_CHECK(vkCreatePipelineLayout(vk.m_LogicalDevice, &pipelineLayoutInfo,
                                   nullptr, &pipelineLayout))
 
@@ -261,16 +261,15 @@ VkPipeline CreateRasterPipeline(
   vkDestroyShaderModule(vk.m_LogicalDevice, vertShaderModule, nullptr);
   vkDestroyShaderModule(vk.m_LogicalDevice, fragShaderModule, nullptr);
 
-  return pipeline;
+  return { pipeline, pipelineLayout };
 }
 
-VkPipeline
+VkPipelineData
 CreateComputePipeline(VkState &vk, StageBinary &comp,
-                           VkDescriptorSetLayout &descriptorSetLayout,
-                           VkPipelineLayout &pipelineLayout) {
+                           VkDescriptorSetLayout &descriptorSetLayout) {
 
   auto compStage = CreateShaderModule(vk, comp);
-
+  VkPipelineLayout pipelineLayout;
   VkPipelineShaderStageCreateInfo compShaderStageInfo{};
   compShaderStageInfo.sType =
       VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -289,17 +288,16 @@ CreateComputePipeline(VkState &vk, StageBinary &comp,
                                &pipelineInfo, nullptr,
                                &pipeline) != VK_SUCCESS) {
     spdlog::error("failed to create compute pipeline!");
-    return pipeline;
+    return {pipeline, pipelineLayout};
   }
 
-  return VK_NULL_HANDLE;
+  return {VK_NULL_HANDLE, VK_NULL_HANDLE};
 }
 
-VkPipeline CreateDynamicRasterPipeline(VkState &vk, ShaderProgram &shader,
+VkPipelineData CreateDynamicRasterPipeline(VkState &vk, ShaderProgram &shader,
                                        VertexDescription &vertexDescription,
                                        RasterizationState &rasterState,
                                        VkExtent2D resolution,
-                                       VkPipelineLayout &pipelineLayout,
                                        Vector<VkFormat> colourAttachments) {
   VkShaderModule vertShaderModule =
       CreateShaderModule(vk, shader.m_Stages[0].m_StageBinary);
@@ -342,6 +340,7 @@ VkPipeline CreateDynamicRasterPipeline(VkState &vk, ShaderProgram &shader,
   VkPipelineLayoutCreateInfo pipelineLayoutInfo =
       shader.GetPipelineLayoutCreateInfo();
 
+  VkPipelineLayout pipelineLayout;
   VK_CHECK(vkCreatePipelineLayout(vk.m_LogicalDevice, &pipelineLayoutInfo,
                                   nullptr, &pipelineLayout))
 
@@ -392,6 +391,6 @@ VkPipeline CreateDynamicRasterPipeline(VkState &vk, ShaderProgram &shader,
   vkDestroyShaderModule(vk.m_LogicalDevice, vertShaderModule, nullptr);
   vkDestroyShaderModule(vk.m_LogicalDevice, fragShaderModule, nullptr);
 
-  return pipeline;
+  return {pipeline, pipelineLayout};
 }
 }

@@ -166,6 +166,22 @@ namespace lvk {
 
   struct VkState;
 
+  struct VkPipelineData
+  {
+    VkPipelineData(VkPipeline pipeline, VkPipelineLayout layout)
+    {
+      m_Pipeline = pipeline;
+      m_PipelineLayout = layout;
+    }
+
+    VkPipelineData() = default;
+
+    void Free(VkState & vk) const;
+
+    VkPipeline          m_Pipeline = VK_NULL_HANDLE;
+    VkPipelineLayout    m_PipelineLayout = VK_NULL_HANDLE;
+  };
+
   class VkBackend
   {
   public:
