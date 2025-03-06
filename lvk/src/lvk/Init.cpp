@@ -8,7 +8,7 @@
 #include "lvk/Utils.h"
 #include "spdlog/spdlog.h"
 #include "cpptrace/cpptrace.hpp"
-#include "ThirdParty/WorkSansRegularTTF.h"
+#include "ThirdParty/FunnelSansTTF.h"
 #include "lvk/Commands.h"
 
 static const bool QUIT_ON_ERROR = false;
@@ -221,7 +221,8 @@ void lvk::init::InitVulkan(VkState& vk, bool enableSwapchainMsaa)
 }
 
 void SetImGuiStyle() {
-    ImVec4* colors = ImGui::GetStyle().Colors;
+    auto& style = ImGui::GetStyle();
+    ImVec4* colors = style.Colors;
     colors[ImGuiCol_Text] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
     colors[ImGuiCol_TextDisabled] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
     colors[ImGuiCol_WindowBg] = ImVec4(0.06f, 0.06f, 0.06f, 1.00f);
@@ -277,7 +278,7 @@ void SetImGuiStyle() {
     colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 0.00f, 0.00f, 0.70f);
     colors[ImGuiCol_NavWindowingDimBg] = ImVec4(1.00f, 0.00f, 0.00f, 0.20f);
     colors[ImGuiCol_ModalWindowDimBg] = ImVec4(1.00f, 0.00f, 0.00f, 0.35f);
-    ImGuiStyle& style = ImGui::GetStyle();
+
     style.WindowPadding = ImVec2(8.00f, 8.00f);
     style.FramePadding = ImVec2(5.00f, 2.00f);
     style.CellPadding = ImVec2(6.00f, 6.00f);
@@ -339,7 +340,7 @@ void lvk::init::InitImGui(VkState& vk)
   }
   ImGui_ImplVulkan_Init(&init_info);
 
-  auto font = io.Fonts->AddFontFromMemoryTTF((void*)&work_sans_ttf[0], WORK_SANS_TTF_SIZE, 16.0f);
+  auto font = io.Fonts->AddFontFromMemoryTTF((void*)&funnel_sans_ttf[0], FUNNEL_SANS_TTF_SIZE, 16.0f);
 
   ImGui_ImplVulkan_CreateFontsTexture();
 
