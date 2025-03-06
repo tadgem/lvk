@@ -17,7 +17,7 @@ static auto reflect_descriptor_info = [](lvk::ShaderStage& stage, lvk::Material 
         {
             for (auto& bindingInfo : descriptorSetInfo.m_BindingDatas)
             {
-                if (bindingInfo.m_ExpectedBufferSize == 0 && bindingInfo.m_BufferType == ShaderBindingType::Sampler)
+                if (bindingInfo.m_ExpectedBufferSizeOrDivisor == 0 && bindingInfo.m_BufferType == ShaderBindingType::Sampler)
                 {
                     Material::SamplerBindingData sbd{
                         descriptorSetInfo.m_SetNumber,
@@ -33,7 +33,7 @@ static auto reflect_descriptor_info = [](lvk::ShaderStage& stage, lvk::Material 
                 {
                     // if a uniform buffer
                     ShaderBufferFrameData uniform;
-                    buffers::CreateUniformBuffers(vk, uniform, VkDeviceSize{ bindingInfo.m_ExpectedBufferSize });
+                    buffers::CreateUniformBuffers(vk, uniform, VkDeviceSize{ bindingInfo.m_ExpectedBufferSizeOrDivisor});
                     // build accessors
                     for (auto& member : bindingInfo.m_Members)
                     {
@@ -48,7 +48,7 @@ static auto reflect_descriptor_info = [](lvk::ShaderStage& stage, lvk::Material 
                     binding.m_Binding = bindingInfo.m_BindingIndex;
 
                     mat.m_UniformBuffers.emplace(binding.m_Data,
-                        Material::ShaderBufferBindingData{ descriptorSetInfo.m_SetNumber, bindingInfo.m_BindingIndex, bindingInfo.m_ExpectedBufferSize,  uniform });
+                        Material::ShaderBufferBindingData{ descriptorSetInfo.m_SetNumber, bindingInfo.m_BindingIndex, bindingInfo.m_ExpectedBufferSizeOrDivisor,  uniform });
                 }
                 else if (bindingInfo.m_BufferType == ShaderBindingType::ShaderStorageBuffer)
                 {

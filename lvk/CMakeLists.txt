@@ -48,6 +48,7 @@ set(LVK_SRCS
     include/lvk/Submission.h
     include/lvk/Defaults.h
     include/Alias.h
+    include/ThirdParty/WorkSansRegularTTF.h
     include/ThirdParty/spirv_reflect.h
     include/ThirdParty/VulkanMemoryAllocator.h
     include/ThirdParty/stb_image.h

@@ -56,7 +56,7 @@ namespace lvk {
   struct DescriptorSetLayoutBindingData {
     String m_BindingName;
     uint32_t m_BindingIndex;
-    uint32_t m_ExpectedBufferSize;
+    uint32_t m_ExpectedBufferSizeOrDivisor;
     ShaderBindingType m_BufferType;
     Vector<ShaderBufferMember> m_Members;
   };

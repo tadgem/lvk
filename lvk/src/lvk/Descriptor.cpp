@@ -274,26 +274,26 @@ ReflectDescriptorSetLayoutsRaw(VkState &vk, const char *stage_bin,
       ShaderBindingType bufferType = GetBindingType(reflectedBinding);
       DescriptorSetLayoutBindingData binding{ String(reflectedBinding.name), reflectedBinding.binding, reflectedBinding.block.size , bufferType};
 
-      if (bufferType == ShaderBindingType::ShaderStorageBuffer)
-      {
-        uint32_t requiredBufferSize = 0;
-        for (uint32_t i = 0; i < reflectedBinding.type_description->member_count; i++)
-        {
-          auto* member = &reflectedBinding.type_description->members[i];
-          if (member->type_flags & SPV_REFLECT_TYPE_FLAG_ARRAY)
-          {
-            requiredBufferSize += member->traits.array.dims[0] * member->traits.array.stride; // todo: support more than 1D arrays
-          }
-
-          for (uint32_t j = 0; j < member->member_count; j++)
-          {
-            auto* childMember = &member->members[i];
-            int jkj = 420;
-          }
-        }
-        binding.m_ExpectedBufferSize = requiredBufferSize;
-        continue;
-      }
+//      if (bufferType == ShaderBindingType::ShaderStorageBuffer)
+//      {
+//        uint32_t requiredBufferSize = 0;
+//        for (uint32_t i = 0; i < reflectedBinding.type_description->member_count; i++)
+//        {
+//          auto* member = &reflectedBinding.type_description->members[i];
+//          if (member->type_flags & SPV_REFLECT_TYPE_FLAG_ARRAY)
+//          {
+//            requiredBufferSize += member->traits.array.dims[0] * member->traits.array.stride; // todo: support more than 1D arrays
+//          }
+//
+//          for (uint32_t j = 0; j < member->member_count; j++)
+//          {
+//            auto* childMember = &member->members[i];
+//            int jkj = 420;
+//          }
+//        }
+//        binding.m_ExpectedBufferSizeOrDivisor = requiredBufferSize;
+//        continue;
+//      }
 
       for (uint32_t i = 0; i < reflectedBinding.block.member_count; i++)
       {
