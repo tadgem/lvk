@@ -51,23 +51,16 @@ Buffer CreateIndexBuffer(VkState& vk, std::vector<uint32_t> indices)
   VkDeviceSize bufferSize = sizeof(uint32_t) * indices.size();
 
   // create a CPU side buffer to dump vertex data into
-  Buffer stagingBuf = CreateBuffer(vk, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-  // dump vert data
-  void* data;
-  vmaMapMemory(vk.m_Allocator, stagingBuf.m_GpuMemory, &data);
-  memcpy(data, indices.data(), bufferSize);
-  vmaUnmapMemory(vk.m_Allocator, stagingBuf.m_GpuMemory);
-
+  MappedBuffer stagingBuf = CreateMappedBuffer(vk, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+  memcpy(stagingBuf.m_MappedAddr, indices.data(), bufferSize);
+  
   // create GPU side buffer
   Buffer buf = CreateBuffer(vk, bufferSize,
                   VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
   CopyBuffer(vk, stagingBuf.m_GpuBuffer, buf.m_GpuBuffer, bufferSize);
-
-  vkDestroyBuffer(vk.m_LogicalDevice, stagingBuf.m_GpuBuffer, nullptr);
-  vmaFreeMemory(vk.m_Allocator, stagingBuf.m_GpuMemory);
+  stagingBuf.Free(vk);
 
   return buf;
 }

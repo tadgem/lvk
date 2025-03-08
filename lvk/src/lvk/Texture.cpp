@@ -392,12 +392,10 @@ void lvk::textures::CreateTexture(VkState& vk, const String& path, VkFormat form
     // create staging buffer to copy texture to gpu
     constexpr VkBufferUsageFlags bufferUsageFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     constexpr VkMemoryPropertyFlags memoryPropertiesFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    Buffer stagingBuffer = buffers::CreateBuffer(vk,imageSize, bufferUsageFlags, memoryPropertiesFlags);
+    MappedBuffer stagingBuffer = buffers::CreateMappedBuffer(vk,imageSize, bufferUsageFlags, memoryPropertiesFlags);
 
-    void* data;
-    vmaMapMemory(vk.m_Allocator, stagingBuffer.m_GpuMemory, &data);
-    memcpy(data, pixels, static_cast<size_t>(imageSize));
-    vmaUnmapMemory(vk.m_Allocator, stagingBuffer.m_GpuMemory);
+    memcpy(stagingBuffer.m_MappedAddr, pixels, static_cast<size_t>(imageSize));
+
     stbi_image_free(pixels);
 
     CreateImage(vk, texWidth, texHeight, mips, VK_SAMPLE_COUNT_1_BIT,
@@ -440,12 +438,9 @@ void lvk::textures::CreateTextureFromMemory(VkState& vk, unsigned char* tex_data
     // create staging buffer to copy texture to gpu
     constexpr VkBufferUsageFlags bufferUsageFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     constexpr VkMemoryPropertyFlags memoryPropertiesFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    Buffer stagingBuffer = buffers::CreateBuffer(vk,imageSize, bufferUsageFlags, memoryPropertiesFlags);
-
-    void* data;
-    vmaMapMemory(vk.m_Allocator, stagingBuffer.m_GpuMemory, &data);
-    memcpy(data, pixels, static_cast<size_t>(imageSize));
-    vmaUnmapMemory(vk.m_Allocator, stagingBuffer.m_GpuMemory);
+    MappedBuffer stagingBuffer = buffers::CreateMappedBuffer(vk,imageSize, bufferUsageFlags, memoryPropertiesFlags);
+    memcpy(stagingBuffer.m_MappedAddr, pixels, static_cast<size_t>(imageSize));
+    
     stbi_image_free(pixels);
 
     CreateImage(vk, texWidth, texHeight, mips, VK_SAMPLE_COUNT_1_BIT,
@@ -486,12 +481,9 @@ void lvk::textures::CreateTexture3DFromMemory(VkState& vk, unsigned char* tex_da
 
     constexpr VkBufferUsageFlags bufferUsageFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     constexpr VkMemoryPropertyFlags memoryPropertiesFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    Buffer stagingBuffer = buffers::CreateBuffer(vk,imageSize, bufferUsageFlags, memoryPropertiesFlags);
+    MappedBuffer stagingBuffer = buffers::CreateMappedBuffer(vk,imageSize, bufferUsageFlags, memoryPropertiesFlags);
 
-    void* data;
-    vmaMapMemory(vk.m_Allocator, stagingBuffer.m_GpuMemory, &data);
-    memcpy(data, pixels, static_cast<size_t>(imageSize));
-    vmaUnmapMemory(vk.m_Allocator, stagingBuffer.m_GpuMemory);
+    memcpy(stagingBuffer.m_MappedAddr, pixels, static_cast<size_t>(imageSize));
     stbi_image_free(pixels);
 
     CreateImage(vk, texWidth, texHeight, mips, VK_SAMPLE_COUNT_1_BIT,

@@ -44,15 +44,12 @@ Buffer CreateVertexBuffer(VkState &vk, Vector<_Ty> verts) {
 
   // create a CPU side buffer to dump vertex data into
   
-  Buffer stagingBuffer = CreateBuffer(vk, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+  MappedBuffer stagingBuffer = CreateMappedBuffer(vk, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                       VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
   // dump vert data
-  void *data;
-  vmaMapMemory(vk.m_Allocator, stagingBuffer.m_GpuMemory, &data);
-  memcpy(data, verts.data(), bufferSize);
-  vmaUnmapMemory(vk.m_Allocator, stagingBuffer.m_GpuMemory);
+  memcpy(stagingBuffer.m_MappedAddr, verts.data(), bufferSize);
 
   // create GPU side buffer
   Buffer vb = CreateBuffer(vk, bufferSize,

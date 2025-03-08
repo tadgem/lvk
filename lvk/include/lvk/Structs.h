@@ -92,6 +92,7 @@ namespace lvk {
 
     void *m_MappedAddr = nullptr;
 
+
     void Map(VkState& vk);
     void Free(VkState &vk) override;
   };
