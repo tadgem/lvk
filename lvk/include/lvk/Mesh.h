@@ -12,13 +12,13 @@ namespace lvk
 
         static VkVertexInputBindingDescription GetBindingDescription()
         {
-          VkVertexInputBindingDescription bindingDescription{};
+            VkVertexInputBindingDescription bindingDescription{};
 
-          bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-          bindingDescription.stride = sizeof(VertexDataPosColUv);
-          bindingDescription.binding = 0;
+            bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+            bindingDescription.stride = sizeof(VertexDataPosColUv);
+            bindingDescription.binding = 0;
 
-          return bindingDescription;
+            return bindingDescription;
         }
 
         static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions() {
@@ -160,30 +160,17 @@ namespace lvk
 
     class Mesh
     {
-      public:
-        VkBuffer m_VertexBuffer = VK_NULL_HANDLE;
-        VmaAllocation m_VertexBufferMemory;
-        VkBuffer m_IndexBuffer = VK_NULL_HANDLE;
-        VmaAllocation m_IndexBufferMemory;
-
+    public:
+        Buffer m_VertexBuffer, m_IndexBuffer;
         uint32_t m_IndexCount = 0;
 
-        void Free(VkState & vk);
+        void Free(VkState& vk);
 
         static Mesh* g_ScreenSpaceQuad;
         static Mesh* g_Cube;
 
-        static void InitBuiltInMeshes(lvk::VkState & vk);
-        static void FreeBuiltInMeshes(lvk::VkState & vk);
+        static void InitBuiltInMeshes(lvk::VkState& vk);
+        static void FreeBuiltInMeshes(lvk::VkState& vk);
     };
 
-    class Renderable
-    {
-      public:
-        VkDescriptorSet    m_DescriptorSet;
-        VkPipelineLayout   m_PipelineLayout;
-        Mesh               m_Mesh;
-
-        void RecordGraphicsCommands(VkCommandBuffer& commandBuffer);
-    };
 }

@@ -390,16 +390,14 @@ void lvk::textures::CreateTexture(VkState& vk, const String& path, VkFormat form
     }
     
     // create staging buffer to copy texture to gpu
-    VkBuffer stagingBuffer;
-    VmaAllocation stagingBufferMemory;
     constexpr VkBufferUsageFlags bufferUsageFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     constexpr VkMemoryPropertyFlags memoryPropertiesFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    buffers::CreateBuffer(vk,imageSize, bufferUsageFlags, memoryPropertiesFlags, stagingBuffer, stagingBufferMemory);
+    Buffer stagingBuffer = buffers::CreateBuffer(vk,imageSize, bufferUsageFlags, memoryPropertiesFlags);
 
     void* data;
-    vmaMapMemory(vk.m_Allocator, stagingBufferMemory, &data);
+    vmaMapMemory(vk.m_Allocator, stagingBuffer.m_GpuMemory, &data);
     memcpy(data, pixels, static_cast<size_t>(imageSize));
-    vmaUnmapMemory(vk.m_Allocator, stagingBufferMemory);
+    vmaUnmapMemory(vk.m_Allocator, stagingBuffer.m_GpuMemory);
     stbi_image_free(pixels);
 
     CreateImage(vk, texWidth, texHeight, mips, VK_SAMPLE_COUNT_1_BIT,
@@ -409,14 +407,13 @@ void lvk::textures::CreateTexture(VkState& vk, const String& path, VkFormat form
     CreateImageView(vk, image, format, mips, VK_IMAGE_ASPECT_COLOR_BIT, imageView);
 
     TransitionImageLayout(vk, image, format, mips, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    CopyBufferToImage(vk, stagingBuffer, image, texWidth, texHeight);
+    CopyBufferToImage(vk, stagingBuffer.m_GpuBuffer, image, texWidth, texHeight);
     
     GenerateMips(vk, image, format, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texWidth), mips, VK_FILTER_LINEAR);
     
     TransitionImageLayout(vk, image, format, mips, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-    vkDestroyBuffer(vk.m_LogicalDevice, stagingBuffer, nullptr);
-    vmaFreeMemory(vk.m_Allocator, stagingBufferMemory);
+    stagingBuffer.Free(vk);
 }
 
 void lvk::textures::CreateTextureFromMemory(VkState& vk, unsigned char* tex_data, uint32_t dataSize, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips)
@@ -441,16 +438,14 @@ void lvk::textures::CreateTextureFromMemory(VkState& vk, unsigned char* tex_data
     }
 
     // create staging buffer to copy texture to gpu
-    VkBuffer stagingBuffer;
-    VmaAllocation stagingBufferMemory;
     constexpr VkBufferUsageFlags bufferUsageFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     constexpr VkMemoryPropertyFlags memoryPropertiesFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    buffers::CreateBuffer(vk,imageSize, bufferUsageFlags, memoryPropertiesFlags, stagingBuffer, stagingBufferMemory);
+    Buffer stagingBuffer = buffers::CreateBuffer(vk,imageSize, bufferUsageFlags, memoryPropertiesFlags);
 
     void* data;
-    vmaMapMemory(vk.m_Allocator, stagingBufferMemory, &data);
+    vmaMapMemory(vk.m_Allocator, stagingBuffer.m_GpuMemory, &data);
     memcpy(data, pixels, static_cast<size_t>(imageSize));
-    vmaUnmapMemory(vk.m_Allocator, stagingBufferMemory);
+    vmaUnmapMemory(vk.m_Allocator, stagingBuffer.m_GpuMemory);
     stbi_image_free(pixels);
 
     CreateImage(vk, texWidth, texHeight, mips, VK_SAMPLE_COUNT_1_BIT,
@@ -460,14 +455,12 @@ void lvk::textures::CreateTextureFromMemory(VkState& vk, unsigned char* tex_data
     CreateImageView(vk, image, format, mips, VK_IMAGE_ASPECT_COLOR_BIT, imageView);
 
     TransitionImageLayout(vk, image, format, mips, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    CopyBufferToImage(vk, stagingBuffer, image, texWidth, texHeight);
+    CopyBufferToImage(vk, stagingBuffer.m_GpuBuffer, image, texWidth, texHeight);
 
     GenerateMips(vk, image, format, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texWidth), mips, VK_FILTER_LINEAR);
 
     TransitionImageLayout(vk, image, format, mips, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-    vkDestroyBuffer(vk.m_LogicalDevice, stagingBuffer, nullptr);
-    vmaFreeMemory(vk.m_Allocator, stagingBufferMemory);
+    stagingBuffer.Free(vk);
 }
 
 void lvk::textures::CreateTexture3DFromMemory(VkState& vk, unsigned char* tex_data, VkExtent3D extent, uint32_t dataSize, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips)
@@ -491,17 +484,14 @@ void lvk::textures::CreateTexture3DFromMemory(VkState& vk, unsigned char* tex_da
         *numMips = mips;
     }
 
-    // create staging buffer to copy texture to gpu
-    VkBuffer stagingBuffer;
-    VmaAllocation stagingBufferMemory;
     constexpr VkBufferUsageFlags bufferUsageFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     constexpr VkMemoryPropertyFlags memoryPropertiesFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    buffers::CreateBuffer(vk,imageSize, bufferUsageFlags, memoryPropertiesFlags, stagingBuffer, stagingBufferMemory);
+    Buffer stagingBuffer = buffers::CreateBuffer(vk,imageSize, bufferUsageFlags, memoryPropertiesFlags);
 
     void* data;
-    vmaMapMemory(vk.m_Allocator, stagingBufferMemory, &data);
+    vmaMapMemory(vk.m_Allocator, stagingBuffer.m_GpuMemory, &data);
     memcpy(data, pixels, static_cast<size_t>(imageSize));
-    vmaUnmapMemory(vk.m_Allocator, stagingBufferMemory);
+    vmaUnmapMemory(vk.m_Allocator, stagingBuffer.m_GpuMemory);
     stbi_image_free(pixels);
 
     CreateImage(vk, texWidth, texHeight, mips, VK_SAMPLE_COUNT_1_BIT,
@@ -511,14 +501,12 @@ void lvk::textures::CreateTexture3DFromMemory(VkState& vk, unsigned char* tex_da
     CreateImageView(vk, image, format, mips, VK_IMAGE_ASPECT_COLOR_BIT, imageView);
 
     TransitionImageLayout(vk, image, format, mips, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    CopyBufferToImage(vk, stagingBuffer, image, texWidth, texHeight);
+    CopyBufferToImage(vk, stagingBuffer.m_GpuBuffer, image, texWidth, texHeight);
 
     GenerateMips(vk, image, format, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texWidth), mips, VK_FILTER_LINEAR);
 
     TransitionImageLayout(vk, image, format, mips, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-    vkDestroyBuffer(vk.m_LogicalDevice, stagingBuffer, nullptr);
-    vmaFreeMemory(vk.m_Allocator, stagingBufferMemory);
+    stagingBuffer.Free(vk);
 }
 
 

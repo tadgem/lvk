@@ -62,15 +62,10 @@ ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferP
     0, 1, 2, 2, 3, 0
     };
 
-    VkBuffer vertBuffer;
-    VmaAllocation vertAlloc;
-    buffers::CreateVertexBuffer<VertexDataPosUv>(vk, screenQuadVerts, vertBuffer, vertAlloc);
+    Buffer vb = buffers::CreateVertexBuffer<VertexDataPosUv>(vk, screenQuadVerts);
+    Buffer ib = buffers::CreateIndexBuffer(vk, screenQuadIndices);
 
-    VkBuffer indexBuffer;
-    VmaAllocation indexAlloc;
-    buffers::CreateIndexBuffer(vk, screenQuadIndices, indexBuffer, indexAlloc);
-
-    Mesh screenQuad{ vertBuffer, vertAlloc, indexBuffer, indexAlloc, 6 };
+    Mesh screenQuad{ vb, ib, 6 };
 
     return { gbuffer, im3dViewState , {1920, 1080}, {},  screenQuad };
 }
@@ -198,7 +193,7 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderData& r
                     { {-1.0f, 1.0f, 0.0f}, {0.0f, h} }
                 };
 
-                vkCmdUpdateBuffer(commandBuffer, view->m_ViewQuad.m_VertexBuffer, 0, 4 * sizeof(VertexDataPosUv), &newScreenQuadData[0]);
+                vkCmdUpdateBuffer(commandBuffer, view->m_ViewQuad.m_VertexBuffer.m_GpuBuffer, 0, 4 * sizeof(VertexDataPosUv), &newScreenQuadData[0]);
             }
 
             {
@@ -228,18 +223,17 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderData& r
                 {
                     MeshEx& mesh = model.m_RenderItems[i].m_Mesh;
 
-                    VkBuffer vertexBuffers[]{ mesh.m_VertexBuffer };
+                    VkBuffer vertexBuffers[]{ mesh.m_Mesh.m_VertexBuffer.m_GpuBuffer };
                     VkDeviceSize sizes[] = { 0 };
 
                     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, sizes);
-                    vkCmdBindIndexBuffer(commandBuffer, mesh.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+                    vkCmdBindIndexBuffer(commandBuffer, mesh.m_Mesh.m_IndexBuffer.m_GpuBuffer, 0, VK_INDEX_TYPE_UINT32);
                     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderData.m_TiledPipeline.m_PipelineLayout, 0, 1, &model.m_RenderItems[i].m_Material.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
                     vkCmdDrawIndexed(commandBuffer, mesh.m_IndexCount, 1, 0, 0, 0);
                 }
                 DrawIm3d(vk, commandBuffer, frameIndex, im3dState, view->m_Im3dState, view->m_Camera.Proj * view->m_Camera.View, viewExtent.width, viewExtent.height);
 
                 vkCmdEndRenderingKHR(commandBuffer);
-
             }
         }
         }

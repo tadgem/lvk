@@ -137,7 +137,7 @@ void RecordComputeCommandBuffers(VkState& vk, VkPipeline& p, VkPipelineLayout& l
 
 void RecordGraphicsCommandBuffers(VkState & vk,
                                   VkPipelineData& particlePipeline,
-                                  std::vector<VkBuffer>& particleBuffers)
+                                  std::vector<Buffer>& particleBuffers)
 {
     lvk::commands::RecordGraphicsCommands(vk, [&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
         // push to example
@@ -174,7 +174,7 @@ void RecordGraphicsCommandBuffers(VkState & vk,
         vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, particlePipeline.m_Pipeline);
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &particleBuffers[frameIndex], sizes);
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &particleBuffers[frameIndex].m_GpuBuffer, sizes);
         vkCmdDraw(commandBuffer, PARTICLE_COUNT, 1, 0,0);
         vkCmdEndRenderPass(commandBuffer);
     });
@@ -188,17 +188,11 @@ void UpdateUniformBuffer(VkState & vk)
 
 }
 
-static void CreateComputeBuffers(VkState& vk, std::vector<VkBuffer>& uniformBuffers,
-                                 std::vector<VmaAllocation>& uniformBuffersMemory,
-
-                                 std::vector<VkBuffer>& shaderStorageBuffers,
-                                 std::vector<VmaAllocation>& shaderStorageBuffersMemory)
+static void CreateComputeBuffers(VkState& vk, std::vector<Buffer>& uniformBuffers,
+                                 std::vector<Buffer>& shaderStorageBuffers)
 {
     uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-    uniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
-
     shaderStorageBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-    shaderStorageBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
 
     std::default_random_engine rndEngine((unsigned)time(nullptr));
     std::uniform_real_distribution<float> rndDist(0.0f, 1.0f);
@@ -215,30 +209,25 @@ static void CreateComputeBuffers(VkState& vk, std::vector<VkBuffer>& uniformBuff
         particle.colour = glm::vec4(rndDist(rndEngine), rndDist(rndEngine), rndDist(rndEngine), 1.0f);
     }
 
-    VkBuffer stagingBuffer;
-    VmaAllocation stagingBufferMemory;
-    buffers::CreateBuffer(vk, buffer_size,
+    MappedBuffer stagingBuffer = buffers::CreateMappedBuffer(vk, buffer_size,
                           VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                          stagingBuffer, stagingBufferMemory);
+                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    void* data;
-    vmaMapMemory(vk.m_Allocator, stagingBufferMemory, &data);
-    memcpy(data, particles.data(), buffer_size);
-    vmaUnmapMemory(vk.m_Allocator, stagingBufferMemory);
+
+    memcpy(stagingBuffer.m_MappedAddr, particles.data(), buffer_size);
+
     for(auto f = 0; f < MAX_FRAMES_IN_FLIGHT; f++)
     {
-        buffers::CreateBuffer(vk, sizeof(ParticlesUBOData),
+        uniformBuffers[f] = buffers::CreateBuffer(vk, sizeof(ParticlesUBOData),
                               VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-                              uniformBuffers[f], uniformBuffersMemory[f]);
+                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
-        buffers::CreateBuffer(vk, buffer_size,
+        shaderStorageBuffers[f] = buffers::CreateBuffer(vk, buffer_size,
                               VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
                                   VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-                                  VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                              shaderStorageBuffers[f], shaderStorageBuffersMemory[f]);
-        buffers::CopyBuffer(vk, stagingBuffer, shaderStorageBuffers[f], buffer_size);
+                                  VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+        buffers::CopyBuffer(vk, stagingBuffer.m_GpuBuffer, shaderStorageBuffers[f].m_GpuBuffer, buffer_size);
 
 
     }
@@ -276,8 +265,8 @@ VkDescriptorSetLayout CreateComputeDescriptorLayouts(VkState& vk)
 }
 
 Vector<VkDescriptorSet> CreateComputeDescriptorSets(VkState& vk, VkDescriptorSetLayout layout,
-                                 std::vector<VkBuffer>& uniformBuffers,
-                                 std::vector<VkBuffer>& shaderStorageBuffers)
+                                 std::vector<Buffer>& uniformBuffers,
+                                 std::vector<Buffer>& shaderStorageBuffers)
 {
 
     std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, layout);
@@ -310,7 +299,7 @@ Vector<VkDescriptorSet> CreateComputeDescriptorSets(VkState& vk, VkDescriptorSet
 
         auto last_index = (f - 1) % MAX_FRAMES_IN_FLIGHT;
         VkDescriptorBufferInfo storageBufferInfoLastFrame{};
-        storageBufferInfoLastFrame.buffer = shaderStorageBuffers[last_index];
+        storageBufferInfoLastFrame.buffer = shaderStorageBuffers[last_index].m_GpuBuffer;
         storageBufferInfoLastFrame.offset = 0;
         storageBufferInfoLastFrame.range = sizeof(Particle) * PARTICLE_COUNT;
 
@@ -323,7 +312,7 @@ Vector<VkDescriptorSet> CreateComputeDescriptorSets(VkState& vk, VkDescriptorSet
         descriptorWrites[1].pBufferInfo = &storageBufferInfoLastFrame;
 
         VkDescriptorBufferInfo storageBufferInfoCurrentFrame{};
-        storageBufferInfoCurrentFrame.buffer = shaderStorageBuffers[f];
+        storageBufferInfoCurrentFrame.buffer = shaderStorageBuffers[f].m_GpuBuffer;
         storageBufferInfoCurrentFrame.offset = 0;
         storageBufferInfoCurrentFrame.range = sizeof(Particle) * PARTICLE_COUNT;
 
@@ -388,12 +377,9 @@ int main()
         vk, "shaders/draw_particle.vert", "shaders/draw_particle.frag");
     Material computeMaterial = Material::Create(vk, particles_prog);
 
-    std::vector<VkBuffer> uniformBuffers;
-    std::vector<VmaAllocation> uniformBuffersMemory;
-    std::vector<VkBuffer> shaderStorageBuffers;
-    std::vector<VmaAllocation> shaderStorageBuffersMemory;
-    CreateComputeBuffers(vk, uniformBuffers, uniformBuffersMemory,
-                         shaderStorageBuffers, shaderStorageBuffersMemory);
+    std::vector<Buffer> uniformBuffers;
+    std::vector<Buffer> shaderStorageBuffers;
+    CreateComputeBuffers(vk, uniformBuffers, shaderStorageBuffers);
 
 
     buffers::CreateUniformBuffers<ParticlesUBOData>(vk, particleDeltaUniformData);

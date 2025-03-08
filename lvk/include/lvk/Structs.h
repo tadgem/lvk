@@ -75,6 +75,10 @@ namespace lvk {
 
     VkBuffer        m_GpuBuffer = VK_NULL_HANDLE;
     VmaAllocation   m_GpuMemory = VK_NULL_HANDLE;
+    VkDeviceSize    m_Size = 0;
+
+    Buffer(VkBuffer buf, VmaAllocation alloc, VkDeviceSize size);
+    Buffer() = default;
 
     virtual void Free(VkState& vk);
   };
@@ -82,8 +86,13 @@ namespace lvk {
   // reuse this for generic cpu dynamic buffer
   class MappedBuffer : public Buffer {
   public:
+    
+    MappedBuffer(Buffer& b);
+    MappedBuffer() = default;
+
     void *m_MappedAddr = nullptr;
 
+    void Map(VkState& vk);
     void Free(VkState &vk) override;
   };
 

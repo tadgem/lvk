@@ -65,12 +65,9 @@ namespace lvk
             VertexDataPos4{{-1.0f,  1.0f, 0.0f, 1.0f}}
         };
 
+        Buffer vertexBuffer = buffers::CreateVertexBuffer<VertexDataPos4>(vk, vertexData);
 
-        VkBuffer vertexBuffer;
-        VmaAllocation vertexBufferMemory;
-        buffers::CreateVertexBuffer<VertexDataPos4>(vk, vertexData, vertexBuffer, vertexBufferMemory);
-
-        return { tris_prog, points_prog, lines_prog, vertexBuffer, vertexBufferMemory };
+        return { tris_prog, points_prog, lines_prog, vertexBuffer };
     }
 
     LvkIm3dViewState AddIm3dForViewport(VkState & vk, LvkIm3dState& state, VkRenderPass renderPass, bool enableMSAA, bool enableDynamicRendering)
@@ -163,9 +160,7 @@ namespace lvk
         state.m_TriProg.Free(vk);
         state.m_LinesProg.Free(vk);
         state.m_PointsProg.Free(vk);
-
-        vkDestroyBuffer(vk.m_LogicalDevice, state.m_ScreenQuad, nullptr);
-        vmaFreeMemory(vk.m_Allocator, state.m_ScreenQuadMemory);
+        state.m_ScreenQuadBuffer.Free(vk);
     }
 
     void DrawIm3d(VkState & vk, VkCommandBuffer& buffer, uint32_t frameIndex, LvkIm3dState& state, LvkIm3dViewState& viewState, glm::mat4 _viewProj, uint32_t width, uint32_t height, bool drawText)
@@ -250,7 +245,7 @@ namespace lvk
                 vkCmdBindPipeline(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline);
                 vkCmdSetViewport(buffer, 0, 1, &viewport);
                 vkCmdSetScissor(buffer, 0, 1, &scissor);
-                vkCmdBindVertexBuffers(buffer, 0, 1, &state.m_ScreenQuad, sizes);
+                vkCmdBindVertexBuffers(buffer, 0, 1, &state.m_ScreenQuadBuffer.m_GpuBuffer, sizes);
                 vkCmdBindDescriptorSets(buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *pipelineLayout, 0, 1, &mat->m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
 
                 vkCmdDraw(buffer, primVertexCount == 3 ? 3 : 4, passPrimCount, 0, 0);

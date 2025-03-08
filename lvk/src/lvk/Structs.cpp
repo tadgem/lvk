@@ -26,3 +26,17 @@ void lvk::Buffer::Free(lvk::VkState &vk) {
   vkDestroyBuffer(vk.m_LogicalDevice, m_GpuBuffer, nullptr);
   vmaFreeMemory(vk.m_Allocator, m_GpuMemory);
 }
+
+lvk::Buffer::Buffer(VkBuffer buf, VmaAllocation alloc, VkDeviceSize size)
+    : m_GpuBuffer(buf), m_GpuMemory(alloc), m_Size(size)
+{}
+
+void lvk::MappedBuffer::Map(VkState& vk)
+{
+    vmaMapMemory(vk.m_Allocator, m_GpuMemory, &m_MappedAddr);
+}
+
+lvk::MappedBuffer::MappedBuffer(Buffer& buf)
+    : Buffer(buf.m_GpuBuffer, buf.m_GpuMemory, buf.m_Size), m_MappedAddr(nullptr)
+{
+}

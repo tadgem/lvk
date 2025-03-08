@@ -53,10 +53,7 @@ struct AABB
 
 
 struct MeshEx {
-    VkBuffer m_VertexBuffer;
-    VmaAllocation m_VertexBufferMemory;
-    VkBuffer m_IndexBuffer;
-    VmaAllocation m_IndexBufferMemory;
+    lvk::Mesh m_Mesh;
     AABB m_AABB;
     glm::mat4 m_OBB;
 
@@ -66,8 +63,8 @@ struct MeshEx {
     void Bind(VkCommandBuffer &cmd)
     {
       const VkDeviceSize sizes[] = { 0 };
-      vkCmdBindVertexBuffers(cmd, 0, 1, &m_VertexBuffer, sizes);
-      vkCmdBindIndexBuffer(cmd, m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+      vkCmdBindVertexBuffers(cmd, 0, 1, &m_Mesh.m_VertexBuffer.m_GpuBuffer, sizes);
+      vkCmdBindIndexBuffer(cmd, m_Mesh.m_IndexBuffer.m_GpuBuffer, 0, VK_INDEX_TYPE_UINT32);
     }
 };
 
@@ -174,10 +171,7 @@ static lvk::String AssimpToSTD(aiString str) {
 
 void FreeMesh(lvk::VkState & vk, MeshEx& m)
 {
-    vkDestroyBuffer(vk.m_LogicalDevice, m.m_VertexBuffer, nullptr);
-    vmaFreeMemory(vk.m_Allocator, m.m_VertexBufferMemory);
-    vkDestroyBuffer(vk.m_LogicalDevice, m.m_IndexBuffer, nullptr);
-    vmaFreeMemory(vk.m_Allocator, m.m_IndexBufferMemory);
+    m.m_Mesh.Free(vk);
 }
 
 void FreeModel(lvk::VkState & vk, Model& model)
@@ -220,8 +214,8 @@ void ProcessMesh(lvk::VkState & vk, Model& model, aiMesh* mesh, aiNode* node, co
     AABB aabb = { {mesh->mAABB.mMin.x, mesh->mAABB.mMin.y, mesh->mAABB.mMin.z},
                     {mesh->mAABB.mMax.x, mesh->mAABB.mMax.y, mesh->mAABB.mMax.z} };
     MeshEx m{};
-    buffers::CreateVertexBuffer<VertexDataPosUv>(vk, verts, m.m_VertexBuffer, m.m_VertexBufferMemory);
-    buffers::CreateIndexBuffer(vk, indices, m.m_IndexBuffer, m.m_IndexBufferMemory);
+    m.m_Mesh.m_VertexBuffer = buffers::CreateVertexBuffer<VertexDataPosUv>(vk, verts);
+    m.m_Mesh.m_IndexBuffer  = buffers::CreateIndexBuffer(vk, indices);
     m.m_IndexCount = static_cast<uint32_t>(indices.size());
     m.m_AABB = aabb;
     model.m_Meshes.push_back(m);
@@ -301,8 +295,8 @@ void ProcessMeshWithNormals(lvk::VkState & vk, Model& model, aiMesh* mesh, aiNod
                 {mesh->mAABB.mMax.x, mesh->mAABB.mMax.y, mesh->mAABB.mMax.z} };
 
     MeshEx m{};
-    buffers::CreateVertexBuffer<VertexDataPosNormalUv>(vk, verts, m.m_VertexBuffer, m.m_VertexBufferMemory);
-    buffers::CreateIndexBuffer(vk, indices, m.m_IndexBuffer, m.m_IndexBufferMemory);
+    m.m_Mesh.m_VertexBuffer = buffers::CreateVertexBuffer<VertexDataPosNormalUv>(vk, verts);
+    m.m_Mesh.m_IndexBuffer = buffers::CreateIndexBuffer(vk, indices);
     m.m_IndexCount = static_cast<uint32_t>(indices.size());
     m.m_MaterialIndex = mesh->mMaterialIndex;
     m.m_AABB = aabb;
@@ -384,14 +378,11 @@ void LoadModelAssimp(lvk::VkState & vk, Model& model, const lvk::String& path, b
 
 MeshEx BuildScreenSpaceQuad(lvk::VkState & vk, lvk::Vector <lvk::VertexDataPosUv > & verts, lvk::Vector<uint32_t>& indices)
 {
-    VkBuffer vertexBuffer;
-    VmaAllocation vertexBufferMemory;
-    VkBuffer indexBuffer;
-    VmaAllocation indexBufferMemory;
-    lvk::buffers::CreateVertexBuffer<lvk::VertexDataPosUv>(vk, verts, vertexBuffer, vertexBufferMemory);
-    lvk::buffers::CreateIndexBuffer(vk, indices, indexBuffer, indexBufferMemory);
-
-    return MeshEx{ vertexBuffer, vertexBufferMemory, indexBuffer, indexBufferMemory, {}, 6 };
+    MeshEx m{};
+    m.m_Mesh.m_VertexBuffer = lvk::buffers::CreateVertexBuffer<lvk::VertexDataPosUv>(vk, verts);
+    m.m_Mesh.m_IndexBuffer  = lvk::buffers::CreateIndexBuffer(vk, indices);
+    m.m_IndexCount = 6;
+    return m;
 }
 
 

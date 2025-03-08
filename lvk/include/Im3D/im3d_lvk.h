@@ -13,8 +13,7 @@ namespace lvk
         ShaderProgram m_PointsProg;
         ShaderProgram m_LinesProg;
         // also ss quad mesh
-        VkBuffer        m_ScreenQuad;
-        VmaAllocation   m_ScreenQuadMemory;
+        Buffer        m_ScreenQuadBuffer;
     };
 
     struct LvkIm3dViewState

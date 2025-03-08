@@ -67,6 +67,21 @@ namespace lvk
         Vector <VkClearValue>       m_ClearValues;
         VkAttachmentLoadOp          m_AttachmentLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         VkExtent2D                  m_Resolution;
+
+        void AddColourAttachment(lvk::VkState& vk, VkExtent2D resolution,
+            uint32_t numMips, VkSampleCountFlagBits sampleCount,
+            VkFormat format, VkImageUsageFlags usageFlags,
+            VkMemoryPropertyFlagBits memoryFlags, VkImageAspectFlagBits imageAspect,
+            VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
+        {
+            m_ColourAttachments.push_back(Attachment::CreateColourAttachment(vk,
+                resolution, numMips, sampleCount, format, usageFlags, memoryFlags, imageAspect, samplerFilter, samplerAddressMode));
+            for (auto& img : m_ColourAttachments.back().m_AttachmentSwapchainImages)
+            {
+                textures::TransitionImageLayout(vk, img.m_Image, format, numMips, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
+            }
+            m_Resolution = resolution;
+        }
         
         void AddColourAttachment(lvk::VkState & vk, ResolutionScale scale,
             uint32_t numMips, VkSampleCountFlagBits sampleCount,
@@ -76,13 +91,23 @@ namespace lvk
         {
             VkExtent2D resolution = vk.m_MaxFramebufferExtent;
             ResolveResolutionScale(scale, resolution.width, resolution.height, resolution.width, resolution.height);
-            m_ColourAttachments.push_back(Attachment::CreateColourAttachment(vk,
-                resolution, numMips, sampleCount, format, usageFlags, memoryFlags, imageAspect, samplerFilter, samplerAddressMode));
-            for(auto& img : m_ColourAttachments.back().m_AttachmentSwapchainImages)
+            AddColourAttachment(vk, resolution, numMips, sampleCount, format, usageFlags, memoryFlags, imageAspect, samplerFilter, samplerAddressMode);
+        }
+
+        void AddDepthAttachment(lvk::VkState& vk, VkExtent2D resolution,
+            uint32_t numMips, VkSampleCountFlagBits sampleCount,
+            VkImageUsageFlags usageFlags,
+            VkMemoryPropertyFlagBits memoryFlags, VkImageAspectFlagBits imageAspect,
+            VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
+        {
+            m_DepthAttachments.push_back(Attachment::CreateDepthAttachment(vk,
+                resolution, numMips, sampleCount, usageFlags, memoryFlags, imageAspect, samplerFilter, samplerAddressMode));
+            for (auto& img : m_DepthAttachments.back().m_AttachmentSwapchainImages)
             {
-                textures::TransitionImageLayout(vk, img.m_Image, format, numMips, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
+                textures::TransitionImageLayout(vk, img.m_Image, utils::FindDepthFormat(vk), numMips, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
             }
             m_Resolution = resolution;
+
         }
 
         void AddDepthAttachment(lvk::VkState & vk, ResolutionScale scale,
@@ -93,14 +118,22 @@ namespace lvk
         {
             VkExtent2D resolution = vk.m_MaxFramebufferExtent;
             ResolveResolutionScale(scale, resolution.width, resolution.height, resolution.width, resolution.height);
-            m_DepthAttachments.push_back(Attachment::CreateDepthAttachment(vk,
-                resolution, numMips, sampleCount, usageFlags, memoryFlags, imageAspect, samplerFilter, samplerAddressMode));
-            for(auto& img : m_DepthAttachments.back().m_AttachmentSwapchainImages)
+            AddDepthAttachment(vk, resolution, numMips, sampleCount, usageFlags, memoryFlags, imageAspect, samplerFilter, samplerAddressMode);
+        }
+
+        void AddResolveAttachment(lvk::VkState& vk, VkExtent2D resolution,
+            uint32_t numMips, VkSampleCountFlagBits sampleCount,
+            VkFormat format, VkImageUsageFlags usageFlags,
+            VkMemoryPropertyFlagBits memoryFlags, VkImageAspectFlagBits imageAspect,
+            VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
+        {
+            m_ResolveAttachments.push_back(Attachment::CreateColourAttachment(vk,
+                resolution, numMips, sampleCount, format, usageFlags, memoryFlags, imageAspect, samplerFilter, samplerAddressMode));
+            for (auto& img : m_ResolveAttachments.back().m_AttachmentSwapchainImages)
             {
-                textures::TransitionImageLayout(vk, img.m_Image, utils::FindDepthFormat(vk), numMips, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+                textures::TransitionImageLayout(vk, img.m_Image, utils::FindDepthFormat(vk), numMips, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
             }
             m_Resolution = resolution;
-
         }
 
         void AddResolveAttachment(lvk::VkState & vk, ResolutionScale scale,
@@ -111,14 +144,7 @@ namespace lvk
         {
             VkExtent2D resolution = vk.m_MaxFramebufferExtent;
             ResolveResolutionScale(scale, resolution.width, resolution.height, resolution.width, resolution.height);
-            m_ResolveAttachments.push_back(Attachment::CreateColourAttachment(vk,
-                resolution, numMips, sampleCount, format, usageFlags, memoryFlags, imageAspect, samplerFilter, samplerAddressMode));
-            for(auto& img : m_ResolveAttachments.back().m_AttachmentSwapchainImages)
-            {
-                textures::TransitionImageLayout(vk, img.m_Image, utils::FindDepthFormat(vk), numMips, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
-            }
-            m_Resolution = resolution;
-
+            AddResolveAttachment(vk, resolution, numMips, sampleCount, format, usageFlags, memoryFlags, imageAspect, samplerFilter, samplerAddressMode);
         }
 
         void Build(lvk::VkState & vk);

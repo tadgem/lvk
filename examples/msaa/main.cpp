@@ -2,9 +2,7 @@
 #include "lvk/Shader.h"
 using namespace lvk;
 
-static std::vector<VkBuffer>            uniformBuffers;
-static std::vector<VmaAllocation>       uniformBuffersMemory;
-static std::vector<void*>               uniformBuffersMapped;
+static std::vector<MappedBuffer>            uniformBuffers;
 static std::vector<VkDescriptorSet>     descriptorSets;
 
 void RecordGraphicsCommandBuffers(VkState & vk, VkPipelineData& pipeline,  Model& model)
@@ -31,7 +29,7 @@ void RecordGraphicsCommandBuffers(VkState & vk, VkPipelineData& pipeline,  Model
         for (int i = 0; i < model.m_Meshes.size(); i++)
         {
             MeshEx& mesh = model.m_Meshes[i];
-            VkBuffer vertexBuffers[]{ mesh.m_VertexBuffer};
+            VkBuffer vertexBuffers[]{ mesh.m_Mesh.m_VertexBuffer.m_GpuBuffer};
             VkDeviceSize sizes[] = { 0 };
 
             VkViewport viewport{};
@@ -52,7 +50,7 @@ void RecordGraphicsCommandBuffers(VkState & vk, VkPipelineData& pipeline,  Model
             vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
             vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
             vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, sizes);
-            vkCmdBindIndexBuffer(commandBuffer, mesh.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+            vkCmdBindIndexBuffer(commandBuffer, mesh.m_Mesh.m_IndexBuffer.m_GpuBuffer, 0, VK_INDEX_TYPE_UINT32);
             vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.m_PipelineLayout, 0, 1, &descriptorSets[frameIndex], 0, nullptr);
             vkCmdDrawIndexed(commandBuffer, mesh.m_IndexCount, 1, 0, 0, 0);
         }
@@ -78,7 +76,7 @@ void UpdateUniformBuffer(VkState & vk)
         ubo.Proj[1][1] *= -1;
     }
 
-    memcpy(uniformBuffersMapped[vk.m_CurrentFrameIndex], &ubo, sizeof(ubo));
+    memcpy(uniformBuffers[vk.m_CurrentFrameIndex].m_MappedAddr, &ubo, sizeof(ubo));
 }
 
 void CreateGraphicsDescriptorSets(VkState & vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler)
@@ -95,7 +93,7 @@ void CreateGraphicsDescriptorSets(VkState & vk, VkDescriptorSetLayout& descripto
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = uniformBuffers[i];
+        bufferInfo.buffer = uniformBuffers[i].m_GpuBuffer;
         bufferInfo.offset = 0;
         bufferInfo.range = sizeof(MvpData);
 
@@ -152,7 +150,7 @@ int main()
     Model model;
     LoadModelAssimp(vk, model, "assets/viking_room.obj");
 
-    buffers::CreateUniformBuffers<MvpData>(vk, uniformBuffers, uniformBuffersMemory, uniformBuffersMapped);
+    uniformBuffers = buffers::CreateUniformBuffers<MvpData>(vk);
 
     CreateGraphicsDescriptorSets(vk, prog.m_DescriptorSetLayout, imageView,
                                  imageSampler);
@@ -174,9 +172,7 @@ int main()
     }
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        vmaUnmapMemory(vk.m_Allocator, uniformBuffersMemory[i]);
-        vkDestroyBuffer(vk.m_LogicalDevice, uniformBuffers[i], nullptr);
-        vmaFreeMemory(vk.m_Allocator, uniformBuffersMemory[i]);
+        uniformBuffers[i].Free(vk);
     }
     FreeModel(vk, model);
 

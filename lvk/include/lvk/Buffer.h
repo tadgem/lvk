@@ -5,39 +5,33 @@
 
 namespace lvk {
 namespace buffers {
-void CreateBuffer(VkState &vk, VkDeviceSize size, VkBufferUsageFlags usage,
-                     VkMemoryPropertyFlags properties, VkBuffer &buffer,
-                     VmaAllocation &allocation);
+Buffer CreateBuffer(VkState &vk, VkDeviceSize size, VkBufferUsageFlags usage,
+                     VkMemoryPropertyFlags properties);
+
 void CopyBuffer(VkState &vk, VkBuffer &src, VkBuffer &dst, VkDeviceSize size);
-void CreateIndexBuffer(VkState &vk, Vector<uint32_t> indices, VkBuffer &buffer,
-                       VmaAllocation &deviceMemory);
+
+Buffer CreateIndexBuffer(VkState &vk, Vector<uint32_t> indices);
 
 template <typename _Ty>
-void CreateUniformBuffers(VkState &vk, Vector<VkBuffer> &uniformBuffersFrames,
-                          Vector<VmaAllocation> &uniformBuffersMemoryFrames,
-                          Vector<void *> &uniformBufferMappedMemoryFrames) {
+Vector<MappedBuffer> CreateUniformBuffers(VkState &vk) {
   VkDeviceSize bufferSize = sizeof(_Ty);
-
-  uniformBuffersFrames.resize(MAX_FRAMES_IN_FLIGHT);
-  uniformBuffersMemoryFrames.resize(MAX_FRAMES_IN_FLIGHT);
-  uniformBufferMappedMemoryFrames.resize(MAX_FRAMES_IN_FLIGHT);
+  Vector<MappedBuffer> uniformBuffers{};
+  uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
   for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-    CreateBuffer(vk, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+    uniformBuffers[i] = CreateMappedBuffer(vk, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                        VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                    uniformBuffersFrames[i], uniformBuffersMemoryFrames[i]);
-
-    VK_CHECK(vmaMapMemory(vk.m_Allocator, uniformBuffersMemoryFrames[i],
-                          &uniformBufferMappedMemoryFrames[i]))
+                        VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
   }
+  return uniformBuffers;
 }
 
-void CreateMappedBuffer(VkState &vk, MappedBuffer &buf,
-                        VkBufferUsageFlags bufferUsage,
-                        VkMemoryPropertyFlags memoryProperties, uint32_t size);
+MappedBuffer CreateMappedBuffer(VkState &vk, VkDeviceSize size, VkBufferUsageFlags bufferUsage,
+                        VkMemoryPropertyFlags memoryProperties);
+
 void CreateUniformBuffers(VkState &vk, ShaderBufferFrameData &uniformData,
                           VkDeviceSize bufferSize);
+
 template <typename _Ty>
 void CreateUniformBuffers(VkState &vk, ShaderBufferFrameData &uniformData) {
   constexpr VkDeviceSize bufferSize = sizeof(_Ty);
@@ -45,34 +39,31 @@ void CreateUniformBuffers(VkState &vk, ShaderBufferFrameData &uniformData) {
 }
 
 template <typename _Ty>
-void CreateVertexBuffer(VkState &vk, Vector<_Ty> verts, VkBuffer &buffer,
-                        VmaAllocation &deviceMemory) {
+Buffer CreateVertexBuffer(VkState &vk, Vector<_Ty> verts) {
   VkDeviceSize bufferSize = sizeof(_Ty) * verts.size();
 
   // create a CPU side buffer to dump vertex data into
-  VkBuffer stagingBuffer;
-  VmaAllocation stagingBufferMemory;
-  CreateBuffer(vk, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+  
+  Buffer stagingBuffer = CreateBuffer(vk, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                  stagingBuffer, stagingBufferMemory);
+                      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
   // dump vert data
   void *data;
-  vmaMapMemory(vk.m_Allocator, stagingBufferMemory, &data);
+  vmaMapMemory(vk.m_Allocator, stagingBuffer.m_GpuMemory, &data);
   memcpy(data, verts.data(), bufferSize);
-  vmaUnmapMemory(vk.m_Allocator, stagingBufferMemory);
+  vmaUnmapMemory(vk.m_Allocator, stagingBuffer.m_GpuMemory);
 
   // create GPU side buffer
-  CreateBuffer(vk, bufferSize,
+  Buffer vb = CreateBuffer(vk, bufferSize,
                   VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
                       VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, buffer, deviceMemory);
+                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-  CopyBuffer(vk, stagingBuffer, buffer, bufferSize);
+  CopyBuffer(vk, stagingBuffer.m_GpuBuffer, vb.m_GpuBuffer, bufferSize);
 
-  vkDestroyBuffer(vk.m_LogicalDevice, stagingBuffer, nullptr);
-  vmaFreeMemory(vk.m_Allocator, stagingBufferMemory);
+  stagingBuffer.Free(vk);
+  return vb;
 }
 }
 }

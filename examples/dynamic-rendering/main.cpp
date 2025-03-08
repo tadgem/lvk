@@ -66,15 +66,10 @@ ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferP
     0, 1, 2, 2, 3, 0
     };
 
-    VkBuffer vertBuffer;
-    VmaAllocation vertAlloc;
-    buffers::CreateVertexBuffer<VertexDataPosUv>(vk, screenQuadVerts, vertBuffer, vertAlloc);
+    Buffer vertexBuffer = buffers::CreateVertexBuffer<VertexDataPosUv>(vk, screenQuadVerts);
+    Buffer indexBuffer = buffers::CreateIndexBuffer(vk, screenQuadIndices);
 
-    VkBuffer indexBuffer;
-    VmaAllocation indexAlloc;
-    buffers::CreateIndexBuffer(vk, screenQuadIndices, indexBuffer, indexAlloc);
-
-    Mesh screenQuad{ vertBuffer, vertAlloc, indexBuffer, indexAlloc, 6 };
+    Mesh screenQuad{ vertexBuffer, indexBuffer,  6 };
 
     return { gbuffer, finalImage, lightPassMat, im3dViewState , {1920, 1080}, {},  screenQuad };
 }
@@ -216,7 +211,7 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderData& r
                     { {-1.0f, 1.0f, 0.0f}, {0.0f, h} }
                 };
 
-                vkCmdUpdateBuffer(commandBuffer, view->m_ViewQuad.m_VertexBuffer, 0, 4 * sizeof(VertexDataPosUv), &newScreenQuadData[0]);
+                vkCmdUpdateBuffer(commandBuffer, view->m_ViewQuad.m_VertexBuffer.m_GpuBuffer, 0, 4 * sizeof(VertexDataPosUv), &newScreenQuadData[0]);
             }
 
             {
@@ -246,11 +241,11 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderData& r
                 {
                     MeshEx& mesh = model.m_RenderItems[i].m_Mesh;
 
-                    VkBuffer vertexBuffers[]{ mesh.m_VertexBuffer };
+                    VkBuffer vertexBuffers[]{ mesh.m_Mesh.m_VertexBuffer.m_GpuBuffer};
                     VkDeviceSize sizes[] = { 0 };
 
                     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, sizes);
-                    vkCmdBindIndexBuffer(commandBuffer, mesh.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+                    vkCmdBindIndexBuffer(commandBuffer, mesh.m_Mesh.m_IndexBuffer.m_GpuBuffer, 0, VK_INDEX_TYPE_UINT32);
                     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderData.m_GBufferPipeline.m_PipelineLayout, 0, 1, &model.m_RenderItems[i].m_Material.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
                     vkCmdDrawIndexed(commandBuffer, mesh.m_IndexCount, 1, 0, 0, 0);
                 }
@@ -283,8 +278,8 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderData& r
             vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
             vkCmdPushConstants(commandBuffer, renderData.m_LightPassPipeline.m_PipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PCViewData), &pcData);
             VkDeviceSize sizes[] = { 0 };
-            vkCmdBindVertexBuffers(commandBuffer, 0, 1, &view->m_ViewQuad.m_VertexBuffer, sizes);
-            vkCmdBindIndexBuffer(commandBuffer, view->m_ViewQuad.m_IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+            vkCmdBindVertexBuffers(commandBuffer, 0, 1, &view->m_ViewQuad.m_VertexBuffer.m_GpuBuffer, sizes);
+            vkCmdBindIndexBuffer(commandBuffer, view->m_ViewQuad.m_IndexBuffer.m_GpuBuffer, 0, VK_INDEX_TYPE_UINT32);
             vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderData.m_LightPassPipeline.m_PipelineLayout, 0, 1, &view->m_LightPassMaterial.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
             vkCmdDrawIndexed(commandBuffer, view->m_ViewQuad.m_IndexCount, 1, 0, 0, 0);
 
