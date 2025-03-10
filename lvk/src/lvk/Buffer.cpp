@@ -29,7 +29,7 @@ Buffer CreateBuffer(VkState& vk, VkDeviceSize size, VkBufferUsageFlags usage, Vk
 
   VK_CHECK(vmaCreateBuffer(vk.m_Allocator, &bufferInfo, &allocInfo, &buffer, &allocation, nullptr));
 
-  return Buffer(Buffer::BufferType::GPUOnly, buffer, allocation, size);
+  return Buffer(Buffer::BufferStorageType::GPUOnly, buffer, allocation, size);
 }
 
 void CopyBuffer(VkState& vk, VkBuffer& src, VkBuffer& dst, VkDeviceSize size)

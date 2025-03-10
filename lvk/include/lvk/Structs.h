@@ -72,17 +72,24 @@ namespace lvk {
   class Buffer
   {
   public:
-      enum BufferType
-      {
-          GPUOnly,
-          Mapped
-      };
-    VkBuffer        m_GpuBuffer = VK_NULL_HANDLE;
-    VmaAllocation   m_GpuMemory = VK_NULL_HANDLE;
-    VkDeviceSize    m_Size = 0;
-    BufferType            m_Type;
+    enum BufferStorageType
+    {
+        GPUOnly,
+        Mapped
+    };
 
-    Buffer(const BufferType& bufferType, VkBuffer buf, VmaAllocation alloc, VkDeviceSize size);
+    enum BufferType
+    {
+        Uniform,
+        ShaderStorage
+    };
+
+    VkBuffer                    m_GpuBuffer = VK_NULL_HANDLE;
+    VmaAllocation               m_GpuMemory = VK_NULL_HANDLE;
+    VkDeviceSize                m_Size = 0;
+    BufferStorageType           m_Type;
+
+    Buffer(const BufferStorageType& bufferType, VkBuffer buf, VmaAllocation alloc, VkDeviceSize size);
     Buffer() = default;
     virtual ~Buffer() = default;
     virtual void Free(VkState& vk);
@@ -109,7 +116,7 @@ namespace lvk {
     template <typename _Ty>
     void Set(uint32_t frameIndex, const _Ty &data, uint32_t offset = 0) {
       constexpr size_t _ty_size = sizeof(_Ty);
-      if (!m_UniformBuffers[frameIndex]->m_Type == Buffer::BufferType::Mapped)
+      if (!m_UniformBuffers[frameIndex]->m_Type == Buffer::BufferStorageType::Mapped)
       {
           spdlog::error("Attempting to set data for non mapped buffer");
           return;
@@ -123,7 +130,7 @@ namespace lvk {
     template <typename _Ty>
     void SetMemory(uint32_t frameIndex, const _Ty *start, uint64_t count) {
       constexpr size_t _ty_size = sizeof(_Ty);
-      if (m_UniformBuffers[frameIndex]->m_Type != Buffer::BufferType::Mapped)
+      if (m_UniformBuffers[frameIndex]->m_Type != Buffer::BufferStorageType::Mapped)
       {
           spdlog::error("Attempting to set data for non mapped buffer");
           return;
@@ -134,6 +141,22 @@ namespace lvk {
     }
 
     void Free(VkState &vk);
+  };
+
+  struct DescriptorSetBinding {
+      union {
+          uint64_t        m_Data;
+          struct {
+              uint32_t    m_Set;
+              uint32_t    m_Binding;
+          };
+      };
+      VkDeviceSize        m_BindingSize;
+
+      bool operator ==(const DescriptorSetBinding& other) const {
+          return (this->m_Data == other.m_Data) &&
+              (this->m_BindingSize== other.m_BindingSize);
+      }
   };
 
   struct VertexDescription
@@ -308,3 +331,15 @@ namespace lvk {
   };
 
 }
+
+template <>
+struct std::hash<lvk::DescriptorSetBinding>
+{
+    std::size_t operator()(const lvk::DescriptorSetBinding& sb) const
+    {
+        using std::hash;
+
+        return ((hash<uint64_t>()(sb.m_Data)
+            ^ (hash<uint64_t>()(sb.m_BindingSize))));
+    }
+};

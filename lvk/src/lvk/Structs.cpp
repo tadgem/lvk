@@ -1,5 +1,6 @@
 #include "lvk/Structs.h"
 #include "lvk/Macros.h"
+
 bool lvk::QueueFamilyIndices::IsComplete() {
   bool foundGraphicsQueue = m_QueueFamilies.find(QueueFamilyType::GraphicsAndCompute) != m_QueueFamilies.end();
   bool foundPresentQueue  = m_QueueFamilies.find(QueueFamilyType::Present) != m_QueueFamilies.end();
@@ -25,7 +26,7 @@ void lvk::Buffer::Free(lvk::VkState &vk) {
   vmaFreeMemory(vk.m_Allocator, m_GpuMemory);
 }
 
-lvk::Buffer::Buffer(const BufferType& bufferType, VkBuffer buf, VmaAllocation alloc, VkDeviceSize size)
+lvk::Buffer::Buffer(const BufferStorageType& bufferType, VkBuffer buf, VmaAllocation alloc, VkDeviceSize size)
     : m_Type(bufferType), m_GpuBuffer(buf), m_GpuMemory(alloc), m_Size(size)
 {}
 
@@ -35,6 +36,6 @@ void lvk::MappedBuffer::Map(VkState& vk)
 }
 
 lvk::MappedBuffer::MappedBuffer(Buffer& buf)
-    : Buffer(Buffer::BufferType::Mapped, buf.m_GpuBuffer, buf.m_GpuMemory, buf.m_Size), m_MappedAddr(nullptr)
+    : Buffer(Buffer::BufferStorageType::Mapped, buf.m_GpuBuffer, buf.m_GpuMemory, buf.m_Size), m_MappedAddr(nullptr)
 {
 }

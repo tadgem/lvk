@@ -38,16 +38,29 @@ static auto reflect_descriptor_info = [](lvk::ShaderStage& stage, lvk::Material 
                     {
                         String accessorName = bindingInfo.m_BindingName + "." + member.m_Name;
                         uint16_t arraySize = member.m_Stride > 0 ? (member.m_Size / member.m_Stride) : 0;
-                        Material::ShaderAccessorData data{ member.m_Size , member.m_Offset, member.m_Stride, arraySize, static_cast<uint32_t>(mat.m_UniformBuffers.size()) };
+                        Material::ShaderAccessorData data{ 
+                            member.m_Size , 
+                            member.m_Offset, 
+                            member.m_Stride, 
+                            arraySize, 
+                            static_cast<uint32_t>(mat.m_ShaderBuffers.size()), 
+                            Buffer::BufferType::Uniform 
+                        };
                         mat.m_UniformBufferAccessors.emplace(accessorName, data);
                     }
 
-                    Material::SetBinding binding = {};
+                    DescriptorSetBinding binding = {};
                     binding.m_Set = descriptorSetInfo.m_SetNumber;
                     binding.m_Binding = bindingInfo.m_BindingIndex;
 
-                    mat.m_UniformBuffers.emplace(binding.m_Data,
-                        Material::ShaderBufferBindingData{ descriptorSetInfo.m_SetNumber, bindingInfo.m_BindingIndex, bindingInfo.m_ExpectedBufferSizeOrDivisor,  std::move(uniform)});
+                    mat.m_ShaderBuffers.emplace(binding,
+                        Material::ShaderBufferBindingData{ 
+                            descriptorSetInfo.m_SetNumber, 
+                            bindingInfo.m_BindingIndex, 
+                            bindingInfo.m_ExpectedBufferSizeOrDivisor, 
+                            Buffer::BufferType::Uniform, 
+                            std::move(uniform)
+                        });
                 }
                 else if (bindingInfo.m_BufferType == ShaderBindingType::ShaderStorageBuffer)
                 {
@@ -57,8 +70,8 @@ static auto reflect_descriptor_info = [](lvk::ShaderStage& stage, lvk::Material 
         }
     };
 
-lvk::Material::ShaderBufferBindingData::ShaderBufferBindingData(uint32_t set, uint32_t binding, uint32_t size, lvk::ShaderBufferFrameData& buffer)
-    : m_SetNumber(set), m_BindingNumber(binding), m_BufferSize(size), m_Buffer(buffer)
+lvk::Material::ShaderBufferBindingData::ShaderBufferBindingData(uint32_t set, uint32_t binding, uint32_t size, Buffer::BufferType bufferType, lvk::ShaderBufferFrameData& buffer)
+    : m_SetNumber(set), m_BindingNumber(binding), m_BufferSize(size), m_BufferType(bufferType), m_Buffer(buffer)
 {
 }
 
@@ -84,7 +97,7 @@ lvk::Material lvk::Material::Create(VkState & vk, ShaderProgram& shader)
 
         // write buffers to descriptor set + default texture for any samplers
         Vector<VkDescriptorBufferInfo>  bufferWriteInfos;
-        for (auto&& [setBinding, bufferInfo] : mat.m_UniformBuffers)
+        for (auto&& [setBinding, bufferInfo] : mat.m_ShaderBuffers)
         {
             VkDescriptorBufferInfo bufferWriteInfo{};
             bufferWriteInfo.buffer = bufferInfo.m_Buffer.m_UniformBuffers[0]->m_GpuBuffer;
@@ -107,7 +120,7 @@ lvk::Material lvk::Material::Create(VkState & vk, ShaderProgram& shader)
         Vector<VkWriteDescriptorSet> descriptorWrites{};
 
         int k = 0;
-        for (auto&& [setBinding, ubo] : mat.m_UniformBuffers)
+        for (auto&& [setBinding, ubo] : mat.m_ShaderBuffers)
         {
             VkWriteDescriptorSet write{};
             write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -137,6 +150,18 @@ lvk::Material lvk::Material::Create(VkState & vk, ShaderProgram& shader)
 
     }
     return mat;
+}
+
+void lvk::Material::AttachBuffer(uint32_t frameIndex, uint32_t set, uint32_t binding, ShaderBufferFrameData& buffer)
+{
+    DescriptorSetBinding b = {};
+    b.m_Set = set;
+    b.m_Binding = binding;
+}
+
+void lvk::Material::CreateBuffer(uint32_t frameIndex, uint32_t set, uint32_t binding)
+{
+
 }
 
 bool lvk::Material::SetSampler(VkState & vk, const String& name, const VkImageView& imageView, const VkSampler& sampler, bool isAttachment)
@@ -238,12 +263,12 @@ void lvk::Material::Free(VkState & vk)
 {
     m_UniformBufferAccessors.clear();
 
-    for (auto& [setBinding, buffer] : m_UniformBuffers)
+    for (auto& [setBinding, buffer] : m_ShaderBuffers)
     {
         buffer.m_Buffer.Free(vk);
     }
 
-    m_UniformBuffers.clear();
+    m_ShaderBuffers.clear();
     m_Samplers.clear();
 
     /*for (auto& frameDescriptorSets : m_DescriptorSets)
@@ -256,6 +281,7 @@ void lvk::Material::Free(VkState & vk)
 
 
 }
+
 bool lvk::Material::SetSampler(lvk::VkState &vk, const lvk::String &name,
                                lvk::Texture &texture) {
     return SetSampler(vk, name, texture.m_ImageView, texture.m_Sampler, false);

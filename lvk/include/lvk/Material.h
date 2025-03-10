@@ -17,12 +17,13 @@ namespace lvk
         class ShaderBufferBindingData
         {
         public:
-            uint32_t m_SetNumber;
-            uint32_t m_BindingNumber;
-            uint32_t m_BufferSize;
-            ShaderBufferFrameData m_Buffer;
+            uint32_t                m_SetNumber;
+            uint32_t                m_BindingNumber;
+            uint32_t                m_BufferSize;
+            ShaderBufferFrameData   m_Buffer;
+            Buffer::BufferType      m_BufferType;
 
-            ShaderBufferBindingData(uint32_t set, uint32_t binding, uint32_t size, ShaderBufferFrameData& buffer);
+            ShaderBufferBindingData(uint32_t set, uint32_t binding, uint32_t size, Buffer::BufferType bufferType, ShaderBufferFrameData& buffer);
             ShaderBufferBindingData() = default;
 
         };
@@ -37,11 +38,13 @@ namespace lvk
 
         struct ShaderAccessorData
         {
-            uint32_t    m_ExpectedSize;
-            uint32_t    m_Offset;
-            uint32_t    m_Stride;
-            uint32_t    m_ArraySize;
-            uint32_t    m_BufferIndex;
+            uint32_t                m_ExpectedSize;
+            uint32_t                m_Offset;
+            uint32_t                m_Stride;
+            uint32_t                m_ArraySize;
+            uint32_t                m_BufferIndex;
+            Buffer::BufferType      m_BufferType;
+
         };
 
         struct FrameDescriptorSets
@@ -51,29 +54,24 @@ namespace lvk
 
         Vector<FrameDescriptorSets>             m_DescriptorSets;
         
-        union SetBinding {
-            uint64_t m_Data;
-            struct {
-                uint32_t m_Set;
-                uint32_t m_Binding;
-            };
-        };
-
         Vector<PushConstantBlock>                       m_PushConstants;
-        HashMap<uint64_t, ShaderBufferBindingData>      m_UniformBuffers;
+        HashMap<DescriptorSetBinding, ShaderBufferBindingData>      m_ShaderBuffers;
         HashMap<String, SamplerBindingData>             m_Samplers;
         HashMap<String, ShaderAccessorData>             m_UniformBufferAccessors;
 
         static Material Create(VkState & vk, ShaderProgram& shader);
 
+        void AttachBuffer(uint32_t frameIndex, uint32_t set, uint32_t binding, ShaderBufferFrameData& buffer);
+        void CreateBuffer(uint32_t frameIndex, uint32_t set, uint32_t binding);
+
         template<typename _Ty>
         bool SetBuffer(uint32_t frameIndex, uint32_t set, uint32_t binding, const _Ty& value)
         {
-            Material::SetBinding sb = {};
+            DescriptorSetBinding sb = {};
             sb.m_Set = set;
             sb.m_Binding = binding;
 
-            m_UniformBuffers[sb.m_Data].m_Buffer.Set(frameIndex, value);
+            m_ShaderBuffers[sb].m_Buffer.Set(frameIndex, value);
 
             return true;
         }
@@ -81,11 +79,11 @@ namespace lvk
         template<typename _Ty>
         bool SetBuffer(uint32_t frameIndex, uint32_t set, uint32_t binding, _Ty* start, uint32_t count)
         {
-            Material::SetBinding sb = {};
+            DescriptorSetBinding sb = {};
             sb.m_Set = set;
             sb.m_Binding = binding;
 
-            m_UniformBuffers[sb.m_Data].m_Buffer.SetMemory(frameIndex, start, count);
+            m_ShaderBuffers[sb].m_Buffer.SetMemory(frameIndex, start, count);
 
             return true;
         }
@@ -96,9 +94,9 @@ namespace lvk
         {
             // size of each element
             static constexpr size_t _type_size = sizeof(_Ty);
-            Material::SetBinding sb = {};
+            Material::DescriptorSetBinding sb = {};
             uint64_t offset = (_type_size * index) + innerElementOffset;
-            m_UniformBuffers[sb.m_Data].m_Buffer.Set(frameIndex, value, offset);
+            m_ShaderBuffers[sb].m_Buffer.Set(frameIndex, value, offset);
         }
 
         template<typename _Ty>
@@ -120,7 +118,7 @@ namespace lvk
             for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
             {
                 // update uniform buffer
-                m_UniformBuffers[data.m_BufferIndex].m_Buffer.Set(i, value, data.m_Offset);
+                // m_ShaderBuffers[data.m_BufferIndex].m_Buffer.Set(i, value, data.m_Offset);
             }
 
             return true;
