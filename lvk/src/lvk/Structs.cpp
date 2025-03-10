@@ -12,7 +12,7 @@ void lvk::MappedBuffer::Free(lvk::VkState &vk) {
 
 void lvk::ShaderBufferFrameData::Free(lvk::VkState &vk) {
   for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-    m_UniformBuffers[i].Free(vk);
+    m_UniformBuffers[i]->Free(vk);
   }
 
   m_UniformBuffers.clear();
@@ -27,8 +27,8 @@ void lvk::Buffer::Free(lvk::VkState &vk) {
   vmaFreeMemory(vk.m_Allocator, m_GpuMemory);
 }
 
-lvk::Buffer::Buffer(VkBuffer buf, VmaAllocation alloc, VkDeviceSize size)
-    : m_GpuBuffer(buf), m_GpuMemory(alloc), m_Size(size)
+lvk::Buffer::Buffer(const BufferType& bufferType, VkBuffer buf, VmaAllocation alloc, VkDeviceSize size)
+    : m_Type(bufferType), m_GpuBuffer(buf), m_GpuMemory(alloc), m_Size(size)
 {}
 
 void lvk::MappedBuffer::Map(VkState& vk)
@@ -37,6 +37,6 @@ void lvk::MappedBuffer::Map(VkState& vk)
 }
 
 lvk::MappedBuffer::MappedBuffer(Buffer& buf)
-    : Buffer(buf.m_GpuBuffer, buf.m_GpuMemory, buf.m_Size), m_MappedAddr(nullptr)
+    : Buffer(Buffer::BufferType::Mapped, buf.m_GpuBuffer, buf.m_GpuMemory, buf.m_Size), m_MappedAddr(nullptr)
 {
 }

@@ -72,14 +72,19 @@ namespace lvk {
   class Buffer
   {
   public:
-
+      enum BufferType
+      {
+          GPUOnly,
+          Mapped
+      };
     VkBuffer        m_GpuBuffer = VK_NULL_HANDLE;
     VmaAllocation   m_GpuMemory = VK_NULL_HANDLE;
     VkDeviceSize    m_Size = 0;
+    BufferType            m_Type;
 
-    Buffer(VkBuffer buf, VmaAllocation alloc, VkDeviceSize size);
+    Buffer(const BufferType& bufferType, VkBuffer buf, VmaAllocation alloc, VkDeviceSize size);
     Buffer() = default;
-
+    virtual ~Buffer() = default;
     virtual void Free(VkState& vk);
   };
 
@@ -98,12 +103,24 @@ namespace lvk {
   };
 
   struct ShaderBufferFrameData {
-    Vector<MappedBuffer> m_UniformBuffers;
+    Vector<Unique<Buffer>> m_UniformBuffers;
+    ShaderBufferFrameData() = default;
+
+    // Copy Constructor definition
+    ShaderBufferFrameData(ShaderBufferFrameData& o) {
+        m_UniformBuffers = std::move(o.m_UniformBuffers);
+    }
 
     template <typename _Ty>
     void Set(uint32_t frameIndex, const _Ty &data, uint32_t offset = 0) {
       constexpr size_t _ty_size = sizeof(_Ty);
-      uint64_t base_addr = (uint64_t)m_UniformBuffers[frameIndex].m_MappedAddr;
+      if (!m_UniformBuffers[frameIndex]->m_Type == Buffer::BufferType::Mapped)
+      {
+          spdlog::error("Attempting to set data for non mapped buffer");
+          return;
+      }
+      MappedBuffer* mb = static_cast<MappedBuffer*>(m_UniformBuffers[frameIndex].get());
+      uint64_t base_addr = (uint64_t)mb->m_MappedAddr;
       void *addr = (void *)(base_addr + static_cast<uint64_t>(offset));
       memcpy(addr, &data, _ty_size);
     }
@@ -111,7 +128,13 @@ namespace lvk {
     template <typename _Ty>
     void SetMemory(uint32_t frameIndex, const _Ty *start, uint64_t count) {
       constexpr size_t _ty_size = sizeof(_Ty);
-      void *addr = m_UniformBuffers[frameIndex].m_MappedAddr;
+      if (m_UniformBuffers[frameIndex]->m_Type != Buffer::BufferType::Mapped)
+      {
+          spdlog::error("Attempting to set data for non mapped buffer");
+          return;
+      }
+      MappedBuffer* mb = static_cast<MappedBuffer*>(m_UniformBuffers[frameIndex].get());
+      void *addr = mb->m_MappedAddr;
       memcpy(addr, start, count);
     }
 

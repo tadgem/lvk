@@ -78,7 +78,7 @@ void CreateGraphicsDescriptorSets(VkState & vk, VkDescriptorSetLayout& descripto
 
   for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
     VkDescriptorBufferInfo mvpBufferInfo{};
-    mvpBufferInfo.buffer = mvpUniformData.m_UniformBuffers[i].m_GpuBuffer;
+    mvpBufferInfo.buffer = mvpUniformData.m_UniformBuffers[i]->m_GpuBuffer;
     mvpBufferInfo.offset = 0;
     mvpBufferInfo.range = sizeof(MvpData);
 
@@ -88,7 +88,7 @@ void CreateGraphicsDescriptorSets(VkState & vk, VkDescriptorSetLayout& descripto
     imageInfo.sampler = textureSampler;
 
     VkDescriptorBufferInfo lightBufferInfo{};
-    lightBufferInfo.buffer = lightsUniformData.m_UniformBuffers[i].m_GpuBuffer;
+    lightBufferInfo.buffer = lightsUniformData.m_UniformBuffers[i]->m_GpuBuffer;
     lightBufferInfo.offset = 0;
     lightBufferInfo.range = sizeof(ForwardLightData);
 
@@ -284,7 +284,7 @@ Vector<VkDescriptorSet> CreateComputeDescriptorSets(VkState& vk, VkDescriptorSet
     for(uint32_t f = 0; f < MAX_FRAMES_IN_FLIGHT; f++)
     {
         VkDescriptorBufferInfo uniformBufferInfo{};
-        uniformBufferInfo.buffer = particleDeltaUniformData.m_UniformBuffers[f].m_GpuBuffer;
+        uniformBufferInfo.buffer = particleDeltaUniformData.m_UniformBuffers[f]->m_GpuBuffer;
         uniformBufferInfo.offset = 0;
         uniformBufferInfo.range = sizeof(ParticlesUBOData);
 

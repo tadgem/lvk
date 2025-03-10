@@ -13,12 +13,23 @@ namespace lvk
         // set mat4, mat3, vec4, vec3, sampler etc.
         // reflect the size of each bound thing in each set (one set for now)
 
-        struct ShaderBufferBindingData
+        class ShaderBufferBindingData
         {
+        public:
             uint32_t m_SetNumber;
             uint32_t m_BindingNumber;
             uint32_t m_BufferSize;
             ShaderBufferFrameData m_Buffer;
+
+            ShaderBufferBindingData(uint32_t set, uint32_t binding, uint32_t size, ShaderBufferFrameData& buffer);
+            ShaderBufferBindingData() = default;
+
+            ShaderBufferBindingData(ShaderBufferBindingData& o) {
+                m_SetNumber = o.m_SetNumber;
+                m_BindingNumber = o.m_BindingNumber;
+                m_BufferSize = o.m_BufferSize;
+                m_Buffer = std::move(o.m_Buffer);
+            }
         };
 
         struct SamplerBindingData

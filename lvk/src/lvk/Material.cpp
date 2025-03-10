@@ -32,8 +32,7 @@ static auto reflect_descriptor_info = [](lvk::ShaderStage& stage, lvk::Material 
                 if (bindingInfo.m_BufferType == ShaderBindingType::UniformBuffer)
                 {
                     // if a uniform buffer
-                    ShaderBufferFrameData uniform;
-                    buffers::CreateUniformBuffers(vk, uniform, VkDeviceSize{ bindingInfo.m_ExpectedBufferSizeOrDivisor});
+                    ShaderBufferFrameData uniform = buffers::CreateUniformBuffers(vk, VkDeviceSize{ bindingInfo.m_ExpectedBufferSizeOrDivisor});
                     // build accessors
                     for (auto& member : bindingInfo.m_Members)
                     {
@@ -48,7 +47,7 @@ static auto reflect_descriptor_info = [](lvk::ShaderStage& stage, lvk::Material 
                     binding.m_Binding = bindingInfo.m_BindingIndex;
 
                     mat.m_UniformBuffers.emplace(binding.m_Data,
-                        Material::ShaderBufferBindingData{ descriptorSetInfo.m_SetNumber, bindingInfo.m_BindingIndex, bindingInfo.m_ExpectedBufferSizeOrDivisor,  uniform });
+                        Material::ShaderBufferBindingData{ descriptorSetInfo.m_SetNumber, bindingInfo.m_BindingIndex, bindingInfo.m_ExpectedBufferSizeOrDivisor,  std::move(uniform)});
                 }
                 else if (bindingInfo.m_BufferType == ShaderBindingType::ShaderStorageBuffer)
                 {
@@ -57,6 +56,11 @@ static auto reflect_descriptor_info = [](lvk::ShaderStage& stage, lvk::Material 
             }
         }
     };
+
+lvk::Material::ShaderBufferBindingData::ShaderBufferBindingData(uint32_t set, uint32_t binding, uint32_t size, lvk::ShaderBufferFrameData& buffer)
+    : m_SetNumber(set), m_BindingNumber(binding), m_BufferSize(size), m_Buffer(std::move(buffer))
+{
+}
 
 // todo: add ability to add existing buffers when creating the material
 lvk::Material lvk::Material::Create(VkState & vk, ShaderProgram& shader)
@@ -83,7 +87,7 @@ lvk::Material lvk::Material::Create(VkState & vk, ShaderProgram& shader)
         for (auto& [setBinding, bufferInfo] : mat.m_UniformBuffers)
         {
             VkDescriptorBufferInfo bufferWriteInfo{};
-            bufferWriteInfo.buffer = bufferInfo.m_Buffer.m_UniformBuffers[0].m_GpuBuffer;
+            bufferWriteInfo.buffer = bufferInfo.m_Buffer.m_UniformBuffers[0]->m_GpuBuffer;
             bufferWriteInfo.offset = 0;
             bufferWriteInfo.range = bufferInfo.m_BufferSize;
             bufferWriteInfos.push_back(bufferWriteInfo);

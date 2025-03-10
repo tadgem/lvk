@@ -29,8 +29,7 @@ Vector<MappedBuffer> CreateUniformBuffers(VkState &vk) {
 MappedBuffer CreateMappedBuffer(VkState &vk, VkDeviceSize size, VkBufferUsageFlags bufferUsage,
                         VkMemoryPropertyFlags memoryProperties);
 
-void CreateUniformBuffers(VkState &vk, ShaderBufferFrameData &uniformData,
-                          VkDeviceSize bufferSize);
+ShaderBufferFrameData CreateUniformBuffers(VkState &vk, VkDeviceSize bufferSize);
 
 template <typename _Ty>
 void CreateUniformBuffers(VkState &vk, ShaderBufferFrameData &uniformData) {
