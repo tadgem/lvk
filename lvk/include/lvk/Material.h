@@ -1,6 +1,7 @@
 #pragma once
 #include "lvk/Framebuffer.h"
 #include "lvk/Texture.h"
+#include <utility>
 namespace lvk
 {
     struct ShaderProgram;
@@ -24,12 +25,6 @@ namespace lvk
             ShaderBufferBindingData(uint32_t set, uint32_t binding, uint32_t size, ShaderBufferFrameData& buffer);
             ShaderBufferBindingData() = default;
 
-            ShaderBufferBindingData(ShaderBufferBindingData& o) {
-                m_SetNumber = o.m_SetNumber;
-                m_BindingNumber = o.m_BindingNumber;
-                m_BufferSize = o.m_BufferSize;
-                m_Buffer = std::move(o.m_Buffer);
-            }
         };
 
         struct SamplerBindingData

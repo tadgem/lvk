@@ -26,5 +26,8 @@ namespace lvk
 
 	template<typename _Ty>
 	using Unique = std::unique_ptr<_Ty>;
+
+	template<typename _Ty>
+	using RefCntPtr = std::shared_ptr<_Ty>;
 }
 

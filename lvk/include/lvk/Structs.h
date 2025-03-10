@@ -103,13 +103,8 @@ namespace lvk {
   };
 
   struct ShaderBufferFrameData {
-    Vector<Unique<Buffer>> m_UniformBuffers;
+    Array<RefCntPtr<Buffer>, MAX_FRAMES_IN_FLIGHT> m_UniformBuffers;
     ShaderBufferFrameData() = default;
-
-    // Copy Constructor definition
-    ShaderBufferFrameData(ShaderBufferFrameData& o) {
-        m_UniformBuffers = std::move(o.m_UniformBuffers);
-    }
 
     template <typename _Ty>
     void Set(uint32_t frameIndex, const _Ty &data, uint32_t offset = 0) {

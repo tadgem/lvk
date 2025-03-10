@@ -58,7 +58,7 @@ static auto reflect_descriptor_info = [](lvk::ShaderStage& stage, lvk::Material 
     };
 
 lvk::Material::ShaderBufferBindingData::ShaderBufferBindingData(uint32_t set, uint32_t binding, uint32_t size, lvk::ShaderBufferFrameData& buffer)
-    : m_SetNumber(set), m_BindingNumber(binding), m_BufferSize(size), m_Buffer(std::move(buffer))
+    : m_SetNumber(set), m_BindingNumber(binding), m_BufferSize(size), m_Buffer(buffer)
 {
 }
 
@@ -84,7 +84,7 @@ lvk::Material lvk::Material::Create(VkState & vk, ShaderProgram& shader)
 
         // write buffers to descriptor set + default texture for any samplers
         Vector<VkDescriptorBufferInfo>  bufferWriteInfos;
-        for (auto& [setBinding, bufferInfo] : mat.m_UniformBuffers)
+        for (auto&& [setBinding, bufferInfo] : mat.m_UniformBuffers)
         {
             VkDescriptorBufferInfo bufferWriteInfo{};
             bufferWriteInfo.buffer = bufferInfo.m_Buffer.m_UniformBuffers[0]->m_GpuBuffer;
@@ -94,7 +94,7 @@ lvk::Material lvk::Material::Create(VkState & vk, ShaderProgram& shader)
         }
         Vector<VkDescriptorImageInfo>   imageWriteInfos;
         Vector<uint32_t> bindings;
-        for (auto& [name, sampler] : mat.m_Samplers)
+        for (auto [name, sampler] : mat.m_Samplers)
         {
             VkDescriptorImageInfo imageInfo{};
             imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -107,7 +107,7 @@ lvk::Material lvk::Material::Create(VkState & vk, ShaderProgram& shader)
         Vector<VkWriteDescriptorSet> descriptorWrites{};
 
         int k = 0;
-        for (auto& [setBinding, ubo] : mat.m_UniformBuffers)
+        for (auto&& [setBinding, ubo] : mat.m_UniformBuffers)
         {
             VkWriteDescriptorSet write{};
             write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

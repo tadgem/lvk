@@ -86,7 +86,9 @@ set(LVK_INCLUDES    ${Vulkan_INCLUDE_DIRS}
 target_include_directories(${PROJECT_NAME} PUBLIC ${LVK_INCLUDES})
 
 if (MSVC)
-    set(${LVK_COMPILE_DEFS} ${LVK_COMPILE_DEFS} "/bigobj" "/MP" "/Zi")
+    # temporarily remove MP to make it easier to diagnose where unique copies are coming from
+    # set(${LVK_COMPILE_DEFS} ${LVK_COMPILE_DEFS} "/bigobj" "/MP" "/Zi")
+    set(${LVK_COMPILE_DEFS} ${LVK_COMPILE_DEFS} "/bigobj" "/Zi")
     set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<$<CONFIG:Debug,Release>:ProgramDatabase>")
 endif ()
 

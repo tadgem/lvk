@@ -14,8 +14,6 @@ void lvk::ShaderBufferFrameData::Free(lvk::VkState &vk) {
   for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
     m_UniformBuffers[i]->Free(vk);
   }
-
-  m_UniformBuffers.clear();
 }
 void lvk::VkPipelineData::Free(lvk::VkState &vk) const
 {
