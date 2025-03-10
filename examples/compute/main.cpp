@@ -382,7 +382,7 @@ int main()
     CreateComputeBuffers(vk, uniformBuffers, shaderStorageBuffers);
 
 
-    buffers::CreateUniformBuffers<ParticlesUBOData>(vk, particleDeltaUniformData);
+    particleDeltaUniformData = buffers::CreateUniformBuffersT<ParticlesUBOData>(vk);
 
     VkDescriptorSetLayout layout = CreateComputeDescriptorLayouts(vk);
     Vector<VkDescriptorSet> computeDescriptors = CreateComputeDescriptorSets(vk, layout,  uniformBuffers, shaderStorageBuffers);

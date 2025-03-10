@@ -32,9 +32,9 @@ MappedBuffer CreateMappedBuffer(VkState &vk, VkDeviceSize size, VkBufferUsageFla
 ShaderBufferFrameData CreateUniformBuffers(VkState &vk, VkDeviceSize bufferSize);
 
 template <typename _Ty>
-void CreateUniformBuffers(VkState &vk, ShaderBufferFrameData &uniformData) {
+ShaderBufferFrameData CreateUniformBuffersT(VkState &vk) {
   constexpr VkDeviceSize bufferSize = sizeof(_Ty);
-  CreateUniformBuffers(vk, uniformData, bufferSize);
+  return CreateUniformBuffers(vk, bufferSize);
 }
 
 template <typename _Ty>
