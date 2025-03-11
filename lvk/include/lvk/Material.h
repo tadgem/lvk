@@ -17,14 +17,14 @@ namespace lvk
         class ShaderBufferBindingData
         {
         public:
-            uint32_t                m_SetNumber;
-            uint32_t                m_BindingNumber;
-            uint32_t                m_BufferSize;
+            DescriptorSetBinding    m_Binding;
             ShaderBufferFrameData   m_Buffer;
             Buffer::BufferType      m_BufferType;
 
-            ShaderBufferBindingData(uint32_t set, uint32_t binding, uint32_t size, Buffer::BufferType bufferType, ShaderBufferFrameData& buffer);
+            ShaderBufferBindingData(uint32_t set, uint32_t binding, VkDeviceSize size, Buffer::BufferType bufferType, ShaderBufferFrameData& buffer);
             ShaderBufferBindingData() = default;
+
+            bool    Ready();
 
         };
 
@@ -52,25 +52,34 @@ namespace lvk
             Array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> m_Sets;
         };
 
-        Vector<FrameDescriptorSets>             m_DescriptorSets;
-        
-        Vector<PushConstantBlock>                       m_PushConstants;
+        Vector<FrameDescriptorSets>                                 m_DescriptorSets;
+        Vector<PushConstantBlock>                                   m_PushConstants;
         HashMap<DescriptorSetBinding, ShaderBufferBindingData>      m_ShaderBuffers;
-        HashMap<String, SamplerBindingData>             m_Samplers;
-        HashMap<String, ShaderAccessorData>             m_UniformBufferAccessors;
+        HashMap<String, SamplerBindingData>                         m_Samplers;
+        HashMap<String, ShaderAccessorData>                         m_UniformBufferAccessors;
 
         static Material Create(VkState & vk, ShaderProgram& shader);
 
-        void AttachBuffer(uint32_t frameIndex, uint32_t set, uint32_t binding, ShaderBufferFrameData& buffer);
-        void CreateBuffer(uint32_t frameIndex, uint32_t set, uint32_t binding);
+        void AttachBuffer(VkState& vk, uint32_t frameIndex, uint32_t set, uint32_t binding, ShaderBufferFrameData& buffer);
+        void CreateBuffer(VkState& vk, uint32_t set, uint32_t binding);
+
+        void UpdateDescriptors(VkState& vk);
 
         template<typename _Ty>
         bool SetBuffer(uint32_t frameIndex, uint32_t set, uint32_t binding, const _Ty& value)
         {
-            DescriptorSetBinding sb = {};
-            sb.m_Set = set;
-            sb.m_Binding = binding;
+            static constexpr size_t _type_size = sizeof(_Ty);
+            DescriptorSetBinding sb (set, binding, _type_size);
 
+            if (m_ShaderBuffers.find(sb) == m_ShaderBuffers.end())
+            {
+                return false;
+            }
+
+            if (!m_ShaderBuffers[sb].Ready())
+            {
+                return false;
+            }
             m_ShaderBuffers[sb].m_Buffer.Set(frameIndex, value);
 
             return true;
@@ -79,9 +88,18 @@ namespace lvk
         template<typename _Ty>
         bool SetBuffer(uint32_t frameIndex, uint32_t set, uint32_t binding, _Ty* start, uint32_t count)
         {
-            DescriptorSetBinding sb = {};
-            sb.m_Set = set;
-            sb.m_Binding = binding;
+            static constexpr size_t _type_size = sizeof(_Ty);
+            DescriptorSetBinding sb(set, binding, _type_size);
+
+            if (m_ShaderBuffers.find(sb) == m_ShaderBuffers.end())
+            {
+                return false;
+            }
+
+            if (!m_ShaderBuffers[sb].Ready())
+            {
+                return false;
+            }
 
             m_ShaderBuffers[sb].m_Buffer.SetMemory(frameIndex, start, count);
 
@@ -94,34 +112,19 @@ namespace lvk
         {
             // size of each element
             static constexpr size_t _type_size = sizeof(_Ty);
-            Material::DescriptorSetBinding sb = {};
+            DescriptorSetBinding sb(set, binding, _type_size);
+
+            if (m_ShaderBuffers.find(sb) == m_ShaderBuffers.end())
+            {
+                return false;
+            }
+
+            if (!m_ShaderBuffers[sb].Ready())
+            {
+                return false;
+            }
             uint64_t offset = (_type_size * index) + innerElementOffset;
             m_ShaderBuffers[sb].m_Buffer.Set(frameIndex, value, offset);
-        }
-
-        template<typename _Ty>
-        bool SetMember(const String& name, const _Ty& value)
-        {
-            static constexpr size_t _type_size = sizeof(_Ty);
-            if (m_UniformBufferAccessors.find(name) == m_UniformBufferAccessors.end())
-            {
-                return false;
-            }
-
-            ShaderAccessorData& data = m_UniformBufferAccessors.at(name);
-
-            if (_type_size != data.m_ExpectedSize)
-            {
-                return false;
-            }
-
-            for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-            {
-                // update uniform buffer
-                // m_ShaderBuffers[data.m_BufferIndex].m_Buffer.Set(i, value, data.m_Offset);
-            }
-
-            return true;
         }
 
         bool SetSampler(VkState & vk, const String& name, const VkImageView& imageView, const VkSampler& sampler, bool isAttachment = false);

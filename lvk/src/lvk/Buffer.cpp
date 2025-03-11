@@ -85,6 +85,23 @@ ShaderBufferFrameData CreateUniformBuffers (VkState& vk, VkDeviceSize bufferSize
   }
   return uniformData;
 }
+
+ShaderBufferFrameData CreateShaderStorageBuffers(VkState& vk, VkDeviceSize bufferSize, VkBufferUsageFlags bufferUsage )
+{
+    ShaderBufferFrameData uniformData{};
+    VkBufferUsageFlags usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    if (bufferUsage != VK_BUFFER_USAGE_FLAG_BITS_MAX_ENUM)
+    {
+        usageFlags |= bufferUsage;
+    }
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        uniformData.m_UniformBuffers[i] = std::move(std::make_unique<MappedBuffer>(CreateMappedBuffer(vk,
+            static_cast<uint32_t>(bufferSize),
+            usageFlags,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)));
+    }
+    return uniformData;
+}
 }
 }
 

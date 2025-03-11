@@ -30,6 +30,9 @@ MappedBuffer CreateMappedBuffer(VkState &vk, VkDeviceSize size, VkBufferUsageFla
                         VkMemoryPropertyFlags memoryProperties);
 
 ShaderBufferFrameData CreateUniformBuffers(VkState &vk, VkDeviceSize bufferSize);
+ShaderBufferFrameData CreateShaderStorageBuffers(VkState& vk, VkDeviceSize bufferSize, 
+    VkBufferUsageFlags bufferUsage = VK_BUFFER_USAGE_FLAG_BITS_MAX_ENUM);
+
 
 template <typename _Ty>
 ShaderBufferFrameData CreateUniformBuffersT(VkState &vk) {

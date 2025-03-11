@@ -29,10 +29,11 @@ static auto reflect_descriptor_info = [](lvk::ShaderStage& stage, lvk::Material 
                     continue;
                 }
 
-                if (bindingInfo.m_BufferType == ShaderBindingType::UniformBuffer)
+                if (bindingInfo.m_BufferType == ShaderBindingType::UniformBuffer ||
+                    bindingInfo.m_BufferType == ShaderBindingType::ShaderStorageBuffer)
                 {
                     // if a uniform buffer
-                    ShaderBufferFrameData uniform = buffers::CreateUniformBuffers(vk, VkDeviceSize{ bindingInfo.m_ExpectedBufferSizeOrDivisor});
+                    //ShaderBufferFrameData uniform = buffers::CreateUniformBuffers(vk, VkDeviceSize{ bindingInfo.m_ExpectedBufferSizeOrDivisor});
                     // build accessors
                     for (auto& member : bindingInfo.m_Members)
                     {
@@ -49,30 +50,113 @@ static auto reflect_descriptor_info = [](lvk::ShaderStage& stage, lvk::Material 
                         mat.m_UniformBufferAccessors.emplace(accessorName, data);
                     }
 
-                    DescriptorSetBinding binding = {};
-                    binding.m_Set = descriptorSetInfo.m_SetNumber;
-                    binding.m_Binding = bindingInfo.m_BindingIndex;
+                    DescriptorSetBinding binding (
+                        descriptorSetInfo.m_SetNumber, 
+                        bindingInfo.m_BindingIndex, 
+                        bindingInfo.m_ExpectedBufferSizeOrDivisor);
+                    
+                    Buffer::BufferType bufferType = bindingInfo.m_BufferType == ShaderBindingType::UniformBuffer ?
+                        Buffer::BufferType::Uniform : Buffer::BufferType::ShaderStorage;
 
                     mat.m_ShaderBuffers.emplace(binding,
-                        Material::ShaderBufferBindingData{ 
-                            descriptorSetInfo.m_SetNumber, 
-                            bindingInfo.m_BindingIndex, 
-                            bindingInfo.m_ExpectedBufferSizeOrDivisor, 
-                            Buffer::BufferType::Uniform, 
-                            std::move(uniform)
+                        Material::ShaderBufferBindingData{
+                            descriptorSetInfo.m_SetNumber,
+                            bindingInfo.m_BindingIndex,
+                            bindingInfo.m_ExpectedBufferSizeOrDivisor,
+                            bufferType,
+                            // Deliberately empty, other code can create buffers and assign
+                            ShaderBufferFrameData()
                         });
-                }
-                else if (bindingInfo.m_BufferType == ShaderBindingType::ShaderStorageBuffer)
-                {
-                    int k = 420; 
                 }
             }
         }
     };
 
-lvk::Material::ShaderBufferBindingData::ShaderBufferBindingData(uint32_t set, uint32_t binding, uint32_t size, Buffer::BufferType bufferType, lvk::ShaderBufferFrameData& buffer)
-    : m_SetNumber(set), m_BindingNumber(binding), m_BufferSize(size), m_BufferType(bufferType), m_Buffer(buffer)
+lvk::Material::ShaderBufferBindingData::ShaderBufferBindingData(uint32_t set, uint32_t binding, VkDeviceSize size, Buffer::BufferType bufferType, lvk::ShaderBufferFrameData& buffer)
+    : m_Binding(set, binding, size), m_BufferType(bufferType), m_Buffer(buffer)
 {
+}
+
+bool lvk::Material::ShaderBufferBindingData::Ready() {
+    bool ready = false;
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        ready &= m_Buffer.m_UniformBuffers[i].get() != nullptr;
+        if (!ready)
+        {
+            break;
+        }
+        ready &= m_Buffer.m_UniformBuffers[i]->m_GpuBuffer != VK_NULL_HANDLE;
+    }
+    return ready;
+}
+
+void lvk::Material::UpdateDescriptors(VkState& vk)
+{
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+
+        // write buffers to descriptor set + default texture for any samplers
+        Vector<VkDescriptorBufferInfo>  bufferWriteInfos;
+        for (auto&& [setBinding, bufferInfo] : m_ShaderBuffers)
+        {
+            if (!bufferInfo.Ready())
+            {
+                continue;
+            }
+            VkDescriptorBufferInfo bufferWriteInfo{};
+            bufferWriteInfo.buffer = bufferInfo.m_Buffer.m_UniformBuffers[0]->m_GpuBuffer;
+            bufferWriteInfo.offset = 0;
+            bufferWriteInfo.range = bufferInfo.m_Binding.m_BindingSize;
+            bufferWriteInfos.push_back(bufferWriteInfo);
+        }
+        Vector<VkDescriptorImageInfo>   imageWriteInfos;
+        Vector<uint32_t> bindings;
+        for (auto [name, sampler] : m_Samplers)
+        {
+            VkDescriptorImageInfo imageInfo{};
+            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            imageInfo.imageView = sampler.m_ImageView;
+            imageInfo.sampler = sampler.m_Sampler;
+            imageWriteInfos.push_back(imageInfo);
+            bindings.push_back(sampler.m_BindingNumber);
+        }
+
+        Vector<VkWriteDescriptorSet> descriptorWrites{};
+
+        int k = 0;
+        for (auto&& [setBinding, ubo] : m_ShaderBuffers)
+        {
+            if (! ubo.Ready())
+            {
+                continue;
+            }
+            VkWriteDescriptorSet write{};
+            write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            write.dstSet = m_DescriptorSets.front().m_Sets[i];
+            write.dstBinding = ubo.m_Binding.m_Binding;
+            write.dstArrayElement = 0; // todo
+            write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            write.descriptorCount = 1;
+            write.pBufferInfo = &bufferWriteInfos[k];
+            descriptorWrites.push_back(write);
+            k++;
+        }
+        for (int j = 0; j < imageWriteInfos.size(); j++)
+        {
+            VkWriteDescriptorSet write{};
+            write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            write.dstSet = m_DescriptorSets.front().m_Sets[i];
+            write.dstBinding = bindings[j];
+            write.dstArrayElement = 0;
+            write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            write.descriptorCount = 1;
+            write.pImageInfo = &imageWriteInfos[j];
+            descriptorWrites.push_back(write);
+        }
+
+        vkUpdateDescriptorSets(vk.m_LogicalDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+
+    }
 }
 
 // todo: add ability to add existing buffers when creating the material
@@ -92,76 +176,53 @@ lvk::Material lvk::Material::Create(VkState & vk, ShaderProgram& shader)
     {
         reflect_descriptor_info(stage, mat, vk);
     }
-    
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 
-        // write buffers to descriptor set + default texture for any samplers
-        Vector<VkDescriptorBufferInfo>  bufferWriteInfos;
-        for (auto&& [setBinding, bufferInfo] : mat.m_ShaderBuffers)
-        {
-            VkDescriptorBufferInfo bufferWriteInfo{};
-            bufferWriteInfo.buffer = bufferInfo.m_Buffer.m_UniformBuffers[0]->m_GpuBuffer;
-            bufferWriteInfo.offset = 0;
-            bufferWriteInfo.range = bufferInfo.m_BufferSize;
-            bufferWriteInfos.push_back(bufferWriteInfo);
-        }
-        Vector<VkDescriptorImageInfo>   imageWriteInfos;
-        Vector<uint32_t> bindings;
-        for (auto [name, sampler] : mat.m_Samplers)
-        {
-            VkDescriptorImageInfo imageInfo{};
-            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo.imageView = sampler.m_ImageView;
-            imageInfo.sampler = sampler.m_Sampler;
-            imageWriteInfos.push_back(imageInfo);
-            bindings.push_back(sampler.m_BindingNumber);
-        }
+    mat.UpdateDescriptors(vk);
 
-        Vector<VkWriteDescriptorSet> descriptorWrites{};
-
-        int k = 0;
-        for (auto&& [setBinding, ubo] : mat.m_ShaderBuffers)
-        {
-            VkWriteDescriptorSet write{};
-            write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            write.dstSet = mat.m_DescriptorSets.front().m_Sets[i];
-            write.dstBinding = ubo.m_BindingNumber;
-            write.dstArrayElement = 0; // todo
-            write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            write.descriptorCount = 1;
-            write.pBufferInfo = &bufferWriteInfos[k];
-            descriptorWrites.push_back(write);
-            k++;
-        }
-        for (int j = 0; j < imageWriteInfos.size(); j++)
-        {
-            VkWriteDescriptorSet write{};
-            write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            write.dstSet = mat.m_DescriptorSets.front().m_Sets[i];
-            write.dstBinding = bindings[j];
-            write.dstArrayElement = 0;
-            write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            write.descriptorCount = 1;
-            write.pImageInfo = &imageWriteInfos[j];
-            descriptorWrites.push_back(write);
-        }
-
-        vkUpdateDescriptorSets(vk.m_LogicalDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-
-    }
     return mat;
 }
 
-void lvk::Material::AttachBuffer(uint32_t frameIndex, uint32_t set, uint32_t binding, ShaderBufferFrameData& buffer)
+void lvk::Material::AttachBuffer(VkState& vk, uint32_t frameIndex, uint32_t set, uint32_t binding, ShaderBufferFrameData& buffer)
 {
-    DescriptorSetBinding b = {};
-    b.m_Set = set;
-    b.m_Binding = binding;
+    VkDeviceSize size = buffer.m_UniformBuffers[frameIndex]->m_Size;
+    DescriptorSetBinding b (set, binding, size);
+    
+    if (m_ShaderBuffers.find(b) == m_ShaderBuffers.end())
+    {
+        spdlog::error("No associated binding");
+        return;
+    }
+
+    ShaderBufferBindingData bindingData(set, binding, size, m_ShaderBuffers[b].m_BufferType, buffer);
+    
+    m_ShaderBuffers[b] = bindingData;
+
+    UpdateDescriptors(vk);
 }
 
-void lvk::Material::CreateBuffer(uint32_t frameIndex, uint32_t set, uint32_t binding)
+void lvk::Material::CreateBuffer(VkState& vk, uint32_t set, uint32_t binding)
 {
+    DescriptorSetBinding bind_handle{};
+    for (auto& [b, _] : m_ShaderBuffers)
+    {
+        if (b.m_Set == set && b.m_Binding == binding)
+        {
+            bind_handle = b;
+            break;
+        }
+    }
 
+    if (m_ShaderBuffers.find(bind_handle) == m_ShaderBuffers.end())
+    {
+        return;
+    }
+
+    ShaderBufferFrameData newBuffer = m_ShaderBuffers[bind_handle].m_BufferType == Buffer::BufferType::Uniform ?
+        buffers::CreateUniformBuffers(vk, bind_handle.m_BindingSize) :
+        buffers::CreateShaderStorageBuffers(vk, bind_handle.m_BindingSize);
+
+    m_ShaderBuffers[bind_handle].m_Buffer = newBuffer;
+    UpdateDescriptors(vk);
 }
 
 bool lvk::Material::SetSampler(VkState & vk, const String& name, const VkImageView& imageView, const VkSampler& sampler, bool isAttachment)

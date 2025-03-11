@@ -113,32 +113,35 @@ namespace lvk {
     Array<RefCntPtr<Buffer>, MAX_FRAMES_IN_FLIGHT> m_UniformBuffers;
     ShaderBufferFrameData() = default;
 
-    template <typename _Ty>
-    void Set(uint32_t frameIndex, const _Ty &data, uint32_t offset = 0) {
-      constexpr size_t _ty_size = sizeof(_Ty);
-      if (!m_UniformBuffers[frameIndex]->m_Type == Buffer::BufferStorageType::Mapped)
-      {
-          spdlog::error("Attempting to set data for non mapped buffer");
-          return;
-      }
-      MappedBuffer* mb = static_cast<MappedBuffer*>(m_UniformBuffers[frameIndex].get());
-      uint64_t base_addr = (uint64_t)mb->m_MappedAddr;
-      void *addr = (void *)(base_addr + static_cast<uint64_t>(offset));
-      memcpy(addr, &data, _ty_size);
-    }
+    bool Ready();
+    bool CanSet(uint32_t frameIndex);
 
     template <typename _Ty>
     void SetMemory(uint32_t frameIndex, const _Ty *start, uint64_t count) {
       constexpr size_t _ty_size = sizeof(_Ty);
-      if (m_UniformBuffers[frameIndex]->m_Type != Buffer::BufferStorageType::Mapped)
+      if (!CanSet(frameIndex))
       {
-          spdlog::error("Attempting to set data for non mapped buffer");
           return;
       }
       MappedBuffer* mb = static_cast<MappedBuffer*>(m_UniformBuffers[frameIndex].get());
       void *addr = mb->m_MappedAddr;
       memcpy(addr, start, count);
     }
+
+
+    template <typename _Ty>
+    void Set(uint32_t frameIndex, const _Ty& data, uint32_t offset = 0) {
+        constexpr size_t _ty_size = sizeof(_Ty);
+        if (!CanSet(frameIndex))
+        {
+            return;
+        }
+        MappedBuffer* mb = static_cast<MappedBuffer*>(m_UniformBuffers[frameIndex].get());
+        uint64_t base_addr = (uint64_t)mb->m_MappedAddr;
+        void* addr = (void*)(base_addr + static_cast<uint64_t>(offset));
+        memcpy(addr, &data, _ty_size);
+    }
+
 
     void Free(VkState &vk);
   };
@@ -152,6 +155,11 @@ namespace lvk {
           };
       };
       VkDeviceSize        m_BindingSize;
+
+      DescriptorSetBinding(uint32_t set, uint32_t binding, VkDeviceSize size) :
+          m_Set(set), m_Binding(binding), m_BindingSize(size) {}
+      DescriptorSetBinding() = default;
+      
 
       bool operator ==(const DescriptorSetBinding& other) const {
           return (this->m_Data == other.m_Data) &&
