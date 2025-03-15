@@ -108,6 +108,8 @@ int main()
         vk, "shaders/lights.vert", "shaders/lights.frag");
 
     Material m = Material::Create(vk, lights_prog);
+    m.CreateBuffer(vk, 0, 0);
+    m.CreateBuffer(vk, 0, 2);
 
     // Pipeline stage?
     auto vertexDescription = VertexDataPosNormalUv::GetVertexDescription();
