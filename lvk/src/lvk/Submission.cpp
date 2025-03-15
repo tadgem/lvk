@@ -2,6 +2,7 @@
 #include "lvk/Init.h"
 #include "lvk/Macros.h"
 #include "lvk/Commands.h"
+#include "lvk/Debug.h"
 #include "ImGui/imgui.h"
 #include "spdlog/spdlog.h"
 #include "ImGui/imgui_impl_vulkan.h"
@@ -107,6 +108,7 @@ void lvk::submission::RenderImGui(VkState& vk)
   for(auto f = 0; f < MAX_FRAMES_IN_FLIGHT; f++)
   {
     VkCommandBuffer imguiCommandBuffer = commands::BeginSingleTimeCommands(vk);
+    debug::BeginDebugMarker(imguiCommandBuffer, "ImGui", { 0.0f, 0.0f, 1.0f, 1.0f });
 
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -125,6 +127,7 @@ void lvk::submission::RenderImGui(VkState& vk)
     vkCmdBeginRenderPass(imguiCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), imguiCommandBuffer);
     vkCmdEndRenderPass(imguiCommandBuffer);
+    debug::EndDebugMarker(imguiCommandBuffer);
     commands::EndSingleTimeCommands(vk, imguiCommandBuffer);
   }
 

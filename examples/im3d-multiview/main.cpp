@@ -43,6 +43,7 @@ ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferP
     finalImage.Build(vk);
 
     Material lightPassMat = Material::Create(vk, lightPassProg);
+    lightPassMat.CreateBuffer(vk, 0, 3);
 
     lightPassMat.SetColourAttachment(vk, "positionBufferSampler", gbuffer, 1);
     lightPassMat.SetColourAttachment(vk, "normalBufferSampler", gbuffer, 2);
@@ -312,7 +313,7 @@ RenderModel CreateRenderModelGbuffer(VkState & vk, const String& modelPath, Shad
         int materialIndex = std::min(mesh.m_MaterialIndex, (uint32_t)model.m_Materials.size() - 1);
         item.m_Mesh = mesh;
         item.m_Material = Material::Create(vk, shader);
-
+        item.m_Material.CreateBuffer(vk, 0, 0);
         MaterialEx& material = model.m_Materials[mesh.m_MaterialIndex];
         item.m_Material.SetSampler(vk, "texSampler", material.m_Diffuse.m_ImageView, material.m_Diffuse.m_Sampler);
         renderModel.m_RenderItems.push_back(item);

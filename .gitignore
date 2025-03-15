@@ -52,3 +52,5 @@ doodle.log
 /.vs
 /.vs
 CMakeSettings.json
+/third-party/sdl/VisualC/examples/demo/02-woodeneye-008/Win32
+/third-party/sdl/VisualC

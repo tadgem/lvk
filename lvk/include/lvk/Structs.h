@@ -72,14 +72,26 @@ namespace lvk {
   class Buffer
   {
   public:
+    enum BufferStorageType
+    {
+        GPUOnly,
+        Mapped
+    };
 
-    VkBuffer        m_GpuBuffer = VK_NULL_HANDLE;
-    VmaAllocation   m_GpuMemory = VK_NULL_HANDLE;
-    VkDeviceSize    m_Size = 0;
+    enum BufferType
+    {
+        Uniform,
+        ShaderStorage
+    };
 
-    Buffer(VkBuffer buf, VmaAllocation alloc, VkDeviceSize size);
+    VkBuffer                    m_GpuBuffer = VK_NULL_HANDLE;
+    VmaAllocation               m_GpuMemory = VK_NULL_HANDLE;
+    VkDeviceSize                m_Size = 0;
+    BufferStorageType           m_Type;
+
+    Buffer(const BufferStorageType& bufferType, VkBuffer buf, VmaAllocation alloc, VkDeviceSize size);
     Buffer() = default;
-
+    virtual ~Buffer() = default;
     virtual void Free(VkState& vk);
   };
 
@@ -98,24 +110,62 @@ namespace lvk {
   };
 
   struct ShaderBufferFrameData {
-    Vector<MappedBuffer> m_UniformBuffers;
+    Array<RefCntPtr<Buffer>, MAX_FRAMES_IN_FLIGHT> m_UniformBuffers;
+    ShaderBufferFrameData() = default;
 
-    template <typename _Ty>
-    void Set(uint32_t frameIndex, const _Ty &data, uint32_t offset = 0) {
-      constexpr size_t _ty_size = sizeof(_Ty);
-      uint64_t base_addr = (uint64_t)m_UniformBuffers[frameIndex].m_MappedAddr;
-      void *addr = (void *)(base_addr + static_cast<uint64_t>(offset));
-      memcpy(addr, &data, _ty_size);
-    }
+    bool Ready();
+    bool CanSet(uint32_t frameIndex);
 
     template <typename _Ty>
     void SetMemory(uint32_t frameIndex, const _Ty *start, uint64_t count) {
       constexpr size_t _ty_size = sizeof(_Ty);
-      void *addr = m_UniformBuffers[frameIndex].m_MappedAddr;
+      if (!CanSet(frameIndex))
+      {
+          return;
+      }
+      MappedBuffer* mb = static_cast<MappedBuffer*>(m_UniformBuffers[frameIndex].get());
+      void *addr = mb->m_MappedAddr;
       memcpy(addr, start, count);
     }
 
+
+    template <typename _Ty>
+    void Set(uint32_t frameIndex, const _Ty& data, uint32_t offset = 0) {
+        constexpr size_t _ty_size = sizeof(_Ty);
+        if (!CanSet(frameIndex))
+        {
+            return;
+        }
+        MappedBuffer* mb = static_cast<MappedBuffer*>(m_UniformBuffers[frameIndex].get());
+        uint64_t base_addr = (uint64_t)mb->m_MappedAddr;
+        void* addr = (void*)(base_addr + static_cast<uint64_t>(offset));
+        memcpy(addr, &data, _ty_size);
+    }
+
+
     void Free(VkState &vk);
+  };
+
+  struct DescriptorSetBinding {
+      union {
+          uint64_t        m_Data;
+          struct {
+              uint32_t    m_Set;
+              uint32_t    m_Binding;
+          };
+      };
+      VkDeviceSize        m_BindingSize;
+
+      DescriptorSetBinding(uint32_t set, uint32_t binding, VkDeviceSize size) :
+          m_Set(set), m_Binding(binding), m_BindingSize(size) {}
+      DescriptorSetBinding() = default;
+      
+
+      bool operator ==(const DescriptorSetBinding& other) const {
+          return (this->m_Data == other.m_Data);
+          // TODO: This size should account for alignment diffs between GPU & CPU
+          // && (this->m_BindingSize== other.m_BindingSize);
+      }
   };
 
   struct VertexDescription
@@ -290,3 +340,17 @@ namespace lvk {
   };
 
 }
+
+template <>
+struct std::hash<lvk::DescriptorSetBinding>
+{
+    std::size_t operator()(const lvk::DescriptorSetBinding& sb) const
+    {
+        using std::hash;
+
+        return ((hash<uint64_t>()(sb.m_Data)));
+
+            // TODO: This size should account for alignment diffs between GPU & CPU
+            // ^ (hash<uint64_t>()(sb.m_BindingSize))));
+    }
+};

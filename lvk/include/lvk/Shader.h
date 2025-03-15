@@ -2,6 +2,7 @@
 #include "lvk/Descriptor.h"
 #include "lvk/Structs.h"
 #include "lvk/Utils.h"
+#include <filesystem>
 namespace lvk
 {
     VkShaderModule CreateShaderModule(VkState& vk, const StageBinary& data);
@@ -12,6 +13,7 @@ namespace lvk
 
     struct ShaderStage
     {
+        String          m_Name;
         StageBinary     m_StageBinary;
         VkShaderModule  m_Module;
         Vector<PushConstantBlock>       m_PushConstants;
@@ -20,23 +22,24 @@ namespace lvk
 
         static String      LoadShaderSource(const String& path);
 
-        static ShaderStage CreateFromBinary(VkState & vk, Vector<unsigned char>& binary, const ShaderStageType& type)
+        static ShaderStage CreateFromBinary(VkState & vk, Vector<unsigned char>& binary, const ShaderStageType& type, const String& name)
         {
             auto stageLayoutDatas = descriptor::ReflectDescriptorSetLayouts(vk, binary);
             auto pushConstants = descriptor::ReflectPushConstants(vk, binary);
             auto module = CreateShaderModule(vk, binary);
 
-            return { binary, module, pushConstants, stageLayoutDatas, type };
+            return { name, binary, module, pushConstants, stageLayoutDatas, type };
         }
 
         static ShaderStage
         CreateFromBinaryPath(VkState & vk, const String& stagePath, const ShaderStageType& stageType)
         {
+            String name = std::filesystem::path(stagePath).filename().u8string();
             auto stageBin = utils::LoadSpirvBinary(stagePath);
-            return CreateFromBinary(vk, stageBin, stageType);
+            return CreateFromBinary(vk, stageBin, stageType, name);
         }
 
-        static ShaderStage CreateFromSource(VkState & vk, const String& source, const ShaderStageType& type, const String& path = "")
+        static ShaderStage CreateFromSource(VkState & vk, const String& source, const ShaderStageType& type, const String& name, const String& path = "")
         {
             auto bin = CreateStageBinaryFromSource(vk, type, source, path);
             if(bin.empty())
@@ -47,13 +50,14 @@ namespace lvk
             auto pushConstants = descriptor::ReflectPushConstants(vk, bin);
             auto module = CreateShaderModule(vk, bin);
 
-            return { bin, module, pushConstants, stageLayoutDatas, type };
+            return { name, bin, module, pushConstants, stageLayoutDatas, type };
         }
 
         static ShaderStage CreateFromSourcePath(VkState & vk, const String& path, const ShaderStageType& type)
         {
+            String name = std::filesystem::path(path).filename().u8string();
             auto source = LoadShaderSource(path);
-            return CreateFromSource(vk, source, type, path);
+            return CreateFromSource(vk, source, type, path, name);
         }
     };
 

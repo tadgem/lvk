@@ -29,7 +29,7 @@ Buffer CreateBuffer(VkState& vk, VkDeviceSize size, VkBufferUsageFlags usage, Vk
 
   VK_CHECK(vmaCreateBuffer(vk.m_Allocator, &bufferInfo, &allocInfo, &buffer, &allocation, nullptr));
 
-  return Buffer(buffer, allocation, size);
+  return Buffer(Buffer::BufferStorageType::GPUOnly, buffer, allocation, size);
 }
 
 void CopyBuffer(VkState& vk, VkBuffer& src, VkBuffer& dst, VkDeviceSize size)
@@ -73,16 +73,34 @@ MappedBuffer CreateMappedBuffer(VkState& vk, VkDeviceSize size, VkBufferUsageFla
   return mb;
 }
 
-void CreateUniformBuffers (VkState& vk, ShaderBufferFrameData& uniformData, VkDeviceSize bufferSize)
+ShaderBufferFrameData CreateUniformBuffers (VkState& vk, VkDeviceSize bufferSize)
 {
-  uniformData.m_UniformBuffers.resize (MAX_FRAMES_IN_FLIGHT);
-
+  ShaderBufferFrameData uniformData {};
+  
   for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-    uniformData.m_UniformBuffers[i] = CreateMappedBuffer (vk, 
+    uniformData.m_UniformBuffers[i] = std::move(std::make_unique<MappedBuffer>(CreateMappedBuffer(vk,
         static_cast<uint32_t>(bufferSize),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)));
   }
+  return uniformData;
+}
+
+ShaderBufferFrameData CreateShaderStorageBuffers(VkState& vk, VkDeviceSize bufferSize, VkBufferUsageFlags bufferUsage )
+{
+    ShaderBufferFrameData uniformData{};
+    VkBufferUsageFlags usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    if (bufferUsage != VK_BUFFER_USAGE_FLAG_BITS_MAX_ENUM)
+    {
+        usageFlags |= bufferUsage;
+    }
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        uniformData.m_UniformBuffers[i] = std::move(std::make_unique<MappedBuffer>(CreateMappedBuffer(vk,
+            static_cast<uint32_t>(bufferSize),
+            usageFlags,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)));
+    }
+    return uniformData;
 }
 }
 }

@@ -12,6 +12,7 @@
 #include "lvk/Mesh.h"
 #include "lvk/Pipeline.h"
 #include "lvk/Defaults.h"
+#include "lvk/Debug.h"
 #include "spdlog/spdlog.h"
 #include "volk.h"
 
@@ -31,28 +32,28 @@ namespace lvk
     {
         Vector<unsigned char> tris_vert_bin = ToVector(&im3d_tris_vert_spv_bin[0], (uint32_t)im3d_tris_vert_spv_bin_SIZE);
         ShaderStage tris_vert = ShaderStage::CreateFromBinary(
-            vk, tris_vert_bin, ShaderStageType::Vertex);
+            vk, tris_vert_bin, ShaderStageType::Vertex, "Im3dTrisVert");
         Vector<unsigned char> tris_frag_bin = ToVector(&im3d_tris_frag_spv_bin[0], (uint32_t)im3d_tris_frag_spv_bin_SIZE);
         ShaderStage tris_frag = ShaderStage::CreateFromBinary(
-            vk, tris_frag_bin, ShaderStageType::Fragment);
+            vk, tris_frag_bin, ShaderStageType::Fragment, "Im3dTrisFrag");
         ShaderProgram tris_prog =
             ShaderProgram::CreateGraphics(vk, tris_vert, tris_frag);
 
         Vector<unsigned char> lines_vert_bin = ToVector(&im3d_lines_vert_spv_bin[0], (uint32_t)im3d_lines_vert_spv_bin_SIZE);
         ShaderStage lines_vert = ShaderStage::CreateFromBinary(
-            vk, lines_vert_bin, ShaderStageType::Vertex);
+            vk, lines_vert_bin, ShaderStageType::Vertex, "Im3dLinesVert");
         Vector<unsigned char> lines_frag_bin = ToVector(&im3d_lines_frag_spv_bin[0], (uint32_t)im3d_lines_frag_spv_bin_SIZE);
         ShaderStage lines_frag = ShaderStage::CreateFromBinary(
-            vk, lines_frag_bin, ShaderStageType::Fragment);
+            vk, lines_frag_bin, ShaderStageType::Fragment, "Im3dLinesFrag");
         ShaderProgram lines_prog =
             ShaderProgram::CreateGraphics(vk, lines_vert, lines_frag);
 
         Vector<unsigned char> points_vert_bin = ToVector(&im3d_points_vert_spv_bin[0], (uint32_t)im3d_points_vert_spv_bin_SIZE);
         ShaderStage points_vert = ShaderStage::CreateFromBinary(
-            vk, points_vert_bin, ShaderStageType::Vertex);
+            vk, points_vert_bin, ShaderStageType::Vertex, "Im3dPointsVert");
         Vector<unsigned char> points_frag_bin = ToVector(&im3d_points_frag_spv_bin[0], (uint32_t)im3d_points_frag_spv_bin_SIZE);
         ShaderStage points_frag = ShaderStage::CreateFromBinary(
-            vk, points_frag_bin, ShaderStageType::Fragment);
+            vk, points_frag_bin, ShaderStageType::Fragment, "Im3dPointsFrag");
         ShaderProgram points_prog =
             ShaderProgram::CreateGraphics(vk, points_vert, points_frag);
 
@@ -92,6 +93,8 @@ namespace lvk
             vk.m_SwapChainImageExtent, {VK_FORMAT_R8G8B8A8_UNORM});
 
         Material tris_material = Material::Create(vk, state.m_TriProg);
+        tris_material.CreateBuffer(vk, 0, 0);
+        tris_material.CreateBuffer(vk, 0, 1);
 
         RasterizationState points_raster_state
         {
@@ -111,6 +114,8 @@ namespace lvk
             vk.m_SwapChainImageExtent, {VK_FORMAT_R8G8B8A8_UNORM});
 
         Material points_material = Material::Create(vk, state.m_PointsProg);
+        points_material.CreateBuffer(vk, 0, 0);
+        points_material.CreateBuffer(vk, 0, 1);
 
         RasterizationState lines_raster_state {
             VK_POLYGON_MODE_LINE,
@@ -129,7 +134,8 @@ namespace lvk
            vk.m_SwapChainImageExtent, {VK_FORMAT_R8G8B8A8_UNORM});
 
         Material lines_material = Material::Create(vk, state.m_LinesProg);
-
+        lines_material.CreateBuffer(vk, 0, 0);
+        lines_material.CreateBuffer(vk, 0, 1);
 
         return { tris_material, points_material, lines_material,
                 tris_pipeline, points_pipeline, lines_pipeline };
@@ -166,7 +172,7 @@ namespace lvk
     void DrawIm3d(VkState & vk, VkCommandBuffer& buffer, uint32_t frameIndex, LvkIm3dState& state, LvkIm3dViewState& viewState, glm::mat4 _viewProj, uint32_t width, uint32_t height, bool drawText)
     {
         auto& context = Im3d::GetContext();
-
+        debug::BeginDebugMarker(buffer, "Im3D Pass");
         for (uint32_t i = 0; i < context.getDrawListCount(); i++)
         {
             auto drawList = &context.getDrawLists()[i];
@@ -220,6 +226,7 @@ namespace lvk
 
             while (remainingPrimCount > 0)
             {
+                
                 int passPrimCount = remainingPrimCount < kPrimsPerPass ? remainingPrimCount : kPrimsPerPass;
                 int passVertexCount = passPrimCount * primVertexCount;
 
@@ -253,6 +260,7 @@ namespace lvk
                 remainingPrimCount -= passPrimCount;
             }
         }
+        debug::EndDebugMarker(buffer);
         if (!drawText)
         {
             return;
@@ -260,6 +268,7 @@ namespace lvk
 
         DrawIm3dTextListsImGui(context.getTextDrawLists(), context.getTextDrawListCount(),
             vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height, _viewProj);
+
     }
 
     void DrawIm3dTextListsImGui(const Im3d::TextDrawList _textDrawLists[], uint32_t _count, uint32_t width, uint32_t height, glm::mat4 _viewProj)

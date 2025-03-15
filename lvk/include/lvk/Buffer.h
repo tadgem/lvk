@@ -29,13 +29,15 @@ Vector<MappedBuffer> CreateUniformBuffers(VkState &vk) {
 MappedBuffer CreateMappedBuffer(VkState &vk, VkDeviceSize size, VkBufferUsageFlags bufferUsage,
                         VkMemoryPropertyFlags memoryProperties);
 
-void CreateUniformBuffers(VkState &vk, ShaderBufferFrameData &uniformData,
-                          VkDeviceSize bufferSize);
+ShaderBufferFrameData CreateUniformBuffers(VkState &vk, VkDeviceSize bufferSize);
+ShaderBufferFrameData CreateShaderStorageBuffers(VkState& vk, VkDeviceSize bufferSize, 
+    VkBufferUsageFlags bufferUsage = VK_BUFFER_USAGE_FLAG_BITS_MAX_ENUM);
+
 
 template <typename _Ty>
-void CreateUniformBuffers(VkState &vk, ShaderBufferFrameData &uniformData) {
+ShaderBufferFrameData CreateUniformBuffersT(VkState &vk) {
   constexpr VkDeviceSize bufferSize = sizeof(_Ty);
-  CreateUniformBuffers(vk, uniformData, bufferSize);
+  return CreateUniformBuffers(vk, bufferSize);
 }
 
 template <typename _Ty>

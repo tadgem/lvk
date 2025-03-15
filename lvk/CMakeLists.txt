@@ -21,6 +21,7 @@ set(LVK_SRCS
     src/lvk/Descriptor.cpp
     src/lvk/RenderPass.cpp
     src/lvk/Submission.cpp
+    src/lvk/Debug.cpp
     src/ThirdParty/spirv_reflect.c
     src/ImGui/imgui_impl_vulkan.cpp
     src/ImGui/imgui_draw.cpp
@@ -47,6 +48,7 @@ set(LVK_SRCS
     include/lvk/RenderPass.h
     include/lvk/Submission.h
     include/lvk/Defaults.h
+    include/lvk/Debug.h
     include/Alias.h
     include/ThirdParty/FunnelSansTTF.h
     include/ThirdParty/spirv_reflect.h
@@ -86,10 +88,13 @@ set(LVK_INCLUDES    ${Vulkan_INCLUDE_DIRS}
 target_include_directories(${PROJECT_NAME} PUBLIC ${LVK_INCLUDES})
 
 if (MSVC)
-    set(${LVK_COMPILE_DEFS} ${LVK_COMPILE_DEFS} "/bigobj" "/MP" "/Zi")
+    # temporarily remove MP to make it easier to diagnose where unique copies are coming from
+    # set(${LVK_COMPILE_DEFS} ${LVK_COMPILE_DEFS} "/bigobj" "/MP" "/Zi" "/fsanitize=address")
+    set(${LVK_COMPILE_DEFS} ${LVK_COMPILE_DEFS} "/bigobj" "/Zi" "/fsanitize=address")
     set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<$<CONFIG:Debug,Release>:ProgramDatabase>")
 endif ()
 
 target_compile_options(${PROJECT_NAME} PRIVATE ${LVK_COMPILE_DEFS})
+target_link_options(${PROJECT_NAME} PUBLIC "/fsanitize=address")
 
 target_link_libraries(${PROJECT_NAME} volk spdlog shaderc shaderc_util cpptrace-lib)
