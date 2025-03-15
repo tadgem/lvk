@@ -150,11 +150,10 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderData& r
     };
     lvk::commands::RecordGraphicsCommands(vk, [&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
         {
-            Array<VkClearValue, 4> clearValues{};
+            debug::BeginDebugMarker(commandBuffer, "Clear Swapchain");
+            Array<VkClearValue, 2> clearValues{};
             clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
-            clearValues[1].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
-            clearValues[2].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
-            clearValues[3].depthStencil = { 1.0f, 0 };
+            clearValues[1].depthStencil = { 1.0f, 0 };
 
             VkRenderPassBeginInfo renderPassInfo{};
             renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -167,24 +166,8 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderData& r
             renderPassInfo.pClearValues = clearValues.data();
 
             vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-            VkViewport viewport{};
-            viewport.x = 0.0f;
-            viewport.x = 0.0f;
-            viewport.width = static_cast<float>(vk.m_SwapChainImageExtent.width);
-            viewport.height = static_cast<float>(vk.m_SwapChainImageExtent.height);
-            viewport.minDepth = 0.0f;
-            viewport.maxDepth = 1.0f;
-
-            VkRect2D scissor{};
-            scissor.offset = { 0,0 };
-            scissor.extent = VkExtent2D{
-                static_cast<uint32_t>(vk.m_SwapChainImageExtent.width) ,
-                static_cast<uint32_t>(vk.m_SwapChainImageExtent.height)
-            };
-            vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-            vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-
             vkCmdEndRenderPass(commandBuffer);
+            debug::EndDebugMarker(commandBuffer);
         }
 
         for (auto& view : views)
@@ -216,7 +199,7 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderData& r
             }
 
             {
-                // vkCmdBeginRenderingKHR(commandBuffer, &view->m_GBuffer.m_DynamicRenderingInfo.m_RenderingInfos[frameIndex]);
+                debug::BeginDebugMarker(commandBuffer, "GBuffer", {0.0f, 1.0f, 0.0f, 1.0f});
                 view->m_GBuffer.BeginDynamicRendering(vk, commandBuffer, frameIndex);
                 vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderData.m_GBufferPipeline.m_Pipeline);
                 VkViewport viewport{};
@@ -251,9 +234,10 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderData& r
                     vkCmdDrawIndexed(commandBuffer, mesh.m_IndexCount, 1, 0, 0, 0);
                 }
                 vkCmdEndRenderingKHR(commandBuffer);
+                debug::EndDebugMarker(commandBuffer);
 
             }
-
+            debug::BeginDebugMarker(commandBuffer, "Lighting Pass", {1.0f, 1.0f, 0.0f, 1.0f});
             //vkCmdBeginRenderingKHR(commandBuffer, &view->m_LightPassFB.m_DynamicRenderingInfo.m_RenderingInfos[frameIndex]);
             view->m_LightPassFB.BeginDynamicRendering(vk, commandBuffer, frameIndex);
 
@@ -283,6 +267,7 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderData& r
             vkCmdBindIndexBuffer(commandBuffer, view->m_ViewQuad.m_IndexBuffer.m_GpuBuffer, 0, VK_INDEX_TYPE_UINT32);
             vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderData.m_LightPassPipeline.m_PipelineLayout, 0, 1, &view->m_LightPassMaterial.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
             vkCmdDrawIndexed(commandBuffer, view->m_ViewQuad.m_IndexCount, 1, 0, 0, 0);
+            debug::EndDebugMarker(commandBuffer);
 
             DrawIm3d(vk, commandBuffer, frameIndex, im3dState, view->m_Im3dState, view->m_Camera.Proj * view->m_Camera.View, viewExtent.width, viewExtent.height);
             vkCmdEndRenderingKHR(commandBuffer);

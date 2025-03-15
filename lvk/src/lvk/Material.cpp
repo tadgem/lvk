@@ -80,19 +80,22 @@ lvk::Material::ShaderBufferBindingData::ShaderBufferBindingData(uint32_t set, ui
 bool lvk::Material::ShaderBufferBindingData::Ready() {
     bool ready = false;
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        ready &= m_Buffer.m_UniformBuffers[i].get() != nullptr;
+        ready = m_Buffer.m_UniformBuffers[i].get() != nullptr;
         if (!ready)
         {
             break;
         }
-        ready &= m_Buffer.m_UniformBuffers[i]->m_GpuBuffer != VK_NULL_HANDLE;
+        ready = m_Buffer.m_UniformBuffers[i]->m_GpuBuffer != VK_NULL_HANDLE;
+        if (!ready)
+        {
+            break;
+        }
     }
     return ready;
 }
 
 void lvk::Material::UpdateDescriptors(VkState& vk)
 {
-
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 
         // write buffers to descriptor set + default texture for any samplers
@@ -101,6 +104,7 @@ void lvk::Material::UpdateDescriptors(VkState& vk)
         {
             if (!bufferInfo.Ready())
             {
+                spdlog::warn("Material with name {} : set {}, binding {} has no associated buffer", m_ShaderName, setBinding.m_Set, setBinding.m_Binding);
                 continue;
             }
             VkDescriptorBufferInfo bufferWriteInfo{};
@@ -164,6 +168,15 @@ lvk::Material lvk::Material::Create(VkState & vk, ShaderProgram& shader)
 {
     Material mat{};
 
+    String materialShaderName = "";
+
+    for (auto& stage : shader.m_Stages)
+    {
+        materialShaderName += stage.m_Name + " ";
+    }
+    
+    mat.m_ShaderName = materialShaderName;
+
     // Create Descriptors
     mat.m_DescriptorSets.push_back(FrameDescriptorSets{});
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
@@ -177,8 +190,6 @@ lvk::Material lvk::Material::Create(VkState & vk, ShaderProgram& shader)
         reflect_descriptor_info(stage, mat, vk);
     }
 
-    mat.UpdateDescriptors(vk);
-
     return mat;
 }
 
@@ -189,7 +200,7 @@ void lvk::Material::AttachBuffer(VkState& vk, uint32_t frameIndex, uint32_t set,
     
     if (m_ShaderBuffers.find(b) == m_ShaderBuffers.end())
     {
-        spdlog::error("No associated binding");
+        spdlog::error("Material with shader {} : No binding at set {}, binding {}", m_ShaderName, set, binding);
         return;
     }
 
@@ -214,6 +225,7 @@ void lvk::Material::CreateBuffer(VkState& vk, uint32_t set, uint32_t binding)
 
     if (m_ShaderBuffers.find(bind_handle) == m_ShaderBuffers.end())
     {
+        spdlog::error("Material with shader {} : No binding at set {}, binding {}", m_ShaderName, set, binding);
         return;
     }
 
@@ -229,6 +241,7 @@ bool lvk::Material::SetSampler(VkState & vk, const String& name, const VkImageVi
 {
     if (m_Samplers.find(name) == m_Samplers.end())
     {
+        spdlog::error("Material with shader {} : No associated sampler with name {}", m_ShaderName, name);
         return false;
     }
 
@@ -260,6 +273,7 @@ bool lvk::Material::SetColourAttachment(VkState & vk, const String& name, Frameb
 {
     if (m_Samplers.find(name) == m_Samplers.end())
     {
+        spdlog::error("Material with shader {} : No associated sampler with name {}", m_ShaderName, name);
         return false;
     }
 

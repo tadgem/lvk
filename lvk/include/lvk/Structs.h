@@ -162,8 +162,9 @@ namespace lvk {
       
 
       bool operator ==(const DescriptorSetBinding& other) const {
-          return (this->m_Data == other.m_Data) &&
-              (this->m_BindingSize== other.m_BindingSize);
+          return (this->m_Data == other.m_Data);
+          // TODO: This size should account for alignment diffs between GPU & CPU
+          // && (this->m_BindingSize== other.m_BindingSize);
       }
   };
 
@@ -347,7 +348,9 @@ struct std::hash<lvk::DescriptorSetBinding>
     {
         using std::hash;
 
-        return ((hash<uint64_t>()(sb.m_Data)
-            ^ (hash<uint64_t>()(sb.m_BindingSize))));
+        return ((hash<uint64_t>()(sb.m_Data)));
+
+            // TODO: This size should account for alignment diffs between GPU & CPU
+            // ^ (hash<uint64_t>()(sb.m_BindingSize))));
     }
 };

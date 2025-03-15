@@ -52,6 +52,7 @@ namespace lvk
             Array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> m_Sets;
         };
 
+        String                                                      m_ShaderName;
         Vector<FrameDescriptorSets>                                 m_DescriptorSets;
         Vector<PushConstantBlock>                                   m_PushConstants;
         HashMap<DescriptorSetBinding, ShaderBufferBindingData>      m_ShaderBuffers;

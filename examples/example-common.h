@@ -126,6 +126,7 @@ struct FrameLightDataT
     uint32_t            m_DirectionalLightActive;
     uint32_t            m_PointLightsActive;
     uint32_t            m_SpotLightsActive;
+    uint32_t            _padding;
 };
 
 float Random(float max = 1.0f)
