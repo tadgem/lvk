@@ -16,7 +16,7 @@ void ShaderProgram::Free(VkState &vk) {
 ShaderProgram ShaderProgram::CreateCompute(VkState &vk, ShaderStage &compute) {
   VkDescriptorSetLayout layout;
 
-  std::vector<VkDescriptorSetLayoutBinding> bindings;
+  Vector<VkDescriptorSetLayoutBinding> bindings;
   for (auto &layout : compute.m_LayoutDatas) {
     for (auto &binding : layout.m_Bindings) {
       bindings.push_back(binding);

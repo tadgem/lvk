@@ -49,7 +49,8 @@ set(LVK_SRCS
     include/lvk/Submission.h
     include/lvk/Defaults.h
     include/lvk/Debug.h
-    include/Alias.h
+    include/lvk/Alias.h
+    include/lvk/Allocator.h
     include/ThirdParty/FunnelSansTTF.h
     include/ThirdParty/spirv_reflect.h
     include/ThirdParty/VulkanMemoryAllocator.h

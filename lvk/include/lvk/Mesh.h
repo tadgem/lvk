@@ -21,8 +21,8 @@ namespace lvk
             return bindingDescription;
         }
 
-        static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions() {
-            std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
+        static Vector<VkVertexInputAttributeDescription> GetAttributeDescriptions() {
+            Vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 
             attributeDescriptions.resize(3);
 
@@ -61,8 +61,8 @@ namespace lvk
             return bindingDescription;
         }
 
-        static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions() {
-            std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
+        static Vector<VkVertexInputAttributeDescription> GetAttributeDescriptions() {
+            Vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 
             attributeDescriptions.resize(1);
 
@@ -93,8 +93,8 @@ namespace lvk
             return bindingDescription;
         }
 
-        static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions() {
-            std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
+        static Vector<VkVertexInputAttributeDescription> GetAttributeDescriptions() {
+            Vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 
             attributeDescriptions.resize(2);
 
@@ -131,8 +131,8 @@ namespace lvk
             return bindingDescription;
         }
 
-        static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions() {
-            std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
+        static Vector<VkVertexInputAttributeDescription> GetAttributeDescriptions() {
+            Vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 
             attributeDescriptions.resize(3);
 

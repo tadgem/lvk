@@ -64,7 +64,7 @@ bool lvk::init::CheckValidationLayerSupport(VkState& vk)
     spdlog::error("Failed to enumerate supported validation layers!");
   }
 
-  std::vector<VkLayerProperties> availableLayers(layerCount);
+  Vector<VkLayerProperties> availableLayers(layerCount);
   if (vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data()) != VK_SUCCESS)
   {
     spdlog::error("Failed to enumerate supported validation layers!");
@@ -90,7 +90,7 @@ bool lvk::init::CheckValidationLayerSupport(VkState& vk)
 
 bool lvk::init::CheckDeviceExtensionSupport(VkState& vk, VkPhysicalDevice device)
 {
-  std::vector<VkExtensionProperties> availableExtensions =
+  Vector<VkExtensionProperties> availableExtensions =
       GetDeviceAvailableExtensions(device);
 
   uint32_t requiredExtensionsFound = 0;
@@ -164,7 +164,7 @@ void lvk::init::CleanupDebugOutput(VkState& vk)
 
 void lvk::init::ListDeviceExtensions(VkState& vk, VkPhysicalDevice physicalDevice)
 {
-  std::vector<VkExtensionProperties> extensions =
+  Vector<VkExtensionProperties> extensions =
       GetDeviceAvailableExtensions(physicalDevice);
 
   VkPhysicalDeviceProperties deviceProperties{};
@@ -370,7 +370,7 @@ void lvk::init::CreateInstance(VkState& vk)
 
   VkApplicationInfo appInfo = CreateAppInfo();
 
-  std::vector<const char*> extensionNames = vk.m_Backend->GetRequiredInstanceExtensions(vk);
+  Vector<const char*> extensionNames = vk.m_Backend->GetRequiredInstanceExtensions(vk);
 
   if(vk.m_UseValidation) {
     for (const auto &extension: extensionNames) {
@@ -379,7 +379,7 @@ void lvk::init::CreateInstance(VkState& vk)
   }
   uint32_t extensionCount;
   vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-  std::vector<VkExtensionProperties> extensions(extensionCount);
+  Vector<VkExtensionProperties> extensions(extensionCount);
   vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 
   if(vk.m_UseValidation) {
@@ -470,7 +470,7 @@ lvk::QueueFamilyIndices lvk::init::FindQueueFamilies(VkState& vk, VkPhysicalDevi
   uint32_t queueFamilyCount = 0;
   vkGetPhysicalDeviceQueueFamilyProperties(m_PhysicalDevice, &queueFamilyCount, nullptr);
 
-  std::vector<VkQueueFamilyProperties> queueFamilyProperties(queueFamilyCount);
+  Vector<VkQueueFamilyProperties> queueFamilyProperties(queueFamilyCount);
   vkGetPhysicalDeviceQueueFamilyProperties(m_PhysicalDevice, &queueFamilyCount, queueFamilyProperties.data());
 
   for (int i = 0; i < queueFamilyProperties.size(); i++)
@@ -573,7 +573,7 @@ void lvk::init::PickPhysicalDevice(VkState& vk)
     std::cerr << "Failed to find any physical devices.\n";
   }
 
-  std::vector<VkPhysicalDevice> physicalDevices(deviceCount);
+  Vector<VkPhysicalDevice> physicalDevices(deviceCount);
   vkEnumeratePhysicalDevices(vk.m_Instance, &deviceCount, physicalDevices.data());
   VkPhysicalDevice physicalDeviceCandidate = VK_NULL_HANDLE;
   uint32_t bestScore = 0;
@@ -615,7 +615,7 @@ void lvk::init::CreateLogicalDevice(VkState& vk)
 {
   vk.m_QueueFamilyIndices = FindQueueFamilies(vk, vk.m_PhysicalDevice);
 
-  std::vector< VkDeviceQueueCreateInfo> queueCreateInfos;
+  Vector< VkDeviceQueueCreateInfo> queueCreateInfos;
   float priority = 1.0f;
   for (auto const& [type, index] : vk.m_QueueFamilyIndices.m_QueueFamilies)
   {
@@ -686,7 +686,7 @@ void lvk::init::GetQueueHandles(VkState& vk)
 }
 
 VkSurfaceFormatKHR lvk::init::ChooseSwapChainSurfaceFormat(
-    std::vector<VkSurfaceFormatKHR> availableFormats) {
+    Vector<VkSurfaceFormatKHR> availableFormats) {
   if (availableFormats.size() == 0)
   {
     spdlog::error("Could not find any suitable Swapchain Surface Format in provided collection!");
@@ -706,7 +706,7 @@ VkSurfaceFormatKHR lvk::init::ChooseSwapChainSurfaceFormat(
   return availableFormats[0];
 }
 
-VkPresentModeKHR lvk::init::ChooseSwapChainPresentMode(VkState& vk, std::vector<VkPresentModeKHR> availableModes)
+VkPresentModeKHR lvk::init::ChooseSwapChainPresentMode(VkState& vk, Vector<VkPresentModeKHR> availableModes)
 {
   if(vk.m_WaitForVerticalSync)
   {
@@ -794,7 +794,7 @@ void lvk::init::CreateSwapChainFramebuffers(VkState& vk)
 
   for (uint32_t i = 0; i < vk.m_SwapChainImageViews.size(); i++)
   {
-    std::vector<VkImageView> attachments;
+    Vector<VkImageView> attachments;
 
     if (vk.m_UseSwapchainMsaa)
     {
@@ -1149,12 +1149,12 @@ void lvk::init::CreateBuiltInRenderPasses(lvk::VkState &vk) {
   }
 }
 
-std::vector<VkExtensionProperties>
+Vector<VkExtensionProperties>
 lvk::init::GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice) {
   uint32_t extensionCount;
   vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
 
-  std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+  Vector<VkExtensionProperties> availableExtensions(extensionCount);
   vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableExtensions.data());
 
   return availableExtensions;

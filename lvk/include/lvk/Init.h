@@ -37,7 +37,7 @@ namespace init
   void                                CreateLogicalDevice(VkState& vk);
   void                                GetQueueHandles(VkState& vk);
   VkSurfaceFormatKHR ChooseSwapChainSurfaceFormat(
-      std::vector<VkSurfaceFormatKHR> availableFormats);
+      Vector<VkSurfaceFormatKHR> availableFormats);
   VkPresentModeKHR                    ChooseSwapChainPresentMode(VkState& vk, Vector<VkPresentModeKHR> availableModes);
   void                                CreateSwapChain(VkState& vk);
   void                                CreateSwapChainFramebuffers(VkState& vk);
@@ -57,7 +57,7 @@ namespace init
   void                                CreateVmaAllocator(VkState& vk);
   void                                GetMaxUsableSampleCount(VkState& vk);
 
-  std::vector<VkExtensionProperties>
+  Vector<VkExtensionProperties>
   GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice);
   void                                EnableCommonExtensions(VkState& vk);
 
@@ -70,6 +70,7 @@ namespace init
   {
     static_assert(std::is_base_of<VkBackend, _BackendTy>::value, "Backend must inherit from VkBackend");
     VkState vk;
+    vk.m_CPUAllocator = std::make_unique<MallocAllocator>();
     vk.m_AppName = appName;
     vk.m_Backend = std::make_unique<_BackendTy>();
     vk.m_Backend->CreateWindowLVK(vk, width, height);

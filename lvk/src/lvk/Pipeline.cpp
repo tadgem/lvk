@@ -197,7 +197,7 @@ VkPipelineData CreateRasterPipeline(
   VkPipelineShaderStageCreateInfo fragShaderStageInfo =
       CreateShaderStageInfo(VK_SHADER_STAGE_FRAGMENT_BIT, fragShaderModule);
 
-  std::vector<VkPipelineShaderStageCreateInfo> shaderStageCreateInfos = {
+  Vector<VkPipelineShaderStageCreateInfo> shaderStageCreateInfos = {
       vertexShaderStageInfo, fragShaderStageInfo
   };
 
@@ -310,7 +310,7 @@ VkPipelineData CreateDynamicRasterPipeline(VkState &vk, ShaderProgram &shader,
   VkPipelineShaderStageCreateInfo fragShaderStageInfo =
       CreateShaderStageInfo(VK_SHADER_STAGE_FRAGMENT_BIT, fragShaderModule);
 
-  std::vector<VkPipelineShaderStageCreateInfo> shaderStageCreateInfos = {
+  Vector<VkPipelineShaderStageCreateInfo> shaderStageCreateInfos = {
       vertexShaderStageInfo, fragShaderStageInfo
   };
 

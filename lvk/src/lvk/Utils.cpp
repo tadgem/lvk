@@ -15,7 +15,7 @@ uint32_t lvk::utils::FindMemoryType(VkState& vk, uint32_t typeFilter, VkMemoryPr
   return UINT32_MAX;
 }
 
-VkFormat lvk::utils::FindSupportedFormat(VkState& vk, const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
+VkFormat lvk::utils::FindSupportedFormat(VkState& vk, const Vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
 {
   for (VkFormat format : candidates) {
     VkFormatProperties props;

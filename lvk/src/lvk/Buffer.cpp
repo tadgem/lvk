@@ -46,7 +46,7 @@ void CopyBuffer(VkState& vk, VkBuffer& src, VkBuffer& dst, VkDeviceSize size)
   commands::EndSingleTimeCommands(vk, commandBuffer);
 }
 
-Buffer CreateIndexBuffer(VkState& vk, std::vector<uint32_t> indices)
+Buffer CreateIndexBuffer(VkState& vk, Vector<uint32_t> indices)
 {
   VkDeviceSize bufferSize = sizeof(uint32_t) * indices.size();
 

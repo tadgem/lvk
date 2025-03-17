@@ -6,14 +6,14 @@
 #include <functional>
 #include <array>
 #include <optional>
-#include <memory>
+#include "lvk/Allocator.h"
 
 namespace lvk
 {
 	using String = std::string;
 
 	template<typename _Ty>
-	using Vector = std::vector<_Ty>;
+	using Vector = std::vector<_Ty, STLAllocator<_Ty>>;
 
 	template<typename _Ty, size_t _Size>
 	using Array = std::array<_Ty, _Size>;

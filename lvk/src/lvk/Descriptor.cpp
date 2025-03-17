@@ -6,9 +6,9 @@ namespace lvk
 {
 namespace descriptor{
 
-std::vector<VkDescriptorSetLayoutBinding> CleanDescriptorSetLayout(std::vector<VkDescriptorSetLayoutBinding>& arr)
+Vector<VkDescriptorSetLayoutBinding> CleanDescriptorSetLayout(Vector<VkDescriptorSetLayoutBinding>& arr)
 {
-  std::vector<VkDescriptorSetLayoutBinding> clean;
+  Vector<VkDescriptorSetLayoutBinding> clean;
 
   for (int k = 0; k < arr.size(); k++)
   {
@@ -170,9 +170,9 @@ Vector<VkDescriptorSetLayoutBinding> GetDescriptorSetLayoutBindings(VkState& vk,
   return CleanDescriptorSetLayout(bindings);
 }
 
-void CreateDescriptorSetLayout(VkState& vk, std::vector<DescriptorSetLayoutData>& vertLayoutDatas, std::vector<DescriptorSetLayoutData>& fragLayoutDatas, VkDescriptorSetLayout& descriptorSetLayout)
+void CreateDescriptorSetLayout(VkState& vk, Vector<DescriptorSetLayoutData>& vertLayoutDatas, Vector<DescriptorSetLayoutData>& fragLayoutDatas, VkDescriptorSetLayout& descriptorSetLayout)
 {
-  std::vector<VkDescriptorSetLayoutBinding> bindings;
+  Vector<VkDescriptorSetLayoutBinding> bindings;
   uint8_t count = 0;
 
   for (auto& vertLayoutData : vertLayoutDatas)
@@ -246,12 +246,14 @@ ReflectDescriptorSetLayoutsRaw(VkState &vk, const char *stage_bin,
     return {};
   }
 
-  std::vector<SpvReflectDescriptorSet*> reflectedDescriptorSets;
+  Vector<SpvReflectDescriptorSet*> reflectedDescriptorSets;
   reflectedDescriptorSets.resize(descriptorSetCount);
   spvReflectEnumerateDescriptorSets(&shaderReflectModule, &descriptorSetCount, &reflectedDescriptorSets[0]);
 
+  STLAllocator<DescriptorSetLayoutData> dsld_alloc(*vk.m_CPUAllocator.get());
 
-  std::vector<DescriptorSetLayoutData> layoutDatas(descriptorSetCount, DescriptorSetLayoutData{});
+  Vector<DescriptorSetLayoutData> layoutDatas(dsld_alloc);
+  layoutDatas.resize(descriptorSetCount);
 
   for (int i = 0; i < reflectedDescriptorSets.size(); i++)
   {
@@ -342,7 +344,7 @@ ReflectPushConstantsRaw(VkState &vk, const char *stage_bin, size_t stage_size) {
 
   uint32_t pushConstantBlockCount = 0;
   spvReflectEnumeratePushConstantBlocks(&shaderReflectModule, &pushConstantBlockCount, nullptr);
-  std::vector<SpvReflectBlockVariable*> reflectedPushConstantBlocks;
+  Vector<SpvReflectBlockVariable*> reflectedPushConstantBlocks;
   reflectedPushConstantBlocks.resize(pushConstantBlockCount);
   spvReflectEnumeratePushConstantBlocks(&shaderReflectModule, &pushConstantBlockCount, reflectedPushConstantBlocks.data());
 

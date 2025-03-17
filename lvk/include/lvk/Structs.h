@@ -3,9 +3,10 @@
 #define VK_NO_PROTOTYPES
 #include "volk.h"
 #include "ThirdParty/VulkanMemoryAllocator.h"
-#include "Alias.h"
+#include "lvk/Alias.h"
 #include "lvk/DescriptorSetAllocator.h"
 #include "lvk/Macros.h"
+#include "lvk/Allocator.h"
 
 namespace lvk {
 
@@ -36,7 +37,7 @@ namespace lvk {
 
   class VulkanAPIWindowHandle {};
 
-  using StageBinary = std::vector<unsigned char>;
+  using StageBinary = Vector<unsigned char>;
 
   struct PushConstantBlock {
     uint32_t m_Size;
@@ -271,6 +272,7 @@ namespace lvk {
   struct VkState
   {
     Unique<VkBackend>               m_Backend;
+    Unique<IAllocator>              m_CPUAllocator;
 
     VkInstance                      m_Instance;
     VkSurfaceKHR                    m_Surface;

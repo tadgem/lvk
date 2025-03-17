@@ -91,7 +91,7 @@ VkDescriptorPool lvk::DescriptorSetAllocator::GetPool(VkDevice device)
 
 VkDescriptorPool lvk::DescriptorSetAllocator::CreatePool(VkDevice device, uint32_t setCount)
 {
-	std::vector<VkDescriptorPoolSize> poolSizes;
+	Vector<VkDescriptorPoolSize> poolSizes;
 	for (PoolSizeRatio ratio : m_Ratios) {
 		poolSizes.push_back(VkDescriptorPoolSize{ ratio.m_DescriptorType, uint32_t(ratio.m_Ratio * p_SetsPerPool) });
 	}
