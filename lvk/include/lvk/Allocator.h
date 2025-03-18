@@ -31,15 +31,15 @@ namespace lvk
 		typedef T value_type;
 		IAllocator& _allocator;
 
-		STLAllocator(IAllocator& alloc) : _allocator(alloc) noexcept {} //default ctor not required by C++ Standard Library
+		STLAllocator(IAllocator& alloc) : _allocator(alloc) {} //default ctor not required by C++ Standard Library
 
 		// A converting copy constructor:
-		template<class U> STLAllocator(const STLAllocator<U>& o ) noexcept : _allocator(o._allocator) {}
-		template<class U> bool operator==(const STLAllocator<U>&) const noexcept
+		template<class U> STLAllocator(const STLAllocator<U>& o ) : _allocator(o._allocator) {}
+		template<class U> bool operator==(const STLAllocator<U>&) const 
 		{
 			return true;
 		}
-		template<class U> bool operator!=(const STLAllocator<U>&) const noexcept
+		template<class U> bool operator!=(const STLAllocator<U>&) const
 		{
 			return false;
 		}
@@ -47,7 +47,7 @@ namespace lvk
 		{
 			return static_cast<T*>(_allocator.allocate(sizeof(T) * n));
 		}
-		void deallocate(T* const p, size_t) const noexcept
+		void deallocate(T* const p, size_t) const
 		{
 			_allocator.deallocate((void*)p);
 		}

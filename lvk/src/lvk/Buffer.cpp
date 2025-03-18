@@ -46,13 +46,13 @@ void CopyBuffer(VkState& vk, VkBuffer& src, VkBuffer& dst, VkDeviceSize size)
   commands::EndSingleTimeCommands(vk, commandBuffer);
 }
 
-Buffer CreateIndexBuffer(VkState& vk, Vector<uint32_t> indices)
+Buffer CreateIndexBuffer(VkState& vk, uint32_t* indices, uint32_t count)
 {
-  VkDeviceSize bufferSize = sizeof(uint32_t) * indices.size();
+  VkDeviceSize bufferSize = sizeof(uint32_t) * count;
 
   // create a CPU side buffer to dump vertex data into
   MappedBuffer stagingBuf = CreateMappedBuffer(vk, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-  memcpy(stagingBuf.m_MappedAddr, indices.data(), bufferSize);
+  memcpy(stagingBuf.m_MappedAddr, indices, bufferSize);
   
   // create GPU side buffer
   Buffer buf = CreateBuffer(vk, bufferSize,

@@ -64,7 +64,9 @@ bool lvk::init::CheckValidationLayerSupport(VkState& vk)
     spdlog::error("Failed to enumerate supported validation layers!");
   }
 
-  Vector<VkLayerProperties> availableLayers(layerCount);
+  STLAllocator<VkLayerProperties>alloc(*vk.m_CPUAllocator);
+  Vector<VkLayerProperties> availableLayers(alloc);
+  availableLayers.resize(layerCount);
   if (vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data()) != VK_SUCCESS)
   {
     spdlog::error("Failed to enumerate supported validation layers!");
@@ -91,7 +93,7 @@ bool lvk::init::CheckValidationLayerSupport(VkState& vk)
 bool lvk::init::CheckDeviceExtensionSupport(VkState& vk, VkPhysicalDevice device)
 {
   Vector<VkExtensionProperties> availableExtensions =
-      GetDeviceAvailableExtensions(device);
+      GetDeviceAvailableExtensions(*vk.m_CPUAllocator, device);
 
   uint32_t requiredExtensionsFound = 0;
 
@@ -165,7 +167,7 @@ void lvk::init::CleanupDebugOutput(VkState& vk)
 void lvk::init::ListDeviceExtensions(VkState& vk, VkPhysicalDevice physicalDevice)
 {
   Vector<VkExtensionProperties> extensions =
-      GetDeviceAvailableExtensions(physicalDevice);
+      GetDeviceAvailableExtensions(*vk.m_CPUAllocator, physicalDevice);
 
   VkPhysicalDeviceProperties deviceProperties{};
   vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
@@ -329,7 +331,7 @@ void lvk::init::InitImGui(VkState& vk)
   init_info.Queue = vk.m_GraphicsQueue;
   init_info.PipelineCache = VK_NULL_HANDLE;
   // TODO: this is a bit shit, need to clean this pool some wheere
-  init_info.DescriptorPool = vk.m_DescriptorSetAllocator.CreatePool(vk.m_LogicalDevice, 4096);
+  init_info.DescriptorPool = vk.m_DescriptorSetAllocator.CreatePool(*vk.m_CPUAllocator, vk.m_LogicalDevice, 4096);
   init_info.Allocator = nullptr;
   init_info.MinImageCount = 2;
   init_info.ImageCount = 2;
@@ -379,7 +381,9 @@ void lvk::init::CreateInstance(VkState& vk)
   }
   uint32_t extensionCount;
   vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-  Vector<VkExtensionProperties> extensions(extensionCount);
+  STLAllocator<VkExtensionProperties> alloc(*vk.m_CPUAllocator);
+  Vector<VkExtensionProperties> extensions(alloc);
+  extensions.resize(extensionCount);
   vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 
   if(vk.m_UseValidation) {
@@ -470,7 +474,9 @@ lvk::QueueFamilyIndices lvk::init::FindQueueFamilies(VkState& vk, VkPhysicalDevi
   uint32_t queueFamilyCount = 0;
   vkGetPhysicalDeviceQueueFamilyProperties(m_PhysicalDevice, &queueFamilyCount, nullptr);
 
-  Vector<VkQueueFamilyProperties> queueFamilyProperties(queueFamilyCount);
+  STLAllocator<VkQueueFamilyProperties> alloc(*vk.m_CPUAllocator);
+  Vector<VkQueueFamilyProperties> queueFamilyProperties(alloc);
+  queueFamilyProperties.resize(queueFamilyCount);
   vkGetPhysicalDeviceQueueFamilyProperties(m_PhysicalDevice, &queueFamilyCount, queueFamilyProperties.data());
 
   for (int i = 0; i < queueFamilyProperties.size(); i++)
@@ -573,7 +579,10 @@ void lvk::init::PickPhysicalDevice(VkState& vk)
     std::cerr << "Failed to find any physical devices.\n";
   }
 
-  Vector<VkPhysicalDevice> physicalDevices(deviceCount);
+  STLAllocator<VkPhysicalDevice>alloc(*vk.m_CPUAllocator);
+
+  Vector<VkPhysicalDevice> physicalDevices(alloc);
+  physicalDevices.resize(deviceCount);
   vkEnumeratePhysicalDevices(vk.m_Instance, &deviceCount, physicalDevices.data());
   VkPhysicalDevice physicalDeviceCandidate = VK_NULL_HANDLE;
   uint32_t bestScore = 0;
@@ -615,7 +624,8 @@ void lvk::init::CreateLogicalDevice(VkState& vk)
 {
   vk.m_QueueFamilyIndices = FindQueueFamilies(vk, vk.m_PhysicalDevice);
 
-  Vector< VkDeviceQueueCreateInfo> queueCreateInfos;
+  STLAllocator< VkDeviceQueueCreateInfo> alloc(*vk.m_CPUAllocator);
+  Vector< VkDeviceQueueCreateInfo> queueCreateInfos(alloc);
   float priority = 1.0f;
   for (auto const& [type, index] : vk.m_QueueFamilyIndices.m_QueueFamilies)
   {
@@ -935,11 +945,12 @@ void lvk::init::CreateCommandPool(VkState& vk)
 
 void lvk::init::CreateDescriptorSetAllocator(VkState& vk)
 {
-  vk.m_DescriptorSetAllocator.Init(vk.m_LogicalDevice, MAX_FRAMES_IN_FLIGHT * 128, {
-                                                                       {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0.33f},
-                                                                       {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0.33f},
-                                                                       {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0.33f},
-                                                                   });
+  STLAllocator<DescriptorSetAllocator::PoolSizeRatio> ratioAlloc(*vk.m_CPUAllocator);
+  Vector<DescriptorSetAllocator::PoolSizeRatio> ratios(ratioAlloc);
+  ratios.push_back({ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0.33f });
+  ratios.push_back({ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0.33f });
+  ratios.push_back({ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0.33f });
+  vk.m_DescriptorSetAllocator.Init(*vk.m_CPUAllocator,vk.m_LogicalDevice, MAX_FRAMES_IN_FLIGHT * 128, ratios);
 }
 
 void lvk::init::CreateSemaphores(VkState& vk)
@@ -1051,10 +1062,11 @@ void lvk::init::GetMaxUsableSampleCount(VkState& vk)
 }
 
 void lvk::init::CreateBuiltInRenderPasses(lvk::VkState &vk) {
-
+  STLAllocator< VkAttachmentDescription> ada(*vk.m_CPUAllocator);
   {
-    Vector<VkAttachmentDescription> colourAttachmentDescriptions{};
-    Vector<VkAttachmentDescription> resolveAttachmentDescriptions{};
+
+    Vector<VkAttachmentDescription> colourAttachmentDescriptions(ada);
+    Vector<VkAttachmentDescription> resolveAttachmentDescriptions(ada);
     VkAttachmentDescription depthAttachmentDescription{};
 
     VkAttachmentDescription colorAttachment{};
@@ -1101,8 +1113,8 @@ void lvk::init::CreateBuiltInRenderPasses(lvk::VkState &vk) {
     render_passes::CreateRenderPass(vk, vk.m_SwapchainImageRenderPass, colourAttachmentDescriptions, resolveAttachmentDescriptions, true, depthAttachmentDescription, VK_ATTACHMENT_LOAD_OP_CLEAR);
   }
   {
-    Vector<VkAttachmentDescription> colourAttachmentDescriptions{};
-    Vector<VkAttachmentDescription> resolveAttachmentDescriptions{};
+    Vector<VkAttachmentDescription> colourAttachmentDescriptions(ada);
+    Vector<VkAttachmentDescription> resolveAttachmentDescriptions(ada);
     VkAttachmentDescription depthAttachmentDescription{};
 
     VkAttachmentDescription colorAttachment{};
@@ -1149,12 +1161,15 @@ void lvk::init::CreateBuiltInRenderPasses(lvk::VkState &vk) {
   }
 }
 
-Vector<VkExtensionProperties>
-lvk::init::GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice) {
+lvk::Vector<VkExtensionProperties>
+lvk::init::GetDeviceAvailableExtensions(IAllocator& alloc, VkPhysicalDevice physicalDevice) {
+  using namespace lvk;
   uint32_t extensionCount;
   vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
 
-  Vector<VkExtensionProperties> availableExtensions(extensionCount);
+  STLAllocator<VkExtensionProperties> epa(alloc);
+  Vector<VkExtensionProperties> availableExtensions(epa);
+  availableExtensions.resize(extensionCount);
   vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableExtensions.data());
 
   return availableExtensions;

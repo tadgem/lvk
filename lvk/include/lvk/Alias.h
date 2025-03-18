@@ -15,6 +15,9 @@ namespace lvk
 	template<typename _Ty>
 	using Vector = std::vector<_Ty, STLAllocator<_Ty>>;
 
+	template<typename _Ty>
+	using StaticVector = std::vector<_Ty>;
+
 	template<typename _Ty, size_t _Size>
 	using Array = std::array<_Ty, _Size>;
 

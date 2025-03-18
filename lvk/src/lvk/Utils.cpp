@@ -34,8 +34,13 @@ VkFormat lvk::utils::FindSupportedFormat(VkState& vk, const Vector<VkFormat>& ca
 
 VkFormat lvk::utils::FindDepthFormat(VkState& vk)
 {
-  return FindSupportedFormat(vk,
-      { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
+    STLAllocator<VkFormat> alloc(*vk.m_CPUAllocator);
+    Vector<VkFormat> formats(alloc);
+    formats.push_back(VK_FORMAT_D32_SFLOAT);
+    formats.push_back(VK_FORMAT_D32_SFLOAT_S8_UINT);
+    formats.push_back(VK_FORMAT_D24_UNORM_S8_UINT);
+    return FindSupportedFormat(vk,
+      formats,
       VK_IMAGE_TILING_OPTIMAL,
       VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
   );
@@ -45,19 +50,21 @@ bool lvk::utils::HasStencilComponent(VkFormat &format) {
 }
 
 
-lvk::StageBinary lvk::utils::LoadSpirvBinary(const String& path)
+lvk::StageBinary lvk::utils::LoadSpirvBinary(VkState& vk, const String& path)
 {
+  STLAllocator<unsigned char> alloc(*vk.m_CPUAllocator);
   std::ifstream file(path, std::ios::ate | std::ios::binary);
 
   if (!file.is_open())
   {
     spdlog::error("Failed to open file at path {} as binary!", path);
     std::cerr << "Failed to open file!" << std::endl;
-    return StageBinary();
+    return StageBinary(alloc);
   }
 
   size_t fileSize = static_cast<size_t>(file.tellg());
-  StageBinary data(fileSize);
+  StageBinary data(alloc);
+  data.resize(fileSize);
 
   file.seekg(0);
 

@@ -181,7 +181,7 @@ lvk::Material lvk::Material::Create(VkState & vk, ShaderProgram& shader)
     mat.m_DescriptorSets.push_back(FrameDescriptorSets{});
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
-        mat.m_DescriptorSets.front().m_Sets[i] = vk.m_DescriptorSetAllocator.Allocate(vk.m_LogicalDevice, shader.m_DescriptorSetLayout, nullptr);
+        mat.m_DescriptorSets.front().m_Sets[i] = vk.m_DescriptorSetAllocator.Allocate(*vk.m_CPUAllocator, vk.m_LogicalDevice, shader.m_DescriptorSetLayout, nullptr);
     }
 
     // Collect

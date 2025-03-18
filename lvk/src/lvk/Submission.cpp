@@ -46,8 +46,10 @@ void lvk::submission::SubmitFrame(VkState& vk)
 
   VkSubmitInfo submitInfo{};
   submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-  Vector<VkSemaphore> waitSemaphores {};
-  Vector<VkPipelineStageFlags> waitStages;
+  STLAllocator<VkSemaphore>sa(*vk.m_CPUAllocator);
+  STLAllocator<VkPipelineStageFlags>psfa(*vk.m_CPUAllocator);
+  Vector<VkSemaphore> waitSemaphores (sa);
+  Vector<VkPipelineStageFlags> waitStages(psfa);
 
   waitSemaphores.push_back(vk.m_ImageAvailableSemaphores[vk.m_CurrentFrameIndex]);
   waitStages.push_back(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);

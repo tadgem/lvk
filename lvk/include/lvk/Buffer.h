@@ -10,7 +10,11 @@ Buffer CreateBuffer(VkState &vk, VkDeviceSize size, VkBufferUsageFlags usage,
 
 void CopyBuffer(VkState &vk, VkBuffer &src, VkBuffer &dst, VkDeviceSize size);
 
-Buffer CreateIndexBuffer(VkState &vk, Vector<uint32_t> indices);
+Buffer CreateIndexBuffer(VkState &vk, uint32_t* indices, uint32_t count);
+Buffer CreateIndexBuffer(VkState& vk, Vector<uint32_t> indices)
+{
+    return CreateIndexBuffer(vk, indices.data(), indices.size());
+}
 
 template <typename _Ty>
 Vector<MappedBuffer> CreateUniformBuffers(VkState &vk) {
@@ -41,8 +45,8 @@ ShaderBufferFrameData CreateUniformBuffersT(VkState &vk) {
 }
 
 template <typename _Ty>
-Buffer CreateVertexBuffer(VkState &vk, Vector<_Ty> verts) {
-  VkDeviceSize bufferSize = sizeof(_Ty) * verts.size();
+Buffer CreateVertexBuffer(VkState &vk, _Ty* verts, uint32_t count) {
+  VkDeviceSize bufferSize = sizeof(_Ty) * count;
 
   // create a CPU side buffer to dump vertex data into
   
@@ -51,7 +55,7 @@ Buffer CreateVertexBuffer(VkState &vk, Vector<_Ty> verts) {
                       VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
   // dump vert data
-  memcpy(stagingBuffer.m_MappedAddr, verts.data(), bufferSize);
+  memcpy(stagingBuffer.m_MappedAddr, verts, bufferSize);
 
   // create GPU side buffer
   Buffer vb = CreateBuffer(vk, bufferSize,
@@ -63,6 +67,11 @@ Buffer CreateVertexBuffer(VkState &vk, Vector<_Ty> verts) {
 
   stagingBuffer.Free(vk);
   return vb;
+}
+
+template <typename _Ty>
+Buffer CreateVertexBuffer(VkState& vk, Vector<_Ty> verts) {
+    return CreateVertexBuffer<_Ty>(vk, verts.data(), verts.size());
 }
 }
 }

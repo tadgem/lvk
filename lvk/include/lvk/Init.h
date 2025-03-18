@@ -6,10 +6,10 @@ namespace lvk {
 
 namespace init
 {
-  const Vector<const char*>   s_ValidationLayers = {
+  const StaticVector<const char*>   s_ValidationLayers = {
       "VK_LAYER_KHRONOS_validation"
   };
-  const Vector<const char*> s_RequiredDeviceExtensions = {
+  const StaticVector<const char*> s_RequiredDeviceExtensions = {
       "VK_KHR_swapchain"
   };
 
@@ -58,7 +58,7 @@ namespace init
   void                                GetMaxUsableSampleCount(VkState& vk);
 
   Vector<VkExtensionProperties>
-  GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice);
+  GetDeviceAvailableExtensions          (IAllocator& alloc, VkPhysicalDevice physicalDevice);
   void                                EnableCommonExtensions(VkState& vk);
 
   void                                CreateBuiltInRenderPasses(VkState& vk);

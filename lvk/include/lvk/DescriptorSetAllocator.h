@@ -14,14 +14,14 @@ namespace lvk
                     float m_Ratio;
             };
 
-            void Init(VkDevice logical_device, uint32_t initialSetAmount, Vector<PoolSizeRatio> ratios);
+            void Init(IAllocator& alloc, VkDevice logical_device, uint32_t initialSetAmount, Vector<PoolSizeRatio> ratios);
             void Reset(VkDevice device);
             void Free(VkDevice device);
 
-            VkDescriptorSet Allocate(VkDevice device, VkDescriptorSetLayout layout, void* pNext = nullptr);
+            VkDescriptorSet Allocate(IAllocator& alloc, VkDevice device, VkDescriptorSetLayout layout, void* pNext = nullptr);
 
-            VkDescriptorPool GetPool(VkDevice device);
-            VkDescriptorPool CreatePool(VkDevice device, uint32_t setCount);
+            VkDescriptorPool GetPool(IAllocator& alloc, VkDevice device);
+            VkDescriptorPool CreatePool(IAllocator& alloc, VkDevice device, uint32_t setCount);
 
             Vector<VkDescriptorPool>	m_FreePool;
             Vector<VkDescriptorPool>	m_FullPool;

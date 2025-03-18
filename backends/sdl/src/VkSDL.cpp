@@ -28,7 +28,7 @@ void lvk::VkSDL::HandleSDLEvent(VkState& vk, SDL_Event& sdl_event)
 
 }
 
-std::vector<const char*> lvk::VkSDL::GetRequiredInstanceExtensions(VkState& vk)
+lvk::Vector<const char*> lvk::VkSDL::GetRequiredInstanceExtensions(VkState& vk)
 {
     uint32_t extensionCount = 0;
 
@@ -39,7 +39,8 @@ std::vector<const char*> lvk::VkSDL::GetRequiredInstanceExtensions(VkState& vk)
         spdlog::error("Failed to enumerate required SDL device extensions");
         return {};
     }
-    std::vector<const char*> extensionNames;
+    STLAllocator<const char*> alloc(*vk.m_CPUAllocator);
+    Vector<const char*> extensionNames(alloc);
 
     for(uint32_t i = 0; i < extensionCount; i++)
     {

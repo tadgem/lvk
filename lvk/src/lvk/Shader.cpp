@@ -28,9 +28,12 @@ ShaderProgram ShaderProgram::CreateCompute(VkState &vk, ShaderStage &compute) {
   layoutInfo.pBindings = bindings.data();
 
   VK_CHECK(vkCreateDescriptorSetLayout(vk.m_LogicalDevice, &layoutInfo, nullptr,
-                                       &layout))
+      &layout))
 
-  return {Vector<ShaderStage>{compute}, layout};
+  STLAllocator<ShaderStage>alloc(*vk.m_CPUAllocator);
+  Vector<ShaderStage> stages(alloc);
+  stages.push_back(compute);
+  return {stages, layout};
 }
 ShaderProgram::ShaderProgram(Vector<ShaderStage> shaderStages,
                              VkDescriptorSetLayout layout) :

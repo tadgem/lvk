@@ -35,7 +35,7 @@ namespace lvk
         CreateFromBinaryPath(VkState & vk, const String& stagePath, const ShaderStageType& stageType)
         {
             String name = std::filesystem::path(stagePath).filename().u8string();
-            auto stageBin = utils::LoadSpirvBinary(stagePath);
+            auto stageBin = utils::LoadSpirvBinary(vk, stagePath);
             return CreateFromBinary(vk, stageBin, stageType, name);
         }
 
@@ -78,8 +78,11 @@ namespace lvk
         {
             VkDescriptorSetLayout layout;
             descriptor::CreateDescriptorSetLayout(vk, vert.m_LayoutDatas, frag.m_LayoutDatas, layout);
-
-            return { Vector<ShaderStage> {vert, frag} , layout };
+            STLAllocator<ShaderStage> alloc(*vk.m_CPUAllocator);
+            Vector<ShaderStage> stages(alloc);
+            stages.push_back(vert);
+            stages.push_back(frag);
+            return { stages , layout };
         }
 
         static ShaderProgram

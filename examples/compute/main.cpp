@@ -66,7 +66,7 @@ void CreateGraphicsDescriptorSets(VkState & vk, VkDescriptorSetLayout& descripto
   std::vector<VkDescriptorSetLayout> forward_layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
   VkDescriptorSetAllocateInfo allocInfo{};
   allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-  allocInfo.descriptorPool = vk.m_DescriptorSetAllocator.GetPool(vk.m_LogicalDevice);
+  allocInfo.descriptorPool = vk.m_DescriptorSetAllocator.GetPool(*vk.m_CPUAllocator, vk.m_LogicalDevice);
   allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
   allocInfo.pSetLayouts = forward_layouts.data();
 
@@ -268,15 +268,17 @@ Vector<VkDescriptorSet> CreateComputeDescriptorSets(VkState& vk, VkDescriptorSet
                                  std::vector<Buffer>& uniformBuffers,
                                  std::vector<Buffer>& shaderStorageBuffers)
 {
+    STLAllocator<VkDescriptorSetLayout> dsla(*vk.m_CPUAllocator);
+    Vector<VkDescriptorSetLayout> layouts(dsla);
 
-    std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, layout);
     VkDescriptorSetAllocateInfo alloc {};
     alloc.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    alloc.descriptorPool = vk.m_DescriptorSetAllocator.GetPool(vk.m_LogicalDevice);
+    alloc.descriptorPool = vk.m_DescriptorSetAllocator.GetPool(*vk.m_CPUAllocator, vk.m_LogicalDevice);
     alloc.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
     alloc.pSetLayouts= layouts.data();
 
-    std::vector<VkDescriptorSet> sets {};
+    STLAllocator<VkDescriptorSet> dsa(*vk.m_CPUAllocator);
+    Vector<VkDescriptorSet> sets (dsa);
     sets.resize(MAX_FRAMES_IN_FLIGHT);
 
     VK_CHECK(vkAllocateDescriptorSets(vk.m_LogicalDevice, &alloc, sets.data()));
