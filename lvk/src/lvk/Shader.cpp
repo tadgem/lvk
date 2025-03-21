@@ -37,10 +37,10 @@ ShaderProgram ShaderProgram::CreateCompute(VkState &vk, ShaderStage &compute) {
   VK_CHECK(vkCreateDescriptorSetLayout(vk.m_LogicalDevice, &layoutInfo, nullptr,
       &layout))
 
-  STLAllocator<ShaderStage>alloc(*vk.m_CPUAllocator);
-  Vector<ShaderStage> stages(alloc);
+  Vector<ShaderStage> stages(*vk.m_CPUAllocator);
   stages.push_back(compute);
-  return ShaderProgram(*vk.m_CPUAllocator, stages, layout);
+  auto shader =  ShaderProgram(*vk.m_CPUAllocator, stages, layout);
+  return shader;
 }
 
 ShaderProgram::ShaderProgram(
@@ -49,7 +49,7 @@ ShaderProgram::ShaderProgram(
     VkDescriptorSetLayout layout) :
     
     m_DescriptorSetLayout(layout), 
-    m_Stages(alloc),
+    m_Stages(shaderStages),
     m_PushConstantRanges(alloc)
 {
   BuildPushConstantRanges();
