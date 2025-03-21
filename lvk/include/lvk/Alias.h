@@ -22,7 +22,12 @@ namespace lvk
 	using Array = std::array<_Ty, _Size>;
 
 	template<typename _Key, typename _Value>
-	using HashMap = std::unordered_map<_Key, _Value>;
+	using HashMap = std::unordered_map<
+		_Key, 
+		_Value, 
+		std::hash<_Key>, 
+		std::equal_to<_Key>/*,
+		STLAllocator<std::pair<const _Key, _Value>>*/>;
 
 	template<typename _Ty>
 	using Optional = std::optional<_Ty>;
