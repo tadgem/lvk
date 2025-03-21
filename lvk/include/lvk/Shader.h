@@ -20,6 +20,8 @@ namespace lvk
         Vector<DescriptorSetLayoutData> m_LayoutDatas;
         ShaderStageType m_Type;
 
+        ShaderStage(IAllocator& alloc);
+
         static String      LoadShaderSource(const String& path);
 
         static ShaderStage CreateFromBinary(VkState & vk, Vector<unsigned char>& binary, const ShaderStageType& type, const String& name)
@@ -28,7 +30,15 @@ namespace lvk
             auto pushConstants = descriptor::ReflectPushConstants(vk, binary);
             auto module = CreateShaderModule(vk, binary);
 
-            return { name, binary, module, pushConstants, stageLayoutDatas, type };
+            ShaderStage stage(*vk.m_CPUAllocator);
+            stage.m_Name = name;
+            stage.m_StageBinary = binary;
+            stage.m_Module = module;
+            stage.m_PushConstants = pushConstants;
+            stage.m_LayoutDatas = stageLayoutDatas;
+            stage.m_Type = type;
+
+            return stage;
         }
 
         static ShaderStage
@@ -44,13 +54,21 @@ namespace lvk
             auto bin = CreateStageBinaryFromSource(vk, type, source, path);
             if(bin.empty())
             {
-              return {};
+              return ShaderStage(*vk.m_CPUAllocator);
             }
             auto stageLayoutDatas = descriptor::ReflectDescriptorSetLayouts(vk, bin);
             auto pushConstants = descriptor::ReflectPushConstants(vk, bin);
             auto module = CreateShaderModule(vk, bin);
 
-            return { name, bin, module, pushConstants, stageLayoutDatas, type };
+            ShaderStage stage(*vk.m_CPUAllocator);
+            stage.m_Name = name;
+            stage.m_StageBinary = bin;
+            stage.m_Module = module;
+            stage.m_PushConstants = pushConstants;
+            stage.m_LayoutDatas = stageLayoutDatas;
+            stage.m_Type = type;
+
+            return std::move(stage);
         }
 
         static ShaderStage CreateFromSourcePath(VkState & vk, const String& path, const ShaderStageType& type)
@@ -63,7 +81,10 @@ namespace lvk
 
     struct ShaderProgram
     {
-        ShaderProgram(Vector<ShaderStage> shaderStages, VkDescriptorSetLayout layout);
+        ShaderProgram(
+            IAllocator& alloc,
+            Vector<ShaderStage> shaderStages, 
+            VkDescriptorSetLayout layout);
         Vector<ShaderStage>         m_Stages;
 
         VkDescriptorSetLayout       m_DescriptorSetLayout;
@@ -82,7 +103,7 @@ namespace lvk
             Vector<ShaderStage> stages(alloc);
             stages.push_back(vert);
             stages.push_back(frag);
-            return { stages , layout };
+            return ShaderProgram (*vk.m_CPUAllocator, stages, layout);
         }
 
         static ShaderProgram

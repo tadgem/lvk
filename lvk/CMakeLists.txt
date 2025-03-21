@@ -37,6 +37,7 @@ set(LVK_SRCS
     include/lvk/Material.h
     include/lvk/Shader.h
     include/lvk/Macros.h
+    include/lvk/Log.h
     include/lvk/DescriptorSetAllocator.h
     include/lvk/Pipeline.h
     include/lvk/Structs.h
@@ -80,12 +81,12 @@ add_library(${PROJECT_NAME} STATIC
 )
 
 set(LVK_INCLUDES    ${Vulkan_INCLUDE_DIRS}
-                    ${SPDLOG_INCLUDES}
                     ${GLM_INCLUDES}
                     ${SHADERC_INCLUDES}
                     ${SHADERC_UTIL_INCLUDES}
-                    ${CPPTRACE_INCLUDES}
-                    ${CMAKE_CURRENT_SOURCE_DIR}/include CACHE INTERNAL "")
+                    ${CMAKE_CURRENT_SOURCE_DIR}/include 
+CACHE INTERNAL "")
+
 target_include_directories(${PROJECT_NAME} PUBLIC ${LVK_INCLUDES})
 
 if (MSVC)
@@ -95,7 +96,7 @@ if (MSVC)
     set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<$<CONFIG:Debug,Release>:ProgramDatabase>")
 endif ()
 
-target_compile_options(${PROJECT_NAME} PRIVATE ${LVK_COMPILE_DEFS})
-target_link_options(${PROJECT_NAME} PUBLIC "/fsanitize=address")
+target_compile_options( ${PROJECT_NAME} PRIVATE ${LVK_COMPILE_DEFS})
+target_link_options(    ${PROJECT_NAME} PUBLIC  "/fsanitize=address")
 
-target_link_libraries(${PROJECT_NAME} volk spdlog shaderc shaderc_util cpptrace-lib)
+target_link_libraries(${PROJECT_NAME} volk shaderc shaderc_util)

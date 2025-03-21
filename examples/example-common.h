@@ -189,7 +189,7 @@ void ProcessMesh(lvk::VkState & vk, Model& model, aiMesh* mesh, aiNode* node, co
     bool hasUVs = mesh->HasTextureCoords(0);
     bool hasIndices = mesh->HasFaces();
 
-    Vector<VertexDataPosUv> verts;
+    Vector<VertexDataPosUv> verts(*vk.m_CPUAllocator);
     if (hasPositions && hasUVs) {
         for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
             VertexDataPosUv vert {};
@@ -199,12 +199,12 @@ void ProcessMesh(lvk::VkState & vk, Model& model, aiMesh* mesh, aiNode* node, co
         }
 
     }
-    Vector<uint32_t> indices;
+    Vector<uint32_t> indices(*vk.m_CPUAllocator);
     if (hasIndices) {
         for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
             aiFace currentFace = mesh->mFaces[i];
             if (currentFace.mNumIndices != 3) {
-                spdlog::error("Attempting to import a mesh with non triangular face structure! cannot load this mesh.");
+                LVK_LOG_ERR("Attempting to import a mesh with non triangular face structure! cannot load this mesh.");
                 return;
             }
             for (unsigned int index = 0; index < mesh->mFaces[i].mNumIndices; index++) {
@@ -260,7 +260,7 @@ void ProcessMeshWithNormals(lvk::VkState & vk, Model& model, aiMesh* mesh, aiNod
     bool hasNormals = mesh->HasNormals();
     bool hasIndices = mesh->HasFaces();
 
-    Vector<aiMaterialProperty*> properties;
+    Vector<aiMaterialProperty*> properties(*vk.m_CPUAllocator);
     aiMaterial* meshMaterial = scene->mMaterials[mesh->mMaterialIndex];
 
     for (unsigned int i = 0; i < meshMaterial->mNumProperties; i++)
@@ -268,7 +268,7 @@ void ProcessMeshWithNormals(lvk::VkState & vk, Model& model, aiMesh* mesh, aiNod
         aiMaterialProperty* prop = meshMaterial->mProperties[i];
         properties.push_back(prop);
     }
-    Vector<VertexDataPosNormalUv> verts;
+    Vector<VertexDataPosNormalUv> verts(*vk.m_CPUAllocator);
     if (hasPositions && hasUVs && hasNormals) {
         for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
             VertexDataPosNormalUv vert{};
@@ -279,12 +279,12 @@ void ProcessMeshWithNormals(lvk::VkState & vk, Model& model, aiMesh* mesh, aiNod
         }
 
     }
-    Vector<uint32_t> indices;
+    Vector<uint32_t> indices(*vk.m_CPUAllocator);
     if (hasIndices) {
         for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
             aiFace currentFace = mesh->mFaces[i];
             if (currentFace.mNumIndices != 3) {
-                spdlog::error("Attempting to import a mesh with non triangular face structure! cannot load this mesh.");
+                LVK_LOG_ERR("Attempting to import a mesh with non triangular face structure! cannot load this mesh.");
                 return;
             }
             for (unsigned int index = 0; index < mesh->mFaces[i].mNumIndices; index++) {
@@ -345,7 +345,7 @@ void LoadModelAssimp(lvk::VkState & vk, Model& model, const lvk::String& path, b
     );
     //
     if (scene == nullptr) {
-        spdlog::error("AssimpModelAssetFactory : Failed to load asset at path : {}", path);
+        LVK_LOG_ERR("AssimpModelAssetFactory : Failed to load asset at path : %s", path);
         return;
     }
     ProcessNode(vk, model, scene->mRootNode, scene, withNormals);

@@ -1,5 +1,5 @@
 #include "lvk/RenderPass.h"
-#include "spdlog/spdlog.h"
+#include "lvk/Log.h"
 
 void lvk::render_passes::CreateRenderPass(VkState& vk, VkRenderPass& renderPass, Vector<VkAttachmentDescription>& colourAttachments, Vector<VkAttachmentDescription>& resolveAttachments, bool hasDepthAttachment, VkAttachmentDescription depthAttachment, VkAttachmentLoadOp attachmentLoadOp)
 {
@@ -83,7 +83,7 @@ void lvk::render_passes::CreateRenderPass(VkState& vk, VkRenderPass& renderPass,
 
   if (vkCreateRenderPass(vk.m_LogicalDevice, &createInfo, nullptr, &renderPass) != VK_SUCCESS)
   {
-    spdlog::error("Failed to create Render Pass!");
+    LVK_LOG_ERR("Failed to create Render Pass!");
     std::cerr << "Failed to create Render Pass!" << std::endl;
   }
 }

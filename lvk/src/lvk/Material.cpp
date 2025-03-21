@@ -72,6 +72,12 @@ static auto reflect_descriptor_info = [](lvk::ShaderStage& stage, lvk::Material 
         }
     };
 
+lvk::Material::Material(IAllocator& alloc) :
+    m_DescriptorSets(alloc),
+    m_PushConstants(alloc) {
+}
+
+
 lvk::Material::ShaderBufferBindingData::ShaderBufferBindingData(uint32_t set, uint32_t binding, VkDeviceSize size, Buffer::BufferType bufferType, lvk::ShaderBufferFrameData& buffer)
     : m_Binding(set, binding, size), m_BufferType(bufferType), m_Buffer(buffer)
 {
@@ -99,12 +105,12 @@ void lvk::Material::UpdateDescriptors(VkState& vk)
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 
         // write buffers to descriptor set + default texture for any samplers
-        Vector<VkDescriptorBufferInfo>  bufferWriteInfos;
+        Vector<VkDescriptorBufferInfo>  bufferWriteInfos(*vk.m_CPUAllocator);
         for (auto&& [setBinding, bufferInfo] : m_ShaderBuffers)
         {
             if (!bufferInfo.Ready())
             {
-                spdlog::warn("Material with name {} : set {}, binding {} has no associated buffer", m_ShaderName, setBinding.m_Set, setBinding.m_Binding);
+                LVK_LOG_WARN("Material with name %s : set %s, binding %s has no associated buffer", m_ShaderName, setBinding.m_Set, setBinding.m_Binding);
                 continue;
             }
             VkDescriptorBufferInfo bufferWriteInfo{};
@@ -113,8 +119,8 @@ void lvk::Material::UpdateDescriptors(VkState& vk)
             bufferWriteInfo.range = bufferInfo.m_Binding.m_BindingSize;
             bufferWriteInfos.push_back(bufferWriteInfo);
         }
-        Vector<VkDescriptorImageInfo>   imageWriteInfos;
-        Vector<uint32_t> bindings;
+        Vector<VkDescriptorImageInfo>   imageWriteInfos(*vk.m_CPUAllocator);;
+        Vector<uint32_t> bindings(*vk.m_CPUAllocator);;
         for (auto [name, sampler] : m_Samplers)
         {
             VkDescriptorImageInfo imageInfo{};
@@ -125,7 +131,7 @@ void lvk::Material::UpdateDescriptors(VkState& vk)
             bindings.push_back(sampler.m_BindingNumber);
         }
 
-        Vector<VkWriteDescriptorSet> descriptorWrites{};
+        Vector<VkWriteDescriptorSet> descriptorWrites(*vk.m_CPUAllocator);
 
         int k = 0;
         for (auto&& [setBinding, ubo] : m_ShaderBuffers)
@@ -166,7 +172,7 @@ void lvk::Material::UpdateDescriptors(VkState& vk)
 // todo: add ability to add existing buffers when creating the material
 lvk::Material lvk::Material::Create(VkState & vk, ShaderProgram& shader)
 {
-    Material mat{};
+    Material mat(*vk.m_CPUAllocator);
 
     String materialShaderName = "";
 
@@ -200,7 +206,7 @@ void lvk::Material::AttachBuffer(VkState& vk, uint32_t frameIndex, uint32_t set,
     
     if (m_ShaderBuffers.find(b) == m_ShaderBuffers.end())
     {
-        spdlog::error("Material with shader {} : No binding at set {}, binding {}", m_ShaderName, set, binding);
+        LVK_LOG_ERR("Material with shader %s : No binding at set %s, binding %s", m_ShaderName, set, binding);
         return;
     }
 
@@ -225,7 +231,7 @@ void lvk::Material::CreateBuffer(VkState& vk, uint32_t set, uint32_t binding)
 
     if (m_ShaderBuffers.find(bind_handle) == m_ShaderBuffers.end())
     {
-        spdlog::error("Material with shader {} : No binding at set {}, binding {}", m_ShaderName, set, binding);
+        LVK_LOG_ERR("Material with shader %s : No binding at set %s, binding %s", m_ShaderName, set, binding);
         return;
     }
 
@@ -241,7 +247,7 @@ bool lvk::Material::SetSampler(VkState & vk, const String& name, const VkImageVi
 {
     if (m_Samplers.find(name) == m_Samplers.end())
     {
-        spdlog::error("Material with shader {} : No associated sampler with name {}", m_ShaderName, name);
+        LVK_LOG_ERR("Material with shader %s: No associated sampler with name %s", m_ShaderName, name);
         return false;
     }
 
@@ -273,7 +279,7 @@ bool lvk::Material::SetColourAttachment(VkState & vk, const String& name, Frameb
 {
     if (m_Samplers.find(name) == m_Samplers.end())
     {
-        spdlog::error("Material with shader {} : No associated sampler with name {}", m_ShaderName, name);
+        LVK_LOG_ERR("Material with shader %s : No associated sampler with name %s", m_ShaderName, name);
         return false;
     }
 

@@ -378,7 +378,7 @@ void lvk::textures::CreateTexture(VkState& vk, const String& path, VkFormat form
 
     if (!pixels)
     {
-        spdlog::error("Failed to load texture image at path {}", path);
+        LVK_LOG_ERR("Failed to load texture image at path %s", path);
         return;
     }
 
@@ -424,7 +424,7 @@ void lvk::textures::CreateTextureFromMemory(VkState& vk, unsigned char* tex_data
 
     if (!pixels)
     {
-        spdlog::error("Failed to load texture image from memory");
+        LVK_LOG_ERR("Failed to load texture image from memory");
         return;
     }
 
@@ -468,7 +468,7 @@ void lvk::textures::CreateTexture3DFromMemory(VkState& vk, unsigned char* tex_da
 
     if (!pixels)
     {
-        spdlog::error("Failed to load texture image from memory");
+        LVK_LOG_ERR("Failed to load texture image from memory");
         return;
     }
 
@@ -511,7 +511,7 @@ void lvk::textures::GenerateMips(VkState& vk, VkImage image, VkFormat format, ui
 
     if (supportsLinearSampling <= 0)
     {
-        spdlog::error("GenerateMips : No support for linear blitting!");
+        LVK_LOG_ERR("GenerateMips : No support for linear blitting!");
         return;
     }
 
@@ -650,7 +650,7 @@ void lvk::textures::TransitionImageLayout(VkState& vk, VkImage image, VkFormat f
         destinationStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     }
     else {
-        spdlog::error("Unsupported barrier transition.");
+        LVK_LOG_ERR("Unsupported barrier transition.");
         return;
     }
 

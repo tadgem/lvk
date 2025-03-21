@@ -1,11 +1,11 @@
 #include "lvk/Buffer.h"
 #include "lvk/Macros.h"
 #include "lvk/Commands.h"
-#include "spdlog/spdlog.h"
+#include "lvk/Log.h"
+
 namespace lvk
 {
-namespace buffers {
-Buffer CreateBuffer(VkState& vk, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
+Buffer buffers::CreateBuffer(VkState& vk, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
 {
   VkBuffer buffer; 
   VmaAllocation allocation;
@@ -32,7 +32,7 @@ Buffer CreateBuffer(VkState& vk, VkDeviceSize size, VkBufferUsageFlags usage, Vk
   return Buffer(Buffer::BufferStorageType::GPUOnly, buffer, allocation, size);
 }
 
-void CopyBuffer(VkState& vk, VkBuffer& src, VkBuffer& dst, VkDeviceSize size)
+void buffers::CopyBuffer(VkState& vk, VkBuffer& src, VkBuffer& dst, VkDeviceSize size)
 {
   // create a new command buffer to record the buffer copy
   VkCommandBuffer commandBuffer = commands::BeginSingleTimeCommands(vk);
@@ -46,12 +46,12 @@ void CopyBuffer(VkState& vk, VkBuffer& src, VkBuffer& dst, VkDeviceSize size)
   commands::EndSingleTimeCommands(vk, commandBuffer);
 }
 
-Buffer CreateIndexBuffer(VkState& vk, uint32_t* indices, uint32_t count)
+Buffer buffers::CreateIndexBuffer(VkState& vk, uint32_t* indices, uint32_t count)
 {
   VkDeviceSize bufferSize = sizeof(uint32_t) * count;
 
   // create a CPU side buffer to dump vertex data into
-  MappedBuffer stagingBuf = CreateMappedBuffer(vk, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+  MappedBuffer stagingBuf = buffers::CreateMappedBuffer(vk, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
   memcpy(stagingBuf.m_MappedAddr, indices, bufferSize);
   
   // create GPU side buffer
@@ -65,7 +65,7 @@ Buffer CreateIndexBuffer(VkState& vk, uint32_t* indices, uint32_t count)
   return buf;
 }
 
-MappedBuffer CreateMappedBuffer(VkState& vk, VkDeviceSize size, VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags memoryProperties)
+MappedBuffer buffers::CreateMappedBuffer(VkState& vk, VkDeviceSize size, VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags memoryProperties)
 {
   Buffer b = CreateBuffer(vk,VkDeviceSize{ size }, bufferUsage, memoryProperties);
   MappedBuffer mb (b);
@@ -73,7 +73,7 @@ MappedBuffer CreateMappedBuffer(VkState& vk, VkDeviceSize size, VkBufferUsageFla
   return mb;
 }
 
-ShaderBufferFrameData CreateUniformBuffers (VkState& vk, VkDeviceSize bufferSize)
+ShaderBufferFrameData buffers::CreateUniformBuffers (VkState& vk, VkDeviceSize bufferSize)
 {
   ShaderBufferFrameData uniformData {};
   
@@ -86,7 +86,7 @@ ShaderBufferFrameData CreateUniformBuffers (VkState& vk, VkDeviceSize bufferSize
   return uniformData;
 }
 
-ShaderBufferFrameData CreateShaderStorageBuffers(VkState& vk, VkDeviceSize bufferSize, VkBufferUsageFlags bufferUsage )
+ShaderBufferFrameData buffers::CreateShaderStorageBuffers(VkState& vk, VkDeviceSize bufferSize, VkBufferUsageFlags bufferUsage )
 {
     ShaderBufferFrameData uniformData{};
     VkBufferUsageFlags usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
@@ -103,5 +103,3 @@ ShaderBufferFrameData CreateShaderStorageBuffers(VkState& vk, VkDeviceSize buffe
     return uniformData;
 }
 }
-}
-

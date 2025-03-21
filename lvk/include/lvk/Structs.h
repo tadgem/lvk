@@ -60,6 +60,13 @@ namespace lvk {
     uint32_t m_ExpectedBufferSizeOrDivisor;
     ShaderBindingType m_BufferType;
     Vector<ShaderBufferMember> m_Members;
+
+    DescriptorSetLayoutBindingData(IAllocator& alloc) :
+        m_BindingName(""),
+        m_BindingIndex(0),
+        m_ExpectedBufferSizeOrDivisor(0),
+        m_Members(alloc) {
+    }
   };
 
   struct DescriptorSetLayoutData {
@@ -68,6 +75,14 @@ namespace lvk {
     VkDescriptorSetLayout m_Layout;
     Vector<VkDescriptorSetLayoutBinding> m_Bindings;
     Vector<DescriptorSetLayoutBindingData> m_BindingDatas;
+
+    DescriptorSetLayoutData(IAllocator& alloc) :
+        m_SetNumber(0),
+        m_Bindings(alloc),
+        m_BindingDatas(alloc)
+    {
+
+    }
   };
 
   class Buffer
@@ -173,6 +188,13 @@ namespace lvk {
   {
     Vector<VkVertexInputBindingDescription>   m_BindingDescriptions;
     Vector<VkVertexInputAttributeDescription> m_AttributeDescriptions;
+
+    VertexDescription(IAllocator& allocator) : 
+        m_BindingDescriptions(STLAllocator<VkVertexInputBindingDescription>(allocator)),
+        m_AttributeDescriptions(STLAllocator<VkVertexInputAttributeDescription>(allocator))
+    {
+
+    }
   };
 
   struct RasterizationState {
@@ -189,12 +211,22 @@ namespace lvk {
   {
     Vector<VkPipelineColorBlendAttachmentState> m_ColourAttachmentStates;
     VkPipelineColorBlendStateCreateInfo         m_BlendStateInfo;
+
+    PipelineAttachmentState(IAllocator& alloc) :
+        m_ColourAttachmentStates(alloc),
+        m_BlendStateInfo({}) {
+    };
   };
 
   struct PipelineDynamicState
   {
     Vector<VkDynamicState>            m_DynamicStates;
     VkPipelineDynamicStateCreateInfo  m_DynamicStateInfo;
+
+    PipelineDynamicState(IAllocator& alloc) :
+        m_DynamicStates(alloc),
+        m_DynamicStateInfo({}) {
+    };
   };
 
   struct RenderPassInfo
@@ -202,6 +234,11 @@ namespace lvk {
     Vector<VkFramebuffer>           m_SwapchainFramebuffers;
     VkRenderPass                    m_RenderPass;
     Vector<VkRenderPassBeginInfo>   m_RenderPassInfos;
+
+    RenderPassInfo(IAllocator& alloc) :
+        m_SwapchainFramebuffers(alloc),
+        m_RenderPassInfos(alloc) {
+    };
   };
 
   struct DynamicRenderingInfo
@@ -232,6 +269,9 @@ namespace lvk {
     VkSurfaceCapabilitiesKHR    m_Capabilities;
     Vector<VkSurfaceFormatKHR>  m_SupportedFormats;
     Vector<VkPresentModeKHR>    m_SupportedPresentModes;
+
+    SwapChainSupportDetais(IAllocator& alloc) :
+        m_SupportedFormats(alloc), m_SupportedPresentModes(alloc){}
   };
 
   struct VkState;
@@ -332,6 +372,22 @@ namespace lvk {
     int                             m_CurrentFrameIndex;
     VkExtent2D                      m_MaxFramebufferExtent;
     String                          m_AppName;
+
+    VkState(IAllocator& alloc) :
+        m_DescriptorSetAllocator(alloc),
+        m_ImageAvailableSemaphores(alloc),
+        m_RenderFinishedSemaphores(alloc),
+        m_ComputeFinishedSemaphores(alloc),
+        m_FrameInFlightFences(alloc),
+        m_ImagesInFlightFences(alloc),
+        m_ComputeInFlightFences(alloc),
+        m_SwapChainImages(alloc),
+        m_SwapChainImageViews(alloc),
+        m_SwapChainFramebuffers(alloc),
+        m_GraphicsCommandBuffers(alloc),
+        m_ComputeCommandBuffers(alloc),
+        m_DesiredDeviceExtensions(alloc) {
+    }
   };
 
   struct VkViewportData

@@ -1,6 +1,6 @@
 #include "lvk/Shader.h"
 #include "lvk/Macros.h"
-#include "spdlog/spdlog.h"
+#include "lvk/Log.h"
 #include "volk.h"
 #include "shaderc/shaderc.h"
 #include <filesystem>
@@ -8,6 +8,13 @@
 #include <regex>
 
 namespace lvk {
+
+ShaderStage::ShaderStage(IAllocator& alloc) :
+    m_PushConstants(alloc),
+    m_LayoutDatas(alloc),
+    m_StageBinary(alloc) {
+}
+
 void ShaderProgram::Free(VkState &vk) {
   vkDestroyDescriptorSetLayout(vk.m_LogicalDevice, m_DescriptorSetLayout,
                                nullptr);
@@ -16,7 +23,7 @@ void ShaderProgram::Free(VkState &vk) {
 ShaderProgram ShaderProgram::CreateCompute(VkState &vk, ShaderStage &compute) {
   VkDescriptorSetLayout layout;
 
-  Vector<VkDescriptorSetLayoutBinding> bindings;
+  Vector<VkDescriptorSetLayoutBinding> bindings(*vk.m_CPUAllocator);
   for (auto &layout : compute.m_LayoutDatas) {
     for (auto &binding : layout.m_Bindings) {
       bindings.push_back(binding);
@@ -33,11 +40,17 @@ ShaderProgram ShaderProgram::CreateCompute(VkState &vk, ShaderStage &compute) {
   STLAllocator<ShaderStage>alloc(*vk.m_CPUAllocator);
   Vector<ShaderStage> stages(alloc);
   stages.push_back(compute);
-  return {stages, layout};
+  return ShaderProgram(*vk.m_CPUAllocator, stages, layout);
 }
-ShaderProgram::ShaderProgram(Vector<ShaderStage> shaderStages,
-                             VkDescriptorSetLayout layout) :
- m_DescriptorSetLayout(layout), m_Stages(std::move(shaderStages))
+
+ShaderProgram::ShaderProgram(
+    IAllocator& alloc, 
+    Vector<ShaderStage> shaderStages,
+    VkDescriptorSetLayout layout) :
+    
+    m_DescriptorSetLayout(layout), 
+    m_Stages(alloc),
+    m_PushConstantRanges(alloc)
 {
   BuildPushConstantRanges();
 }
@@ -54,7 +67,7 @@ void ShaderProgram::BuildPushConstantRanges() {
     }
 
     if (stage.m_PushConstants.size() > 1) {
-      spdlog::error(
+      LVK_LOG_ERR(
           "VulkanAPI : CreateRasterizationPipeline : Supplied stage has more than 1 push constant block, this is not allowed.");
       continue;
     }
@@ -106,8 +119,7 @@ VkShaderModule CreateShaderModule(VkState &vk, const StageBinary &data) {
   VkShaderModule shaderModule;
   if (vkCreateShaderModule(vk.m_LogicalDevice, &createInfo, nullptr,
                            &shaderModule) != VK_SUCCESS) {
-    spdlog::error("Failed to create shader module!");
-    std::cerr << "Failed to create shader module" << std::endl;
+    LVK_LOG_ERR("Failed to create shader module!");
   }
   return shaderModule;
 }
@@ -123,8 +135,7 @@ VkShaderModule CreateShaderModuleRaw(VkState &vk, const char *data,
   VkShaderModule shaderModule;
   if (vkCreateShaderModule(vk.m_LogicalDevice, &createInfo, nullptr,
                            &shaderModule) != VK_SUCCESS) {
-    spdlog::error("Failed to create shader module!");
-    std::cerr << "Failed to create shader module" << std::endl;
+    LVK_LOG_ERR("Failed to create shader module!");
   }
   return shaderModule;
 }
@@ -159,10 +170,10 @@ StageBinary CreateStageBinaryFromSource(VkState &vk, ShaderStageType type,
 
   const char* spirv_bytes = shaderc_result_get_bytes(result);
   size_t      spirv_size  = shaderc_result_get_length(result);
-  StageBinary bin {};
+  StageBinary bin (*vk.m_CPUAllocator);
   if(shaderc_result_get_num_errors(result) != 0)
   {
-      spdlog::error("Failed to compile shader : {}",
+      LVK_LOG_ERR("Failed to compile shader : %s",
                     shaderc_result_get_error_message(result));
       return bin;
   }

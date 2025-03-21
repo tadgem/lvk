@@ -3,27 +3,7 @@
 
 namespace lvk
 {
-	class IAllocator
-	{
-	public:
-		virtual void* allocate(size_t size)		= 0;
-		virtual void  deallocate(void* addr)	= 0;
-
-		virtual ~IAllocator() {}
-	};
-
-	class MallocAllocator : public IAllocator
-	{
-	public:
-		void* allocate(size_t size) override {
-			return std::malloc(size);
-		}
-
-		void deallocate(void* addr)
-		{
-			std::free(addr);
-		}
-	};
+	class IAllocator;
 
 	template <class T>
 	struct STLAllocator
@@ -34,8 +14,8 @@ namespace lvk
 		STLAllocator(IAllocator& alloc) : _allocator(alloc) {} //default ctor not required by C++ Standard Library
 
 		// A converting copy constructor:
-		template<class U> STLAllocator(const STLAllocator<U>& o ) : _allocator(o._allocator) {}
-		template<class U> bool operator==(const STLAllocator<U>&) const 
+		template<class U> STLAllocator(const STLAllocator<U>& o) : _allocator(o._allocator) {}
+		template<class U> bool operator==(const STLAllocator<U>&) const
 		{
 			return true;
 		}
@@ -53,4 +33,32 @@ namespace lvk
 		}
 	};
 
+	class IAllocator
+	{
+	public:
+		virtual void* allocate(size_t size) = 0;
+		virtual void  deallocate(void* addr) = 0;
+
+		virtual ~IAllocator() {}
+
+		template<typename T>
+		operator STLAllocator<T>() noexcept
+		{
+			return STLAllocator<T>(*this);
+		}
+	};
+
+
+	class MallocAllocator : public IAllocator
+	{
+	public:
+		void* allocate(size_t size) override {
+			return std::malloc(size);
+		}
+
+		void deallocate(void* addr)
+		{
+			std::free(addr);
+		}
+	};
 }

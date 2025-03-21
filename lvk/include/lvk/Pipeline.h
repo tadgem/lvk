@@ -42,7 +42,7 @@ namespace pipelines{
 
         Framebuffer* AddFramebuffer(VkState & vk)
         {
-            m_FBs.push_back(new Framebuffer());
+            m_FBs.push_back(new Framebuffer(*vk.m_CPUAllocator));
             return m_FBs[m_FBs.size() - 1];
         }
 

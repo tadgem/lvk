@@ -59,6 +59,8 @@ namespace lvk
         HashMap<String, SamplerBindingData>                         m_Samplers;
         HashMap<String, ShaderAccessorData>                         m_UniformBufferAccessors;
 
+        Material(IAllocator& alloc);
+
         static Material Create(VkState & vk, ShaderProgram& shader);
 
         void AttachBuffer(VkState& vk, uint32_t frameIndex, uint32_t set, uint32_t binding, ShaderBufferFrameData& buffer);

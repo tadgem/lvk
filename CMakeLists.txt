@@ -11,10 +11,8 @@ set(SHADERC_SKIP_TESTS ON CACHE BOOL "" FORCE)
 
 add_subdirectory(submodules/glm)
 add_subdirectory(submodules/assimp)
-add_subdirectory(third-party/spdlog)
 add_subdirectory(third-party/sdl)
 add_subdirectory(submodules/volk)
-add_subdirectory(submodules/cpptrace)
 add_subdirectory(submodules/SPIRV-headers)
 add_subdirectory(submodules/SPIRV-tools)
 add_subdirectory(submodules/glslang)
@@ -32,7 +30,6 @@ set(SHADERC_UTIL_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/submodules/shaderc/libshad
 set_target_properties(glm PROPERTIES			FOLDER "ThirdParty/glm")
 set_target_properties(SDL3_test PROPERTIES		FOLDER "ThirdParty/SDL")
 set_target_properties(SDL3-static PROPERTIES	FOLDER "ThirdParty/SDL")
-set_target_properties(spdlog PROPERTIES			FOLDER "ThirdParty/spdlog")
 
 add_subdirectory(lvk)
 add_subdirectory(backends/sdl)

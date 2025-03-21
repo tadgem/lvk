@@ -69,8 +69,9 @@ namespace init
   VkState                             Create(const String& appName, uint32_t width, uint32_t height, bool enableSwapchainMsaa)
   {
     static_assert(std::is_base_of<VkBackend, _BackendTy>::value, "Backend must inherit from VkBackend");
-    VkState vk;
-    vk.m_CPUAllocator = std::make_unique<MallocAllocator>();
+    auto alloc = std::make_unique<MallocAllocator>();
+    VkState vk(*alloc);
+    vk.m_CPUAllocator = std::move(alloc);
     vk.m_AppName = appName;
     vk.m_Backend = std::make_unique<_BackendTy>();
     vk.m_Backend->CreateWindowLVK(vk, width, height);

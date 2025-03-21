@@ -21,8 +21,8 @@ namespace lvk
             return bindingDescription;
         }
 
-        static Vector<VkVertexInputAttributeDescription> GetAttributeDescriptions() {
-            Vector<VkVertexInputAttributeDescription> attributeDescriptions{};
+        static Vector<VkVertexInputAttributeDescription> GetAttributeDescriptions(IAllocator& alloc) {
+            Vector<VkVertexInputAttributeDescription> attributeDescriptions(alloc);
 
             attributeDescriptions.resize(3);
 
@@ -44,7 +44,7 @@ namespace lvk
             return attributeDescriptions;
         }
 
-        static VertexDescription GetVertexDescription();
+        static VertexDescription GetVertexDescription(IAllocator& alloc);
     };
 
     struct VertexDataPos4
@@ -61,8 +61,8 @@ namespace lvk
             return bindingDescription;
         }
 
-        static Vector<VkVertexInputAttributeDescription> GetAttributeDescriptions() {
-            Vector<VkVertexInputAttributeDescription> attributeDescriptions{};
+        static Vector<VkVertexInputAttributeDescription> GetAttributeDescriptions(IAllocator& alloc) {
+            Vector<VkVertexInputAttributeDescription> attributeDescriptions(alloc);
 
             attributeDescriptions.resize(1);
 
@@ -74,7 +74,7 @@ namespace lvk
             return attributeDescriptions;
         }
 
-        static VertexDescription GetVertexDescription();
+        static VertexDescription GetVertexDescription(IAllocator& alloc);
 
     };
 
@@ -93,8 +93,8 @@ namespace lvk
             return bindingDescription;
         }
 
-        static Vector<VkVertexInputAttributeDescription> GetAttributeDescriptions() {
-            Vector<VkVertexInputAttributeDescription> attributeDescriptions{};
+        static Vector<VkVertexInputAttributeDescription> GetAttributeDescriptions(IAllocator& alloc) {
+            Vector<VkVertexInputAttributeDescription> attributeDescriptions(alloc);
 
             attributeDescriptions.resize(2);
 
@@ -111,7 +111,7 @@ namespace lvk
             return attributeDescriptions;
         }
 
-        static VertexDescription GetVertexDescription();
+        static VertexDescription GetVertexDescription(IAllocator& alloc);
 
     };
 
@@ -131,8 +131,8 @@ namespace lvk
             return bindingDescription;
         }
 
-        static Vector<VkVertexInputAttributeDescription> GetAttributeDescriptions() {
-            Vector<VkVertexInputAttributeDescription> attributeDescriptions{};
+        static Vector<VkVertexInputAttributeDescription> GetAttributeDescriptions(IAllocator& alloc) {
+            Vector<VkVertexInputAttributeDescription> attributeDescriptions(alloc);
 
             attributeDescriptions.resize(3);
 
@@ -154,7 +154,7 @@ namespace lvk
             return attributeDescriptions;
         }
 
-        static VertexDescription GetVertexDescription();
+        static VertexDescription GetVertexDescription(IAllocator& alloc);
 
     };
 

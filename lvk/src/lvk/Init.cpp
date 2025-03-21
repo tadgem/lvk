@@ -6,8 +6,7 @@
 #include "lvk/RenderPass.h"
 #include "lvk/Texture.h"
 #include "lvk/Utils.h"
-#include "spdlog/spdlog.h"
-#include "cpptrace/cpptrace.hpp"
+#include "lvk/Log.h"
 #include "ThirdParty/FunnelSansTTF.h"
 #include "lvk/Commands.h"
 
@@ -21,17 +20,15 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 
   if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
   {
-    spdlog::warn("VL: {}\n Stacktrace:\n", pCallbackData->pMessage);
-    //cpptrace::generate_trace().print();
+    LVK_LOG_WARN("VL: %s\n", pCallbackData->pMessage);
   }
   if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
   {
-    spdlog::info("VL: {}", pCallbackData->pMessage);
+    LVK_LOG_INFO("VL: %s\n", pCallbackData->pMessage);
   }
   if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
   {
-    spdlog::error("VL: {}\n Stacktrace:\n", pCallbackData->pMessage);
-    //cpptrace::generate_trace().print();
+    LVK_LOG_ERR("VL: %s\n", pCallbackData->pMessage);
   }
   return VK_FALSE;
 }
@@ -61,7 +58,7 @@ bool lvk::init::CheckValidationLayerSupport(VkState& vk)
   uint32_t layerCount;
   if (vkEnumerateInstanceLayerProperties(&layerCount, nullptr) != VK_SUCCESS)
   {
-    spdlog::error("Failed to enumerate supported validation layers!");
+    LVK_LOG_ERR("Failed to enumerate supported validation layers!");
   }
 
   STLAllocator<VkLayerProperties>alloc(*vk.m_CPUAllocator);
@@ -69,7 +66,7 @@ bool lvk::init::CheckValidationLayerSupport(VkState& vk)
   availableLayers.resize(layerCount);
   if (vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data()) != VK_SUCCESS)
   {
-    spdlog::error("Failed to enumerate supported validation layers!");
+      LVK_LOG_ERR("Failed to enumerate supported validation layers!");
   }
 
   for (const char* layerName : s_ValidationLayers) {
@@ -136,15 +133,13 @@ void lvk::init::SetupDebugOutput(VkState& vk)
 
   if (!function)
   {
-    spdlog::error("Could not find vkCreateDebugUtilsMessengerEXT function");
-    std::cerr << "Could not find vkCreateDebugUtilsMessengerEXT function";
+    LVK_LOG_ERR("Could not find vkCreateDebugUtilsMessengerEXT function");
     return;
   }
 
   if (function(vk.m_Instance, &createInfo, nullptr, &vk.m_DebugMessenger))
   {
-    spdlog::error("Failed to create debug messenger");
-    std::cerr << "Failed to create debug messenger";
+    LVK_LOG_ERR("Failed to create debug messenger");
   }
 
 }
@@ -159,8 +154,7 @@ void lvk::init::CleanupDebugOutput(VkState& vk)
   }
   else
   {
-    spdlog::error("Could not find vkDestroyDebugUtilsMessengerEXT function");
-    std::cerr << "Could not find vkDestroyDebugUtilsMessengerEXT function";
+    LVK_LOG_ERR("Could not find vkDestroyDebugUtilsMessengerEXT function");
   }
 }
 
@@ -171,10 +165,10 @@ void lvk::init::ListDeviceExtensions(VkState& vk, VkPhysicalDevice physicalDevic
 
   VkPhysicalDeviceProperties deviceProperties{};
   vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
-  spdlog::info("Selected device {} supports the following extensions:", &deviceProperties.deviceName[0]);
+  LVK_LOG_INFO("Selected device %s supports the following extensions:", &deviceProperties.deviceName[0]);
   for (int i = 0; i < extensions.size(); i++)
   {
-    spdlog::info("    - {}", &extensions[i].extensionName[0]);
+    LVK_LOG_INFO("    - %s", &extensions[i].extensionName[0]);
   }
 }
 
@@ -366,8 +360,7 @@ void lvk::init::CreateInstance(VkState& vk)
 {
   if (vk.m_UseValidation && !CheckValidationLayerSupport(vk))
   {
-    spdlog::error("Validation layers requested but not available.");
-    std::cerr << "Validation layers requested but not available.";
+    LVK_LOG_ERR("Validation layers requested but not available.");
   }
 
   VkApplicationInfo appInfo = CreateAppInfo();
@@ -376,7 +369,7 @@ void lvk::init::CreateInstance(VkState& vk)
 
   if(vk.m_UseValidation) {
     for (const auto &extension: extensionNames) {
-      spdlog::info("Backend Extension : {}", extension);
+      LVK_LOG_INFO("Backend Extension : %s", extension);
     }
   }
   uint32_t extensionCount;
@@ -387,11 +380,11 @@ void lvk::init::CreateInstance(VkState& vk)
   vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 
   if(vk.m_UseValidation) {
-    spdlog::info("Supported m_Instance extensions: ");
+    LVK_LOG_INFO("Supported m_Instance extensions: ");
   }
   for (const auto& extension : extensions) {
     if (vk.m_UseValidation) {
-      spdlog::info("{}", &extension.extensionName[0]);
+      LVK_LOG_INFO("   - %s", &extension.extensionName[0]);
     }
     bool shouldAdd = true;
     for (int i = 0; i < extensionNames.size(); i++)
@@ -433,7 +426,7 @@ void lvk::init::CreateInstance(VkState& vk)
 
   if (vkCreateInstance(&createInfo, nullptr, &vk.m_Instance) != VK_SUCCESS)
   {
-    spdlog::error("Failed to create vulkan m_Instance");
+    LVK_LOG_ERR("Failed to create vulkan m_Instance");
   }
 
   volkLoadInstance(vk.m_Instance);
@@ -498,7 +491,7 @@ lvk::QueueFamilyIndices lvk::init::FindQueueFamilies(VkState& vk, VkPhysicalDevi
 
 lvk::SwapChainSupportDetais lvk::init::GetSwapChainSupportDetails(VkState& vk, VkPhysicalDevice physicalDevice)
 {
-  SwapChainSupportDetais details;
+  SwapChainSupportDetais details(*vk.m_CPUAllocator);
 
   vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, vk.m_Surface, &details.m_Capabilities);
 
@@ -575,8 +568,7 @@ void lvk::init::PickPhysicalDevice(VkState& vk)
 
   if (deviceCount == 0)
   {
-    spdlog::error("Failed to find any physical devices.");
-    std::cerr << "Failed to find any physical devices.\n";
+    LVK_LOG_ERR("Failed to find any physical devices.");
   }
 
   STLAllocator<VkPhysicalDevice>alloc(*vk.m_CPUAllocator);
@@ -599,7 +591,7 @@ void lvk::init::PickPhysicalDevice(VkState& vk)
 
   if (bestScore == 0)
   {
-    spdlog::error("failed to find a suitable device.");
+    LVK_LOG_ERR("failed to find a suitable device.");
     return;
   }
 
@@ -607,15 +599,15 @@ void lvk::init::PickPhysicalDevice(VkState& vk)
 
   if (vk.m_PhysicalDevice == VK_NULL_HANDLE)
   {
-    spdlog::error("Failed to find a suitable physical device.");
-    std::cerr << "Failed to find a suitable physical device.\n";
+    LVK_LOG_ERR("Failed to find a suitable physical device.");
+    return;
   }
 
   VkPhysicalDeviceProperties deviceProperties{};
   vkGetPhysicalDeviceProperties(vk.m_PhysicalDevice, &deviceProperties);
 
   if(vk.m_UseValidation) {
-    spdlog::info("Chose GPU : {}", &deviceProperties.deviceName[0]);
+    LVK_LOG_INFO("Chose GPU : %s", &deviceProperties.deviceName[0]);
     ListDeviceExtensions(vk, vk.m_PhysicalDevice);
   }
 }
@@ -681,8 +673,8 @@ void lvk::init::CreateLogicalDevice(VkState& vk)
 
   if (vkCreateDevice(vk.m_PhysicalDevice, &createInfo, nullptr, &vk.m_LogicalDevice))
   {
-    spdlog::error("Failed to create logical device.");
-    std::cerr << "Failed to create logical device. \n";
+    LVK_LOG_ERR("Failed to create logical device.");
+    return;
   }
 
   volkLoadDevice(vk.m_LogicalDevice);
@@ -699,8 +691,7 @@ VkSurfaceFormatKHR lvk::init::ChooseSwapChainSurfaceFormat(
     Vector<VkSurfaceFormatKHR> availableFormats) {
   if (availableFormats.size() == 0)
   {
-    spdlog::error("Could not find any suitable Swapchain Surface Format in provided collection!");
-    std::cerr << "Could not find any suitable Swapchain Surface Format in provided collection!" << std::endl;
+    LVK_LOG_ERR("Could not find any suitable Swapchain Surface Format in provided collection!");
   }
 
   for (auto const& format : availableFormats)
@@ -711,8 +702,7 @@ VkSurfaceFormatKHR lvk::init::ChooseSwapChainSurfaceFormat(
     }
   }
 
-  spdlog::error("Could not find suitable Swapchain Surface Format in provided collection!");
-  std::cerr << "Could not find suitable Swapchain Surface Format in provided collection!" << std::endl;
+  LVK_LOG_ERR("Could not find suitable Swapchain Surface Format in provided collection!");
   return availableFormats[0];
 }
 
@@ -786,8 +776,7 @@ void lvk::init::CreateSwapChain(VkState& vk)
 
   if (vkCreateSwapchainKHR(vk.m_LogicalDevice, &createInfo, nullptr, &vk.m_SwapChain) != VK_SUCCESS)
   {
-    spdlog::error("Failed to create swapchain.");
-    std::cerr << "Failed to create swapchain" << std::endl;
+    LVK_LOG_ERR("Failed to create swapchain.");
   }
 
   vkGetSwapchainImagesKHR(vk.m_LogicalDevice, vk.m_SwapChain, &swapChainImageCount, nullptr);
@@ -804,7 +793,7 @@ void lvk::init::CreateSwapChainFramebuffers(VkState& vk)
 
   for (uint32_t i = 0; i < vk.m_SwapChainImageViews.size(); i++)
   {
-    Vector<VkImageView> attachments;
+    Vector<VkImageView> attachments(*vk.m_CPUAllocator);
 
     if (vk.m_UseSwapchainMsaa)
     {
@@ -859,7 +848,7 @@ void lvk::init::CleanupSwapChain(VkState& vk)
 
 void lvk::init::RecreateSwapChain(VkState& vk)
 {
-  spdlog::info("VulkanAPI : Recreating Swapchain");
+  LVK_LOG_INFO("VulkanAPI : Recreating Swapchain");
   while (vkDeviceWaitIdle(vk.m_LogicalDevice) != VK_SUCCESS);
 
   CleanupSwapChain(vk);
@@ -938,8 +927,7 @@ void lvk::init::CreateCommandPool(VkState& vk)
 
   if(vkCreateCommandPool(vk.m_LogicalDevice, &createInfo, nullptr, &vk.m_GraphicsComputeQueueCommandPool) != VK_SUCCESS)
   {
-    spdlog::error("Failed to create Command Pool!");
-    std::cerr << "Failed to create Command Pool!" << std::endl;
+    LVK_LOG_ERR("Failed to create Command Pool!");
   }
 }
 
@@ -968,8 +956,7 @@ void lvk::init::CreateSemaphores(VkState& vk)
         vkCreateSemaphore(vk.m_LogicalDevice, &createInfo, nullptr, &vk.m_RenderFinishedSemaphores[i]) != VK_SUCCESS ||
         vkCreateSemaphore(vk.m_LogicalDevice, &createInfo, nullptr, &vk.m_ComputeFinishedSemaphores[i]) != VK_SUCCESS)
     {
-      spdlog::error("Failed to create semaphores!");
-      std::cerr << "Failed to create semaphores!" << std::endl;
+      LVK_LOG_ERR("Failed to create semaphores!");
     }
   }
 
@@ -990,8 +977,7 @@ void lvk::init::CreateFences(VkState& vk)
     if (vkCreateFence(vk.m_LogicalDevice, &createInfo, nullptr, &vk.m_FrameInFlightFences[i]) != VK_SUCCESS ||
         vkCreateFence(vk.m_LogicalDevice, &createInfo, nullptr, &vk.m_ComputeInFlightFences[i]) != VK_SUCCESS )
     {
-      spdlog::error("Failed to create Fences!");
-      std::cerr << "Failed to create Fences!" << std::endl;
+      LVK_LOG_ERR("Failed to create Fences!");
     }
   }
 }

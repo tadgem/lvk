@@ -1,5 +1,5 @@
 #include "lvk/Utils.h"
-#include "spdlog/spdlog.h"
+#include "lvk/Log.h"
 #include <fstream>
 #include <sstream>
 
@@ -27,7 +27,7 @@ VkFormat lvk::utils::FindSupportedFormat(VkState& vk, const Vector<VkFormat>& ca
       return format;
     }
   }
-  spdlog::error("Failed to find appropriate supported format from candidates");
+  LVK_LOG_ERR("Failed to find appropriate supported format from candidates");
   return VkFormat{};
 
 }
@@ -57,7 +57,7 @@ lvk::StageBinary lvk::utils::LoadSpirvBinary(VkState& vk, const String& path)
 
   if (!file.is_open())
   {
-    spdlog::error("Failed to open file at path {} as binary!", path);
+    LVK_LOG_ERR("Failed to open file at path {} as binary!", path);
     std::cerr << "Failed to open file!" << std::endl;
     return StageBinary(alloc);
   }

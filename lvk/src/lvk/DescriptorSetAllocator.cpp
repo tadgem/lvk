@@ -1,7 +1,7 @@
 #include "volk.h"
 #include "lvk/DescriptorSetAllocator.h"
 #include "lvk/Macros.h"
-#include "spdlog/spdlog.h"
+#include "lvk/Log.h"
 
 void lvk::DescriptorSetAllocator::Init(IAllocator& alloc, VkDevice logical_device, uint32_t initialSetAmount, Vector<PoolSizeRatio> ratios)
 {

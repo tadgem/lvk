@@ -79,6 +79,14 @@ namespace lvk
         VkAttachmentLoadOp          m_AttachmentLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         VkExtent2D                  m_Resolution;
 
+        Framebuffer(IAllocator& alloc) : 
+            m_ColourAttachments(alloc),
+            m_DepthAttachments(alloc),
+            m_ResolveAttachments(alloc),
+            m_RenderPassInfo(alloc),
+            m_ClearValues(alloc)
+        {  }
+
         void AddColourAttachment(lvk::VkState& vk, VkExtent2D resolution,
             uint32_t numMips, VkSampleCountFlagBits sampleCount,
             VkFormat format, VkImageUsageFlags usageFlags,

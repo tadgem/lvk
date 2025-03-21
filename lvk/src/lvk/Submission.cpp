@@ -4,7 +4,7 @@
 #include "lvk/Commands.h"
 #include "lvk/Debug.h"
 #include "ImGui/imgui.h"
-#include "spdlog/spdlog.h"
+#include "lvk/Log.h"
 #include "ImGui/imgui_impl_vulkan.h"
 
 void lvk::submission::SubmitFrame(VkState& vk)
@@ -36,7 +36,7 @@ void lvk::submission::SubmitFrame(VkState& vk)
     return;
   }
   else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-    spdlog::error("VulkanAPI : Failed to acquire swap chain image!");
+    LVK_LOG_ERR("VulkanAPI : Failed to acquire swap chain image!");
     return;
   }
 
@@ -72,7 +72,7 @@ void lvk::submission::SubmitFrame(VkState& vk)
 
   if (vkQueueSubmit(vk.m_GraphicsQueue, 1, &submitInfo, vk.m_FrameInFlightFences[vk.m_CurrentFrameIndex]) != VK_SUCCESS)
   {
-    spdlog::error("VulkanAPI : Failed to submit draw command buffer!");
+    LVK_LOG_ERR("VulkanAPI : Failed to submit draw command buffer!");
   }
 
   if (vk.m_UseImGui)
@@ -97,7 +97,7 @@ void lvk::submission::SubmitFrame(VkState& vk)
     return;
   }
   else if (result != VK_SUCCESS) {
-    spdlog::error("VulkanAPI : Error presenting swapchain image");
+    LVK_LOG_ERR("VulkanAPI : Error presenting swapchain image");
   }
 
   vk.m_CurrentFrameIndex = (vk.m_CurrentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;

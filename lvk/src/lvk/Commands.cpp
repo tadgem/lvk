@@ -1,6 +1,6 @@
 #include "lvk/Commands.h"
 #include "lvk/Macros.h"
-#include "spdlog/spdlog.h"
+#include "lvk/Log.h"
 namespace lvk {
 namespace commands {
 VkCommandBuffer BeginSingleTimeCommands(VkState &vk) {
