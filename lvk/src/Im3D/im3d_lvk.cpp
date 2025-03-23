@@ -83,6 +83,7 @@ namespace lvk
 
         Vector<VkFormat> formats(*vk.m_CPUAllocator);
         formats.push_back(VK_FORMAT_R8G8B8A8_UNORM);
+
         VkPipelineData tris_pipeline = !enableDynamicRendering ?
             pipelines::CreateRasterPipeline(vk,
                 state.m_TriProg, vertexDescription, tris_raster_state,
@@ -104,7 +105,7 @@ namespace lvk
             VK_COMPARE_OP_LESS,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
         };
-        formats.push_back(VK_FORMAT_R8G8B8A8_UNORM);
+
         VkPipelineData points_pipeline = !enableDynamicRendering ?
             pipelines::CreateRasterPipeline(vk,
                 state.m_PointsProg, vertexDescription, points_raster_state,
