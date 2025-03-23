@@ -262,6 +262,8 @@ namespace lvk {
   struct QueueFamilyIndices {
     HashMap<QueueFamilyType, uint32_t> m_QueueFamilies;
 
+    QueueFamilyIndices(IAllocator& alloc);
+
     bool IsComplete();
   };
 
@@ -386,7 +388,9 @@ namespace lvk {
         m_SwapChainFramebuffers(alloc),
         m_GraphicsCommandBuffers(alloc),
         m_ComputeCommandBuffers(alloc),
-        m_DesiredDeviceExtensions(alloc) {
+        m_DesiredDeviceExtensions(alloc),
+        m_QueueFamilyIndices(alloc)
+    {
     }
   };
 

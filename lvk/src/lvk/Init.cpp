@@ -462,7 +462,7 @@ void lvk::init::CleanupVulkan(VkState& vk)
 
 lvk::QueueFamilyIndices lvk::init::FindQueueFamilies(VkState& vk, VkPhysicalDevice m_PhysicalDevice)
 {
-  QueueFamilyIndices indices;
+  QueueFamilyIndices indices (*vk.m_CPUAllocator);
 
   uint32_t queueFamilyCount = 0;
   vkGetPhysicalDeviceQueueFamilyProperties(m_PhysicalDevice, &queueFamilyCount, nullptr);

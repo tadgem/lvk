@@ -74,7 +74,11 @@ static auto reflect_descriptor_info = [](lvk::ShaderStage& stage, lvk::Material 
 
 lvk::Material::Material(IAllocator& alloc) :
     m_DescriptorSets(alloc),
-    m_PushConstants(alloc) {
+    m_PushConstants(alloc),
+    m_ShaderBuffers(alloc),
+    m_Samplers(alloc),
+    m_UniformBufferAccessors(alloc)
+{
 }
 
 
