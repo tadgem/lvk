@@ -2,10 +2,8 @@
 #include "lvk/Shader.h"
 using namespace lvk;
 
-static std::vector<MappedBuffer>            uniformBuffers;
-static std::vector<VkDescriptorSet>     descriptorSets;
 
-void RecordGraphicsCommandBuffers(VkState & vk, VkPipelineData& pipeline,  Model& model)
+void RecordGraphicsCommandBuffers(VkState & vk, VkPipelineData& pipeline,  Model& model, Vector<VkDescriptorSet>& descriptorSets)
 {
     lvk::commands::RecordGraphicsCommands(vk, [&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
         // push to example
@@ -58,7 +56,7 @@ void RecordGraphicsCommandBuffers(VkState & vk, VkPipelineData& pipeline,  Model
     });
 }
 
-void UpdateUniformBuffer(VkState & vk)
+void UpdateUniformBuffer(VkState & vk, Vector<MappedBuffer>& uniformBuffers)
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -79,12 +77,13 @@ void UpdateUniformBuffer(VkState & vk)
     memcpy(uniformBuffers[vk.m_CurrentFrameIndex].m_MappedAddr, &ubo, sizeof(ubo));
 }
 
-void CreateGraphicsDescriptorSets(VkState & vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler)
+void CreateGraphicsDescriptorSets(VkState & vk, VkDescriptorSetLayout& descriptorSetLayout, VkImageView& textureImageView, VkSampler& textureSampler, 
+    Vector<VkDescriptorSet>& descriptorSets, Vector<MappedBuffer>& uniformBuffers)
 {
     std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = vk.m_DescriptorSetAllocator.GetPool(vk.m_LogicalDevice);
+    allocInfo.descriptorPool = vk.m_DescriptorSetAllocator.GetPool(*vk.m_CPUAllocator, vk.m_LogicalDevice);
     allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
     allocInfo.pSetLayouts = layouts.data();
 
@@ -130,6 +129,10 @@ int main()
     bool enableMSAA = true;
     VkState vk = init::Create<VkSDL>("MSAA Example", 1920, 1080, enableMSAA);
 
+
+    Vector<MappedBuffer>           uniformBuffers(*vk.m_CPUAllocator);
+    Vector<VkDescriptorSet>        descriptorSets(*vk.m_CPUAllocator);
+
     ShaderProgram prog = ShaderProgram::CreateGraphicsFromSourcePath(
         vk, "shaders/texture.vert", "shaders/texture.frag");
 
@@ -141,32 +144,32 @@ int main()
     textures::CreateTexture(vk, "assets/viking_room.png", VK_FORMAT_R8G8B8A8_UNORM, textureImage, imageView, textureMemory, &mipLevels);
     textures::CreateImageSampler(vk, imageView, mipLevels, VK_FILTER_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, imageSampler);
 
-    auto vertexDescription = VertexDataPosUv::GetVertexDescription();
+    auto vertexDescription = VertexDataPosUv::GetVertexDescription(*vk.m_CPUAllocator);
     VkPipelineData pipeline = lvk::pipelines::CreateRasterPipeline(vk,
         prog, vertexDescription, defaults::CullNoneRasterStateMSAA,
         vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent);
 
     // create vertex and index buffer
-    Model model;
+    Model model(*vk.m_CPUAllocator);
     LoadModelAssimp(vk, model, "assets/viking_room.obj");
 
     uniformBuffers = buffers::CreateUniformBuffers<MvpData>(vk);
 
     CreateGraphicsDescriptorSets(vk, prog.m_DescriptorSetLayout, imageView,
-                                 imageSampler);
+                                 imageSampler, descriptorSets, uniformBuffers);
 
     while (vk.m_ShouldRun)
     {    
         vk.m_Backend->PreFrame(vk);
         
-        UpdateUniformBuffer(vk);
+        UpdateUniformBuffer(vk, uniformBuffers);
 
         if (ImGui::Begin("Help"))
         {
 
         }
         ImGui::End();
-        RecordGraphicsCommandBuffers(vk, pipeline, model);
+        RecordGraphicsCommandBuffers(vk, pipeline, model, descriptorSets);
 
         vk.m_Backend->PostFrame(vk);
     }

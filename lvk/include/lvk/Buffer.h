@@ -20,7 +20,7 @@ namespace lvk {
         template <typename _Ty>
         static Vector<MappedBuffer> CreateUniformBuffers(VkState& vk) {
             VkDeviceSize bufferSize = sizeof(_Ty);
-            Vector<MappedBuffer> uniformBuffers{};
+            Vector<MappedBuffer> uniformBuffers(*vk.m_CPUAllocator);
             uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
             for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
