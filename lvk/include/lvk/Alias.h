@@ -10,8 +10,9 @@
 
 namespace lvk
 {
+	// using String = std::basic_string<char, std::char_traits<char>, STLAllocator<char>>;
 	using String = std::string;
-
+	
 	template<typename _Ty>
 	using Vector = std::vector<_Ty, STLAllocator<_Ty>>;
 
