@@ -30,7 +30,7 @@ static Transform g_Transform;
 
 ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferProg, ShaderProgram lightPassProg)
 {
-    Framebuffer gbuffer{};
+    Framebuffer gbuffer(*vk.m_CPUAllocator);
     gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
     gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
@@ -41,7 +41,7 @@ ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferP
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
     gbuffer.Build(vk);
 
-    Framebuffer finalImage{};
+    Framebuffer finalImage(*vk.m_CPUAllocator);
     finalImage.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
     finalImage.Build(vk);
@@ -56,19 +56,19 @@ ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferP
 
     auto im3dViewState = AddIm3dForViewport(vk, im3dState, finalImage.m_RenderPassInfo.m_RenderPass, false, true);
 
-    static Vector<VertexDataPosUv> screenQuadVerts = {
+    StaticVector<VertexDataPosUv> screenQuadVerts = {
                     { { -1.0f, -1.0f , 0.0f}, { 0.0f, 0.0f } },
                     { {1.0f, -1.0f, 0.0f}, {1.0, 0.0f} },
                     { {1.0f, 1.0f, 0.0f}, {1.0, 1.0} },
                     { {-1.0f, 1.0f, 0.0f}, {0.0f, 1.0} }
     };
 
-    static lvk::Vector<uint32_t> screenQuadIndices = {
+    StaticVector<uint32_t> screenQuadIndices = {
     0, 1, 2, 2, 3, 0
     };
 
-    Buffer vertexBuffer = buffers::CreateVertexBuffer<VertexDataPosUv>(vk, screenQuadVerts);
-    Buffer indexBuffer = buffers::CreateIndexBuffer(vk, screenQuadIndices);
+    Buffer vertexBuffer = buffers::CreateVertexBuffer<VertexDataPosUv>(vk, screenQuadVerts.data(), screenQuadVerts.size());
+    Buffer indexBuffer = buffers::CreateIndexBuffer(vk, screenQuadIndices.data(), screenQuadIndices.size());
 
     Mesh screenQuad{ vertexBuffer, indexBuffer,  6 };
 
@@ -78,25 +78,28 @@ ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferP
 RenderData CreateRenderData(VkState& vk, ShaderProgram gbufferProg, ShaderProgram lightPassProg)
 {
 
-
+    Vector<VkFormat> gbufferFormats(*vk.m_CPUAllocator); 
+    
+    gbufferFormats.push_back(VK_FORMAT_R16G16B16A16_SFLOAT);
+    gbufferFormats.push_back(VK_FORMAT_R16G16B16A16_SFLOAT);
+    gbufferFormats.push_back(VK_FORMAT_R16G16B16A16_SFLOAT);
+    
     VkPipelineLayout gbufferPipelineLayout;
-    auto vertexDescription = VertexDataPosNormalUv::GetVertexDescription();
+    auto vertexDescription = VertexDataPosNormalUv::GetVertexDescription(*vk.m_CPUAllocator);
     VkPipelineData gbufferPipeline = lvk::pipelines::CreateDynamicRasterPipeline(vk,
         gbufferProg,vertexDescription,
         defaults::DefaultRasterState,
-        vk.m_SwapChainImageExtent,
-         {
-             VK_FORMAT_R16G16B16A16_SFLOAT,
-             VK_FORMAT_R16G16B16A16_SFLOAT,
-             VK_FORMAT_R16G16B16A16_SFLOAT
-         });
+        vk.m_SwapChainImageExtent, gbufferFormats);
 
     // create present graphics pipeline
     // Pipeline stage?
-    auto presentVertexDescription = VertexDataPosUv::GetVertexDescription();
+    Vector<VkFormat> presentFormats(*vk.m_CPUAllocator);
+    presentFormats.push_back(VK_FORMAT_R8G8B8A8_UNORM);
+
+    auto presentVertexDescription = VertexDataPosUv::GetVertexDescription(*vk.m_CPUAllocator);
     VkPipelineData pipeline = lvk::pipelines::CreateDynamicRasterPipeline(vk,
        lightPassProg, presentVertexDescription, defaults::CullNoneRasterState,
-       vk.m_SwapChainImageExtent,  {VK_FORMAT_R8G8B8A8_UNORM});
+       vk.m_SwapChainImageExtent,  presentFormats);
 
     return {gbufferPipeline, pipeline};
 }
@@ -142,7 +145,7 @@ void UpdateViewData(VkState & vk, ViewData* view, DeferredLightData& lightData)
 
 void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderData& renderData, RenderModel& model, Mesh& screenQuad, LvkIm3dState& im3dState, DeferredLightData& lightData)
 {
-    static Vector<VertexDataPosUv> originalScreenQuadData = {
+    static StaticVector<VertexDataPosUv> originalScreenQuadData = {
                     { { -1.0f, -1.0f , 0.0f}, { 0.0f, 0.0f } },
                     { {1.0f, -1.0f, 0.0f}, {1.0, 0.0f} },
                     { {1.0f, 1.0f, 0.0f}, {1.0, 1.0} },
@@ -188,12 +191,13 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderData& r
                 float w = static_cast<float>((float) viewExtent.width / (float) max.width);
                 float h = static_cast<float>((float) viewExtent.height / (float) max.height);
 
-                Vector<VertexDataPosUv> newScreenQuadData = {
-                    { { -1.0f, -1.0f , 0.0f}, { 0.0f, 0.0f } },
-                    { {1.0f, -1.0f, 0.0f}, {w, 0.0f} },
-                    { {1.0f, 1.0f, 0.0f}, {w, h} },
-                    { {-1.0f, 1.0f, 0.0f}, {0.0f, h} }
-                };
+                Vector<VertexDataPosUv> newScreenQuadData(*vk.m_CPUAllocator); 
+                
+                    newScreenQuadData.push_back({ { -1.0f, -1.0f , 0.0f}, { 0.0f, 0.0f } });
+                    newScreenQuadData.push_back({ {1.0f, -1.0f, 0.0f}, {w, 0.0f} });
+                    newScreenQuadData.push_back({ {1.0f, 1.0f, 0.0f}, {w, h} });
+                    newScreenQuadData.push_back({ {-1.0f, 1.0f, 0.0f}, {0.0f, h} });
+                
 
                 vkCmdUpdateBuffer(commandBuffer, view->m_ViewQuad.m_VertexBuffer.m_GpuBuffer, 0, 4 * sizeof(VertexDataPosUv), &newScreenQuadData[0]);
             }
@@ -278,14 +282,14 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderData& r
 
 RenderModel CreateRenderModelGbuffer(VkState & vk, const String& modelPath, ShaderProgram& shader)
 {
-    Model model;
+    Model model(*vk.m_CPUAllocator);
     LoadModelAssimp(vk, model, modelPath, true);
 
-    RenderModel renderModel{};
+    RenderModel renderModel(*vk.m_CPUAllocator);
     renderModel.m_Original = model;
     for (auto& mesh : model.m_Meshes)
     {
-        RenderItem item{};
+        RenderItem item(*vk.m_CPUAllocator);
         int materialIndex = std::min(mesh.m_MaterialIndex, (uint32_t)model.m_Materials.size() - 1);
         item.m_Mesh = mesh;
         item.m_Material = Material::Create(vk, shader);
@@ -431,8 +435,8 @@ int main() {
     bool enableMSAA = false;
     VkState vk = init::Create<VkSDL>("Im3D Multiview", 1920, 1080, enableMSAA);
 
-    spdlog::info("vkCmdBeginRenderingKHR : addr : {}", (void*) *vkCmdBeginRenderingKHR);
-    spdlog::info("vkCmdEndRenderingKHR : addr : {}", (void*) *vkCmdEndRenderingKHR);
+    LVK_LOG_INFO("vkCmdBeginRenderingKHR : addr : %ull", (void*) *vkCmdBeginRenderingKHR);
+    LVK_LOG_INFO("vkCmdEndRenderingKHR : addr : %ull", (void*) *vkCmdEndRenderingKHR);
 
     auto im3dState = LoadIm3D(vk);
 
@@ -449,7 +453,10 @@ int main() {
     ViewData viewB = CreateView(vk, im3dState, gbufferProg, lightPassProg);
     viewB.m_Camera.Position = { 30.0, 0.0f, -20.0f };
 
-    Vector<ViewData*> views{ &viewA, &viewB };
+    Vector<ViewData*> views(*vk.m_CPUAllocator);
+    views.push_back(&viewA);
+    views.push_back(&viewB);
+
     RenderData renderData = CreateRenderData(vk, gbufferProg, lightPassProg);
     // create vertex and index buffer
     // allocate materials instead of raw buffers etc.

@@ -77,6 +77,10 @@ struct Model
 {
     lvk::Vector<MeshEx>        m_Meshes;
     lvk::Vector<MaterialEx>  m_Materials;
+
+    Model(lvk::IAllocator& alloc) :
+        m_Meshes(alloc), m_Materials(alloc) {
+    }
 };
 
 struct Transform {
@@ -394,12 +398,20 @@ struct RenderItem
 {
     MeshEx              m_Mesh;
     lvk::Material       m_Material;
+
+    RenderItem(lvk::IAllocator& alloc) : m_Material(alloc) {}
 };
 
 struct RenderModel
 {
     Model m_Original;
     lvk::Vector<RenderItem> m_RenderItems;
+
+    RenderModel(lvk::IAllocator& alloc) : m_RenderItems(alloc), m_Original(alloc)
+    {
+
+    }
+
     void Free(lvk::VkState & vk)
     {
         for (auto& item : m_RenderItems)

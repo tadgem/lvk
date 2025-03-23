@@ -32,8 +32,8 @@ namespace lvk
         {
             uint32_t        m_SetNumber;
             uint32_t        m_BindingNumber;
-            VkImageView&    m_ImageView;
-            VkSampler&      m_Sampler;
+            VkImageView     m_ImageView;
+            VkSampler       m_Sampler;
         };
 
         struct ShaderAccessorData
@@ -56,8 +56,8 @@ namespace lvk
         Vector<FrameDescriptorSets>                                 m_DescriptorSets;
         Vector<PushConstantBlock>                                   m_PushConstants;
         HashMap<DescriptorSetBinding, ShaderBufferBindingData>      m_ShaderBuffers;
-        HashMap<String, SamplerBindingData>                         m_Samplers;
         HashMap<String, ShaderAccessorData>                         m_UniformBufferAccessors;
+        HashMap<String, SamplerBindingData>                         m_Samplers;
 
         Material(IAllocator& alloc);
 

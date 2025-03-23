@@ -114,7 +114,7 @@ void lvk::Material::UpdateDescriptors(VkState& vk)
         {
             if (!bufferInfo.Ready())
             {
-                LVK_LOG_WARN("Material with name %s : set %s, binding %s has no associated buffer", m_ShaderName, setBinding.m_Set, setBinding.m_Binding);
+                LVK_LOG_WARN("Material with name %s : set %d, binding %d has no associated buffer", m_ShaderName, setBinding.m_Set, setBinding.m_Binding);
                 continue;
             }
             VkDescriptorBufferInfo bufferWriteInfo{};

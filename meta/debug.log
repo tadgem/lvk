@@ -1,0 +1,151 @@
+>------ Build started: Project: CMakeLists, Configuration: RelWithDebInfo ------
+  [1/3] Linking CXX static library lvk\lvk.lib
+  [2/3] Building CXX object examples\dynamic-rendering\CMakeFiles\example-dynamic-rendering.dir\main.cpp.obj
+  FAILED: examples/dynamic-rendering/CMakeFiles/example-dynamic-rendering.dir/main.cpp.obj 
+  C:\PROGRA~1\MICROS~1\2022\COMMUN~1\VC\Tools\MSVC\1443~1.348\bin\Hostx64\x64\cl.exe  /nologo /TP  -IC:\Users\liam_\Documents\GitHub\lvk\submodules\glm -IC:\Users\liam_\Documents\GitHub\lvk\submodules\shaderc\libshaderc\include -IC:\Users\liam_\Documents\GitHub\lvk\submodules\shaderc\libshaderc_util\include -IC:\Users\liam_\Documents\GitHub\lvk\lvk\include -IC:\Users\liam_\Documents\GitHub\lvk\backends\sdl\include -IC:\Users\liam_\Documents\GitHub\lvk\third-party\sdl\include -IC:\Users\liam_\Documents\GitHub\lvk\examples -IC:\Users\liam_\Documents\GitHub\lvk\submodules\assimp\include -IC:\Users\liam_\Documents\GitHub\lvk\submodules\volk -IC:\VulkanSDK\1.3.296.0\Include -IC:\Users\liam_\Documents\GitHub\lvk\out\build\x64-Release\third-party\sdl\include-revision -IC:\Users\liam_\Documents\GitHub\lvk\submodules\assimp\code\..\include -IC:\Users\liam_\Documents\GitHub\lvk\out\build\x64-Release\submodules\assimp\code\..\include /DWIN32 /D_WINDOWS /W3 /GR /EHsc /MD /Zi /O2 /Ob1 /DNDEBUG -std:c++17 /showIncludes /Foexamples\dynamic-rendering\CMakeFiles\example-dynamic-rendering.dir\main.cpp.obj /Fdexamples\dynamic-rendering\CMakeFiles\example-dynamic-rendering.dir\ /FS -c C:\Users\liam_\Documents\GitHub\lvk\examples\dynamic-rendering\main.cpp
+C:\Users\liam_\Documents\GitHub\lvk\lvk\include\lvk\Buffer.h(17): warning C4244: 'argument': conversion from 'unsigned __int64' to 'uint32_t', possible loss of data
+C:\Users\liam_\Documents\GitHub\lvk\examples\example-common.h(352): warning C4477: 'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 1 has type 'const lvk::String'
+C:\Users\liam_\Documents\GitHub\lvk\examples\dynamic-rendering\main.cpp(70): warning C4267: 'argument': conversion from 'size_t' to 'uint32_t', possible loss of data
+C:\Users\liam_\Documents\GitHub\lvk\examples\dynamic-rendering\main.cpp(71): warning C4267: 'argument': conversion from 'size_t' to 'uint32_t', possible loss of data
+C:\Users\liam_\Documents\GitHub\lvk\examples\dynamic-rendering\main.cpp(87): warning C4101: 'gbufferPipelineLayout': unreferenced local variable
+C:\Users\liam_\Documents\GitHub\lvk\examples\dynamic-rendering\main.cpp(318): warning C4244: 'argument': conversion from 'float' to 'uint32_t', possible loss of data
+C:\Users\liam_\Documents\GitHub\lvk\examples\dynamic-rendering\main.cpp(318): warning C4244: 'argument': conversion from 'float' to 'uint32_t', possible loss of data
+C:\Users\liam_\Documents\GitHub\lvk\examples\dynamic-rendering\main.cpp(335): warning C4244: 'argument': conversion from 'float' to 'uint32_t', possible loss of data
+C:\Users\liam_\Documents\GitHub\lvk\examples\dynamic-rendering\main.cpp(335): warning C4244: 'argument': conversion from 'float' to 'uint32_t', possible loss of data
+C:\Users\liam_\Documents\GitHub\lvk\examples\dynamic-rendering\main.cpp(438): warning C4477: 'printf' : format string '%u' requires an argument of type 'unsigned int', but variadic argument 1 has type 'void *'
+C:\Users\liam_\Documents\GitHub\lvk\examples\dynamic-rendering\main.cpp(438): warning C4313: 'printf': '%u' in format string conflicts with argument 1 of type 'void *'
+C:\Users\liam_\Documents\GitHub\lvk\examples\dynamic-rendering\main.cpp(439): warning C4477: 'printf' : format string '%u' requires an argument of type 'unsigned int', but variadic argument 1 has type 'void *'
+C:\Users\liam_\Documents\GitHub\lvk\examples\dynamic-rendering\main.cpp(439): warning C4313: 'printf': '%u' in format string conflicts with argument 1 of type 'void *'
+C:\Users\liam_\Documents\GitHub\lvk\lvk\include\lvk\Buffer.h(75): warning C4244: 'argument': conversion from 'unsigned __int64' to 'uint32_t', possible loss of data
+  C:\Users\liam_\Documents\GitHub\lvk\lvk\include\lvk/Buffer.h(75): note: the template instantiation context (the oldest one first) is
+  C:\Users\liam_\Documents\GitHub\lvk\examples\example-common.h(222): note: see reference to function template instantiation 'lvk::Buffer lvk::buffers::CreateVertexBuffer<lvk::VertexDataPosUv>(lvk::VkState &,std::vector<lvk::VertexDataPosUv,lvk::STLAllocator<lvk::VertexDataPosUv>> &)' being compiled
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\list(1305): error C2679: binary '=': no operator found which takes a right-hand operand of type '_Val' (or there is no acceptable conversion)
+          with
+          [
+              _Val=std::pair<lvk::String,lvk::Material::SamplerBindingData>
+          ]
+  C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\utility(333): note: could be 'std::pair<_Kty,_Ty> &std::pair<_Kty,_Ty>::operator =(volatile const std::pair<_Kty,_Ty> &)'
+          with
+          [
+              _Kty=lvk::String,
+              _Ty=lvk::Material::SamplerBindingData
+          ]
+  C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\list(1305): note: 'std::pair<_Kty,_Ty> &std::pair<_Kty,_Ty>::operator =(volatile const std::pair<_Kty,_Ty> &)': cannot convert argument 2 from '_Val' to 'volatile const std::pair<_Kty,_Ty> &'
+          with
+          [
+              _Kty=lvk::String,
+              _Ty=lvk::Material::SamplerBindingData
+          ]
+          and
+          [
+              _Val=std::pair<lvk::String,lvk::Material::SamplerBindingData>
+          ]
+          and
+          [
+              _Kty=lvk::String,
+              _Ty=lvk::Material::SamplerBindingData
+          ]
+  C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\list(1305): note: A non-const reference may only be bound to an lvalue
+  C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\utility(412): note: or       'std::pair<_Kty,_Ty> &std::pair<_Kty,_Ty>::operator =(std::pair<_Other1,_Other2> &&) noexcept(<expr>)'
+          with
+          [
+              _Kty=lvk::String,
+              _Ty=lvk::Material::SamplerBindingData
+          ]
+  C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\list(1305): note: 'std::pair<_Kty,_Ty> &std::pair<_Kty,_Ty>::operator =(std::pair<_Other1,_Other2> &&) noexcept(<expr>)': could not deduce template argument for '__formal'
+          with
+          [
+              _Kty=lvk::String,
+              _Ty=lvk::Material::SamplerBindingData
+          ]
+  C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\utility(409): note: 'std::enable_if_t<false,int>' : Failed to specialize alias template
+  C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\utility(387): note: or       'std::pair<_Kty,_Ty> &std::pair<_Kty,_Ty>::operator =(const std::pair<_Other1,_Other2> &) noexcept(<expr>)'
+          with
+          [
+              _Kty=lvk::String,
+              _Ty=lvk::Material::SamplerBindingData
+          ]
+  C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\list(1305): note: 'std::pair<_Kty,_Ty> &std::pair<_Kty,_Ty>::operator =(const std::pair<_Other1,_Other2> &) noexcept(<expr>)': could not deduce template argument for '__formal'
+          with
+          [
+              _Kty=lvk::String,
+              _Ty=lvk::Material::SamplerBindingData
+          ]
+  C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\utility(384): note: 'std::enable_if_t<false,int>' : Failed to specialize alias template
+  C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\utility(363): note: or       'std::pair<_Kty,_Ty> &std::pair<_Kty,_Ty>::operator =(_Identity<_Myself&&>::type) noexcept(<expr>)'
+          with
+          [
+              _Kty=lvk::String,
+              _Ty=lvk::Material::SamplerBindingData
+          ]
+  C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\list(1305): note: 'std::pair<_Kty,_Ty> &std::pair<_Kty,_Ty>::operator =(_Identity<_Myself&&>::type) noexcept(<expr>)': could not deduce template argument for '__formal'
+          with
+          [
+              _Kty=lvk::String,
+              _Ty=lvk::Material::SamplerBindingData
+          ]
+  C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\utility(360): note: 'std::enable_if_t<false,int>' : Failed to specialize alias template
+  C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\utility(339): note: or       'std::pair<_Kty,_Ty> &std::pair<_Kty,_Ty>::operator =(_Identity<const _Myself&>::type) noexcept(<expr>)'
+          with
+          [
+              _Kty=lvk::String,
+              _Ty=lvk::Material::SamplerBindingData
+          ]
+  C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\list(1305): note: 'std::pair<_Kty,_Ty> &std::pair<_Kty,_Ty>::operator =(_Identity<const _Myself&>::type) noexcept(<expr>)': could not deduce template argument for '__formal'
+          with
+          [
+              _Kty=lvk::String,
+              _Ty=lvk::Material::SamplerBindingData
+          ]
+  C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\utility(336): note: 'std::enable_if_t<false,int>' : Failed to specialize alias template
+  C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\list(1305): note: while trying to match the argument list '(std::pair<_Kty,_Ty>, _Val)'
+          with
+          [
+              _Kty=lvk::String,
+              _Ty=lvk::Material::SamplerBindingData
+          ]
+          and
+          [
+              _Val=std::pair<lvk::String,lvk::Material::SamplerBindingData>
+          ]
+  C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\list(1305): note: the template instantiation context (the oldest one first) is
+  C:\Users\liam_\Documents\GitHub\lvk\lvk\include\lvk/Material.h(60): note: see reference to class template instantiation 'std::unordered_map<lvk::String,lvk::Material::SamplerBindingData,std::hash<lvk::String>,std::equal_to<lvk::String>,lvk::STLAllocator<std::pair<const lvk::String,lvk::Material::SamplerBindingData>>>' being compiled
+  C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\unordered_map(61): note: see reference to class template instantiation 'std::_Hash<std::_Umap_traits<_Kty,_Ty,std::_Uhash_compare<_Kty,_Hasher,_Keyeq>,_Alloc,false>>' being compiled
+          with
+          [
+              _Kty=lvk::String,
+              _Ty=lvk::Material::SamplerBindingData,
+              _Hasher=std::hash<lvk::String>,
+              _Keyeq=std::equal_to<lvk::String>,
+              _Alloc=lvk::STLAllocator<std::pair<const lvk::String,lvk::Material::SamplerBindingData>>
+          ]
+  C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\xhash(507): note: while compiling class template member function 'std::_Hash<std::_Umap_traits<_Kty,_Ty,std::_Uhash_compare<_Kty,_Hasher,_Keyeq>,_Alloc,false>> &std::_Hash<std::_Umap_traits<_Kty,_Ty,std::_Uhash_compare<_Kty,_Hasher,_Keyeq>,_Alloc,false>>::operator =(std::_Hash<std::_Umap_traits<_Kty,_Ty,std::_Uhash_compare<_Kty,_Hasher,_Keyeq>,_Alloc,false>> &&)'
+          with
+          [
+              _Kty=lvk::String,
+              _Ty=lvk::Material::SamplerBindingData,
+              _Hasher=std::hash<lvk::String>,
+              _Keyeq=std::equal_to<lvk::String>,
+              _Alloc=lvk::STLAllocator<std::pair<const lvk::String,lvk::Material::SamplerBindingData>>
+          ]
+  C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\unordered_map(255): note: see the first reference to 'std::_Hash<std::_Umap_traits<_Kty,_Ty,std::_Uhash_compare<_Kty,_Hasher,_Keyeq>,_Alloc,false>>::operator =' in 'std::unordered_map<lvk::String,lvk::Material::SamplerBindingData,std::hash<lvk::String>,std::equal_to<lvk::String>,lvk::STLAllocator<std::pair<const lvk::String,lvk::Material::SamplerBindingData>>>::operator ='
+          with
+          [
+              _Kty=lvk::String,
+              _Ty=lvk::Material::SamplerBindingData,
+              _Hasher=std::hash<lvk::String>,
+              _Keyeq=std::equal_to<lvk::String>,
+              _Alloc=lvk::STLAllocator<std::pair<const lvk::String,lvk::Material::SamplerBindingData>>
+          ]
+  C:\Users\liam_\Documents\GitHub\lvk\lvk\include\lvk/Material.h(140): note: see the first reference to 'std::unordered_map<lvk::String,lvk::Material::SamplerBindingData,std::hash<lvk::String>,std::equal_to<lvk::String>,lvk::STLAllocator<std::pair<const lvk::String,lvk::Material::SamplerBindingData>>>::operator =' in 'lvk::Material::operator ='
+  C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.43.34808\include\xhash(573): note: see reference to function template instantiation 'void std::list<std::pair<const lvk::String,lvk::Material::SamplerBindingData>,lvk::STLAllocator<std::pair<const lvk::String,lvk::Material::SamplerBindingData>>>::_Assign_cast<std::pair<_Kty,_Ty>&,std::_Hash<std::_Umap_traits<_Kty,_Ty,std::_Uhash_compare<_Kty,_Hasher,_Keyeq>,_Alloc,false>>::=::_Adapter>(_UIter,const _UIter)' being compiled
+          with
+          [
+              _Kty=lvk::String,
+              _Ty=lvk::Material::SamplerBindingData,
+              _Hasher=std::hash<lvk::String>,
+              _Keyeq=std::equal_to<lvk::String>,
+              _Alloc=lvk::STLAllocator<std::pair<const lvk::String,lvk::Material::SamplerBindingData>>,
+              _UIter=std::_Hash<std::_Umap_traits<lvk::String,lvk::Material::SamplerBindingData,std::_Uhash_compare<lvk::String,std::hash<lvk::String>,std::equal_to<lvk::String>>,lvk::STLAllocator<std::pair<const lvk::String,lvk::Material::SamplerBindingData>>,false>>::=::_Adapter
+          ]
+  ninja: build stopped: subcommand failed.
