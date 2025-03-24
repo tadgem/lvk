@@ -12,7 +12,9 @@ namespace lvk {
 ShaderStage::ShaderStage(IAllocator& alloc) :
     m_PushConstants(alloc),
     m_LayoutDatas(alloc),
-    m_StageBinary(alloc) {
+    m_StageBinary(alloc),
+    m_Name(alloc)
+{
 }
 
 void ShaderProgram::Free(VkState &vk) {
@@ -156,7 +158,7 @@ shaderc_shader_kind GetShadercShaderKind(lvk::ShaderStageType type)
 }
 
 StageBinary CreateStageBinaryFromSource(VkState &vk, ShaderStageType type,
-                                    const std::string &source, const std::string& shaderName) {
+                                    const String &source, const String& shaderName) {
   shaderc_compiler* c = shaderc_compiler_initialize();
   shaderc_compile_options_t opt {};
 
@@ -190,11 +192,13 @@ StageBinary CreateStageBinaryFromSource(VkState &vk, ShaderStageType type,
   return bin;
 }
 
-void RecurseStringInclude(String inputDir, String& output, const String& path)
+void RecurseStringInclude(VkState& vk, String inputDir, String& output, const String& path)
 {
-  String input = utils::LoadStringFromPath(inputDir + "/" + path);
-  String dir = std::filesystem::path(path).parent_path().u8string();
-  std::istringstream iss(input);
+  String input(*vk.m_CPUAllocator);
+  String dir(*vk.m_CPUAllocator);
+  input = utils::LoadStringFromPath(vk, inputDir + "/" + path);
+  dir = std::filesystem::path(path).parent_path().u8string();
+  IStringStream iss(input);
   std::regex include_dir_regex("\\\"(.*)\\\"");
   for (std::string line; std::getline(iss, line); )
   {
@@ -207,11 +211,12 @@ void RecurseStringInclude(String inputDir, String& output, const String& path)
         {
           const std::smatch& match = *i;
           // remove first and last ""
-          std::string include_dir = match.str().substr(1, match.str().size() - 2);
-          RecurseStringInclude(inputDir, output, include_dir);
+          String include_dir(*vk.m_CPUAllocator);
+          include_dir = match.str().substr(1, match.str().size() - 2);
+          RecurseStringInclude(vk, inputDir, output, include_dir);
         }
 
-        RecurseStringInclude(dir, output, input);
+        RecurseStringInclude(vk, dir, output, input);
       }
       else
       {
@@ -220,11 +225,15 @@ void RecurseStringInclude(String inputDir, String& output, const String& path)
   }
 }
 
-String ShaderStage::LoadShaderSource(const String &path) {
-  String final_shader_src {};
+String ShaderStage::LoadShaderSource(VkState& vk, const String &path) {
+  String final_shader_src(*vk.m_CPUAllocator);
+  String parent_path(*vk.m_CPUAllocator);
+  String filename(*vk.m_CPUAllocator);
   std::filesystem::path inputPath(path);
-  RecurseStringInclude(inputPath.parent_path().u8string(),
-                       final_shader_src, inputPath.filename().u8string());
+  parent_path = inputPath.parent_path().u8string();
+  filename = inputPath.filename().u8string();
+  
+  RecurseStringInclude(vk, parent_path, final_shader_src, filename);
   // do includes
   return final_shader_src;
 }

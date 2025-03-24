@@ -374,9 +374,9 @@ int main()
     VkState vk = init::Create<VkSDL>("Forward Lights", 1920, 1080, enableMSAA);
 
     // shader abstraction
-    ShaderProgram particles_prog = ShaderProgram::CreateComputeFromSourcePath(vk, "shaders/particles.comp");
+    ShaderProgram particles_prog = ShaderProgram::CreateComputeFromSourcePath(vk, String("shaders/particles.comp", *vk.m_CPUAllocator));
     ShaderProgram draw_particles = ShaderProgram::CreateGraphicsFromSourcePath(
-        vk, "shaders/draw_particle.vert", "shaders/draw_particle.frag");
+        vk, String("shaders/draw_particle.vert", *vk.m_CPUAllocator), String("shaders/draw_particle.frag", *vk.m_CPUAllocator));
     Material computeMaterial = Material::Create(vk, particles_prog);
 
     std::vector<Buffer> uniformBuffers;

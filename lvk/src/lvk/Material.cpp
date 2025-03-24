@@ -77,7 +77,8 @@ lvk::Material::Material(IAllocator& alloc) :
     m_PushConstants(alloc),
     m_ShaderBuffers(alloc),
     m_Samplers(alloc),
-    m_UniformBufferAccessors(alloc)
+    m_UniformBufferAccessors(alloc),
+    m_ShaderName(alloc)
 {
 }
 
@@ -114,7 +115,7 @@ void lvk::Material::UpdateDescriptors(VkState& vk)
         {
             if (!bufferInfo.Ready())
             {
-                LVK_LOG_WARN("Material with name %s : set %d, binding %d has no associated buffer", m_ShaderName, setBinding.m_Set, setBinding.m_Binding);
+                LVK_LOG_WARN("Material with name %s : set %d, binding %d has no associated buffer", m_ShaderName.c_str(), setBinding.m_Set, setBinding.m_Binding);
                 continue;
             }
             VkDescriptorBufferInfo bufferWriteInfo{};
@@ -178,7 +179,7 @@ lvk::Material lvk::Material::Create(VkState & vk, ShaderProgram& shader)
 {
     Material mat(*vk.m_CPUAllocator);
 
-    String materialShaderName = "";
+    String materialShaderName(*vk.m_CPUAllocator);
 
     for (auto& stage : shader.m_Stages)
     {
@@ -210,7 +211,7 @@ void lvk::Material::AttachBuffer(VkState& vk, uint32_t frameIndex, uint32_t set,
     
     if (m_ShaderBuffers.find(b) == m_ShaderBuffers.end())
     {
-        LVK_LOG_ERR("Material with shader %s : No binding at set %s, binding %s", m_ShaderName, set, binding);
+        LVK_LOG_ERR("Material with shader %s : No binding at set %s, binding %s", m_ShaderName.c_str(), set, binding);
         return;
     }
 
@@ -235,7 +236,7 @@ void lvk::Material::CreateBuffer(VkState& vk, uint32_t set, uint32_t binding)
 
     if (m_ShaderBuffers.find(bind_handle) == m_ShaderBuffers.end())
     {
-        LVK_LOG_ERR("Material with shader %s : No binding at set %s, binding %s", m_ShaderName, set, binding);
+        LVK_LOG_ERR("Material with shader %s : No binding at set %s, binding %s", m_ShaderName.c_str(), set, binding);
         return;
     }
 
@@ -283,7 +284,7 @@ bool lvk::Material::SetColourAttachment(VkState & vk, const String& name, Frameb
 {
     if (m_Samplers.find(name) == m_Samplers.end())
     {
-        LVK_LOG_ERR("Material with shader %s : No associated sampler with name %s", m_ShaderName, name);
+        LVK_LOG_ERR("Material with shader %s : No associated sampler with name %s", m_ShaderName.c_str(), name);
         return false;
     }
 

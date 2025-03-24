@@ -104,8 +104,8 @@ int main()
     VkState vk = init::Create<VkSDL>("Forward Lights", 1920, 1080, enableMSAA);
     FillExampleLightData(lightDataCpu);
 
-    ShaderProgram lights_prog = ShaderProgram::CreateGraphicsFromSourcePath(
-        vk, "shaders/lights.vert", "shaders/lights.frag");
+    ShaderProgram lights_prog= ShaderProgram::CreateGraphicsFromSourcePath(
+        vk, String("shaders/lights.vert", *vk.m_CPUAllocator), String("shaders/lights.frag", *vk.m_CPUAllocator));
 
     Material m = Material::Create(vk, lights_prog);
     m.CreateBuffer(vk, 0, 0);
@@ -119,9 +119,9 @@ int main()
 
     // create vertex and index buffer
     Model model(*vk.m_CPUAllocator);
-    LoadModelAssimp(vk, model, "assets/viking_room.obj", true);
+    LoadModelAssimp(vk, model, String("assets/viking_room.obj", *vk.m_CPUAllocator), true);
 
-    if(!m.SetSampler(vk, "texSampler", model.m_Materials.front().m_Diffuse))
+    if(!m.SetSampler(vk, String("texSampler", *vk.m_CPUAllocator), model.m_Materials.front().m_Diffuse))
     {
         LVK_LOG_ERR("Failed to set diffuse texture for forward lighting shader");
     }

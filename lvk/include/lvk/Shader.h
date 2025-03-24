@@ -9,7 +9,7 @@ namespace lvk
     VkShaderModule CreateShaderModuleRaw(VkState& vk, const char* data, size_t length);
 
     StageBinary CreateStageBinaryFromSource(VkState& vk,
-      ShaderStageType type, const String& sourc, const String& shaderName);
+      ShaderStageType type, const String& source, const String& shaderName);
 
     struct ShaderStage
     {
@@ -22,7 +22,7 @@ namespace lvk
 
         ShaderStage(IAllocator& alloc);
 
-        static String      LoadShaderSource(const String& path);
+        static String      LoadShaderSource(VkState& vk, const String& path);
 
         static ShaderStage CreateFromBinary(VkState & vk, Vector<unsigned char>& binary, const ShaderStageType& type, const String& name)
         {
@@ -44,7 +44,8 @@ namespace lvk
         static ShaderStage
         CreateFromBinaryPath(VkState & vk, const String& stagePath, const ShaderStageType& stageType)
         {
-            String name = std::filesystem::path(stagePath).filename().u8string();
+            String name(*vk.m_CPUAllocator);
+            name = std::filesystem::path(stagePath).filename().u8string();
             auto stageBin = utils::LoadSpirvBinary(vk, stagePath);
             return CreateFromBinary(vk, stageBin, stageType, name);
         }
@@ -73,8 +74,9 @@ namespace lvk
 
         static ShaderStage CreateFromSourcePath(VkState & vk, const String& path, const ShaderStageType& type)
         {
-            String name = std::filesystem::path(path).filename().u8string();
-            auto source = LoadShaderSource(path);
+            String name(*vk.m_CPUAllocator);
+            name = std::filesystem::path(path).filename().u8string();
+            auto source = LoadShaderSource(vk, path);
             return CreateFromSource(vk, source, type, path, name);
         }
     };

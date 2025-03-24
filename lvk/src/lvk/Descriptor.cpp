@@ -277,7 +277,7 @@ ReflectDescriptorSetLayoutsRaw(VkState &vk, const char *stage_bin,
         ShaderBindingType bufferType = GetBindingType(reflectedBinding);
         STLAllocator<ShaderBufferMember> sbma(*vk.m_CPUAllocator);
         DescriptorSetLayoutBindingData binding(*vk.m_CPUAllocator);
-        binding.m_BindingName = String(reflectedBinding.name); 
+        binding.m_BindingName = String(reflectedBinding.name, *vk.m_CPUAllocator); 
         binding.m_BindingIndex = reflectedBinding.binding;
         binding.m_ExpectedBufferSizeOrDivisor = reflectedBinding.block.size; 
         binding.m_BufferType = bufferType; 
@@ -308,8 +308,8 @@ ReflectDescriptorSetLayoutsRaw(VkState &vk, const char *stage_bin,
       for (uint32_t i = 0; i < reflectedBinding.block.member_count; i++)
       {
         auto member = reflectedBinding.block.members[i];
-        ShaderBufferMember reflectedMember{};
-        reflectedMember.m_Name = String(member.name);
+        ShaderBufferMember reflectedMember(*vk.m_CPUAllocator);
+        reflectedMember.m_Name = String(member.name, *vk.m_CPUAllocator);
         reflectedMember.m_Offset = member.absolute_offset; // this might be an issue with padded types?
         reflectedMember.m_Size = member.padded_size;
         reflectedMember.m_Type = GetTypeFromSpvReflect(member.type_description);
@@ -327,8 +327,8 @@ ReflectDescriptorSetLayoutsRaw(VkState &vk, const char *stage_bin,
       }
       if (reflectedBinding.resource_type & SPV_REFLECT_RESOURCE_FLAG_SAMPLER)
       {
-        ShaderBufferMember reflectedMember{};
-        reflectedMember.m_Name = String(reflectedBinding.name);
+        ShaderBufferMember reflectedMember(*vk.m_CPUAllocator);
+        reflectedMember.m_Name = String(reflectedBinding.name, *vk.m_CPUAllocator);
         reflectedMember.m_Type = ShaderBufferMemberType::_sampler;
         binding.m_Members.push_back(reflectedMember);
       }
@@ -364,7 +364,12 @@ ReflectPushConstantsRaw(VkState &vk, const char *stage_bin, size_t stage_size) {
   for (uint32_t i = 0; i < pushConstantBlockCount; i++)
   {
     const SpvReflectBlockVariable& pcBlock = *reflectedPushConstantBlocks[i];
-    pushConstants.push_back({ pcBlock.size, pcBlock.offset, pcBlock.name, (VkShaderStageFlags) shaderReflectModule.shader_stage });
+    PushConstantBlock pcb(*vk.m_CPUAllocator);
+    pcb.m_Size = pcBlock.size;
+    pcb.m_Offset = pcBlock.offset;
+    pcb.m_Name = pcBlock.name;
+    pcb.m_Stage = (VkShaderStageFlags)shaderReflectModule.shader_stage;
+    pushConstants.push_back(pcb);
   }
 
   return pushConstants;

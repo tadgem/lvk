@@ -256,7 +256,7 @@ RenderModel CreateRenderModelGbuffer(VkState & vk, const String& modelPath, Shad
         item.m_Material = Material::Create(vk, shader);
 
         MaterialEx& material = model.m_Materials[mesh.m_MaterialIndex];
-        item.m_Material.SetSampler(vk, "texSampler", material.m_Diffuse.m_ImageView, material.m_Diffuse.m_Sampler);
+        item.m_Material.SetSampler(vk, String("texSampler", *vk.m_CPUAllocator), material.m_Diffuse.m_ImageView, material.m_Diffuse.m_Sampler);
         renderModel.m_RenderItems.push_back(item);
     }
 
@@ -408,11 +408,11 @@ int main() {
     FillExampleLightData(lightDataCpu);
 
     ShaderProgram gbufferProg = ShaderProgram::CreateGraphicsFromSourcePath(
-        vk, "shaders/gbuffer.vert", "shaders/gbuffer.frag");
+        vk, String("shaders/gbuffer.vert", *vk.m_CPUAllocator), String("shaders/gbuffer.frag", *vk.m_CPUAllocator));
     ShaderProgram lightPassProg = ShaderProgram::CreateGraphicsFromSourcePath(
-        vk, "shaders/lights.vert", "shaders/lights.frag");
+        vk, String("shaders/lights.vert", *vk.m_CPUAllocator), String("shaders/lights.frag", *vk.m_CPUAllocator));
     ShaderProgram tiledForwardProg = ShaderProgram::CreateGraphicsFromSourcePath(
-        vk, "shaders/clustered.vert", "shaders/clustered.frag");
+        vk, String("shaders/clustered.vert", *vk.m_CPUAllocator), String("shaders/clustered.frag", *vk.m_CPUAllocator));
 
     ViewData viewA = CreateView(vk, im3dState, gbufferProg, lightPassProg);
     viewA.m_Camera.Position = { -40.0, 10.0f, 30.0f };
@@ -426,7 +426,7 @@ int main() {
     RenderData renderData = CreateRenderData(vk, gbufferProg, lightPassProg, tiledForwardProg);
     // create vertex and index buffer
     // allocate materials instead of raw buffers etc.
-    RenderModel m = CreateRenderModelGbuffer(vk, "assets/Sponza/sponza.gltf", gbufferProg);
+    RenderModel m = CreateRenderModelGbuffer(vk, String("assets/Sponza/sponza.gltf", *vk.m_CPUAllocator), gbufferProg);
 
     while (vk.m_Backend->ShouldRun(vk))
     {

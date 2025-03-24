@@ -6,5 +6,5 @@ namespace lvk::utils {
   VkFormat                            FindDepthFormat(VkState& vk);
   bool                                HasStencilComponent(VkFormat& format);
   StageBinary                         LoadSpirvBinary(VkState& vk, const String& path);
-  String                              LoadStringFromPath(const String& path);
+  String                              LoadStringFromPath(VkState& vk, const String& path);
 }

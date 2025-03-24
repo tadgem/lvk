@@ -170,8 +170,8 @@ static glm::vec2 AssimpToGLM(aiVector2D aiVec) {
     return glm::vec2(aiVec.x, aiVec.y);
 }
 
-static lvk::String AssimpToSTD(aiString str) {
-    return lvk::String(str.C_Str());
+static lvk::String AssimpToSTD(lvk::IAllocator& alloc, aiString str) {
+    return lvk::String(str.C_Str(), alloc);
 }
 
 void FreeMesh(lvk::VkState & vk, MeshEx& m)
@@ -354,7 +354,14 @@ void LoadModelAssimp(lvk::VkState & vk, Model& model, const lvk::String& path, b
     }
     ProcessNode(vk, model, scene->mRootNode, scene, withNormals);
 
-    lvk::String directory = path.substr(0, path.find_last_of('/') + 1);
+    // TODO: STL substr does not accept an allocator as param and so returned string 
+    // MUST be default allocated :( EASTL does not do this, uses allocator 
+    // provided on the string be substr'd
+    std::string path_stl(path);
+    auto lastDelim = path_stl.find_last_of('/') + 1;
+    std::string dir_stl = path_stl.substr(0, lastDelim);
+    lvk::String directory = lvk::String(dir_stl, *vk.m_CPUAllocator);
+
     for (unsigned int i = 0; i < scene->mNumMaterials; i++)
     {
         aiMaterial* meshMaterial = scene->mMaterials[i];
@@ -374,7 +381,7 @@ void LoadModelAssimp(lvk::VkState & vk, Model& model, const lvk::String& path, b
         {
             aiString resultPath;
             aiGetMaterialTexture(meshMaterial, aiTextureType_DIFFUSE, 0, &resultPath);
-            lvk::String finalPath = directory + lvk::String(resultPath.C_Str());
+            lvk::String finalPath = directory + lvk::String(resultPath.C_Str(), *vk.m_CPUAllocator);
             lvk::Texture texture = lvk::Texture::CreateTexture(vk, finalPath, VK_FORMAT_R8G8B8A8_UNORM);
             model.m_Materials.push_back({ texture });
         }

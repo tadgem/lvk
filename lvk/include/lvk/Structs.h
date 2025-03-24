@@ -44,6 +44,8 @@ namespace lvk {
     uint32_t m_Offset;
     String m_Name;
     VkShaderStageFlags m_Stage;
+
+    PushConstantBlock(IAllocator& alloc) : m_Name(alloc) {}
   };
 
   struct ShaderBufferMember {
@@ -52,7 +54,9 @@ namespace lvk {
     uint32_t m_Stride;
     String m_Name;
     ShaderBufferMemberType m_Type;
-  };
+
+    ShaderBufferMember(IAllocator& alloc) : m_Name(alloc) {}
+  }; 
 
   struct DescriptorSetLayoutBindingData {
     String m_BindingName;
@@ -62,7 +66,7 @@ namespace lvk {
     Vector<ShaderBufferMember> m_Members;
 
     DescriptorSetLayoutBindingData(IAllocator& alloc) :
-        m_BindingName(""),
+        m_BindingName(alloc),
         m_BindingIndex(0),
         m_ExpectedBufferSizeOrDivisor(0),
         m_Members(alloc) {
@@ -389,7 +393,8 @@ namespace lvk {
         m_GraphicsCommandBuffers(alloc),
         m_ComputeCommandBuffers(alloc),
         m_DesiredDeviceExtensions(alloc),
-        m_QueueFamilyIndices(alloc)
+        m_QueueFamilyIndices(alloc),
+        m_AppName(alloc)
     {
     }
   };
