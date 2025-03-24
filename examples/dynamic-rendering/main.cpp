@@ -49,9 +49,9 @@ ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferP
     Material lightPassMat = Material::Create(vk, lightPassProg);
     lightPassMat.CreateBuffer(vk, 0, 3);
 
-    lightPassMat.SetColourAttachment(vk, String("positionBufferSampler", *vk.m_CPUAllocator), gbuffer, 1);
-    lightPassMat.SetColourAttachment(vk, String("normalBufferSampler", *vk.m_CPUAllocator), gbuffer, 2);
-    lightPassMat.SetColourAttachment(vk, String("colourBufferSampler", *vk.m_CPUAllocator), gbuffer, 0);
+    lightPassMat.SetColourAttachment(vk, "positionBufferSampler", gbuffer, 1);
+    lightPassMat.SetColourAttachment(vk, "normalBufferSampler", gbuffer, 2);
+    lightPassMat.SetColourAttachment(vk, "colourBufferSampler", gbuffer, 0);
 
 
     auto im3dViewState = AddIm3dForViewport(vk, im3dState, finalImage.m_RenderPassInfo.m_RenderPass, false, true);
@@ -153,7 +153,7 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderData& r
     };
     lvk::commands::RecordGraphicsCommands(vk, [&](VkCommandBuffer& commandBuffer, uint32_t frameIndex) {
         {
-            debug::BeginDebugMarker(commandBuffer, String("Clear Swapchain", *vk.m_CPUAllocator));
+            debug::BeginDebugMarker(commandBuffer, "Clear Swapchain");
             Array<VkClearValue, 2> clearValues{};
             clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
             clearValues[1].depthStencil = { 1.0f, 0 };
@@ -203,7 +203,7 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderData& r
             }
 
             {
-                debug::BeginDebugMarker(commandBuffer, String("GBuffer", *vk.m_CPUAllocator), {0.0f, 1.0f, 0.0f, 1.0f});
+                debug::BeginDebugMarker(commandBuffer, "GBuffer", {0.0f, 1.0f, 0.0f, 1.0f});
                 view->m_GBuffer.BeginDynamicRendering(vk, commandBuffer, frameIndex);
                 vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderData.m_GBufferPipeline.m_Pipeline);
                 VkViewport viewport{};
@@ -241,7 +241,7 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderData& r
                 debug::EndDebugMarker(commandBuffer);
 
             }
-            debug::BeginDebugMarker(commandBuffer, String("Lighting Pass", *vk.m_CPUAllocator), {1.0f, 1.0f, 0.0f, 1.0f});
+            debug::BeginDebugMarker(commandBuffer, "Lighting Pass", {1.0f, 1.0f, 0.0f, 1.0f});
             //vkCmdBeginRenderingKHR(commandBuffer, &view->m_LightPassFB.m_DynamicRenderingInfo.m_RenderingInfos[frameIndex]);
             view->m_LightPassFB.BeginDynamicRendering(vk, commandBuffer, frameIndex);
 
@@ -280,7 +280,7 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderData& r
     );
 }
 
-RenderModel CreateRenderModelGbuffer(VkState & vk, const String& modelPath, ShaderProgram& shader)
+RenderModel CreateRenderModelGbuffer(VkState & vk, const char* modelPath, ShaderProgram& shader)
 {
     Model model(*vk.m_CPUAllocator);
     LoadModelAssimp(vk, model, modelPath, true);
@@ -295,7 +295,7 @@ RenderModel CreateRenderModelGbuffer(VkState & vk, const String& modelPath, Shad
         item.m_Material = Material::Create(vk, shader);
         item.m_Material.CreateBuffer(vk, 0, 0);
         MaterialEx& material = model.m_Materials[mesh.m_MaterialIndex];
-        item.m_Material.SetSampler(vk, String("texSampler", *vk.m_CPUAllocator), material.m_Diffuse.m_ImageView, material.m_Diffuse.m_Sampler);
+        item.m_Material.SetSampler(vk, "texSampler" , material.m_Diffuse.m_ImageView, material.m_Diffuse.m_Sampler);
         renderModel.m_RenderItems.push_back(item);
     }
 
@@ -444,9 +444,9 @@ int main() {
     FillExampleLightData(lightDataCpu);
 
     ShaderProgram gbufferProg = ShaderProgram::CreateGraphicsFromSourcePath(
-        vk, String("shaders/gbuffer.vert", *vk.m_CPUAllocator), String("shaders/gbuffer.frag", *vk.m_CPUAllocator));
+        vk, "shaders/gbuffer.vert", "shaders/gbuffer.frag");
     ShaderProgram lightPassProg = ShaderProgram::CreateGraphicsFromSourcePath(
-        vk, String("shaders/lights.vert", *vk.m_CPUAllocator), String("shaders/lights.frag", *vk.m_CPUAllocator));
+        vk, "shaders/lights.vert", "shaders/lights.frag");
 
     ViewData viewA = CreateView(vk, im3dState, gbufferProg, lightPassProg);
     viewA.m_Camera.Position = { -40.0, 10.0f, 30.0f };
@@ -460,7 +460,7 @@ int main() {
     RenderData renderData = CreateRenderData(vk, gbufferProg, lightPassProg);
     // create vertex and index buffer
     // allocate materials instead of raw buffers etc.
-    RenderModel m = CreateRenderModelGbuffer(vk, String("assets/Sponza/sponza.gltf", *vk.m_CPUAllocator), gbufferProg);
+    RenderModel m = CreateRenderModelGbuffer(vk, "assets/Sponza/sponza.gltf", gbufferProg);
 
     while (vk.m_Backend->ShouldRun(vk))
     {

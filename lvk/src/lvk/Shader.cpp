@@ -158,7 +158,7 @@ shaderc_shader_kind GetShadercShaderKind(lvk::ShaderStageType type)
 }
 
 StageBinary CreateStageBinaryFromSource(VkState &vk, ShaderStageType type,
-                                    const String &source, const String& shaderName) {
+                                    const String &source, const char* shaderName) {
   shaderc_compiler* c = shaderc_compiler_initialize();
   shaderc_compile_options_t opt {};
 
@@ -166,7 +166,7 @@ StageBinary CreateStageBinaryFromSource(VkState &vk, ShaderStageType type,
                           source.c_str(),
                           source.size(),
                           GetShadercShaderKind(type),
-                          shaderName.c_str(),
+                          shaderName,
                           "main",
                            opt);
 
@@ -196,7 +196,8 @@ void RecurseStringInclude(VkState& vk, String inputDir, String& output, const St
 {
   String input(*vk.m_CPUAllocator);
   String dir(*vk.m_CPUAllocator);
-  input = utils::LoadStringFromPath(vk, inputDir + "/" + path);
+  String finalDir = inputDir + "/" + path;
+  input = utils::LoadStringFromPath(vk, finalDir.c_str());
   dir = std::filesystem::path(path).parent_path().u8string();
   IStringStream iss(input);
   std::regex include_dir_regex("\\\"(.*)\\\"");
@@ -225,7 +226,7 @@ void RecurseStringInclude(VkState& vk, String inputDir, String& output, const St
   }
 }
 
-String ShaderStage::LoadShaderSource(VkState& vk, const String &path) {
+String ShaderStage::LoadShaderSource(VkState& vk, const char* path) {
   String final_shader_src(*vk.m_CPUAllocator);
   String parent_path(*vk.m_CPUAllocator);
   String filename(*vk.m_CPUAllocator);

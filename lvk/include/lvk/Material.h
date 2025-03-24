@@ -130,10 +130,13 @@ namespace lvk
             m_ShaderBuffers[sb].m_Buffer.Set(frameIndex, value, offset);
         }
 
-        bool SetSampler(VkState & vk, const String& name, const VkImageView& imageView, const VkSampler& sampler, bool isAttachment = false);
-        bool SetSampler(VkState & vk, const String& name, Texture& texture);
-        bool SetColourAttachment(VkState & vk, const String& name, Framebuffer& framebuffer, uint32_t colourAttachmentIndex);
+        bool SetSampler(VkState & vk, const char* name, const VkImageView& imageView, const VkSampler& sampler, bool isAttachment = false);
+        bool SetSampler(VkState & vk, const char* name, Texture& texture);
+        bool SetColourAttachment(VkState& vk, const String& name, Framebuffer& framebuffer, uint32_t colourAttachmentIndex);
+        bool SetColourAttachment(VkState & vk, const char* name, Framebuffer& framebuffer, uint32_t colourAttachmentIndex);
         bool SetDepthAttachment(VkState & vk, const String& name, Framebuffer& framebuffer);
+        bool SetDepthAttachment(VkState& vk, const char* name, Framebuffer& framebuffer);
+
 
         
         void Free(VkState & vk);

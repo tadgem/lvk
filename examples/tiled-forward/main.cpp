@@ -244,7 +244,7 @@ void RecordCommandBuffersV2(VkState& vk, Vector<ViewData*> views, RenderData& re
 RenderModel CreateRenderModelGbuffer(VkState & vk, const String& modelPath, ShaderProgram& shader)
 {
     Model model(*vk.m_CPUAllocator);
-    LoadModelAssimp(vk, model, modelPath, true);
+    LoadModelAssimp(vk, model, modelPath.c_str(), true);
 
     RenderModel renderModel(*vk.m_CPUAllocator);
     renderModel.m_Original = model;
@@ -256,7 +256,7 @@ RenderModel CreateRenderModelGbuffer(VkState & vk, const String& modelPath, Shad
         item.m_Material = Material::Create(vk, shader);
 
         MaterialEx& material = model.m_Materials[mesh.m_MaterialIndex];
-        item.m_Material.SetSampler(vk, String("texSampler", *vk.m_CPUAllocator), material.m_Diffuse.m_ImageView, material.m_Diffuse.m_Sampler);
+        item.m_Material.SetSampler(vk, "texSampler", material.m_Diffuse.m_ImageView, material.m_Diffuse.m_Sampler);
         renderModel.m_RenderItems.push_back(item);
     }
 
@@ -408,11 +408,11 @@ int main() {
     FillExampleLightData(lightDataCpu);
 
     ShaderProgram gbufferProg = ShaderProgram::CreateGraphicsFromSourcePath(
-        vk, String("shaders/gbuffer.vert", *vk.m_CPUAllocator), String("shaders/gbuffer.frag", *vk.m_CPUAllocator));
+        vk, "shaders/gbuffer.vert", "shaders/gbuffer.frag");
     ShaderProgram lightPassProg = ShaderProgram::CreateGraphicsFromSourcePath(
-        vk, String("shaders/lights.vert", *vk.m_CPUAllocator), String("shaders/lights.frag", *vk.m_CPUAllocator));
+        vk, "shaders/lights.vert", "shaders/lights.frag");
     ShaderProgram tiledForwardProg = ShaderProgram::CreateGraphicsFromSourcePath(
-        vk, String("shaders/clustered.vert", *vk.m_CPUAllocator), String("shaders/clustered.frag", *vk.m_CPUAllocator));
+        vk, "shaders/clustered.vert", "shaders/clustered.frag");
 
     ViewData viewA = CreateView(vk, im3dState, gbufferProg, lightPassProg);
     viewA.m_Camera.Position = { -40.0, 10.0f, 30.0f };

@@ -368,12 +368,12 @@ void lvk::textures::CreateImageSampler(VkState& vk, VkImageView& imageView, uint
     VK_CHECK(vkCreateSampler(vk.m_LogicalDevice, &samplerInfo, nullptr, &sampler))
 }
 
-void lvk::textures::CreateTexture(VkState& vk, const String& path, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips)
+void lvk::textures::CreateTexture(VkState& vk, const char* path, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips)
 {
     bool generateMips = numMips != nullptr;
 
     int texWidth, texHeight, texChannels;
-    stbi_uc* pixels = stbi_load(path.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    stbi_uc* pixels = stbi_load(path, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     VkDeviceSize imageSize = texWidth * texHeight * 4;
 
     if (!pixels)

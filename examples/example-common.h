@@ -334,10 +334,10 @@ void ProcessNode(lvk::VkState & vk, Model& model, aiNode* node, const aiScene* s
     }
 }
 
-void LoadModelAssimp(lvk::VkState & vk, Model& model, const lvk::String& path, bool withNormals = false)
+void LoadModelAssimp(lvk::VkState & vk, Model& model, const char* path, bool withNormals = false)
 {
     Assimp::Importer importer;
-    const aiScene* scene = importer.ReadFile(path.c_str(),
+    const aiScene* scene = importer.ReadFile(path,
         aiProcess_Triangulate |
         aiProcess_CalcTangentSpace |
         aiProcess_OptimizeMeshes |
@@ -382,7 +382,7 @@ void LoadModelAssimp(lvk::VkState & vk, Model& model, const lvk::String& path, b
             aiString resultPath;
             aiGetMaterialTexture(meshMaterial, aiTextureType_DIFFUSE, 0, &resultPath);
             lvk::String finalPath = directory + lvk::String(resultPath.C_Str(), *vk.m_CPUAllocator);
-            lvk::Texture texture = lvk::Texture::CreateTexture(vk, finalPath, VK_FORMAT_R8G8B8A8_UNORM);
+            lvk::Texture texture = lvk::Texture::CreateTexture(vk, finalPath.c_str(), VK_FORMAT_R8G8B8A8_UNORM);
             model.m_Materials.push_back({ texture });
         }
     }

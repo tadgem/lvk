@@ -248,17 +248,18 @@ void lvk::Material::CreateBuffer(VkState& vk, uint32_t set, uint32_t binding)
     UpdateDescriptors(vk);
 }
 
-bool lvk::Material::SetSampler(VkState & vk, const String& name, const VkImageView& imageView, const VkSampler& sampler, bool isAttachment)
+bool lvk::Material::SetSampler(VkState & vk, const char* name, const VkImageView& imageView, const VkSampler& sampler, bool isAttachment)
 {
-    if (m_Samplers.find(name) == m_Samplers.end())
+    auto nameStr = String(name, *vk.m_CPUAllocator);
+    if (m_Samplers.find(nameStr) == m_Samplers.end())
     {
-        LVK_LOG_ERR("Material with shader %s: No associated sampler with name %s", m_ShaderName, name);
+        LVK_LOG_ERR("Material with shader %s: No associated sampler with name %s", m_ShaderName.c_str(), name);
         return false;
     }
 
     VkImageLayout imageLayout = isAttachment ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-    SamplerBindingData& samplerBinding = m_Samplers.at(name);
+    SamplerBindingData& samplerBinding = m_Samplers.at(nameStr);
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
         VkDescriptorImageInfo imageInfo{};
@@ -314,6 +315,13 @@ bool lvk::Material::SetColourAttachment(VkState & vk, const String& name, Frameb
 
 }
 
+bool lvk::Material::SetColourAttachment(VkState& vk, const char* name, Framebuffer& framebuffer, uint32_t colourAttachmentIndex)
+{
+    String name_str(name, *vk.m_CPUAllocator);
+    return SetColourAttachment(vk, name_str, framebuffer, colourAttachmentIndex);
+}
+
+
 bool lvk::Material::SetDepthAttachment(VkState & vk, const String& name, Framebuffer& framebuffer)
 {
     if (m_Samplers.find(name) == m_Samplers.end())
@@ -345,6 +353,13 @@ bool lvk::Material::SetDepthAttachment(VkState & vk, const String& name, Framebu
     return true;
 }
 
+bool lvk::Material::SetDepthAttachment(VkState& vk, const char* name, Framebuffer& framebuffer)
+{
+    String name_str(name, *vk.m_CPUAllocator);
+    return SetDepthAttachment(vk, name_str, framebuffer);
+}
+
+
 void lvk::Material::Free(VkState & vk)
 {
     m_UniformBufferAccessors.clear();
@@ -368,7 +383,7 @@ void lvk::Material::Free(VkState & vk)
 
 }
 
-bool lvk::Material::SetSampler(lvk::VkState &vk, const lvk::String &name,
+bool lvk::Material::SetSampler(lvk::VkState &vk, const char* name,
                                lvk::Texture &texture) {
     return SetSampler(vk, name, texture.m_ImageView, texture.m_Sampler, false);
 }

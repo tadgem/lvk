@@ -110,7 +110,7 @@ void lvk::submission::RenderImGui(VkState& vk)
   for(auto f = 0; f < MAX_FRAMES_IN_FLIGHT; f++)
   {
     VkCommandBuffer imguiCommandBuffer = commands::BeginSingleTimeCommands(vk);
-    debug::BeginDebugMarker(imguiCommandBuffer, String("ImGui", *vk.m_CPUAllocator), {0.0f, 0.0f, 1.0f, 1.0f});
+    debug::BeginDebugMarker(imguiCommandBuffer, "ImGui", {0.0f, 0.0f, 1.0f, 1.0f});
 
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;

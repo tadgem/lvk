@@ -134,14 +134,14 @@ int main()
     Vector<VkDescriptorSet>        descriptorSets(*vk.m_CPUAllocator);
 
     ShaderProgram prog = ShaderProgram::CreateGraphicsFromSourcePath(
-        vk, String("shaders/texture.vert", *vk.m_CPUAllocator), String("shaders/texture.frag", *vk.m_CPUAllocator));
+        vk, "shaders/texture.vert","shaders/texture.frag");
 
     uint32_t mipLevels;
     VkImage textureImage;
     VkImageView imageView;
     VkDeviceMemory textureMemory;
     VkSampler imageSampler;
-    textures::CreateTexture(vk, String("assets/viking_room.png", *vk.m_CPUAllocator), VK_FORMAT_R8G8B8A8_UNORM, textureImage, imageView, textureMemory, &mipLevels);
+    textures::CreateTexture(vk, "assets/viking_room.png", VK_FORMAT_R8G8B8A8_UNORM, textureImage, imageView, textureMemory, &mipLevels);
     textures::CreateImageSampler(vk, imageView, mipLevels, VK_FILTER_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, imageSampler);
 
     auto vertexDescription = VertexDataPosUv::GetVertexDescription(*vk.m_CPUAllocator);
@@ -151,7 +151,7 @@ int main()
 
     // create vertex and index buffer
     Model model(*vk.m_CPUAllocator);
-    LoadModelAssimp(vk, model, String("assets/viking_room.obj", *vk.m_CPUAllocator));
+    LoadModelAssimp(vk, model, "assets/viking_room.obj");
 
     uniformBuffers = buffers::CreateUniformBuffers<MvpData>(vk);
 

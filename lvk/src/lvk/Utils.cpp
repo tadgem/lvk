@@ -50,10 +50,10 @@ bool lvk::utils::HasStencilComponent(VkFormat &format) {
 }
 
 
-lvk::StageBinary lvk::utils::LoadSpirvBinary(VkState& vk, const String& path)
+lvk::StageBinary lvk::utils::LoadSpirvBinary(VkState& vk, const char* path)
 {
   STLAllocator<unsigned char> alloc(*vk.m_CPUAllocator);
-  std::ifstream file(path.c_str(), std::ios::ate | std::ios::binary);
+  std::ifstream file(path, std::ios::ate | std::ios::binary);
 
   if (!file.is_open())
   {
@@ -74,8 +74,8 @@ lvk::StageBinary lvk::utils::LoadSpirvBinary(VkState& vk, const String& path)
   return data;
 }
 
-lvk::String lvk::utils::LoadStringFromPath(VkState& vk, const lvk::String &path) {
-  std::ifstream in(path.c_str());
+lvk::String lvk::utils::LoadStringFromPath(VkState& vk, const char* path) {
+  std::ifstream in(path);
   std::stringstream stream;
   if (!in.is_open()) {
     return String(*vk.m_CPUAllocator);

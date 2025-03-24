@@ -32,28 +32,28 @@ namespace lvk
     {
         Vector<unsigned char> tris_vert_bin = ToVector(*vk.m_CPUAllocator, &im3d_tris_vert_spv_bin[0], (uint32_t)im3d_tris_vert_spv_bin_SIZE);
         ShaderStage tris_vert = ShaderStage::CreateFromBinary(
-            vk, tris_vert_bin, ShaderStageType::Vertex, String("Im3dTrisVert", *vk.m_CPUAllocator));
+            vk, tris_vert_bin, ShaderStageType::Vertex, "Im3dTrisVert");
         Vector<unsigned char> tris_frag_bin = ToVector(*vk.m_CPUAllocator, &im3d_tris_frag_spv_bin[0], (uint32_t)im3d_tris_frag_spv_bin_SIZE);
         ShaderStage tris_frag = ShaderStage::CreateFromBinary(
-            vk, tris_frag_bin, ShaderStageType::Fragment, String("Im3dTrisFrag", *vk.m_CPUAllocator));
+            vk, tris_frag_bin, ShaderStageType::Fragment,"Im3dTrisFrag");
         ShaderProgram tris_prog =
             ShaderProgram::CreateGraphics(vk, tris_vert, tris_frag);
 
         Vector<unsigned char> lines_vert_bin = ToVector(*vk.m_CPUAllocator, &im3d_lines_vert_spv_bin[0], (uint32_t)im3d_lines_vert_spv_bin_SIZE);
         ShaderStage lines_vert = ShaderStage::CreateFromBinary(
-            vk, lines_vert_bin, ShaderStageType::Vertex, String("Im3dLinesVert", *vk.m_CPUAllocator));
+            vk, lines_vert_bin, ShaderStageType::Vertex, "Im3dLinesVert");
         Vector<unsigned char> lines_frag_bin = ToVector(*vk.m_CPUAllocator, &im3d_lines_frag_spv_bin[0], (uint32_t)im3d_lines_frag_spv_bin_SIZE);
         ShaderStage lines_frag = ShaderStage::CreateFromBinary(
-            vk, lines_frag_bin, ShaderStageType::Fragment, String("Im3dLinesFrag", *vk.m_CPUAllocator));
+            vk, lines_frag_bin, ShaderStageType::Fragment, "Im3dLinesFrag");
         ShaderProgram lines_prog =
             ShaderProgram::CreateGraphics(vk, lines_vert, lines_frag);
 
         Vector<unsigned char> points_vert_bin = ToVector(*vk.m_CPUAllocator, &im3d_points_vert_spv_bin[0], (uint32_t)im3d_points_vert_spv_bin_SIZE);
         ShaderStage points_vert = ShaderStage::CreateFromBinary(
-            vk, points_vert_bin, ShaderStageType::Vertex, String("Im3dPointsVert", *vk.m_CPUAllocator));
+            vk, points_vert_bin, ShaderStageType::Vertex, "Im3dPointsVert");
         Vector<unsigned char> points_frag_bin = ToVector(*vk.m_CPUAllocator, &im3d_points_frag_spv_bin[0], (uint32_t)im3d_points_frag_spv_bin_SIZE);
         ShaderStage points_frag = ShaderStage::CreateFromBinary(
-            vk, points_frag_bin, ShaderStageType::Fragment, String("Im3dPointsFrag", *vk.m_CPUAllocator));
+            vk, points_frag_bin, ShaderStageType::Fragment, "Im3dPointsFrag");
         ShaderProgram points_prog =
             ShaderProgram::CreateGraphics(vk, points_vert, points_frag);
 
@@ -174,7 +174,7 @@ namespace lvk
     void DrawIm3d(VkState& vk, VkCommandBuffer& buffer, uint32_t frameIndex, LvkIm3dState& state, LvkIm3dViewState& viewState, glm::mat4 _viewProj, uint32_t width, uint32_t height, bool drawText)
     {
         auto& context = Im3d::GetContext();
-        debug::BeginDebugMarker(buffer, String("Im3D Pass", *vk.m_CPUAllocator));
+        debug::BeginDebugMarker(buffer, "Im3D Pass");
         for (uint32_t i = 0; i < context.getDrawListCount(); i++)
         {
             auto drawList = &context.getDrawLists()[i];
