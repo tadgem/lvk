@@ -77,6 +77,10 @@ struct Model
 {
     lvk::Vector<MeshEx>        m_Meshes;
     lvk::Vector<MaterialEx>  m_Materials;
+
+    Model(lvk::IAllocator& alloc) :
+        m_Meshes(alloc), m_Materials(alloc) {
+    }
 };
 
 struct Transform {
@@ -166,8 +170,8 @@ static glm::vec2 AssimpToGLM(aiVector2D aiVec) {
     return glm::vec2(aiVec.x, aiVec.y);
 }
 
-static lvk::String AssimpToSTD(aiString str) {
-    return lvk::String(str.C_Str());
+static lvk::String AssimpToSTD(lvk::IAllocator& alloc, aiString str) {
+    return lvk::String(str.C_Str(), alloc);
 }
 
 void FreeMesh(lvk::VkState & vk, MeshEx& m)
@@ -189,7 +193,7 @@ void ProcessMesh(lvk::VkState & vk, Model& model, aiMesh* mesh, aiNode* node, co
     bool hasUVs = mesh->HasTextureCoords(0);
     bool hasIndices = mesh->HasFaces();
 
-    Vector<VertexDataPosUv> verts;
+    Vector<VertexDataPosUv> verts(*vk.m_CPUAllocator);
     if (hasPositions && hasUVs) {
         for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
             VertexDataPosUv vert {};
@@ -199,12 +203,12 @@ void ProcessMesh(lvk::VkState & vk, Model& model, aiMesh* mesh, aiNode* node, co
         }
 
     }
-    Vector<uint32_t> indices;
+    Vector<uint32_t> indices(*vk.m_CPUAllocator);
     if (hasIndices) {
         for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
             aiFace currentFace = mesh->mFaces[i];
             if (currentFace.mNumIndices != 3) {
-                spdlog::error("Attempting to import a mesh with non triangular face structure! cannot load this mesh.");
+                LVK_LOG_ERR("Attempting to import a mesh with non triangular face structure! cannot load this mesh.");
                 return;
             }
             for (unsigned int index = 0; index < mesh->mFaces[i].mNumIndices; index++) {
@@ -260,7 +264,7 @@ void ProcessMeshWithNormals(lvk::VkState & vk, Model& model, aiMesh* mesh, aiNod
     bool hasNormals = mesh->HasNormals();
     bool hasIndices = mesh->HasFaces();
 
-    Vector<aiMaterialProperty*> properties;
+    Vector<aiMaterialProperty*> properties(*vk.m_CPUAllocator);
     aiMaterial* meshMaterial = scene->mMaterials[mesh->mMaterialIndex];
 
     for (unsigned int i = 0; i < meshMaterial->mNumProperties; i++)
@@ -268,7 +272,7 @@ void ProcessMeshWithNormals(lvk::VkState & vk, Model& model, aiMesh* mesh, aiNod
         aiMaterialProperty* prop = meshMaterial->mProperties[i];
         properties.push_back(prop);
     }
-    Vector<VertexDataPosNormalUv> verts;
+    Vector<VertexDataPosNormalUv> verts(*vk.m_CPUAllocator);
     if (hasPositions && hasUVs && hasNormals) {
         for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
             VertexDataPosNormalUv vert{};
@@ -279,12 +283,12 @@ void ProcessMeshWithNormals(lvk::VkState & vk, Model& model, aiMesh* mesh, aiNod
         }
 
     }
-    Vector<uint32_t> indices;
+    Vector<uint32_t> indices(*vk.m_CPUAllocator);
     if (hasIndices) {
         for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
             aiFace currentFace = mesh->mFaces[i];
             if (currentFace.mNumIndices != 3) {
-                spdlog::error("Attempting to import a mesh with non triangular face structure! cannot load this mesh.");
+                LVK_LOG_ERR("Attempting to import a mesh with non triangular face structure! cannot load this mesh.");
                 return;
             }
             for (unsigned int index = 0; index < mesh->mFaces[i].mNumIndices; index++) {
@@ -330,10 +334,10 @@ void ProcessNode(lvk::VkState & vk, Model& model, aiNode* node, const aiScene* s
     }
 }
 
-void LoadModelAssimp(lvk::VkState & vk, Model& model, const lvk::String& path, bool withNormals = false)
+void LoadModelAssimp(lvk::VkState & vk, Model& model, const char* path, bool withNormals = false)
 {
     Assimp::Importer importer;
-    const aiScene* scene = importer.ReadFile(path.c_str(),
+    const aiScene* scene = importer.ReadFile(path,
         aiProcess_Triangulate |
         aiProcess_CalcTangentSpace |
         aiProcess_OptimizeMeshes |
@@ -345,12 +349,19 @@ void LoadModelAssimp(lvk::VkState & vk, Model& model, const lvk::String& path, b
     );
     //
     if (scene == nullptr) {
-        spdlog::error("AssimpModelAssetFactory : Failed to load asset at path : {}", path);
+        LVK_LOG_ERR("AssimpModelAssetFactory : Failed to load asset at path : %s", path);
         return;
     }
     ProcessNode(vk, model, scene->mRootNode, scene, withNormals);
 
-    lvk::String directory = path.substr(0, path.find_last_of('/') + 1);
+    // TODO: STL substr does not accept an allocator as param and so returned string 
+    // MUST be default allocated :( EASTL does not do this, uses allocator 
+    // provided on the string be substr'd
+    std::string path_stl(path);
+    auto lastDelim = path_stl.find_last_of('/') + 1;
+    std::string dir_stl = path_stl.substr(0, lastDelim);
+    lvk::String directory = lvk::String(dir_stl, *vk.m_CPUAllocator);
+
     for (unsigned int i = 0; i < scene->mNumMaterials; i++)
     {
         aiMaterial* meshMaterial = scene->mMaterials[i];
@@ -370,8 +381,8 @@ void LoadModelAssimp(lvk::VkState & vk, Model& model, const lvk::String& path, b
         {
             aiString resultPath;
             aiGetMaterialTexture(meshMaterial, aiTextureType_DIFFUSE, 0, &resultPath);
-            lvk::String finalPath = directory + lvk::String(resultPath.C_Str());
-            lvk::Texture texture = lvk::Texture::CreateTexture(vk, finalPath, VK_FORMAT_R8G8B8A8_UNORM);
+            lvk::String finalPath = directory + lvk::String(resultPath.C_Str(), *vk.m_CPUAllocator);
+            lvk::Texture texture = lvk::Texture::CreateTexture(vk, finalPath.c_str(), VK_FORMAT_R8G8B8A8_UNORM);
             model.m_Materials.push_back({ texture });
         }
     }
@@ -394,12 +405,20 @@ struct RenderItem
 {
     MeshEx              m_Mesh;
     lvk::Material       m_Material;
+
+    RenderItem(lvk::IAllocator& alloc) : m_Material(alloc) {}
 };
 
 struct RenderModel
 {
     Model m_Original;
     lvk::Vector<RenderItem> m_RenderItems;
+
+    RenderModel(lvk::IAllocator& alloc) : m_RenderItems(alloc), m_Original(alloc)
+    {
+
+    }
+
     void Free(lvk::VkState & vk)
     {
         for (auto& item : m_RenderItems)

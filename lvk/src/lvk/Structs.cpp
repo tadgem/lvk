@@ -1,6 +1,6 @@
 #include "lvk/Structs.h"
 #include "lvk/Macros.h"
-#include "spdlog/spdlog.h"
+#include "lvk/Log.h"
 
 bool lvk::QueueFamilyIndices::IsComplete() {
   bool foundGraphicsQueue = m_QueueFamilies.find(QueueFamilyType::GraphicsAndCompute) != m_QueueFamilies.end();
@@ -10,6 +10,11 @@ bool lvk::QueueFamilyIndices::IsComplete() {
 void lvk::MappedBuffer::Free(lvk::VkState &vk) {
   vmaUnmapMemory(vk.m_Allocator, m_GpuMemory);
   Buffer::Free(vk);
+}
+
+lvk::QueueFamilyIndices::QueueFamilyIndices(IAllocator& alloc) : m_QueueFamilies(alloc)
+{
+
 }
 
 void lvk::ShaderBufferFrameData::Free(lvk::VkState& vk) {
@@ -50,12 +55,12 @@ bool lvk::ShaderBufferFrameData::CanSet(uint32_t frameIndex)
 {
     if (!Ready())
     {
-        spdlog::error("Buffer has not beed set or allocated");
+        LVK_LOG_ERR("Buffer has not beed set or allocated");
         return false;
     }
     if (m_UniformBuffers[frameIndex]->m_Type != Buffer::BufferStorageType::Mapped)
     {
-        spdlog::error("Attempting to set data for non mapped buffer");
+        LVK_LOG_ERR("Attempting to set data for non mapped buffer");
         return false;
     }
     return true;

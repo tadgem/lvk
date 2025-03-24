@@ -14,6 +14,12 @@ namespace lvk
         VkFormat                m_Format;
         VkSampleCountFlagBits   m_SampleCount;
 
+        Attachment(VkState& vk)
+            : m_AttachmentSwapchainImages(STLAllocator<Texture>(*vk.m_CPUAllocator))
+        {
+
+        }
+
         void Free(VkState & vk)
         {
             for (auto& t : m_AttachmentSwapchainImages)
@@ -28,7 +34,10 @@ namespace lvk
             VkMemoryPropertyFlagBits memoryFlags, VkImageAspectFlagBits imageAspect,
             VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
         {
-            Attachment a{ {}, format, sampleCount };
+            Attachment a(vk);
+            a.m_Format = format;
+            a.m_SampleCount = sampleCount;
+
             VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL;
             for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
             {
@@ -43,7 +52,9 @@ namespace lvk
             VkMemoryPropertyFlagBits memoryFlags, VkImageAspectFlagBits imageAspect,
             VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
         {
-            Attachment a{ {}, utils::FindDepthFormat(vk), sampleCount };
+            Attachment a(vk);
+            a.m_Format = utils::FindDepthFormat(vk);
+            a.m_SampleCount = sampleCount;
             VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL;
             for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
             {
@@ -67,6 +78,14 @@ namespace lvk
         Vector <VkClearValue>       m_ClearValues;
         VkAttachmentLoadOp          m_AttachmentLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         VkExtent2D                  m_Resolution;
+
+        Framebuffer(IAllocator& alloc) : 
+            m_ColourAttachments(alloc),
+            m_DepthAttachments(alloc),
+            m_ResolveAttachments(alloc),
+            m_RenderPassInfo(alloc),
+            m_ClearValues(alloc)
+        {  }
 
         void AddColourAttachment(lvk::VkState& vk, VkExtent2D resolution,
             uint32_t numMips, VkSampleCountFlagBits sampleCount,

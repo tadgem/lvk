@@ -1,14 +1,15 @@
 #include "lvk/Descriptor.h"
 #include "lvk/Macros.h"
-#include "spdlog/spdlog.h"
+#include "lvk/Log.h"
 
 namespace lvk
 {
 namespace descriptor{
 
-std::vector<VkDescriptorSetLayoutBinding> CleanDescriptorSetLayout(std::vector<VkDescriptorSetLayoutBinding>& arr)
+Vector<VkDescriptorSetLayoutBinding> CleanDescriptorSetLayout(IAllocator& alloc, Vector<VkDescriptorSetLayoutBinding>& arr)
 {
-  std::vector<VkDescriptorSetLayoutBinding> clean;
+  STLAllocator<VkDescriptorSetLayoutBinding>a(alloc);
+  Vector<VkDescriptorSetLayoutBinding> clean(a);
 
   for (int k = 0; k < arr.size(); k++)
   {
@@ -132,7 +133,7 @@ ShaderBufferMemberType GetTypeFromSpvReflect(SpvReflectTypeDescription* typeDesc
 
 Vector<VkDescriptorSetLayoutBinding> GetDescriptorSetLayoutBindings(VkState& vk, Vector<DescriptorSetLayoutData>& vertLayoutDatas, Vector<DescriptorSetLayoutData>& fragLayoutDatas)
 {
-  Vector<VkDescriptorSetLayoutBinding> bindings;
+  Vector<VkDescriptorSetLayoutBinding> bindings(*vk.m_CPUAllocator);
   uint8_t count = 0;
 
   for (auto& vertLayoutData : vertLayoutDatas)
@@ -167,12 +168,13 @@ Vector<VkDescriptorSetLayoutBinding> GetDescriptorSetLayoutBindings(VkState& vk,
     }
   }
 
-  return CleanDescriptorSetLayout(bindings);
+  return CleanDescriptorSetLayout(*vk.m_CPUAllocator, bindings);
 }
 
-void CreateDescriptorSetLayout(VkState& vk, std::vector<DescriptorSetLayoutData>& vertLayoutDatas, std::vector<DescriptorSetLayoutData>& fragLayoutDatas, VkDescriptorSetLayout& descriptorSetLayout)
+void CreateDescriptorSetLayout(VkState& vk, Vector<DescriptorSetLayoutData>& vertLayoutDatas, Vector<DescriptorSetLayoutData>& fragLayoutDatas, VkDescriptorSetLayout& descriptorSetLayout)
 {
-  std::vector<VkDescriptorSetLayoutBinding> bindings;
+  STLAllocator<VkDescriptorSetLayoutBinding> a(*vk.m_CPUAllocator);
+  Vector<VkDescriptorSetLayoutBinding> bindings(a);
   uint8_t count = 0;
 
   for (auto& vertLayoutData : vertLayoutDatas)
@@ -207,7 +209,7 @@ void CreateDescriptorSetLayout(VkState& vk, std::vector<DescriptorSetLayoutData>
     }
   }
 
-  Vector<VkDescriptorSetLayoutBinding> cleanBindings = CleanDescriptorSetLayout(bindings);
+  Vector<VkDescriptorSetLayoutBinding> cleanBindings = CleanDescriptorSetLayout(*vk.m_CPUAllocator, bindings);
 
   VkDescriptorSetLayoutCreateInfo layoutInfo{};
   layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -229,12 +231,13 @@ Vector<PushConstantBlock> ReflectPushConstants(VkState& vk, StageBinary& stageBi
 
 VkDescriptorSet CreateDescriptorSet(VkState& vk, DescriptorSetLayoutData& layoutData)
 {
-  return vk.m_DescriptorSetAllocator.Allocate(vk.m_LogicalDevice, layoutData.m_Layout, nullptr);
+  return vk.m_DescriptorSetAllocator.Allocate(*vk.m_CPUAllocator, vk.m_LogicalDevice, layoutData.m_Layout, nullptr);
 }
 
 Vector<DescriptorSetLayoutData>
 ReflectDescriptorSetLayoutsRaw(VkState &vk, const char *stage_bin,
                                size_t stage_size) {
+  STLAllocator<DescriptorSetLayoutData> dsld_alloc(*vk.m_CPUAllocator.get());
   SpvReflectShaderModule shaderReflectModule;
   SpvReflectResult result = spvReflectCreateShaderModule(stage_size, stage_bin, &shaderReflectModule);
 
@@ -243,36 +246,43 @@ ReflectDescriptorSetLayoutsRaw(VkState &vk, const char *stage_bin,
 
   if (descriptorSetCount == 0)
   {
-    return {};
+    return Vector<DescriptorSetLayoutData>(dsld_alloc);
   }
 
-  std::vector<SpvReflectDescriptorSet*> reflectedDescriptorSets;
+
+  Vector<SpvReflectDescriptorSet*> reflectedDescriptorSets(*vk.m_CPUAllocator);
   reflectedDescriptorSets.resize(descriptorSetCount);
   spvReflectEnumerateDescriptorSets(&shaderReflectModule, &descriptorSetCount, &reflectedDescriptorSets[0]);
 
-
-  std::vector<DescriptorSetLayoutData> layoutDatas(descriptorSetCount, DescriptorSetLayoutData{});
+  Vector<DescriptorSetLayoutData> layoutDatas(*vk.m_CPUAllocator);
 
   for (int i = 0; i < reflectedDescriptorSets.size(); i++)
   {
     const SpvReflectDescriptorSet& reflectedSet = *reflectedDescriptorSets[i];
-    DescriptorSetLayoutData& layoutData = layoutDatas[i];
+    DescriptorSetLayoutData layoutData = DescriptorSetLayoutData(*vk.m_CPUAllocator);
 
     layoutData.m_Bindings.resize(reflectedSet.binding_count);
     for (uint32_t bc = 0; bc < reflectedSet.binding_count; bc++)
     {
-      const SpvReflectDescriptorBinding& reflectedBinding = *reflectedSet.bindings[bc];
-      VkDescriptorSetLayoutBinding& layoutBinding = layoutData.m_Bindings[bc];
-      layoutBinding.binding = reflectedBinding.binding;
-      layoutBinding.descriptorType = static_cast<VkDescriptorType>(reflectedBinding.descriptor_type);
-      layoutBinding.descriptorCount = 1; // sus
-      for (uint32_t i_dim = 0; i_dim < reflectedBinding.array.dims_count; ++i_dim) {
-        layoutBinding.descriptorCount *= reflectedBinding.array.dims[i_dim];
-      }
-      layoutBinding.stageFlags = static_cast<VkShaderStageFlagBits>(shaderReflectModule.shader_stage);
+        const SpvReflectDescriptorBinding& reflectedBinding = *reflectedSet.bindings[bc];
+        VkDescriptorSetLayoutBinding& layoutBinding = layoutData.m_Bindings[bc];
+        layoutBinding.binding = reflectedBinding.binding;
+        layoutBinding.descriptorType = static_cast<VkDescriptorType>(reflectedBinding.descriptor_type);
+        layoutBinding.descriptorCount = 1; // sus
+        for (uint32_t i_dim = 0; i_dim < reflectedBinding.array.dims_count; ++i_dim) {
+            layoutBinding.descriptorCount *= reflectedBinding.array.dims[i_dim];
+        }
+        layoutBinding.stageFlags = static_cast<VkShaderStageFlagBits>(shaderReflectModule.shader_stage);
 
-      ShaderBindingType bufferType = GetBindingType(reflectedBinding);
-      DescriptorSetLayoutBindingData binding{ String(reflectedBinding.name), reflectedBinding.binding, reflectedBinding.block.size , bufferType};
+        ShaderBindingType bufferType = GetBindingType(reflectedBinding);
+        STLAllocator<ShaderBufferMember> sbma(*vk.m_CPUAllocator);
+        DescriptorSetLayoutBindingData binding(*vk.m_CPUAllocator);
+        binding.m_BindingName = String(reflectedBinding.name, *vk.m_CPUAllocator); 
+        binding.m_BindingIndex = reflectedBinding.binding;
+        binding.m_ExpectedBufferSizeOrDivisor = reflectedBinding.block.size; 
+        binding.m_BufferType = bufferType; 
+        binding.m_Members = Vector<ShaderBufferMember>(sbma);
+    
 
 //      if (bufferType == ShaderBindingType::ShaderStorageBuffer)
 //      {
@@ -298,8 +308,8 @@ ReflectDescriptorSetLayoutsRaw(VkState &vk, const char *stage_bin,
       for (uint32_t i = 0; i < reflectedBinding.block.member_count; i++)
       {
         auto member = reflectedBinding.block.members[i];
-        ShaderBufferMember reflectedMember{};
-        reflectedMember.m_Name = String(member.name);
+        ShaderBufferMember reflectedMember(*vk.m_CPUAllocator);
+        reflectedMember.m_Name = String(member.name, *vk.m_CPUAllocator);
         reflectedMember.m_Offset = member.absolute_offset; // this might be an issue with padded types?
         reflectedMember.m_Size = member.padded_size;
         reflectedMember.m_Type = GetTypeFromSpvReflect(member.type_description);
@@ -317,8 +327,8 @@ ReflectDescriptorSetLayoutsRaw(VkState &vk, const char *stage_bin,
       }
       if (reflectedBinding.resource_type & SPV_REFLECT_RESOURCE_FLAG_SAMPLER)
       {
-        ShaderBufferMember reflectedMember{};
-        reflectedMember.m_Name = String(reflectedBinding.name);
+        ShaderBufferMember reflectedMember(*vk.m_CPUAllocator);
+        reflectedMember.m_Name = String(reflectedBinding.name, *vk.m_CPUAllocator);
         reflectedMember.m_Type = ShaderBufferMemberType::_sampler;
         binding.m_Members.push_back(reflectedMember);
       }
@@ -329,6 +339,8 @@ ReflectDescriptorSetLayoutsRaw(VkState &vk, const char *stage_bin,
     layoutData.m_CreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     layoutData.m_CreateInfo.bindingCount = reflectedSet.binding_count;
     layoutData.m_CreateInfo.pBindings = layoutData.m_Bindings.data();
+
+    layoutDatas.push_back(layoutData);
   }
 
   return layoutDatas;
@@ -336,13 +348,15 @@ ReflectDescriptorSetLayoutsRaw(VkState &vk, const char *stage_bin,
 
 Vector<PushConstantBlock>
 ReflectPushConstantsRaw(VkState &vk, const char *stage_bin, size_t stage_size) {
-  Vector<PushConstantBlock> pushConstants{};
+  STLAllocator<PushConstantBlock> pcba(*vk.m_CPUAllocator);
+  Vector<PushConstantBlock> pushConstants(pcba);
   SpvReflectShaderModule shaderReflectModule;
   SpvReflectResult result = spvReflectCreateShaderModule(stage_size, stage_bin, &shaderReflectModule);
 
   uint32_t pushConstantBlockCount = 0;
   spvReflectEnumeratePushConstantBlocks(&shaderReflectModule, &pushConstantBlockCount, nullptr);
-  std::vector<SpvReflectBlockVariable*> reflectedPushConstantBlocks;
+  STLAllocator<SpvReflectBlockVariable*>alloc(*vk.m_CPUAllocator);
+  Vector<SpvReflectBlockVariable*> reflectedPushConstantBlocks(alloc);
   reflectedPushConstantBlocks.resize(pushConstantBlockCount);
   spvReflectEnumeratePushConstantBlocks(&shaderReflectModule, &pushConstantBlockCount, reflectedPushConstantBlocks.data());
 
@@ -350,7 +364,12 @@ ReflectPushConstantsRaw(VkState &vk, const char *stage_bin, size_t stage_size) {
   for (uint32_t i = 0; i < pushConstantBlockCount; i++)
   {
     const SpvReflectBlockVariable& pcBlock = *reflectedPushConstantBlocks[i];
-    pushConstants.push_back({ pcBlock.size, pcBlock.offset, pcBlock.name, (VkShaderStageFlags) shaderReflectModule.shader_stage });
+    PushConstantBlock pcb(*vk.m_CPUAllocator);
+    pcb.m_Size = pcBlock.size;
+    pcb.m_Offset = pcBlock.offset;
+    pcb.m_Name = pcBlock.name;
+    pcb.m_Stage = (VkShaderStageFlags)shaderReflectModule.shader_stage;
+    pushConstants.push_back(pcb);
   }
 
   return pushConstants;

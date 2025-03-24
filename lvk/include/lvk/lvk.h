@@ -1,5 +1,4 @@
 #pragma once
-#include "spdlog/spdlog.h"
 #include "lvk/Macros.h"
 #include "lvk/Structs.h"
 #include "lvk/Buffer.h"
@@ -16,3 +15,4 @@
 #include "lvk/Utils.h"
 #include "lvk/Defaults.h"
 #include "lvk/Debug.h"
+#include "lvk/Allocator.h"

@@ -13,14 +13,14 @@
 #include "lvk/Pipeline.h"
 #include "lvk/Defaults.h"
 #include "lvk/Debug.h"
-#include "spdlog/spdlog.h"
+#include "lvk/Log.h"
 #include "volk.h"
 
 namespace lvk
 {
-    Vector<unsigned char> ToVector(const unsigned char* src, uint32_t count)
+    Vector<unsigned char> ToVector(IAllocator& alloc, const unsigned char* src, uint32_t count)
     {
-        Vector<unsigned char> chars{};
+        Vector<unsigned char> chars(alloc);
         for (uint32_t i = 0; i < count; i++)
         {
             chars.push_back(src[i]);
@@ -28,54 +28,52 @@ namespace lvk
         return chars;
     }
 
-    LvkIm3dState LoadIm3D(VkState & vk)
+    LvkIm3dState LoadIm3D(VkState& vk)
     {
-        Vector<unsigned char> tris_vert_bin = ToVector(&im3d_tris_vert_spv_bin[0], (uint32_t)im3d_tris_vert_spv_bin_SIZE);
+        Vector<unsigned char> tris_vert_bin = ToVector(*vk.m_CPUAllocator, &im3d_tris_vert_spv_bin[0], (uint32_t)im3d_tris_vert_spv_bin_SIZE);
         ShaderStage tris_vert = ShaderStage::CreateFromBinary(
             vk, tris_vert_bin, ShaderStageType::Vertex, "Im3dTrisVert");
-        Vector<unsigned char> tris_frag_bin = ToVector(&im3d_tris_frag_spv_bin[0], (uint32_t)im3d_tris_frag_spv_bin_SIZE);
+        Vector<unsigned char> tris_frag_bin = ToVector(*vk.m_CPUAllocator, &im3d_tris_frag_spv_bin[0], (uint32_t)im3d_tris_frag_spv_bin_SIZE);
         ShaderStage tris_frag = ShaderStage::CreateFromBinary(
-            vk, tris_frag_bin, ShaderStageType::Fragment, "Im3dTrisFrag");
+            vk, tris_frag_bin, ShaderStageType::Fragment,"Im3dTrisFrag");
         ShaderProgram tris_prog =
             ShaderProgram::CreateGraphics(vk, tris_vert, tris_frag);
 
-        Vector<unsigned char> lines_vert_bin = ToVector(&im3d_lines_vert_spv_bin[0], (uint32_t)im3d_lines_vert_spv_bin_SIZE);
+        Vector<unsigned char> lines_vert_bin = ToVector(*vk.m_CPUAllocator, &im3d_lines_vert_spv_bin[0], (uint32_t)im3d_lines_vert_spv_bin_SIZE);
         ShaderStage lines_vert = ShaderStage::CreateFromBinary(
             vk, lines_vert_bin, ShaderStageType::Vertex, "Im3dLinesVert");
-        Vector<unsigned char> lines_frag_bin = ToVector(&im3d_lines_frag_spv_bin[0], (uint32_t)im3d_lines_frag_spv_bin_SIZE);
+        Vector<unsigned char> lines_frag_bin = ToVector(*vk.m_CPUAllocator, &im3d_lines_frag_spv_bin[0], (uint32_t)im3d_lines_frag_spv_bin_SIZE);
         ShaderStage lines_frag = ShaderStage::CreateFromBinary(
             vk, lines_frag_bin, ShaderStageType::Fragment, "Im3dLinesFrag");
         ShaderProgram lines_prog =
             ShaderProgram::CreateGraphics(vk, lines_vert, lines_frag);
 
-        Vector<unsigned char> points_vert_bin = ToVector(&im3d_points_vert_spv_bin[0], (uint32_t)im3d_points_vert_spv_bin_SIZE);
+        Vector<unsigned char> points_vert_bin = ToVector(*vk.m_CPUAllocator, &im3d_points_vert_spv_bin[0], (uint32_t)im3d_points_vert_spv_bin_SIZE);
         ShaderStage points_vert = ShaderStage::CreateFromBinary(
             vk, points_vert_bin, ShaderStageType::Vertex, "Im3dPointsVert");
-        Vector<unsigned char> points_frag_bin = ToVector(&im3d_points_frag_spv_bin[0], (uint32_t)im3d_points_frag_spv_bin_SIZE);
+        Vector<unsigned char> points_frag_bin = ToVector(*vk.m_CPUAllocator, &im3d_points_frag_spv_bin[0], (uint32_t)im3d_points_frag_spv_bin_SIZE);
         ShaderStage points_frag = ShaderStage::CreateFromBinary(
             vk, points_frag_bin, ShaderStageType::Fragment, "Im3dPointsFrag");
         ShaderProgram points_prog =
             ShaderProgram::CreateGraphics(vk, points_vert, points_frag);
 
 
-        Vector<VertexDataPos4> vertexData =
-        {
-            VertexDataPos4{{-1.0f, -1.0f, 0.0f,1.0f}},
-            VertexDataPos4{{1.0f, -1.0f, 0.0f, 1.0f}},
-            VertexDataPos4{{1.0f,  1.0f, 0.0f, 1.0f}},
-            VertexDataPos4{{-1.0f,  1.0f, 0.0f, 1.0f}}
-        };
+        Vector<VertexDataPos4> vertexData(*vk.m_CPUAllocator);
+        vertexData.push_back(VertexDataPos4{ {-1.0f, -1.0f, 0.0f,1.0f} });
+        vertexData.push_back(VertexDataPos4{ {1.0f, -1.0f, 0.0f, 1.0f} });
+        vertexData.push_back(VertexDataPos4{ {1.0f,  1.0f, 0.0f, 1.0f} });
+        vertexData.push_back(VertexDataPos4{ {-1.0f,  1.0f, 0.0f, 1.0f} });
 
         Buffer vertexBuffer = buffers::CreateVertexBuffer<VertexDataPos4>(vk, vertexData);
 
         return { tris_prog, points_prog, lines_prog, vertexBuffer };
     }
 
-    LvkIm3dViewState AddIm3dForViewport(VkState & vk, LvkIm3dState& state, VkRenderPass renderPass, bool enableMSAA, bool enableDynamicRendering)
+    LvkIm3dViewState AddIm3dForViewport(VkState& vk, LvkIm3dState& state, VkRenderPass renderPass, bool enableMSAA, bool enableDynamicRendering)
     {
-        auto vertexDescription = VertexDataPos4::GetVertexDescription();
+        auto vertexDescription = VertexDataPos4::GetVertexDescription(*vk.m_CPUAllocator);
 
-        RasterizationState tris_raster_state {
+        RasterizationState tris_raster_state{
             VK_POLYGON_MODE_FILL,
             VK_CULL_MODE_NONE,
             enableMSAA,
@@ -83,14 +81,17 @@ namespace lvk
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
         };
 
+        Vector<VkFormat> formats(*vk.m_CPUAllocator);
+        formats.push_back(VK_FORMAT_R8G8B8A8_UNORM);
+
         VkPipelineData tris_pipeline = !enableDynamicRendering ?
             pipelines::CreateRasterPipeline(vk,
-            state.m_TriProg, vertexDescription, tris_raster_state,
-            renderPass, vk.m_SwapChainImageExtent)   :
+                state.m_TriProg, vertexDescription, tris_raster_state,
+                renderPass, vk.m_SwapChainImageExtent) :
 
             pipelines::CreateDynamicRasterPipeline(vk,
-            state.m_TriProg, vertexDescription, tris_raster_state,
-            vk.m_SwapChainImageExtent, {VK_FORMAT_R8G8B8A8_UNORM});
+                state.m_TriProg, vertexDescription, tris_raster_state,
+                vk.m_SwapChainImageExtent, formats);
 
         Material tris_material = Material::Create(vk, state.m_TriProg);
         tris_material.CreateBuffer(vk, 0, 0);
@@ -104,20 +105,21 @@ namespace lvk
             VK_COMPARE_OP_LESS,
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
         };
+
         VkPipelineData points_pipeline = !enableDynamicRendering ?
             pipelines::CreateRasterPipeline(vk,
-            state.m_PointsProg, vertexDescription, points_raster_state,
-            renderPass, vk.m_SwapChainImageExtent) :
+                state.m_PointsProg, vertexDescription, points_raster_state,
+                renderPass, vk.m_SwapChainImageExtent) :
 
             pipelines::CreateDynamicRasterPipeline(vk,
-            state.m_PointsProg, vertexDescription, points_raster_state,
-            vk.m_SwapChainImageExtent, {VK_FORMAT_R8G8B8A8_UNORM});
+                state.m_PointsProg, vertexDescription, points_raster_state,
+                vk.m_SwapChainImageExtent, formats);
 
         Material points_material = Material::Create(vk, state.m_PointsProg);
         points_material.CreateBuffer(vk, 0, 0);
         points_material.CreateBuffer(vk, 0, 1);
 
-        RasterizationState lines_raster_state {
+        RasterizationState lines_raster_state{
             VK_POLYGON_MODE_LINE,
             VK_CULL_MODE_NONE,
             enableMSAA,
@@ -126,12 +128,12 @@ namespace lvk
         };
         VkPipelineData lines_pipeline = !enableDynamicRendering ?
             pipelines::CreateRasterPipeline(vk,
-            state.m_LinesProg, vertexDescription, lines_raster_state,
-            renderPass, vk.m_SwapChainImageExtent) :
+                state.m_LinesProg, vertexDescription, lines_raster_state,
+                renderPass, vk.m_SwapChainImageExtent) :
 
-           pipelines::CreateDynamicRasterPipeline(vk,
-           state.m_LinesProg, vertexDescription, lines_raster_state,
-           vk.m_SwapChainImageExtent, {VK_FORMAT_R8G8B8A8_UNORM});
+            pipelines::CreateDynamicRasterPipeline(vk,
+                state.m_LinesProg, vertexDescription, lines_raster_state,
+                vk.m_SwapChainImageExtent, formats);
 
         Material lines_material = Material::Create(vk, state.m_LinesProg);
         lines_material.CreateBuffer(vk, 0, 0);
@@ -141,7 +143,7 @@ namespace lvk
                 tris_pipeline, points_pipeline, lines_pipeline };
     }
 
-    void FreeIm3dViewport(VkState & vk, LvkIm3dViewState& viewState)
+    void FreeIm3dViewport(VkState& vk, LvkIm3dViewState& viewState)
     {
         viewState.m_TrisMaterial.Free(vk);
         viewState.m_LinesMaterial.Free(vk);
@@ -161,7 +163,7 @@ namespace lvk
         return m;
     }
 
-    void FreeIm3d(VkState & vk, LvkIm3dState& state)
+    void FreeIm3d(VkState& vk, LvkIm3dState& state)
     {
         state.m_TriProg.Free(vk);
         state.m_LinesProg.Free(vk);
@@ -169,7 +171,7 @@ namespace lvk
         state.m_ScreenQuadBuffer.Free(vk);
     }
 
-    void DrawIm3d(VkState & vk, VkCommandBuffer& buffer, uint32_t frameIndex, LvkIm3dState& state, LvkIm3dViewState& viewState, glm::mat4 _viewProj, uint32_t width, uint32_t height, bool drawText)
+    void DrawIm3d(VkState& vk, VkCommandBuffer& buffer, uint32_t frameIndex, LvkIm3dState& state, LvkIm3dViewState& viewState, glm::mat4 _viewProj, uint32_t width, uint32_t height, bool drawText)
     {
         auto& context = Im3d::GetContext();
         debug::BeginDebugMarker(buffer, "Im3D Pass");
@@ -206,7 +208,7 @@ namespace lvk
                 primVertexCount = 1;
                 break;
             default:
-                spdlog::error("Im3d: unknown primitive type");
+                LVK_LOG_ERR("Im3d: unknown primitive type");
                 return;
             }
 
@@ -226,7 +228,7 @@ namespace lvk
 
             while (remainingPrimCount > 0)
             {
-                
+
                 int passPrimCount = remainingPrimCount < kPrimsPerPass ? remainingPrimCount : kPrimsPerPass;
                 int passVertexCount = passPrimCount * primVertexCount;
 
@@ -373,5 +375,4 @@ namespace lvk
             }
         }
     }
-
 }

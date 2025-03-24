@@ -25,6 +25,3 @@
 [submodule "submodules/SPIRV-headers"]
 	path = submodules/SPIRV-headers
 	url = https://github.com/KhronosGroup/SPIRV-Headers.git
-[submodule "submodules/cpptrace"]
-	path = submodules/cpptrace
-	url = https://github.com/jeremy-rifkin/cpptrace.git

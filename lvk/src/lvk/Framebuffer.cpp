@@ -29,7 +29,8 @@ void lvk::Framebuffer::Build(lvk::VkState &vk)
 
 void lvk::Framebuffer::BuildRenderPasses(lvk::VkState &vk) {
     // build renderpass & dynamic rendering state
-    Vector<VkAttachmentDescription> colourAttachmentDescriptions{};
+    STLAllocator<VkAttachmentDescription> attachmentDescriptionAlloc(*vk.m_CPUAllocator);
+    Vector<VkAttachmentDescription> colourAttachmentDescriptions(attachmentDescriptionAlloc);
     for (auto& col : m_ColourAttachments)
     {
         VkAttachmentDescription colourAttachment{};
@@ -44,7 +45,7 @@ void lvk::Framebuffer::BuildRenderPasses(lvk::VkState &vk) {
         colourAttachmentDescriptions.push_back(colourAttachment);
     }
 
-    Vector<VkAttachmentDescription> resolveAttachmentDescriptions{};
+    Vector<VkAttachmentDescription> resolveAttachmentDescriptions(attachmentDescriptionAlloc);
 
     for (auto& col : m_ResolveAttachments)
     {
@@ -79,9 +80,10 @@ void lvk::Framebuffer::BuildRenderPasses(lvk::VkState &vk) {
                                     colourAttachmentDescriptions, resolveAttachmentDescriptions, hasDepth,
                                     depthAttachmentDescription, m_AttachmentLoadOp);
 
+    STLAllocator<VkImageView> iva(*vk.m_CPUAllocator);
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
-        Vector<VkImageView> framebufferAttachments;
+        Vector<VkImageView> framebufferAttachments(iva);
         for (auto& colour : m_ColourAttachments)
         {
           framebufferAttachments.push_back(colour.m_AttachmentSwapchainImages[i].m_ImageView);
@@ -113,7 +115,8 @@ void lvk::Framebuffer::BuildRenderPasses(lvk::VkState &vk) {
 }
 
 void lvk::Framebuffer::BeginDynamicRendering(lvk::VkState& vk, VkCommandBuffer &cmd, uint32_t frameIndex) {
-    Vector<VkRenderingAttachmentInfoKHR> colourInfos {};
+    STLAllocator<VkRenderingAttachmentInfoKHR> raia(*vk.m_CPUAllocator);
+    Vector<VkRenderingAttachmentInfoKHR> colourInfos (raia);
     for (auto &col : m_ColourAttachments) {
           VkRenderingAttachmentInfoKHR curr = {};
 
@@ -125,7 +128,7 @@ void lvk::Framebuffer::BeginDynamicRendering(lvk::VkState& vk, VkCommandBuffer &
           curr.clearValue = {0.0f, 0.0f, 0.0f, 1.0f};
           colourInfos.push_back(curr);
     }
-    Vector<VkRenderingAttachmentInfoKHR> depthInfos {};
+    Vector<VkRenderingAttachmentInfoKHR> depthInfos(raia);
 
     if(!m_DepthAttachments.empty()) {
         for (auto &depth : m_DepthAttachments) {
@@ -139,7 +142,7 @@ void lvk::Framebuffer::BeginDynamicRendering(lvk::VkState& vk, VkCommandBuffer &
             depthInfos.push_back(curr);
         }
     }
-    Vector<VkRenderingAttachmentInfoKHR> resolveInfos {};
+    Vector<VkRenderingAttachmentInfoKHR> resolveInfos (raia);
 
     for (auto &resolve : m_ResolveAttachments) {
           VkRenderingAttachmentInfoKHR curr {};
@@ -172,3 +175,4 @@ void lvk::Framebuffer::BeginDynamicRendering(lvk::VkState& vk, VkCommandBuffer &
     vkCmdBeginRenderingKHR(cmd, &info);
 
 }
+

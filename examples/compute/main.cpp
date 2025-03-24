@@ -12,9 +12,9 @@ struct Particle
   glm::vec2 velocity;
   glm::vec4 colour;
 
-  static lvk::Vector<VkVertexInputAttributeDescription> GetAttributeDescriptions()
+  static lvk::Vector<VkVertexInputAttributeDescription> GetAttributeDescriptions(IAllocator& alloc)
   {
-    Vector<VkVertexInputAttributeDescription> attrs {};
+    Vector<VkVertexInputAttributeDescription> attrs (alloc);
     attrs.resize(2);
     attrs[0].binding = 0;
     attrs[0].location = 0;
@@ -29,16 +29,16 @@ struct Particle
     return attrs;
   }
 
-  static VertexDescription GetVertexDescription()
+  static VertexDescription GetVertexDescription(IAllocator& alloc)
   {
-    VertexDescription desc {};
+    VertexDescription desc (alloc);
     VkVertexInputBindingDescription binding {};
     binding.binding = 0;
     binding.stride = sizeof(Particle);
     binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     desc.m_BindingDescriptions = {binding};
-    desc.m_AttributeDescriptions = GetAttributeDescriptions();
+    desc.m_AttributeDescriptions = GetAttributeDescriptions(alloc);
     return desc;
   }
 
@@ -66,7 +66,7 @@ void CreateGraphicsDescriptorSets(VkState & vk, VkDescriptorSetLayout& descripto
   std::vector<VkDescriptorSetLayout> forward_layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
   VkDescriptorSetAllocateInfo allocInfo{};
   allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-  allocInfo.descriptorPool = vk.m_DescriptorSetAllocator.GetPool(vk.m_LogicalDevice);
+  allocInfo.descriptorPool = vk.m_DescriptorSetAllocator.GetPool(*vk.m_CPUAllocator, vk.m_LogicalDevice);
   allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
   allocInfo.pSetLayouts = forward_layouts.data();
 
@@ -125,7 +125,7 @@ void CreateGraphicsDescriptorSets(VkState & vk, VkDescriptorSetLayout& descripto
 }
 
 
-void RecordComputeCommandBuffers(VkState& vk, VkPipeline& p, VkPipelineLayout& layout, Vector<VkDescriptorSet>& computeDescriptors)
+void RecordComputeCommandBuffers(VkState& vk, VkPipeline& p, VkPipelineLayout& layout, Array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT>& computeDescriptors)
 {
   lvk::commands::RecordComputeCommands(vk, [&](VkCommandBuffer& cmd, uint32_t frameIndex)
   {
@@ -264,20 +264,22 @@ VkDescriptorSetLayout CreateComputeDescriptorLayouts(VkState& vk)
     return layout;
 }
 
-Vector<VkDescriptorSet> CreateComputeDescriptorSets(VkState& vk, VkDescriptorSetLayout layout,
+Array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> CreateComputeDescriptorSets(VkState& vk, VkDescriptorSetLayout layout,
                                  std::vector<Buffer>& uniformBuffers,
                                  std::vector<Buffer>& shaderStorageBuffers)
 {
+    Array<VkDescriptorSetLayout, 2> layouts{ layout, layout };
+    
 
-    std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, layout);
     VkDescriptorSetAllocateInfo alloc {};
     alloc.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    alloc.descriptorPool = vk.m_DescriptorSetAllocator.GetPool(vk.m_LogicalDevice);
+    alloc.descriptorPool = vk.m_DescriptorSetAllocator.GetPool(*vk.m_CPUAllocator, vk.m_LogicalDevice);
     alloc.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
     alloc.pSetLayouts= layouts.data();
+    
 
-    std::vector<VkDescriptorSet> sets {};
-    sets.resize(MAX_FRAMES_IN_FLIGHT);
+    Array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> sets ;
+    
 
     VK_CHECK(vkAllocateDescriptorSets(vk.m_LogicalDevice, &alloc, sets.data()));
 
@@ -385,14 +387,14 @@ int main()
     particleDeltaUniformData = buffers::CreateUniformBuffersT<ParticlesUBOData>(vk);
 
     VkDescriptorSetLayout layout = CreateComputeDescriptorLayouts(vk);
-    Vector<VkDescriptorSet> computeDescriptors = CreateComputeDescriptorSets(vk, layout,  uniformBuffers, shaderStorageBuffers);
+    Array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> computeDescriptors = CreateComputeDescriptorSets(vk, layout,  uniformBuffers, shaderStorageBuffers);
     VkPipelineLayout computePipelineLayout;
     VkPipeline computePipeline = CreateComputePipeline(vk, layout, particles_prog, computePipelineLayout);
 
 
     RasterizationState rasterState = {VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, false, VK_COMPARE_OP_ALWAYS,VK_PRIMITIVE_TOPOLOGY_POINT_LIST };
 
-    auto particleVertexDescription = Particle::GetVertexDescription();
+    auto particleVertexDescription = Particle::GetVertexDescription(*vk.m_CPUAllocator);
     VkPipelineData particlePipeline = lvk::pipelines::CreateRasterPipeline(
         vk, draw_particles, particleVertexDescription, rasterState,
         vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent);

@@ -368,17 +368,17 @@ void lvk::textures::CreateImageSampler(VkState& vk, VkImageView& imageView, uint
     VK_CHECK(vkCreateSampler(vk.m_LogicalDevice, &samplerInfo, nullptr, &sampler))
 }
 
-void lvk::textures::CreateTexture(VkState& vk, const String& path, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips)
+void lvk::textures::CreateTexture(VkState& vk, const char* path, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips)
 {
     bool generateMips = numMips != nullptr;
 
     int texWidth, texHeight, texChannels;
-    stbi_uc* pixels = stbi_load(path.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    stbi_uc* pixels = stbi_load(path, &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     VkDeviceSize imageSize = texWidth * texHeight * 4;
 
     if (!pixels)
     {
-        spdlog::error("Failed to load texture image at path {}", path);
+        LVK_LOG_ERR("Failed to load texture image at path %s", path);
         return;
     }
 
@@ -424,7 +424,7 @@ void lvk::textures::CreateTextureFromMemory(VkState& vk, unsigned char* tex_data
 
     if (!pixels)
     {
-        spdlog::error("Failed to load texture image from memory");
+        LVK_LOG_ERR("Failed to load texture image from memory");
         return;
     }
 
@@ -468,7 +468,7 @@ void lvk::textures::CreateTexture3DFromMemory(VkState& vk, unsigned char* tex_da
 
     if (!pixels)
     {
-        spdlog::error("Failed to load texture image from memory");
+        LVK_LOG_ERR("Failed to load texture image from memory");
         return;
     }
 
@@ -511,7 +511,7 @@ void lvk::textures::GenerateMips(VkState& vk, VkImage image, VkFormat format, ui
 
     if (supportsLinearSampling <= 0)
     {
-        spdlog::error("GenerateMips : No support for linear blitting!");
+        LVK_LOG_ERR("GenerateMips : No support for linear blitting!");
         return;
     }
 
@@ -650,7 +650,7 @@ void lvk::textures::TransitionImageLayout(VkState& vk, VkImage image, VkFormat f
         destinationStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     }
     else {
-        spdlog::error("Unsupported barrier transition.");
+        LVK_LOG_ERR("Unsupported barrier transition.");
         return;
     }
 

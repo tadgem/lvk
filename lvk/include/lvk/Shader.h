@@ -9,7 +9,7 @@ namespace lvk
     VkShaderModule CreateShaderModuleRaw(VkState& vk, const char* data, size_t length);
 
     StageBinary CreateStageBinaryFromSource(VkState& vk,
-      ShaderStageType type, const String& sourc, const String& shaderName);
+      ShaderStageType type, const String& source, const char* shaderName);
 
     struct ShaderStage
     {
@@ -20,50 +20,73 @@ namespace lvk
         Vector<DescriptorSetLayoutData> m_LayoutDatas;
         ShaderStageType m_Type;
 
-        static String      LoadShaderSource(const String& path);
+        ShaderStage(IAllocator& alloc);
 
-        static ShaderStage CreateFromBinary(VkState & vk, Vector<unsigned char>& binary, const ShaderStageType& type, const String& name)
+        static String      LoadShaderSource(VkState& vk, const char* path);
+
+        static ShaderStage CreateFromBinary(VkState & vk, Vector<unsigned char>& binary, const ShaderStageType& type, const char* name)
         {
             auto stageLayoutDatas = descriptor::ReflectDescriptorSetLayouts(vk, binary);
             auto pushConstants = descriptor::ReflectPushConstants(vk, binary);
             auto module = CreateShaderModule(vk, binary);
 
-            return { name, binary, module, pushConstants, stageLayoutDatas, type };
+            ShaderStage stage(*vk.m_CPUAllocator);
+            stage.m_Name = name;
+            stage.m_StageBinary = binary;
+            stage.m_Module = module;
+            stage.m_PushConstants = pushConstants;
+            stage.m_LayoutDatas = stageLayoutDatas;
+            stage.m_Type = type;
+
+            return stage;
         }
 
         static ShaderStage
-        CreateFromBinaryPath(VkState & vk, const String& stagePath, const ShaderStageType& stageType)
+        CreateFromBinaryPath(VkState & vk, const char* stagePath, const ShaderStageType& stageType)
         {
-            String name = std::filesystem::path(stagePath).filename().u8string();
-            auto stageBin = utils::LoadSpirvBinary(stagePath);
-            return CreateFromBinary(vk, stageBin, stageType, name);
+            String name(*vk.m_CPUAllocator);
+            name = std::filesystem::path(stagePath).filename().u8string();
+            auto stageBin = utils::LoadSpirvBinary(vk, stagePath);
+            return CreateFromBinary(vk, stageBin, stageType, name.c_str());
         }
 
-        static ShaderStage CreateFromSource(VkState & vk, const String& source, const ShaderStageType& type, const String& name, const String& path = "")
+        static ShaderStage CreateFromSource(VkState & vk, const String& source, const ShaderStageType& type, const char* name, const char* path = "")
         {
             auto bin = CreateStageBinaryFromSource(vk, type, source, path);
             if(bin.empty())
             {
-              return {};
+              return ShaderStage(*vk.m_CPUAllocator);
             }
             auto stageLayoutDatas = descriptor::ReflectDescriptorSetLayouts(vk, bin);
             auto pushConstants = descriptor::ReflectPushConstants(vk, bin);
             auto module = CreateShaderModule(vk, bin);
 
-            return { name, bin, module, pushConstants, stageLayoutDatas, type };
+            ShaderStage stage(*vk.m_CPUAllocator);
+            stage.m_Name = name;
+            stage.m_StageBinary = bin;
+            stage.m_Module = module;
+            stage.m_PushConstants = pushConstants;
+            stage.m_LayoutDatas = stageLayoutDatas;
+            stage.m_Type = type;
+
+            return std::move(stage);
         }
 
-        static ShaderStage CreateFromSourcePath(VkState & vk, const String& path, const ShaderStageType& type)
+        static ShaderStage CreateFromSourcePath(VkState & vk, const char* path, const ShaderStageType& type)
         {
-            String name = std::filesystem::path(path).filename().u8string();
-            auto source = LoadShaderSource(path);
-            return CreateFromSource(vk, source, type, path, name);
+            String name(*vk.m_CPUAllocator);
+            name = std::filesystem::path(path).filename().u8string();
+            auto source = LoadShaderSource(vk, path);
+            return CreateFromSource(vk, source, type, path, name.c_str());
         }
     };
 
     struct ShaderProgram
     {
-        ShaderProgram(Vector<ShaderStage> shaderStages, VkDescriptorSetLayout layout);
+        ShaderProgram(
+            IAllocator& alloc,
+            Vector<ShaderStage> shaderStages, 
+            VkDescriptorSetLayout layout);
         Vector<ShaderStage>         m_Stages;
 
         VkDescriptorSetLayout       m_DescriptorSetLayout;
@@ -78,12 +101,15 @@ namespace lvk
         {
             VkDescriptorSetLayout layout;
             descriptor::CreateDescriptorSetLayout(vk, vert.m_LayoutDatas, frag.m_LayoutDatas, layout);
-
-            return { Vector<ShaderStage> {vert, frag} , layout };
+            STLAllocator<ShaderStage> alloc(*vk.m_CPUAllocator);
+            Vector<ShaderStage> stages(alloc);
+            stages.push_back(vert);
+            stages.push_back(frag);
+            return ShaderProgram (*vk.m_CPUAllocator, stages, layout);
         }
 
         static ShaderProgram
-        CreateGraphicsFromBinaryPath(VkState & vk, const String& vertPath, const String& fragPath)
+        CreateGraphicsFromBinaryPath(VkState & vk, const char* vertPath, const char* fragPath)
         {
             ShaderStage vert = ShaderStage::CreateFromBinaryPath(
                 vk, vertPath, ShaderStageType::Vertex);
@@ -93,7 +119,7 @@ namespace lvk
         }
 
         static ShaderProgram
-        CreateGraphicsFromSourcePath(VkState & vk, const String& vertPath, const String& fragPath)
+        CreateGraphicsFromSourcePath(VkState & vk, const char* vertPath, const char* fragPath)
         {
             ShaderStage vert = ShaderStage::CreateFromSourcePath(
                 vk, vertPath, ShaderStageType::Vertex);
@@ -104,13 +130,13 @@ namespace lvk
 
         static ShaderProgram CreateCompute(VkState & vk, ShaderStage& compute);
 
-        static ShaderProgram CreateComputeFromBinaryPath(VkState& vk, const String& comp_path)
+        static ShaderProgram CreateComputeFromBinaryPath(VkState& vk, const char* comp_path)
         {
             ShaderStage comp = ShaderStage::CreateFromBinaryPath(vk, comp_path, ShaderStageType::Compute);
             return CreateCompute(vk, comp);
         }
 
-        static ShaderProgram CreateComputeFromSourcePath(VkState& vk, const String& compute_src_path)
+        static ShaderProgram CreateComputeFromSourcePath(VkState& vk, const char* compute_src_path)
         {
             ShaderStage comp = ShaderStage::CreateFromSourcePath(vk, compute_src_path, ShaderStageType::Compute);
             return CreateCompute(vk, comp);

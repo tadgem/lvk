@@ -1,5 +1,5 @@
 #include "lvk/Pipeline.h"
-#include "spdlog/spdlog.h"
+#include "lvk/Log.h"
 
 VkPipelineShaderStageCreateInfo CreateShaderStageInfo(VkShaderStageFlagBits shaderStage, VkShaderModule& module)
 {
@@ -112,10 +112,10 @@ VkPipelineMultisampleStateCreateInfo CreateMultiSampleInfo(lvk::VkState& vk, lvk
   return multisampleInfo;
 }
 
-lvk::PipelineAttachmentState CreateAttachmentState(uint32_t colourAttachmentCount)
+lvk::PipelineAttachmentState CreateAttachmentState(lvk::IAllocator& alloc, uint32_t colourAttachmentCount)
 {
   using namespace lvk;
-  PipelineAttachmentState state {};
+  PipelineAttachmentState state (alloc);
   for (uint32_t i = 0; i < colourAttachmentCount; i++) {
     VkPipelineColorBlendAttachmentState colorBlendAttachment{};
     colorBlendAttachment.colorWriteMask =
@@ -144,10 +144,10 @@ lvk::PipelineAttachmentState CreateAttachmentState(uint32_t colourAttachmentCoun
   return state;
 }
 
-lvk::PipelineDynamicState CreateDynamicStateInfo()
+lvk::PipelineDynamicState CreateDynamicStateInfo(lvk::IAllocator& alloc)
 {
   using namespace lvk;
-  PipelineDynamicState dynamicState {};
+  PipelineDynamicState dynamicState(alloc);
   dynamicState.m_DynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
   dynamicState.m_DynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR);
 
@@ -197,7 +197,7 @@ VkPipelineData CreateRasterPipeline(
   VkPipelineShaderStageCreateInfo fragShaderStageInfo =
       CreateShaderStageInfo(VK_SHADER_STAGE_FRAGMENT_BIT, fragShaderModule);
 
-  std::vector<VkPipelineShaderStageCreateInfo> shaderStageCreateInfos = {
+  Array<VkPipelineShaderStageCreateInfo, 2> shaderStageCreateInfos = {
       vertexShaderStageInfo, fragShaderStageInfo
   };
 
@@ -217,9 +217,9 @@ VkPipelineData CreateRasterPipeline(
       CreateMultiSampleInfo(vk, rasterState);
 
   PipelineAttachmentState attachmentState =
-      CreateAttachmentState(colorAttachmentCount);
+      CreateAttachmentState(*vk.m_CPUAllocator, colorAttachmentCount);
 
-  PipelineDynamicState dynamicState = CreateDynamicStateInfo();
+  PipelineDynamicState dynamicState = CreateDynamicStateInfo(*vk.m_CPUAllocator);
 
   VkPipelineDepthStencilStateCreateInfo depthStencil =
       CreateDepthStencilState(rasterState);
@@ -287,7 +287,7 @@ CreateComputePipeline(VkState &vk, StageBinary &comp,
   if (vkCreateComputePipelines(vk.m_LogicalDevice, VK_NULL_HANDLE, 1,
                                &pipelineInfo, nullptr,
                                &pipeline) != VK_SUCCESS) {
-    spdlog::error("failed to create compute pipeline!");
+    LVK_LOG_ERR("failed to create compute pipeline!");
     return {pipeline, pipelineLayout};
   }
 
@@ -310,7 +310,7 @@ VkPipelineData CreateDynamicRasterPipeline(VkState &vk, ShaderProgram &shader,
   VkPipelineShaderStageCreateInfo fragShaderStageInfo =
       CreateShaderStageInfo(VK_SHADER_STAGE_FRAGMENT_BIT, fragShaderModule);
 
-  std::vector<VkPipelineShaderStageCreateInfo> shaderStageCreateInfos = {
+  Array<VkPipelineShaderStageCreateInfo, 2> shaderStageCreateInfos = {
       vertexShaderStageInfo, fragShaderStageInfo
   };
 
@@ -330,9 +330,9 @@ VkPipelineData CreateDynamicRasterPipeline(VkState &vk, ShaderProgram &shader,
       CreateMultiSampleInfo(vk, rasterState);
 
   PipelineAttachmentState attachmentState =
-      CreateAttachmentState(static_cast<uint32_t>(colourAttachments.size()));
+      CreateAttachmentState(*vk.m_CPUAllocator, static_cast<uint32_t>(colourAttachments.size()));
 
-  PipelineDynamicState dynamicState = CreateDynamicStateInfo();
+  PipelineDynamicState dynamicState = CreateDynamicStateInfo(*vk.m_CPUAllocator);
 
   VkPipelineDepthStencilStateCreateInfo depthStencil =
       CreateDepthStencilState(rasterState);

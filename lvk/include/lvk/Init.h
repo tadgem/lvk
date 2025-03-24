@@ -6,10 +6,10 @@ namespace lvk {
 
 namespace init
 {
-  const Vector<const char*>   s_ValidationLayers = {
+  const StaticVector<const char*>   s_ValidationLayers = {
       "VK_LAYER_KHRONOS_validation"
   };
-  const Vector<const char*> s_RequiredDeviceExtensions = {
+  const StaticVector<const char*> s_RequiredDeviceExtensions = {
       "VK_KHR_swapchain"
   };
 
@@ -37,7 +37,7 @@ namespace init
   void                                CreateLogicalDevice(VkState& vk);
   void                                GetQueueHandles(VkState& vk);
   VkSurfaceFormatKHR ChooseSwapChainSurfaceFormat(
-      std::vector<VkSurfaceFormatKHR> availableFormats);
+      Vector<VkSurfaceFormatKHR> availableFormats);
   VkPresentModeKHR                    ChooseSwapChainPresentMode(VkState& vk, Vector<VkPresentModeKHR> availableModes);
   void                                CreateSwapChain(VkState& vk);
   void                                CreateSwapChainFramebuffers(VkState& vk);
@@ -57,8 +57,8 @@ namespace init
   void                                CreateVmaAllocator(VkState& vk);
   void                                GetMaxUsableSampleCount(VkState& vk);
 
-  std::vector<VkExtensionProperties>
-  GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice);
+  Vector<VkExtensionProperties>
+  GetDeviceAvailableExtensions          (IAllocator& alloc, VkPhysicalDevice physicalDevice);
   void                                EnableCommonExtensions(VkState& vk);
 
   void                                CreateBuiltInRenderPasses(VkState& vk);
@@ -66,11 +66,13 @@ namespace init
 
 
   template<typename _BackendTy>
-  VkState                             Create(const String& appName, uint32_t width, uint32_t height, bool enableSwapchainMsaa)
+  VkState                             Create(const char* appName, uint32_t width, uint32_t height, bool enableSwapchainMsaa)
   {
     static_assert(std::is_base_of<VkBackend, _BackendTy>::value, "Backend must inherit from VkBackend");
-    VkState vk;
-    vk.m_AppName = appName;
+    auto alloc = std::make_unique<MallocAllocator>();
+    VkState vk(*alloc);
+    vk.m_CPUAllocator = std::move(alloc);
+    vk.m_AppName = String(appName, *alloc);
     vk.m_Backend = std::make_unique<_BackendTy>();
     vk.m_Backend->CreateWindowLVK(vk, width, height);
     InitVulkan(vk, enableSwapchainMsaa);

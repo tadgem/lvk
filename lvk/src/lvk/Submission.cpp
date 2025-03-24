@@ -4,7 +4,7 @@
 #include "lvk/Commands.h"
 #include "lvk/Debug.h"
 #include "ImGui/imgui.h"
-#include "spdlog/spdlog.h"
+#include "lvk/Log.h"
 #include "ImGui/imgui_impl_vulkan.h"
 
 void lvk::submission::SubmitFrame(VkState& vk)
@@ -36,7 +36,7 @@ void lvk::submission::SubmitFrame(VkState& vk)
     return;
   }
   else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-    spdlog::error("VulkanAPI : Failed to acquire swap chain image!");
+    LVK_LOG_ERR("VulkanAPI : Failed to acquire swap chain image!");
     return;
   }
 
@@ -46,8 +46,10 @@ void lvk::submission::SubmitFrame(VkState& vk)
 
   VkSubmitInfo submitInfo{};
   submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-  Vector<VkSemaphore> waitSemaphores {};
-  Vector<VkPipelineStageFlags> waitStages;
+  STLAllocator<VkSemaphore>sa(*vk.m_CPUAllocator);
+  STLAllocator<VkPipelineStageFlags>psfa(*vk.m_CPUAllocator);
+  Vector<VkSemaphore> waitSemaphores (sa);
+  Vector<VkPipelineStageFlags> waitStages(psfa);
 
   waitSemaphores.push_back(vk.m_ImageAvailableSemaphores[vk.m_CurrentFrameIndex]);
   waitStages.push_back(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
@@ -70,7 +72,7 @@ void lvk::submission::SubmitFrame(VkState& vk)
 
   if (vkQueueSubmit(vk.m_GraphicsQueue, 1, &submitInfo, vk.m_FrameInFlightFences[vk.m_CurrentFrameIndex]) != VK_SUCCESS)
   {
-    spdlog::error("VulkanAPI : Failed to submit draw command buffer!");
+    LVK_LOG_ERR("VulkanAPI : Failed to submit draw command buffer!");
   }
 
   if (vk.m_UseImGui)
@@ -95,7 +97,7 @@ void lvk::submission::SubmitFrame(VkState& vk)
     return;
   }
   else if (result != VK_SUCCESS) {
-    spdlog::error("VulkanAPI : Error presenting swapchain image");
+    LVK_LOG_ERR("VulkanAPI : Error presenting swapchain image");
   }
 
   vk.m_CurrentFrameIndex = (vk.m_CurrentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
@@ -108,7 +110,7 @@ void lvk::submission::RenderImGui(VkState& vk)
   for(auto f = 0; f < MAX_FRAMES_IN_FLIGHT; f++)
   {
     VkCommandBuffer imguiCommandBuffer = commands::BeginSingleTimeCommands(vk);
-    debug::BeginDebugMarker(imguiCommandBuffer, "ImGui", { 0.0f, 0.0f, 1.0f, 1.0f });
+    debug::BeginDebugMarker(imguiCommandBuffer, "ImGui", {0.0f, 0.0f, 1.0f, 1.0f});
 
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;

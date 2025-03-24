@@ -104,7 +104,7 @@ int main()
     VkState vk = init::Create<VkSDL>("Forward Lights", 1920, 1080, enableMSAA);
     FillExampleLightData(lightDataCpu);
 
-    ShaderProgram lights_prog = ShaderProgram::CreateGraphicsFromSourcePath(
+    ShaderProgram lights_prog= ShaderProgram::CreateGraphicsFromSourcePath(
         vk, "shaders/lights.vert", "shaders/lights.frag");
 
     Material m = Material::Create(vk, lights_prog);
@@ -112,18 +112,18 @@ int main()
     m.CreateBuffer(vk, 0, 2);
 
     // Pipeline stage?
-    auto vertexDescription = VertexDataPosNormalUv::GetVertexDescription();
+    auto vertexDescription = VertexDataPosNormalUv::GetVertexDescription(*vk.m_CPUAllocator);
     VkPipelineData pipeline = lvk::pipelines::CreateRasterPipeline(vk,
         lights_prog,vertexDescription, defaults::CullNoneRasterStateMSAA,
         vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent);
 
     // create vertex and index buffer
-    Model model;
+    Model model(*vk.m_CPUAllocator);
     LoadModelAssimp(vk, model, "assets/viking_room.obj", true);
 
     if(!m.SetSampler(vk, "texSampler", model.m_Materials.front().m_Diffuse))
     {
-        spdlog::error("Failed to set diffuse texture for forward lighting shader");
+        LVK_LOG_ERR("Failed to set diffuse texture for forward lighting shader");
     }
 
     while (vk.m_ShouldRun)

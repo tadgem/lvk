@@ -3,9 +3,10 @@
 #define VK_NO_PROTOTYPES
 #include "volk.h"
 #include "ThirdParty/VulkanMemoryAllocator.h"
-#include "Alias.h"
+#include "lvk/Alias.h"
 #include "lvk/DescriptorSetAllocator.h"
 #include "lvk/Macros.h"
+#include "lvk/Allocator.h"
 
 namespace lvk {
 
@@ -36,13 +37,15 @@ namespace lvk {
 
   class VulkanAPIWindowHandle {};
 
-  using StageBinary = std::vector<unsigned char>;
+  using StageBinary = Vector<unsigned char>;
 
   struct PushConstantBlock {
     uint32_t m_Size;
     uint32_t m_Offset;
     String m_Name;
     VkShaderStageFlags m_Stage;
+
+    PushConstantBlock(IAllocator& alloc) : m_Name(alloc) {}
   };
 
   struct ShaderBufferMember {
@@ -51,7 +54,9 @@ namespace lvk {
     uint32_t m_Stride;
     String m_Name;
     ShaderBufferMemberType m_Type;
-  };
+
+    ShaderBufferMember(IAllocator& alloc) : m_Name(alloc) {}
+  }; 
 
   struct DescriptorSetLayoutBindingData {
     String m_BindingName;
@@ -59,6 +64,13 @@ namespace lvk {
     uint32_t m_ExpectedBufferSizeOrDivisor;
     ShaderBindingType m_BufferType;
     Vector<ShaderBufferMember> m_Members;
+
+    DescriptorSetLayoutBindingData(IAllocator& alloc) :
+        m_BindingName(alloc),
+        m_BindingIndex(0),
+        m_ExpectedBufferSizeOrDivisor(0),
+        m_Members(alloc) {
+    }
   };
 
   struct DescriptorSetLayoutData {
@@ -67,6 +79,14 @@ namespace lvk {
     VkDescriptorSetLayout m_Layout;
     Vector<VkDescriptorSetLayoutBinding> m_Bindings;
     Vector<DescriptorSetLayoutBindingData> m_BindingDatas;
+
+    DescriptorSetLayoutData(IAllocator& alloc) :
+        m_SetNumber(0),
+        m_Bindings(alloc),
+        m_BindingDatas(alloc)
+    {
+
+    }
   };
 
   class Buffer
@@ -172,6 +192,13 @@ namespace lvk {
   {
     Vector<VkVertexInputBindingDescription>   m_BindingDescriptions;
     Vector<VkVertexInputAttributeDescription> m_AttributeDescriptions;
+
+    VertexDescription(IAllocator& allocator) : 
+        m_BindingDescriptions(STLAllocator<VkVertexInputBindingDescription>(allocator)),
+        m_AttributeDescriptions(STLAllocator<VkVertexInputAttributeDescription>(allocator))
+    {
+
+    }
   };
 
   struct RasterizationState {
@@ -188,12 +215,22 @@ namespace lvk {
   {
     Vector<VkPipelineColorBlendAttachmentState> m_ColourAttachmentStates;
     VkPipelineColorBlendStateCreateInfo         m_BlendStateInfo;
+
+    PipelineAttachmentState(IAllocator& alloc) :
+        m_ColourAttachmentStates(alloc),
+        m_BlendStateInfo({}) {
+    };
   };
 
   struct PipelineDynamicState
   {
     Vector<VkDynamicState>            m_DynamicStates;
     VkPipelineDynamicStateCreateInfo  m_DynamicStateInfo;
+
+    PipelineDynamicState(IAllocator& alloc) :
+        m_DynamicStates(alloc),
+        m_DynamicStateInfo({}) {
+    };
   };
 
   struct RenderPassInfo
@@ -201,6 +238,11 @@ namespace lvk {
     Vector<VkFramebuffer>           m_SwapchainFramebuffers;
     VkRenderPass                    m_RenderPass;
     Vector<VkRenderPassBeginInfo>   m_RenderPassInfos;
+
+    RenderPassInfo(IAllocator& alloc) :
+        m_SwapchainFramebuffers(alloc),
+        m_RenderPassInfos(alloc) {
+    };
   };
 
   struct DynamicRenderingInfo
@@ -224,6 +266,8 @@ namespace lvk {
   struct QueueFamilyIndices {
     HashMap<QueueFamilyType, uint32_t> m_QueueFamilies;
 
+    QueueFamilyIndices(IAllocator& alloc);
+
     bool IsComplete();
   };
 
@@ -231,6 +275,9 @@ namespace lvk {
     VkSurfaceCapabilitiesKHR    m_Capabilities;
     Vector<VkSurfaceFormatKHR>  m_SupportedFormats;
     Vector<VkPresentModeKHR>    m_SupportedPresentModes;
+
+    SwapChainSupportDetais(IAllocator& alloc) :
+        m_SupportedFormats(alloc), m_SupportedPresentModes(alloc){}
   };
 
   struct VkState;
@@ -271,6 +318,7 @@ namespace lvk {
   struct VkState
   {
     Unique<VkBackend>               m_Backend;
+    Unique<IAllocator>              m_CPUAllocator;
 
     VkInstance                      m_Instance;
     VkSurfaceKHR                    m_Surface;
@@ -330,6 +378,25 @@ namespace lvk {
     int                             m_CurrentFrameIndex;
     VkExtent2D                      m_MaxFramebufferExtent;
     String                          m_AppName;
+
+    VkState(IAllocator& alloc) :
+        m_DescriptorSetAllocator(alloc),
+        m_ImageAvailableSemaphores(alloc),
+        m_RenderFinishedSemaphores(alloc),
+        m_ComputeFinishedSemaphores(alloc),
+        m_FrameInFlightFences(alloc),
+        m_ImagesInFlightFences(alloc),
+        m_ComputeInFlightFences(alloc),
+        m_SwapChainImages(alloc),
+        m_SwapChainImageViews(alloc),
+        m_SwapChainFramebuffers(alloc),
+        m_GraphicsCommandBuffers(alloc),
+        m_ComputeCommandBuffers(alloc),
+        m_DesiredDeviceExtensions(alloc),
+        m_QueueFamilyIndices(alloc),
+        m_AppName(alloc)
+    {
+    }
   };
 
   struct VkViewportData

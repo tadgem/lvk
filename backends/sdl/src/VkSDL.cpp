@@ -4,7 +4,7 @@
 #include "VkSDL.h"
 #include "lvk/Init.h"
 #include "lvk/Submission.h"
-#include "spdlog/spdlog.h"
+#include "lvk/Log.h"
 #include "volk.h"
 #include <filesystem>
 
@@ -28,7 +28,7 @@ void lvk::VkSDL::HandleSDLEvent(VkState& vk, SDL_Event& sdl_event)
 
 }
 
-std::vector<const char*> lvk::VkSDL::GetRequiredInstanceExtensions(VkState& vk)
+lvk::Vector<const char*> lvk::VkSDL::GetRequiredInstanceExtensions(VkState& vk)
 {
     uint32_t extensionCount = 0;
 
@@ -36,10 +36,11 @@ std::vector<const char*> lvk::VkSDL::GetRequiredInstanceExtensions(VkState& vk)
         SDL_Vulkan_GetInstanceExtensions(&extensionCount);
     if(extensionCount == 0)
     {
-        spdlog::error("Failed to enumerate required SDL device extensions");
-        return {};
+        LVK_LOG_ERR("Failed to enumerate required SDL device extensions");
+        return Vector<const char*>(*vk.m_CPUAllocator);
     }
-    std::vector<const char*> extensionNames;
+    STLAllocator<const char*> alloc(*vk.m_CPUAllocator);
+    Vector<const char*> extensionNames(alloc);
 
     for(uint32_t i = 0; i < extensionCount; i++)
     {
@@ -60,7 +61,7 @@ void lvk::VkSDL::CreateSurface(VkState& vk)
     if (!SDL_Vulkan_CreateSurface(
             m_SdlHandle->m_SdlWindow, vk.m_Instance,alloc_callback, &vk.m_Surface))
     {
-        spdlog::error("Failed to create SDL Vulkan surface");
+        LVK_LOG_ERR("Failed to create SDL Vulkan surface");
         std::cerr << "Failed to create SDL Vulkan surface";
     }
 }
@@ -71,7 +72,7 @@ void lvk::VkSDL::CleanupWindow(VkState& vk)
 
     if (derived == nullptr)
     {
-        spdlog::error("Failed to cast Window Handle to SDL WindowHandle");
+        LVK_LOG_ERR("Failed to cast Window Handle to SDL WindowHandle");
         return;
     }
     SDL_DestroyWindow(m_SdlHandle->m_SdlWindow);
@@ -108,7 +109,7 @@ void lvk::VkSDL::PostFrame(VkState& vk)
 
     if (vkDeviceWaitIdle(vk.m_LogicalDevice) != VK_SUCCESS)
     {
-        spdlog::error("Failed to wait for device idle");
+        LVK_LOG_ERR("Failed to wait for device idle");
         std::cerr << "Failed to wait for device idle" << std::endl;
     }
 
@@ -144,7 +145,7 @@ void lvk::VkSDL::Run(VkState& vk, std::function<void()> callback)
     }
     if (vkDeviceWaitIdle(vk.m_LogicalDevice) != VK_SUCCESS)
     {
-        spdlog::error("Failed to wait for device idle");
+        LVK_LOG_ERR("Failed to wait for device idle");
         std::cerr << "Failed to wait for device idle" << std::endl;
     }
 }
@@ -186,7 +187,7 @@ VkExtent2D lvk::VkSDL::GetMaxFramebufferResolution(VkState& vk)
 
 lvk::VkSDL::VkSDL(bool enableDebugValidation)
 {
-    spdlog::info("LVK : current working directory : {}", std::filesystem::current_path().string());
+    LVK_LOG_INFO("LVK : current working directory : %s", std::filesystem::current_path().string());
 }
 
 lvk::VulkanAPIWindowHandle_SDL::VulkanAPIWindowHandle_SDL(SDL_Window* sdlWindow) : m_SdlWindow(sdlWindow)

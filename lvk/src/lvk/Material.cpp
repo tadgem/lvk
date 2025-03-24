@@ -72,6 +72,17 @@ static auto reflect_descriptor_info = [](lvk::ShaderStage& stage, lvk::Material 
         }
     };
 
+lvk::Material::Material(IAllocator& alloc) :
+    m_DescriptorSets(alloc),
+    m_PushConstants(alloc),
+    m_ShaderBuffers(alloc),
+    m_Samplers(alloc),
+    m_UniformBufferAccessors(alloc),
+    m_ShaderName(alloc)
+{
+}
+
+
 lvk::Material::ShaderBufferBindingData::ShaderBufferBindingData(uint32_t set, uint32_t binding, VkDeviceSize size, Buffer::BufferType bufferType, lvk::ShaderBufferFrameData& buffer)
     : m_Binding(set, binding, size), m_BufferType(bufferType), m_Buffer(buffer)
 {
@@ -99,12 +110,12 @@ void lvk::Material::UpdateDescriptors(VkState& vk)
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 
         // write buffers to descriptor set + default texture for any samplers
-        Vector<VkDescriptorBufferInfo>  bufferWriteInfos;
+        Vector<VkDescriptorBufferInfo>  bufferWriteInfos(*vk.m_CPUAllocator);
         for (auto&& [setBinding, bufferInfo] : m_ShaderBuffers)
         {
             if (!bufferInfo.Ready())
             {
-                spdlog::warn("Material with name {} : set {}, binding {} has no associated buffer", m_ShaderName, setBinding.m_Set, setBinding.m_Binding);
+                LVK_LOG_WARN("Material with name %s : set %d, binding %d has no associated buffer", m_ShaderName.c_str(), setBinding.m_Set, setBinding.m_Binding);
                 continue;
             }
             VkDescriptorBufferInfo bufferWriteInfo{};
@@ -113,8 +124,8 @@ void lvk::Material::UpdateDescriptors(VkState& vk)
             bufferWriteInfo.range = bufferInfo.m_Binding.m_BindingSize;
             bufferWriteInfos.push_back(bufferWriteInfo);
         }
-        Vector<VkDescriptorImageInfo>   imageWriteInfos;
-        Vector<uint32_t> bindings;
+        Vector<VkDescriptorImageInfo>   imageWriteInfos(*vk.m_CPUAllocator);;
+        Vector<uint32_t> bindings(*vk.m_CPUAllocator);;
         for (auto [name, sampler] : m_Samplers)
         {
             VkDescriptorImageInfo imageInfo{};
@@ -125,7 +136,7 @@ void lvk::Material::UpdateDescriptors(VkState& vk)
             bindings.push_back(sampler.m_BindingNumber);
         }
 
-        Vector<VkWriteDescriptorSet> descriptorWrites{};
+        Vector<VkWriteDescriptorSet> descriptorWrites(*vk.m_CPUAllocator);
 
         int k = 0;
         for (auto&& [setBinding, ubo] : m_ShaderBuffers)
@@ -166,9 +177,9 @@ void lvk::Material::UpdateDescriptors(VkState& vk)
 // todo: add ability to add existing buffers when creating the material
 lvk::Material lvk::Material::Create(VkState & vk, ShaderProgram& shader)
 {
-    Material mat{};
+    Material mat(*vk.m_CPUAllocator);
 
-    String materialShaderName = "";
+    String materialShaderName(*vk.m_CPUAllocator);
 
     for (auto& stage : shader.m_Stages)
     {
@@ -181,7 +192,7 @@ lvk::Material lvk::Material::Create(VkState & vk, ShaderProgram& shader)
     mat.m_DescriptorSets.push_back(FrameDescriptorSets{});
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
-        mat.m_DescriptorSets.front().m_Sets[i] = vk.m_DescriptorSetAllocator.Allocate(vk.m_LogicalDevice, shader.m_DescriptorSetLayout, nullptr);
+        mat.m_DescriptorSets.front().m_Sets[i] = vk.m_DescriptorSetAllocator.Allocate(*vk.m_CPUAllocator, vk.m_LogicalDevice, shader.m_DescriptorSetLayout, nullptr);
     }
 
     // Collect
@@ -200,7 +211,7 @@ void lvk::Material::AttachBuffer(VkState& vk, uint32_t frameIndex, uint32_t set,
     
     if (m_ShaderBuffers.find(b) == m_ShaderBuffers.end())
     {
-        spdlog::error("Material with shader {} : No binding at set {}, binding {}", m_ShaderName, set, binding);
+        LVK_LOG_ERR("Material with shader %s : No binding at set %s, binding %s", m_ShaderName.c_str(), set, binding);
         return;
     }
 
@@ -225,7 +236,7 @@ void lvk::Material::CreateBuffer(VkState& vk, uint32_t set, uint32_t binding)
 
     if (m_ShaderBuffers.find(bind_handle) == m_ShaderBuffers.end())
     {
-        spdlog::error("Material with shader {} : No binding at set {}, binding {}", m_ShaderName, set, binding);
+        LVK_LOG_ERR("Material with shader %s : No binding at set %s, binding %s", m_ShaderName.c_str(), set, binding);
         return;
     }
 
@@ -237,17 +248,18 @@ void lvk::Material::CreateBuffer(VkState& vk, uint32_t set, uint32_t binding)
     UpdateDescriptors(vk);
 }
 
-bool lvk::Material::SetSampler(VkState & vk, const String& name, const VkImageView& imageView, const VkSampler& sampler, bool isAttachment)
+bool lvk::Material::SetSampler(VkState & vk, const char* name, const VkImageView& imageView, const VkSampler& sampler, bool isAttachment)
 {
-    if (m_Samplers.find(name) == m_Samplers.end())
+    auto nameStr = String(name, *vk.m_CPUAllocator);
+    if (m_Samplers.find(nameStr) == m_Samplers.end())
     {
-        spdlog::error("Material with shader {} : No associated sampler with name {}", m_ShaderName, name);
+        LVK_LOG_ERR("Material with shader %s: No associated sampler with name %s", m_ShaderName.c_str(), name);
         return false;
     }
 
     VkImageLayout imageLayout = isAttachment ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-    SamplerBindingData& samplerBinding = m_Samplers.at(name);
+    SamplerBindingData& samplerBinding = m_Samplers.at(nameStr);
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
         VkDescriptorImageInfo imageInfo{};
@@ -273,7 +285,7 @@ bool lvk::Material::SetColourAttachment(VkState & vk, const String& name, Frameb
 {
     if (m_Samplers.find(name) == m_Samplers.end())
     {
-        spdlog::error("Material with shader {} : No associated sampler with name {}", m_ShaderName, name);
+        LVK_LOG_ERR("Material with shader %s : No associated sampler with name %s", m_ShaderName.c_str(), name);
         return false;
     }
 
@@ -302,6 +314,13 @@ bool lvk::Material::SetColourAttachment(VkState & vk, const String& name, Frameb
     return true;
 
 }
+
+bool lvk::Material::SetColourAttachment(VkState& vk, const char* name, Framebuffer& framebuffer, uint32_t colourAttachmentIndex)
+{
+    String name_str(name, *vk.m_CPUAllocator);
+    return SetColourAttachment(vk, name_str, framebuffer, colourAttachmentIndex);
+}
+
 
 bool lvk::Material::SetDepthAttachment(VkState & vk, const String& name, Framebuffer& framebuffer)
 {
@@ -334,6 +353,13 @@ bool lvk::Material::SetDepthAttachment(VkState & vk, const String& name, Framebu
     return true;
 }
 
+bool lvk::Material::SetDepthAttachment(VkState& vk, const char* name, Framebuffer& framebuffer)
+{
+    String name_str(name, *vk.m_CPUAllocator);
+    return SetDepthAttachment(vk, name_str, framebuffer);
+}
+
+
 void lvk::Material::Free(VkState & vk)
 {
     m_UniformBufferAccessors.clear();
@@ -357,7 +383,7 @@ void lvk::Material::Free(VkState & vk)
 
 }
 
-bool lvk::Material::SetSampler(lvk::VkState &vk, const lvk::String &name,
+bool lvk::Material::SetSampler(lvk::VkState &vk, const char* name,
                                lvk::Texture &texture) {
     return SetSampler(vk, name, texture.m_ImageView, texture.m_Sampler, false);
 }

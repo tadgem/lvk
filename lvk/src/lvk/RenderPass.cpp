@@ -1,5 +1,5 @@
 #include "lvk/RenderPass.h"
-#include "spdlog/spdlog.h"
+#include "lvk/Log.h"
 
 void lvk::render_passes::CreateRenderPass(VkState& vk, VkRenderPass& renderPass, Vector<VkAttachmentDescription>& colourAttachments, Vector<VkAttachmentDescription>& resolveAttachments, bool hasDepthAttachment, VkAttachmentDescription depthAttachment, VkAttachmentLoadOp attachmentLoadOp)
 {
@@ -7,10 +7,13 @@ void lvk::render_passes::CreateRenderPass(VkState& vk, VkRenderPass& renderPass,
   VkSubpassDescription subpass{};
   subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
-  Vector<VkAttachmentDescription> attachments;
+  STLAllocator< VkAttachmentDescription>ada(*vk.m_CPUAllocator);
+  STLAllocator< VkAttachmentReference>ara(*vk.m_CPUAllocator);
 
-  Vector<VkAttachmentReference>   colourAttachmentReferences;
-  Vector<VkAttachmentReference>   resolveAttachmentReferences;
+  Vector<VkAttachmentDescription> attachments(ada);
+
+  Vector<VkAttachmentReference>   colourAttachmentReferences (ara);
+  Vector<VkAttachmentReference>   resolveAttachmentReferences(ara);
 
   uint32_t attachmentCount = 0;
 
@@ -80,7 +83,7 @@ void lvk::render_passes::CreateRenderPass(VkState& vk, VkRenderPass& renderPass,
 
   if (vkCreateRenderPass(vk.m_LogicalDevice, &createInfo, nullptr, &renderPass) != VK_SUCCESS)
   {
-    spdlog::error("Failed to create Render Pass!");
+    LVK_LOG_ERR("Failed to create Render Pass!");
     std::cerr << "Failed to create Render Pass!" << std::endl;
   }
 }

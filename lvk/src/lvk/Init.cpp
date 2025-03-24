@@ -6,8 +6,7 @@
 #include "lvk/RenderPass.h"
 #include "lvk/Texture.h"
 #include "lvk/Utils.h"
-#include "spdlog/spdlog.h"
-#include "cpptrace/cpptrace.hpp"
+#include "lvk/Log.h"
 #include "ThirdParty/FunnelSansTTF.h"
 #include "lvk/Commands.h"
 
@@ -21,17 +20,15 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 
   if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
   {
-    spdlog::warn("VL: {}\n Stacktrace:\n", pCallbackData->pMessage);
-    //cpptrace::generate_trace().print();
+    LVK_LOG_WARN("VL: %s\n", pCallbackData->pMessage);
   }
   if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
   {
-    spdlog::info("VL: {}", pCallbackData->pMessage);
+    LVK_LOG_INFO("VL: %s\n", pCallbackData->pMessage);
   }
   if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
   {
-    spdlog::error("VL: {}\n Stacktrace:\n", pCallbackData->pMessage);
-    //cpptrace::generate_trace().print();
+    LVK_LOG_ERR("VL: %s\n", pCallbackData->pMessage);
   }
   return VK_FALSE;
 }
@@ -61,13 +58,15 @@ bool lvk::init::CheckValidationLayerSupport(VkState& vk)
   uint32_t layerCount;
   if (vkEnumerateInstanceLayerProperties(&layerCount, nullptr) != VK_SUCCESS)
   {
-    spdlog::error("Failed to enumerate supported validation layers!");
+    LVK_LOG_ERR("Failed to enumerate supported validation layers!");
   }
 
-  std::vector<VkLayerProperties> availableLayers(layerCount);
+  STLAllocator<VkLayerProperties>alloc(*vk.m_CPUAllocator);
+  Vector<VkLayerProperties> availableLayers(alloc);
+  availableLayers.resize(layerCount);
   if (vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data()) != VK_SUCCESS)
   {
-    spdlog::error("Failed to enumerate supported validation layers!");
+      LVK_LOG_ERR("Failed to enumerate supported validation layers!");
   }
 
   for (const char* layerName : s_ValidationLayers) {
@@ -90,8 +89,8 @@ bool lvk::init::CheckValidationLayerSupport(VkState& vk)
 
 bool lvk::init::CheckDeviceExtensionSupport(VkState& vk, VkPhysicalDevice device)
 {
-  std::vector<VkExtensionProperties> availableExtensions =
-      GetDeviceAvailableExtensions(device);
+  Vector<VkExtensionProperties> availableExtensions =
+      GetDeviceAvailableExtensions(*vk.m_CPUAllocator, device);
 
   uint32_t requiredExtensionsFound = 0;
 
@@ -134,15 +133,13 @@ void lvk::init::SetupDebugOutput(VkState& vk)
 
   if (!function)
   {
-    spdlog::error("Could not find vkCreateDebugUtilsMessengerEXT function");
-    std::cerr << "Could not find vkCreateDebugUtilsMessengerEXT function";
+    LVK_LOG_ERR("Could not find vkCreateDebugUtilsMessengerEXT function");
     return;
   }
 
   if (function(vk.m_Instance, &createInfo, nullptr, &vk.m_DebugMessenger))
   {
-    spdlog::error("Failed to create debug messenger");
-    std::cerr << "Failed to create debug messenger";
+    LVK_LOG_ERR("Failed to create debug messenger");
   }
 
 }
@@ -157,22 +154,21 @@ void lvk::init::CleanupDebugOutput(VkState& vk)
   }
   else
   {
-    spdlog::error("Could not find vkDestroyDebugUtilsMessengerEXT function");
-    std::cerr << "Could not find vkDestroyDebugUtilsMessengerEXT function";
+    LVK_LOG_ERR("Could not find vkDestroyDebugUtilsMessengerEXT function");
   }
 }
 
 void lvk::init::ListDeviceExtensions(VkState& vk, VkPhysicalDevice physicalDevice)
 {
-  std::vector<VkExtensionProperties> extensions =
-      GetDeviceAvailableExtensions(physicalDevice);
+  Vector<VkExtensionProperties> extensions =
+      GetDeviceAvailableExtensions(*vk.m_CPUAllocator, physicalDevice);
 
   VkPhysicalDeviceProperties deviceProperties{};
   vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
-  spdlog::info("Selected device {} supports the following extensions:", &deviceProperties.deviceName[0]);
+  LVK_LOG_INFO("Selected device %s supports the following extensions:", &deviceProperties.deviceName[0]);
   for (int i = 0; i < extensions.size(); i++)
   {
-    spdlog::info("    - {}", &extensions[i].extensionName[0]);
+    LVK_LOG_INFO("    - %s", &extensions[i].extensionName[0]);
   }
 }
 
@@ -329,7 +325,7 @@ void lvk::init::InitImGui(VkState& vk)
   init_info.Queue = vk.m_GraphicsQueue;
   init_info.PipelineCache = VK_NULL_HANDLE;
   // TODO: this is a bit shit, need to clean this pool some wheere
-  init_info.DescriptorPool = vk.m_DescriptorSetAllocator.CreatePool(vk.m_LogicalDevice, 4096);
+  init_info.DescriptorPool = vk.m_DescriptorSetAllocator.CreatePool(*vk.m_CPUAllocator, vk.m_LogicalDevice, 4096);
   init_info.Allocator = nullptr;
   init_info.MinImageCount = 2;
   init_info.ImageCount = 2;
@@ -364,30 +360,31 @@ void lvk::init::CreateInstance(VkState& vk)
 {
   if (vk.m_UseValidation && !CheckValidationLayerSupport(vk))
   {
-    spdlog::error("Validation layers requested but not available.");
-    std::cerr << "Validation layers requested but not available.";
+    LVK_LOG_ERR("Validation layers requested but not available.");
   }
 
   VkApplicationInfo appInfo = CreateAppInfo();
 
-  std::vector<const char*> extensionNames = vk.m_Backend->GetRequiredInstanceExtensions(vk);
+  Vector<const char*> extensionNames = vk.m_Backend->GetRequiredInstanceExtensions(vk);
 
   if(vk.m_UseValidation) {
     for (const auto &extension: extensionNames) {
-      spdlog::info("Backend Extension : {}", extension);
+      LVK_LOG_INFO("Backend Extension : %s", extension);
     }
   }
   uint32_t extensionCount;
   vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-  std::vector<VkExtensionProperties> extensions(extensionCount);
+  STLAllocator<VkExtensionProperties> alloc(*vk.m_CPUAllocator);
+  Vector<VkExtensionProperties> extensions(alloc);
+  extensions.resize(extensionCount);
   vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 
   if(vk.m_UseValidation) {
-    spdlog::info("Supported m_Instance extensions: ");
+    LVK_LOG_INFO("Supported m_Instance extensions: ");
   }
   for (const auto& extension : extensions) {
     if (vk.m_UseValidation) {
-      spdlog::info("{}", &extension.extensionName[0]);
+      LVK_LOG_INFO("   - %s", &extension.extensionName[0]);
     }
     bool shouldAdd = true;
     for (int i = 0; i < extensionNames.size(); i++)
@@ -429,7 +426,7 @@ void lvk::init::CreateInstance(VkState& vk)
 
   if (vkCreateInstance(&createInfo, nullptr, &vk.m_Instance) != VK_SUCCESS)
   {
-    spdlog::error("Failed to create vulkan m_Instance");
+    LVK_LOG_ERR("Failed to create vulkan m_Instance");
   }
 
   volkLoadInstance(vk.m_Instance);
@@ -465,12 +462,14 @@ void lvk::init::CleanupVulkan(VkState& vk)
 
 lvk::QueueFamilyIndices lvk::init::FindQueueFamilies(VkState& vk, VkPhysicalDevice m_PhysicalDevice)
 {
-  QueueFamilyIndices indices;
+  QueueFamilyIndices indices (*vk.m_CPUAllocator);
 
   uint32_t queueFamilyCount = 0;
   vkGetPhysicalDeviceQueueFamilyProperties(m_PhysicalDevice, &queueFamilyCount, nullptr);
 
-  std::vector<VkQueueFamilyProperties> queueFamilyProperties(queueFamilyCount);
+  STLAllocator<VkQueueFamilyProperties> alloc(*vk.m_CPUAllocator);
+  Vector<VkQueueFamilyProperties> queueFamilyProperties(alloc);
+  queueFamilyProperties.resize(queueFamilyCount);
   vkGetPhysicalDeviceQueueFamilyProperties(m_PhysicalDevice, &queueFamilyCount, queueFamilyProperties.data());
 
   for (int i = 0; i < queueFamilyProperties.size(); i++)
@@ -492,7 +491,7 @@ lvk::QueueFamilyIndices lvk::init::FindQueueFamilies(VkState& vk, VkPhysicalDevi
 
 lvk::SwapChainSupportDetais lvk::init::GetSwapChainSupportDetails(VkState& vk, VkPhysicalDevice physicalDevice)
 {
-  SwapChainSupportDetais details;
+  SwapChainSupportDetais details(*vk.m_CPUAllocator);
 
   vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, vk.m_Surface, &details.m_Capabilities);
 
@@ -569,11 +568,13 @@ void lvk::init::PickPhysicalDevice(VkState& vk)
 
   if (deviceCount == 0)
   {
-    spdlog::error("Failed to find any physical devices.");
-    std::cerr << "Failed to find any physical devices.\n";
+    LVK_LOG_ERR("Failed to find any physical devices.");
   }
 
-  std::vector<VkPhysicalDevice> physicalDevices(deviceCount);
+  STLAllocator<VkPhysicalDevice>alloc(*vk.m_CPUAllocator);
+
+  Vector<VkPhysicalDevice> physicalDevices(alloc);
+  physicalDevices.resize(deviceCount);
   vkEnumeratePhysicalDevices(vk.m_Instance, &deviceCount, physicalDevices.data());
   VkPhysicalDevice physicalDeviceCandidate = VK_NULL_HANDLE;
   uint32_t bestScore = 0;
@@ -590,7 +591,7 @@ void lvk::init::PickPhysicalDevice(VkState& vk)
 
   if (bestScore == 0)
   {
-    spdlog::error("failed to find a suitable device.");
+    LVK_LOG_ERR("failed to find a suitable device.");
     return;
   }
 
@@ -598,15 +599,15 @@ void lvk::init::PickPhysicalDevice(VkState& vk)
 
   if (vk.m_PhysicalDevice == VK_NULL_HANDLE)
   {
-    spdlog::error("Failed to find a suitable physical device.");
-    std::cerr << "Failed to find a suitable physical device.\n";
+    LVK_LOG_ERR("Failed to find a suitable physical device.");
+    return;
   }
 
   VkPhysicalDeviceProperties deviceProperties{};
   vkGetPhysicalDeviceProperties(vk.m_PhysicalDevice, &deviceProperties);
 
   if(vk.m_UseValidation) {
-    spdlog::info("Chose GPU : {}", &deviceProperties.deviceName[0]);
+    LVK_LOG_INFO("Chose GPU : %s", &deviceProperties.deviceName[0]);
     ListDeviceExtensions(vk, vk.m_PhysicalDevice);
   }
 }
@@ -615,7 +616,8 @@ void lvk::init::CreateLogicalDevice(VkState& vk)
 {
   vk.m_QueueFamilyIndices = FindQueueFamilies(vk, vk.m_PhysicalDevice);
 
-  std::vector< VkDeviceQueueCreateInfo> queueCreateInfos;
+  STLAllocator< VkDeviceQueueCreateInfo> alloc(*vk.m_CPUAllocator);
+  Vector< VkDeviceQueueCreateInfo> queueCreateInfos(alloc);
   float priority = 1.0f;
   for (auto const& [type, index] : vk.m_QueueFamilyIndices.m_QueueFamilies)
   {
@@ -671,8 +673,8 @@ void lvk::init::CreateLogicalDevice(VkState& vk)
 
   if (vkCreateDevice(vk.m_PhysicalDevice, &createInfo, nullptr, &vk.m_LogicalDevice))
   {
-    spdlog::error("Failed to create logical device.");
-    std::cerr << "Failed to create logical device. \n";
+    LVK_LOG_ERR("Failed to create logical device.");
+    return;
   }
 
   volkLoadDevice(vk.m_LogicalDevice);
@@ -686,11 +688,10 @@ void lvk::init::GetQueueHandles(VkState& vk)
 }
 
 VkSurfaceFormatKHR lvk::init::ChooseSwapChainSurfaceFormat(
-    std::vector<VkSurfaceFormatKHR> availableFormats) {
+    Vector<VkSurfaceFormatKHR> availableFormats) {
   if (availableFormats.size() == 0)
   {
-    spdlog::error("Could not find any suitable Swapchain Surface Format in provided collection!");
-    std::cerr << "Could not find any suitable Swapchain Surface Format in provided collection!" << std::endl;
+    LVK_LOG_ERR("Could not find any suitable Swapchain Surface Format in provided collection!");
   }
 
   for (auto const& format : availableFormats)
@@ -701,12 +702,11 @@ VkSurfaceFormatKHR lvk::init::ChooseSwapChainSurfaceFormat(
     }
   }
 
-  spdlog::error("Could not find suitable Swapchain Surface Format in provided collection!");
-  std::cerr << "Could not find suitable Swapchain Surface Format in provided collection!" << std::endl;
+  LVK_LOG_ERR("Could not find suitable Swapchain Surface Format in provided collection!");
   return availableFormats[0];
 }
 
-VkPresentModeKHR lvk::init::ChooseSwapChainPresentMode(VkState& vk, std::vector<VkPresentModeKHR> availableModes)
+VkPresentModeKHR lvk::init::ChooseSwapChainPresentMode(VkState& vk, Vector<VkPresentModeKHR> availableModes)
 {
   if(vk.m_WaitForVerticalSync)
   {
@@ -776,8 +776,7 @@ void lvk::init::CreateSwapChain(VkState& vk)
 
   if (vkCreateSwapchainKHR(vk.m_LogicalDevice, &createInfo, nullptr, &vk.m_SwapChain) != VK_SUCCESS)
   {
-    spdlog::error("Failed to create swapchain.");
-    std::cerr << "Failed to create swapchain" << std::endl;
+    LVK_LOG_ERR("Failed to create swapchain.");
   }
 
   vkGetSwapchainImagesKHR(vk.m_LogicalDevice, vk.m_SwapChain, &swapChainImageCount, nullptr);
@@ -794,7 +793,7 @@ void lvk::init::CreateSwapChainFramebuffers(VkState& vk)
 
   for (uint32_t i = 0; i < vk.m_SwapChainImageViews.size(); i++)
   {
-    std::vector<VkImageView> attachments;
+    Vector<VkImageView> attachments(*vk.m_CPUAllocator);
 
     if (vk.m_UseSwapchainMsaa)
     {
@@ -849,7 +848,7 @@ void lvk::init::CleanupSwapChain(VkState& vk)
 
 void lvk::init::RecreateSwapChain(VkState& vk)
 {
-  spdlog::info("VulkanAPI : Recreating Swapchain");
+  LVK_LOG_INFO("VulkanAPI : Recreating Swapchain");
   while (vkDeviceWaitIdle(vk.m_LogicalDevice) != VK_SUCCESS);
 
   CleanupSwapChain(vk);
@@ -928,18 +927,18 @@ void lvk::init::CreateCommandPool(VkState& vk)
 
   if(vkCreateCommandPool(vk.m_LogicalDevice, &createInfo, nullptr, &vk.m_GraphicsComputeQueueCommandPool) != VK_SUCCESS)
   {
-    spdlog::error("Failed to create Command Pool!");
-    std::cerr << "Failed to create Command Pool!" << std::endl;
+    LVK_LOG_ERR("Failed to create Command Pool!");
   }
 }
 
 void lvk::init::CreateDescriptorSetAllocator(VkState& vk)
 {
-  vk.m_DescriptorSetAllocator.Init(vk.m_LogicalDevice, MAX_FRAMES_IN_FLIGHT * 128, {
-                                                                       {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0.33f},
-                                                                       {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0.33f},
-                                                                       {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0.33f},
-                                                                   });
+  STLAllocator<DescriptorSetAllocator::PoolSizeRatio> ratioAlloc(*vk.m_CPUAllocator);
+  Vector<DescriptorSetAllocator::PoolSizeRatio> ratios(ratioAlloc);
+  ratios.push_back({ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0.33f });
+  ratios.push_back({ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0.33f });
+  ratios.push_back({ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0.33f });
+  vk.m_DescriptorSetAllocator.Init(*vk.m_CPUAllocator,vk.m_LogicalDevice, MAX_FRAMES_IN_FLIGHT * 128, ratios);
 }
 
 void lvk::init::CreateSemaphores(VkState& vk)
@@ -957,8 +956,7 @@ void lvk::init::CreateSemaphores(VkState& vk)
         vkCreateSemaphore(vk.m_LogicalDevice, &createInfo, nullptr, &vk.m_RenderFinishedSemaphores[i]) != VK_SUCCESS ||
         vkCreateSemaphore(vk.m_LogicalDevice, &createInfo, nullptr, &vk.m_ComputeFinishedSemaphores[i]) != VK_SUCCESS)
     {
-      spdlog::error("Failed to create semaphores!");
-      std::cerr << "Failed to create semaphores!" << std::endl;
+      LVK_LOG_ERR("Failed to create semaphores!");
     }
   }
 
@@ -979,8 +977,7 @@ void lvk::init::CreateFences(VkState& vk)
     if (vkCreateFence(vk.m_LogicalDevice, &createInfo, nullptr, &vk.m_FrameInFlightFences[i]) != VK_SUCCESS ||
         vkCreateFence(vk.m_LogicalDevice, &createInfo, nullptr, &vk.m_ComputeInFlightFences[i]) != VK_SUCCESS )
     {
-      spdlog::error("Failed to create Fences!");
-      std::cerr << "Failed to create Fences!" << std::endl;
+      LVK_LOG_ERR("Failed to create Fences!");
     }
   }
 }
@@ -1051,10 +1048,11 @@ void lvk::init::GetMaxUsableSampleCount(VkState& vk)
 }
 
 void lvk::init::CreateBuiltInRenderPasses(lvk::VkState &vk) {
-
+  STLAllocator< VkAttachmentDescription> ada(*vk.m_CPUAllocator);
   {
-    Vector<VkAttachmentDescription> colourAttachmentDescriptions{};
-    Vector<VkAttachmentDescription> resolveAttachmentDescriptions{};
+
+    Vector<VkAttachmentDescription> colourAttachmentDescriptions(ada);
+    Vector<VkAttachmentDescription> resolveAttachmentDescriptions(ada);
     VkAttachmentDescription depthAttachmentDescription{};
 
     VkAttachmentDescription colorAttachment{};
@@ -1101,8 +1099,8 @@ void lvk::init::CreateBuiltInRenderPasses(lvk::VkState &vk) {
     render_passes::CreateRenderPass(vk, vk.m_SwapchainImageRenderPass, colourAttachmentDescriptions, resolveAttachmentDescriptions, true, depthAttachmentDescription, VK_ATTACHMENT_LOAD_OP_CLEAR);
   }
   {
-    Vector<VkAttachmentDescription> colourAttachmentDescriptions{};
-    Vector<VkAttachmentDescription> resolveAttachmentDescriptions{};
+    Vector<VkAttachmentDescription> colourAttachmentDescriptions(ada);
+    Vector<VkAttachmentDescription> resolveAttachmentDescriptions(ada);
     VkAttachmentDescription depthAttachmentDescription{};
 
     VkAttachmentDescription colorAttachment{};
@@ -1149,12 +1147,15 @@ void lvk::init::CreateBuiltInRenderPasses(lvk::VkState &vk) {
   }
 }
 
-std::vector<VkExtensionProperties>
-lvk::init::GetDeviceAvailableExtensions(VkPhysicalDevice physicalDevice) {
+lvk::Vector<VkExtensionProperties>
+lvk::init::GetDeviceAvailableExtensions(IAllocator& alloc, VkPhysicalDevice physicalDevice) {
+  using namespace lvk;
   uint32_t extensionCount;
   vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
 
-  std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+  STLAllocator<VkExtensionProperties> epa(alloc);
+  Vector<VkExtensionProperties> availableExtensions(epa);
+  availableExtensions.resize(extensionCount);
   vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableExtensions.data());
 
   return availableExtensions;

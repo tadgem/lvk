@@ -26,7 +26,7 @@ static Transform g_Transform;
 
 ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferProg, ShaderProgram lightPassProg)
 {
-    Framebuffer gbuffer{};
+    Framebuffer gbuffer(*vk.m_CPUAllocator);
     gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
     gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
@@ -37,7 +37,7 @@ ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferP
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
     gbuffer.Build(vk);
 
-    Framebuffer finalImage{};
+    Framebuffer finalImage(*vk.m_CPUAllocator);
     finalImage.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
     finalImage.Build(vk);
@@ -45,38 +45,38 @@ ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferP
     Material lightPassMat = Material::Create(vk, lightPassProg);
     lightPassMat.CreateBuffer(vk, 0, 3);
 
-    lightPassMat.SetColourAttachment(vk, "positionBufferSampler", gbuffer, 1);
-    lightPassMat.SetColourAttachment(vk, "normalBufferSampler", gbuffer, 2);
-    lightPassMat.SetColourAttachment(vk, "colourBufferSampler", gbuffer, 0);
+    lightPassMat.SetColourAttachment(vk, String("positionBufferSampler", *vk.m_CPUAllocator), gbuffer, 1);
+    lightPassMat.SetColourAttachment(vk, String("normalBufferSampler", *vk.m_CPUAllocator), gbuffer, 2);
+    lightPassMat.SetColourAttachment(vk, String("colourBufferSampler", *vk.m_CPUAllocator), gbuffer, 0);
 
     // create gbuffer pipeline
-    auto vertexDescription = VertexDataPosNormalUv::GetVertexDescription();
+    auto vertexDescription = VertexDataPosNormalUv::GetVertexDescription(*vk.m_CPUAllocator);
     VkPipelineData gbufferPipeline = lvk::pipelines::CreateRasterPipeline(vk,
         gbufferProg,vertexDescription, defaults::DefaultRasterState,
         gbuffer.m_RenderPassInfo.m_RenderPass, vk.m_SwapChainImageExtent, 3);
 
     // create present graphics pipeline
     // Pipeline stage?
-    auto presentVertexDescription = VertexDataPosUv::GetVertexDescription();
+    auto presentVertexDescription = VertexDataPosUv::GetVertexDescription(*vk.m_CPUAllocator);
     VkPipelineData pipeline = lvk::pipelines::CreateRasterPipeline(vk,
         lightPassProg, presentVertexDescription, defaults::CullNoneRasterState,
         finalImage.m_RenderPassInfo.m_RenderPass, vk.m_SwapChainImageExtent);
 
     auto im3dViewState = AddIm3dForViewport(vk, im3dState, finalImage.m_RenderPassInfo.m_RenderPass, false);
 
-    static Vector<VertexDataPosUv> screenQuadVerts = {
+    static StaticVector<VertexDataPosUv> screenQuadVerts = {
                     { { -1.0f, -1.0f , 0.0f}, { 0.0f, 0.0f } },
                     { {1.0f, -1.0f, 0.0f}, {1.0, 0.0f} },
                     { {1.0f, 1.0f, 0.0f}, {1.0, 1.0} },
                     { {-1.0f, 1.0f, 0.0f}, {0.0f, 1.0} }
     };
 
-    static lvk::Vector<uint32_t> screenQuadIndices = {
+    static StaticVector<uint32_t> screenQuadIndices = {
     0, 1, 2, 2, 3, 0
     };
 
-    Buffer vertexBuffer = buffers::CreateVertexBuffer<VertexDataPosUv>(vk, screenQuadVerts);
-    Buffer indexBuffer = buffers::CreateIndexBuffer(vk, screenQuadIndices);
+    Buffer vertexBuffer = buffers::CreateVertexBuffer<VertexDataPosUv>(vk, screenQuadVerts.data(), screenQuadVerts.size());
+    Buffer indexBuffer = buffers::CreateIndexBuffer(vk, screenQuadIndices.data(), screenQuadIndices.size());
 
     Mesh screenQuad{ vertexBuffer, indexBuffer, 6 };
 
@@ -124,7 +124,7 @@ void UpdateViewData(VkState & vk, ViewData* view, DeferredLightData& lightData)
 
 void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderModel& model, Mesh& screenQuad, LvkIm3dState& im3dState, DeferredLightData& lightData)
 {
-    static Vector<VertexDataPosUv> originalScreenQuadData = {
+    static StaticVector<VertexDataPosUv> originalScreenQuadData = {
                     { { -1.0f, -1.0f , 0.0f}, { 0.0f, 0.0f } },
                     { {1.0f, -1.0f, 0.0f}, {1.0, 0.0f} },
                     { {1.0f, 1.0f, 0.0f}, {1.0, 1.0} },
@@ -187,12 +187,12 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderModel& 
                 float w = static_cast<float>((float) viewExtent.width / (float) max.width);
                 float h = static_cast<float>((float) viewExtent.height / (float) max.height);
 
-                Vector<VertexDataPosUv> newScreenQuadData = {
-                    { { -1.0f, -1.0f , 0.0f}, { 0.0f, 0.0f } },
-                    { {1.0f, -1.0f, 0.0f}, {w, 0.0f} },
-                    { {1.0f, 1.0f, 0.0f}, {w, h} },
-                    { {-1.0f, 1.0f, 0.0f}, {0.0f, h} }
-                };
+                Vector<VertexDataPosUv> newScreenQuadData(*vk.m_CPUAllocator); 
+                newScreenQuadData.push_back({ { -1.0f, -1.0f , 0.0f}, { 0.0f, 0.0f } });
+                newScreenQuadData.push_back({ {1.0f, -1.0f, 0.0f}, {w, 0.0f} });
+                newScreenQuadData.push_back({ {1.0f, 1.0f, 0.0f}, {w, h} });
+                newScreenQuadData.push_back({ {-1.0f, 1.0f, 0.0f}, {0.0f, h} });
+                
 
                 vkCmdUpdateBuffer(commandBuffer, view->m_ViewQuad.m_VertexBuffer.m_GpuBuffer, 0, 4 * sizeof(VertexDataPosUv), &newScreenQuadData[0]);
             }
@@ -302,20 +302,20 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderModel& 
 
 RenderModel CreateRenderModelGbuffer(VkState & vk, const String& modelPath, ShaderProgram& shader)
 {
-    Model model;
+    Model model(*vk.m_CPUAllocator);
     LoadModelAssimp(vk, model, modelPath, true);
 
-    RenderModel renderModel{};
+    RenderModel renderModel(*vk.m_CPUAllocator);
     renderModel.m_Original = model;
     for (auto& mesh : model.m_Meshes)
     {
-        RenderItem item{};
+        RenderItem item(*vk.m_CPUAllocator);
         int materialIndex = std::min(mesh.m_MaterialIndex, (uint32_t)model.m_Materials.size() - 1);
         item.m_Mesh = mesh;
         item.m_Material = Material::Create(vk, shader);
         item.m_Material.CreateBuffer(vk, 0, 0);
         MaterialEx& material = model.m_Materials[mesh.m_MaterialIndex];
-        item.m_Material.SetSampler(vk, "texSampler", material.m_Diffuse.m_ImageView, material.m_Diffuse.m_Sampler);
+        item.m_Material.SetSampler(vk, String("texSampler", *vk.m_CPUAllocator), material.m_Diffuse.m_ImageView, material.m_Diffuse.m_Sampler);
         renderModel.m_RenderItems.push_back(item);
     }
 
@@ -460,20 +460,22 @@ int main() {
     FillExampleLightData(lightDataCpu);
 
     ShaderProgram gbufferProg = ShaderProgram::CreateGraphicsFromSourcePath(
-        vk, "shaders/gbuffer.vert", "shaders/gbuffer.frag");
+        vk, String("shaders/gbuffer.vert", *vk.m_CPUAllocator), String("shaders/gbuffer.frag", *vk.m_CPUAllocator));
     ShaderProgram lightPassProg = ShaderProgram::CreateGraphicsFromSourcePath(
-        vk, "shaders/lights.vert", "shaders/lights.frag");
+        vk, String("shaders/lights.vert", *vk.m_CPUAllocator), String("shaders/lights.frag", *vk.m_CPUAllocator));
 
     ViewData viewA = CreateView(vk, im3dState, gbufferProg, lightPassProg);
     viewA.m_Camera.Position = { -40.0, 10.0f, 30.0f };
     ViewData viewB = CreateView(vk, im3dState, gbufferProg, lightPassProg);
     viewB.m_Camera.Position = { 30.0, 0.0f, -20.0f };
 
-    Vector<ViewData*> views{ &viewA, &viewB };
+    Vector<ViewData*> views(*vk.m_CPUAllocator);
+    views.push_back(&viewA);
+    views.push_back(&viewB);
 
     // create vertex and index buffer
     // allocate materials instead of raw buffers etc.
-    RenderModel m = CreateRenderModelGbuffer(vk, "assets/sponza/sponza.gltf", gbufferProg);
+    RenderModel m = CreateRenderModelGbuffer(vk, String("assets/sponza/sponza.gltf", *vk.m_CPUAllocator), gbufferProg);
 
     while (vk.m_Backend->ShouldRun(vk))
     {

@@ -32,8 +32,8 @@ namespace lvk
         {
             uint32_t        m_SetNumber;
             uint32_t        m_BindingNumber;
-            VkImageView&    m_ImageView;
-            VkSampler&      m_Sampler;
+            VkImageView     m_ImageView;
+            VkSampler       m_Sampler;
         };
 
         struct ShaderAccessorData
@@ -56,8 +56,10 @@ namespace lvk
         Vector<FrameDescriptorSets>                                 m_DescriptorSets;
         Vector<PushConstantBlock>                                   m_PushConstants;
         HashMap<DescriptorSetBinding, ShaderBufferBindingData>      m_ShaderBuffers;
-        HashMap<String, SamplerBindingData>                         m_Samplers;
         HashMap<String, ShaderAccessorData>                         m_UniformBufferAccessors;
+        HashMap<String, SamplerBindingData>                         m_Samplers;
+
+        Material(IAllocator& alloc);
 
         static Material Create(VkState & vk, ShaderProgram& shader);
 
@@ -128,10 +130,13 @@ namespace lvk
             m_ShaderBuffers[sb].m_Buffer.Set(frameIndex, value, offset);
         }
 
-        bool SetSampler(VkState & vk, const String& name, const VkImageView& imageView, const VkSampler& sampler, bool isAttachment = false);
-        bool SetSampler(VkState & vk, const String& name, Texture& texture);
-        bool SetColourAttachment(VkState & vk, const String& name, Framebuffer& framebuffer, uint32_t colourAttachmentIndex);
+        bool SetSampler(VkState & vk, const char* name, const VkImageView& imageView, const VkSampler& sampler, bool isAttachment = false);
+        bool SetSampler(VkState & vk, const char* name, Texture& texture);
+        bool SetColourAttachment(VkState& vk, const String& name, Framebuffer& framebuffer, uint32_t colourAttachmentIndex);
+        bool SetColourAttachment(VkState & vk, const char* name, Framebuffer& framebuffer, uint32_t colourAttachmentIndex);
         bool SetDepthAttachment(VkState & vk, const String& name, Framebuffer& framebuffer);
+        bool SetDepthAttachment(VkState& vk, const char* name, Framebuffer& framebuffer);
+
 
         
         void Free(VkState & vk);
