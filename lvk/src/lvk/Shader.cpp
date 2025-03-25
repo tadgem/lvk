@@ -3,9 +3,9 @@
 #include "lvk/Log.h"
 #include "volk.h"
 #include "shaderc/shaderc.h"
-#include <filesystem>
-#include <sstream>
-#include <regex>
+#include LVK_FILESYSTEM_ALIAS
+#include LVK_STRING_STREAM_ALIAS
+#include LVK_REGEX_ALIAS
 
 namespace lvk {
 

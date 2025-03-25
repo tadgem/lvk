@@ -1,5 +1,5 @@
 #pragma once
-#include <memory>
+#include LVK_MEMORY_ALIAS
 
 namespace lvk
 {

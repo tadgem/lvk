@@ -2,7 +2,7 @@
 #include "lvk/Descriptor.h"
 #include "lvk/Structs.h"
 #include "lvk/Utils.h"
-#include <filesystem>
+#include LVK_FILESYSTEM_ALIAS
 namespace lvk
 {
     VkShaderModule CreateShaderModule(VkState& vk, const StageBinary& data);

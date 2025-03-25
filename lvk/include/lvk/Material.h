@@ -1,7 +1,7 @@
 #pragma once
 #include "lvk/Framebuffer.h"
 #include "lvk/Texture.h"
-#include <utility>
+#include LVK_UTILITY_ALIAS
 namespace lvk
 {
     struct ShaderProgram;
