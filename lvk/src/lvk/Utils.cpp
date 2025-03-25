@@ -1,7 +1,5 @@
 #include "lvk/Utils.h"
 #include "lvk/Log.h"
-#include <fstream>
-#include <sstream>
 
 uint32_t lvk::utils::FindMemoryType(VkState& vk, uint32_t typeFilter, VkMemoryPropertyFlags properties)
 {
@@ -47,42 +45,4 @@ VkFormat lvk::utils::FindDepthFormat(VkState& vk)
 }
 bool lvk::utils::HasStencilComponent(VkFormat &format) {
   return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
-}
-
-
-lvk::StageBinary lvk::utils::LoadSpirvBinary(VkState& vk, const char* path)
-{
-  STLAllocator<unsigned char> alloc(*vk.m_CPUAllocator);
-  std::ifstream file(path, std::ios::ate | std::ios::binary);
-
-  if (!file.is_open())
-  {
-    LVK_LOG_ERR("Failed to open file at path {} as binary!", path);
-    std::cerr << "Failed to open file!" << std::endl;
-    return StageBinary(alloc);
-  }
-
-  size_t fileSize = static_cast<size_t>(file.tellg());
-  StageBinary data(alloc);
-  data.resize(fileSize);
-
-  file.seekg(0);
-
-  file.read((char*) data.data(), fileSize);
-
-  file.close();
-  return data;
-}
-
-lvk::String lvk::utils::LoadStringFromPath(VkState& vk, const char* path) {
-  std::ifstream in(path);
-  std::stringstream stream;
-  if (!in.is_open()) {
-    return String(*vk.m_CPUAllocator);
-  }
-
-  stream << in.rdbuf();
-  String str(*vk.m_CPUAllocator);
-  str = stream.str();
-  return str;
 }

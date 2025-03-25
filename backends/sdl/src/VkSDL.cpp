@@ -185,6 +185,28 @@ VkExtent2D lvk::VkSDL::GetMaxFramebufferResolution(VkState& vk)
     return res;
 }
 
+lvk::StageBinary lvk::VkSDL::LoadBinaryFromPath(VkState& vk, const char* path)
+{
+    size_t numBytes;
+    void* addr = SDL_LoadFile(path, &numBytes);
+    StageBinary binary(*vk.m_CPUAllocator);
+    binary.resize(numBytes);
+    memcpy(binary.data(), addr, numBytes);
+    SDL_free(addr);
+    return binary;
+}
+
+lvk::String lvk::VkSDL::LoadStringFromPath(VkState& vk, const char* path)
+{
+    size_t numBytes;
+    void* addr = SDL_LoadFile(path, &numBytes);
+    String str(*vk.m_CPUAllocator);
+    str.resize(numBytes);
+    memcpy(str.data(), addr, numBytes);
+    SDL_free(addr);
+    return str;
+}
+
 lvk::VkSDL::VkSDL(bool enableDebugValidation)
 {
     LVK_LOG_INFO("LVK : current working directory : %s", std::filesystem::current_path().string());

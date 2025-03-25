@@ -1,5 +1,6 @@
 #pragma once
-#include <memory>
+#include "lvk/Alias.h"
+#include LVK_STDLIB_ALIAS
 
 namespace lvk
 {
@@ -53,12 +54,12 @@ namespace lvk
 	{
 	public:
 		void* allocate(size_t size) override {
-			return std::malloc(size);
+			return LVK_STL::malloc(size);
 		}
 
 		void deallocate(void* addr)
 		{
-			std::free(addr);
+			LVK_STL::free(addr);
 		}
 	};
 }

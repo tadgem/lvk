@@ -300,7 +300,7 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderModel& 
     );
 }
 
-RenderModel CreateRenderModelGbuffer(VkState & vk, const String& modelPath, ShaderProgram& shader)
+RenderModel CreateRenderModelGbuffer(VkState & vk, const char* modelPath, ShaderProgram& shader)
 {
     Model model(*vk.m_CPUAllocator);
     LoadModelAssimp(vk, model, modelPath, true);
@@ -315,7 +315,7 @@ RenderModel CreateRenderModelGbuffer(VkState & vk, const String& modelPath, Shad
         item.m_Material = Material::Create(vk, shader);
         item.m_Material.CreateBuffer(vk, 0, 0);
         MaterialEx& material = model.m_Materials[mesh.m_MaterialIndex];
-        item.m_Material.SetSampler(vk, String("texSampler", *vk.m_CPUAllocator), material.m_Diffuse.m_ImageView, material.m_Diffuse.m_Sampler);
+        item.m_Material.SetSampler(vk, "texSampler", material.m_Diffuse.m_ImageView, material.m_Diffuse.m_Sampler);
         renderModel.m_RenderItems.push_back(item);
     }
 
@@ -460,9 +460,9 @@ int main() {
     FillExampleLightData(lightDataCpu);
 
     ShaderProgram gbufferProg = ShaderProgram::CreateGraphicsFromSourcePath(
-        vk, String("shaders/gbuffer.vert", *vk.m_CPUAllocator), String("shaders/gbuffer.frag", *vk.m_CPUAllocator));
+        vk, "shaders/gbuffer.vert", "shaders/gbuffer.frag");
     ShaderProgram lightPassProg = ShaderProgram::CreateGraphicsFromSourcePath(
-        vk, String("shaders/lights.vert", *vk.m_CPUAllocator), String("shaders/lights.frag", *vk.m_CPUAllocator));
+        vk, "shaders/lights.vert", "shaders/lights.frag");
 
     ViewData viewA = CreateView(vk, im3dState, gbufferProg, lightPassProg);
     viewA.m_Camera.Position = { -40.0, 10.0f, 30.0f };
@@ -475,7 +475,7 @@ int main() {
 
     // create vertex and index buffer
     // allocate materials instead of raw buffers etc.
-    RenderModel m = CreateRenderModelGbuffer(vk, String("assets/sponza/sponza.gltf", *vk.m_CPUAllocator), gbufferProg);
+    RenderModel m = CreateRenderModelGbuffer(vk, "assets/sponza/sponza.gltf", gbufferProg);
 
     while (vk.m_Backend->ShouldRun(vk))
     {

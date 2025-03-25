@@ -3,9 +3,9 @@
 #include "lvk/Log.h"
 #include "volk.h"
 #include "shaderc/shaderc.h"
-#include <filesystem>
-#include <sstream>
-#include <regex>
+#include LVK_FILESYSTEM_ALIAS
+#include LVK_STRING_STREAM_ALIAS
+#include LVK_REGEX_ALIAS
 
 namespace lvk {
 
@@ -197,7 +197,7 @@ void RecurseStringInclude(VkState& vk, String inputDir, String& output, const St
   String input(*vk.m_CPUAllocator);
   String dir(*vk.m_CPUAllocator);
   String finalDir = inputDir + "/" + path;
-  input = utils::LoadStringFromPath(vk, finalDir.c_str());
+  input = vk.m_Backend->LoadStringFromPath(vk, finalDir.c_str());
   dir = std::filesystem::path(path).parent_path().u8string();
   IStringStream iss(input);
   std::regex include_dir_regex("\\\"(.*)\\\"");

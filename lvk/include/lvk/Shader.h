@@ -2,7 +2,7 @@
 #include "lvk/Descriptor.h"
 #include "lvk/Structs.h"
 #include "lvk/Utils.h"
-#include <filesystem>
+#include LVK_FILESYSTEM_ALIAS
 namespace lvk
 {
     VkShaderModule CreateShaderModule(VkState& vk, const StageBinary& data);
@@ -45,8 +45,8 @@ namespace lvk
         CreateFromBinaryPath(VkState & vk, const char* stagePath, const ShaderStageType& stageType)
         {
             String name(*vk.m_CPUAllocator);
-            name = std::filesystem::path(stagePath).filename().u8string();
-            auto stageBin = utils::LoadSpirvBinary(vk, stagePath);
+            name = LVK_STL::filesystem::path(stagePath).filename().u8string();
+            auto stageBin = vk.m_Backend->LoadBinaryFromPath(vk, stagePath);
             return CreateFromBinary(vk, stageBin, stageType, name.c_str());
         }
 
@@ -69,13 +69,13 @@ namespace lvk
             stage.m_LayoutDatas = stageLayoutDatas;
             stage.m_Type = type;
 
-            return std::move(stage);
+            return LVK_STL::move(stage);
         }
 
         static ShaderStage CreateFromSourcePath(VkState & vk, const char* path, const ShaderStageType& type)
         {
             String name(*vk.m_CPUAllocator);
-            name = std::filesystem::path(path).filename().u8string();
+            name = LVK_STL::filesystem::path(path).filename().u8string();
             auto source = LoadShaderSource(vk, path);
             return CreateFromSource(vk, source, type, path, name.c_str());
         }
