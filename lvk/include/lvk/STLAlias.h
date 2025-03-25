@@ -1,5 +1,10 @@
 #pragma once
 
+// Namespace alias that allows replacement (e.g. std / eastl)
+#ifndef LVK_STL
+	#define LVK_STL std
+#endif
+
 #ifndef LVK_UNORDERED_MAP_ALIAS
 	#define LVK_UNORDERED_MAP_ALIAS <unordered_map>
 #endif
@@ -42,4 +47,8 @@
 
 #ifndef LVK_REGEX_ALIAS
 	#define LVK_REGEX_ALIAS <regex>
+#endif
+
+#ifndef LVK_STDLIB_ALIAS
+	#define LVK_STDLIB_ALIAS <cstdlib>
 #endif
