@@ -46,7 +46,7 @@ namespace lvk
         {
             String name(*vk.m_CPUAllocator);
             name = std::filesystem::path(stagePath).filename().u8string();
-            auto stageBin = utils::LoadSpirvBinary(vk, stagePath);
+            auto stageBin = vk.m_Backend->LoadBinaryFromPath(vk, stagePath);
             return CreateFromBinary(vk, stageBin, stageType, name.c_str());
         }
 

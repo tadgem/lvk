@@ -197,7 +197,7 @@ void RecurseStringInclude(VkState& vk, String inputDir, String& output, const St
   String input(*vk.m_CPUAllocator);
   String dir(*vk.m_CPUAllocator);
   String finalDir = inputDir + "/" + path;
-  input = utils::LoadStringFromPath(vk, finalDir.c_str());
+  input = vk.m_Backend->LoadStringFromPath(vk, finalDir.c_str());
   dir = std::filesystem::path(path).parent_path().u8string();
   IStringStream iss(input);
   std::regex include_dir_regex("\\\"(.*)\\\"");

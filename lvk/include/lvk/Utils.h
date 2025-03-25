@@ -5,6 +5,4 @@ namespace lvk::utils {
   VkFormat                            FindSupportedFormat(VkState& vk, const Vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
   VkFormat                            FindDepthFormat(VkState& vk);
   bool                                HasStencilComponent(VkFormat& format);
-  StageBinary                         LoadSpirvBinary(VkState& vk, const char* path);
-  String                              LoadStringFromPath(VkState& vk, const char* path);
 }

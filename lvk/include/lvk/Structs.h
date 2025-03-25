@@ -313,6 +313,8 @@ namespace lvk {
     virtual void                        Run(VkState& vk, std::function<void()> callback) = 0;
     virtual void                        InitImGuiBackend(VkState& vk) = 0;
     virtual void                        CleanupImGuiBackend(VkState& vk) = 0;
+    virtual StageBinary                 LoadBinaryFromPath(VkState& vk, const char* path) = 0;
+    virtual String                      LoadStringFromPath(VkState& vk, const char* path) = 0;
   };
 
   struct VkState
