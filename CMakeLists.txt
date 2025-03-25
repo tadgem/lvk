@@ -8,7 +8,7 @@ set(SDL3_DISABLE_INSTALL ON CACHE BOOL "Disable SDL Install")
 set(SDL3_DISABLE_UNINSTALL ON CACHE BOOL "Disable SDL Uninstall")
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Disable ASSIMP dynamic linking")
 set(SHADERC_SKIP_TESTS ON CACHE BOOL "" FORCE)
-
+set(SHADERC_ENABLE_SHARED_CRT ON CACHE BOOL "" FORCE)
 add_subdirectory(submodules/glm)
 add_subdirectory(submodules/assimp)
 add_subdirectory(third-party/sdl)

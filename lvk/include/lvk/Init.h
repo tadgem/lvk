@@ -73,7 +73,7 @@ namespace init
     auto alloc = LVK_STL::make_unique<MallocAllocator>();
     VkState vk(*alloc);
     vk.m_CPUAllocator = LVK_STL::move(alloc);
-    vk.m_AppName = String(appName, *alloc);
+    vk.m_AppName = String(appName, *vk.m_CPUAllocator);
     vk.m_Backend = LVK_STL::make_unique<_BackendTy>();
     vk.m_Backend->CreateWindowLVK(vk, width, height);
     InitVulkan(vk, enableSwapchainMsaa);
