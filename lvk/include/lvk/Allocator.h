@@ -54,12 +54,12 @@ namespace lvk
 	{
 	public:
 		void* allocate(size_t size) override {
-			return LVK_STL::malloc(size);
+			return LVK_MEMORY_NS::malloc(size);
 		}
 
 		void deallocate(void* addr)
 		{
-			LVK_STL::free(addr);
+			LVK_MEMORY_NS::free(addr);
 		}
 	};
 }

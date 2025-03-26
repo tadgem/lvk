@@ -8,10 +8,10 @@ namespace commands {
 
   void RecordGraphicsCommands(
       VkState &vk,
-      LVK_STL::function<void(VkCommandBuffer &, uint32_t)> graphicsCommandsCallback);
+      LVK_FUNCTIONAL_NS::function<void(VkCommandBuffer &, uint32_t)> graphicsCommandsCallback);
 
   void RecordComputeCommands(
       VkState &vk,
-      LVK_STL::function<void(VkCommandBuffer &, uint32_t)> computeCommandsCallback);
+      LVK_FUNCTIONAL_NS::function<void(VkCommandBuffer &, uint32_t)> computeCommandsCallback);
 }
 } // namespace turas

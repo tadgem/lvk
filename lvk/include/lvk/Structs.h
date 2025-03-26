@@ -310,7 +310,7 @@ namespace lvk {
     virtual bool                        ShouldRun(VkState& vk) = 0;
     virtual void                        PreFrame(VkState& vk) = 0;
     virtual void                        PostFrame(VkState& vk) = 0;
-    virtual void                        Run(VkState& vk, LVK_STL::function<void()> callback) = 0;
+    virtual void                        Run(VkState& vk, LVK_FUNCTIONAL_NS::function<void()> callback) = 0;
     virtual void                        InitImGuiBackend(VkState& vk) = 0;
     virtual void                        CleanupImGuiBackend(VkState& vk) = 0;
     virtual StageBinary                 LoadBinaryFromPath(VkState& vk, const char* path) = 0;
@@ -411,11 +411,11 @@ namespace lvk {
 }
 
 template <>
-struct LVK_STL::hash<lvk::DescriptorSetBinding>
+struct LVK_UNORDERED_MAP_NS::hash<lvk::DescriptorSetBinding>
 {
-    LVK_STL::size_t operator()(const lvk::DescriptorSetBinding& sb) const
+    LVK_UNORDERED_MAP_NS::size_t operator()(const lvk::DescriptorSetBinding& sb) const
     {
-        using LVK_STL::hash;
+        using LVK_UNORDERED_MAP_NS::hash;
 
         return ((hash<uint64_t>()(sb.m_Data)));
 
