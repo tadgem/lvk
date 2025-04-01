@@ -35,8 +35,8 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 
 void lvk::init::Cleanup(VkState& vk)
 {
-  //Texture::FreeDefaultTexture(*this);
-  // Mesh::FreeBuiltInMeshes(*this);
+  Texture::FreeDefaultTexture(vk);
+  Mesh::FreeBuiltInMeshes(vk);
   CleanupImGui(vk);
   vk.m_Backend->CleanupWindow(vk);
   CleanupVulkan(vk);

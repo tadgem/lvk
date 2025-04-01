@@ -209,7 +209,7 @@ lvk::String lvk::VkSDL::LoadStringFromPath(VkState& vk, const char* path)
 
 lvk::VkSDL::VkSDL(bool enableDebugValidation)
 {
-    LVK_LOG_INFO("LVK : current working directory : %s", std::filesystem::current_path().string());
+    LVK_LOG_INFO("LVK : current working directory : %s", std::filesystem::current_path().string().c_str());
 }
 
 lvk::VulkanAPIWindowHandle_SDL::VulkanAPIWindowHandle_SDL(SDL_Window* sdlWindow) : m_SdlWindow(sdlWindow)
