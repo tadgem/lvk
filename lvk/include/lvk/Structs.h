@@ -374,7 +374,7 @@ namespace lvk {
     bool                            m_UseSwapchainMsaa = false;
     bool                            m_WaitForVerticalSync = false;
     bool                            m_UseDynamicRendering = false;
-    const bool                      m_UseValidation = true;
+    bool                            m_UseValidation = true;
     const bool                      m_UseImGui      = true;
     uint64_t                        m_LastFrameTime;
     int                             m_CurrentFrameIndex;

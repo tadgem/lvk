@@ -66,13 +66,14 @@ namespace init
 
 
   template<typename _BackendTy, typename _AllocatorType = MallocAllocator>
-  VkState                             Create(const char* appName, uint32_t width, uint32_t height, bool enableSwapchainMsaa)
+  VkState                             Create(const char* appName, uint32_t width, uint32_t height, bool enableSwapchainMsaa, bool enableValidation = true)
   {
     // always going to be in STD impl :(
     static_assert(std::is_base_of<VkBackend, _BackendTy>::value, "Backend must inherit from VkBackend");
     static_assert(std::is_base_of<IAllocator, _AllocatorType>::value, "Allocator must inherit from IAllocator");
     auto alloc = LVK_MEMORY_NS::make_unique<_AllocatorType>();
     VkState vk(*alloc);
+    vk.m_UseValidation = enableValidation;
     vk.m_CPUAllocator = LVK_MEMORY_NS::move(alloc);
     vk.m_AppName = String(appName, *vk.m_CPUAllocator);
     vk.m_Backend = LVK_MEMORY_NS::make_unique<_BackendTy>();
