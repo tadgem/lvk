@@ -170,6 +170,16 @@ static glm::vec2 AssimpToGLM(aiVector2D aiVec) {
     return glm::vec2(aiVec.x, aiVec.y);
 }
 
+static lvk::Vector2 AssimpToLVK(aiVector2D& aiVec)
+{
+    return lvk::Vector2{ aiVec.x, aiVec.y};
+}
+
+static lvk::Vector3 AssimpToLVK(aiVector3D& aiVec)
+{
+    return lvk::Vector3{ aiVec.x, aiVec.y, aiVec.z };
+}
+
 static lvk::String AssimpToSTD(lvk::IAllocator& alloc, aiString str) {
     return lvk::String(str.C_Str(), alloc);
 }
@@ -197,8 +207,8 @@ void ProcessMesh(lvk::VkState & vk, Model& model, aiMesh* mesh, aiNode* node, co
     if (hasPositions && hasUVs) {
         for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
             VertexDataPosUv vert {};
-            vert.Position = AssimpToGLM(mesh->mVertices[i]);
-            vert.UV = glm::vec2(mesh->mTextureCoords[0][i].x, 1.0f - mesh->mTextureCoords[0][i].y);
+            vert.Position = AssimpToLVK(mesh->mVertices[i]);
+            vert.UV = lvk::Vector2{ mesh->mTextureCoords[0][i].x, 1.0f - mesh->mTextureCoords[0][i].y };
             verts.push_back(vert);
         }
 
@@ -276,9 +286,9 @@ void ProcessMeshWithNormals(lvk::VkState & vk, Model& model, aiMesh* mesh, aiNod
     if (hasPositions && hasUVs && hasNormals) {
         for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
             VertexDataPosNormalUv vert{};
-            vert.Position = AssimpToGLM(mesh->mVertices[i]);
-            vert.UV = glm::vec2(mesh->mTextureCoords[0][i].x, 1.0f - mesh->mTextureCoords[0][i].y);
-            vert.Normal = AssimpToGLM(mesh->mNormals[i]);
+            vert.Position = AssimpToLVK(mesh->mVertices[i]);
+            vert.UV = Vector2{ mesh->mTextureCoords[0][i].x, 1.0f - mesh->mTextureCoords[0][i].y };
+            vert.Normal = AssimpToLVK(mesh->mNormals[i]);
             verts.push_back(vert);
         }
 
