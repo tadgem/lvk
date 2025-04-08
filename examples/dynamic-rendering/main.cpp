@@ -273,7 +273,9 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderData& r
             vkCmdDrawIndexed(commandBuffer, view->m_ViewQuad.m_IndexCount, 1, 0, 0, 0);
             debug::EndDebugMarker(commandBuffer);
 
-            DrawIm3d(vk, commandBuffer, frameIndex, im3dState, view->m_Im3dState, view->m_Camera.Proj * view->m_Camera.View, viewExtent.width, viewExtent.height);
+            auto viewProj = view->m_Camera.Proj * view->m_Camera.View;
+            // TODO: Horrendous use of reinterpret_cast
+            DrawIm3d(vk, commandBuffer, frameIndex, im3dState, view->m_Im3dState, *reinterpret_cast<Matrix4x4*>(&viewProj) , viewExtent.width, viewExtent.height);
             vkCmdEndRenderingKHR(commandBuffer);
         }
         }
@@ -315,7 +317,13 @@ void OnImGui(VkState & vk, DeferredLightData& lightDataCpu, Vector<ViewData*> vi
         auto& image = views[0]->m_LightPassFB.m_ColourAttachments[0].m_AttachmentSwapchainImages[vk.m_CurrentFrameIndex];
 
         ImGuiX::Image(image, extent, { 0,0 }, uv1);
-        DrawIm3dTextListsImGuiAsChild(Im3d::GetTextDrawLists(), Im3d::GetTextDrawListCount(), (float)views[0]->m_CurrentResolution.width, (float)views[0]->m_CurrentResolution.height, views[0]->m_Camera.Proj * views[0]->m_Camera.View);
+        auto viewProj = views[0]->m_Camera.Proj * views[0]->m_Camera.View;
+        DrawIm3dTextListsImGuiAsChild(
+            Im3d::GetTextDrawLists(),
+            Im3d::GetTextDrawListCount(),
+            (float)views[0]->m_CurrentResolution.width,
+            (float)views[0]->m_CurrentResolution.height,
+            *reinterpret_cast<Matrix4x4*>(&viewProj));
         views[0]->m_CurrentResolution = { (uint32_t)extent.x, (uint32_t)extent.y };
 
     }
@@ -332,7 +340,13 @@ void OnImGui(VkState & vk, DeferredLightData& lightDataCpu, Vector<ViewData*> vi
         auto& image = views[1]->m_LightPassFB.m_ColourAttachments[0].m_AttachmentSwapchainImages[vk.m_CurrentFrameIndex];
 
         ImGuiX::Image(image, extent, { 0,0 }, uv1);
-        DrawIm3dTextListsImGuiAsChild(Im3d::GetTextDrawLists(), Im3d::GetTextDrawListCount(), (float)views[1]->m_CurrentResolution.width, (float)views[1]->m_CurrentResolution.height, views[1]->m_Camera.Proj * views[1]->m_Camera.View);
+        auto viewProj = views[1]->m_Camera.Proj * views[1]->m_Camera.View;
+        DrawIm3dTextListsImGuiAsChild(
+            Im3d::GetTextDrawLists(), 
+            Im3d::GetTextDrawListCount(), 
+            (float)views[1]->m_CurrentResolution.width, 
+            (float)views[1]->m_CurrentResolution.height, 
+            *reinterpret_cast<Matrix4x4*>(&viewProj));
         views[1]->m_CurrentResolution = { (uint32_t)extent.x, (uint32_t)extent.y };
 
     }

@@ -1,14 +1,13 @@
 #pragma once
-#include "glm/glm.hpp"
 #include "lvk/Structs.h"
 
 namespace lvk
 {
     struct VertexDataPosColUv
     {
-        glm::vec3 Position;
-        glm::vec3 Colour;
-        glm::vec2 UV;
+        Vector3 Position;
+        Vector3 Colour;
+        Vector2 UV;
 
         static VkVertexInputBindingDescription GetBindingDescription()
         {
@@ -49,7 +48,7 @@ namespace lvk
 
     struct VertexDataPos4
     {
-        glm::vec4 Position;
+        Vector4 Position;
 
         static VkVertexInputBindingDescription GetBindingDescription() {
             VkVertexInputBindingDescription bindingDescription{};
@@ -80,8 +79,8 @@ namespace lvk
 
     struct VertexDataPosUv
     {
-        glm::vec3 Position;
-        glm::vec2 UV;
+        Vector3 Position;
+        Vector2 UV;
 
         static VkVertexInputBindingDescription GetBindingDescription() {
             VkVertexInputBindingDescription bindingDescription{};
@@ -117,9 +116,9 @@ namespace lvk
 
     struct VertexDataPosNormalUv
     {
-        glm::vec3 Position;
-        glm::vec3 Normal;
-        glm::vec2 UV;
+        Vector3 Position;
+        Vector3 Normal;
+        Vector2 UV;
 
         static VkVertexInputBindingDescription GetBindingDescription() {
             VkVertexInputBindingDescription bindingDescription{};

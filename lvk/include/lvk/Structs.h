@@ -10,6 +10,64 @@
 
 namespace lvk {
 
+  struct Vector2
+  {
+      union
+      {
+          struct { float x, y; };
+          float  _values[2];
+      };
+  };
+
+  struct Vector3
+  {
+      union
+      {
+          struct { float x, y, z; };
+          float  _values[3];
+      };
+  };
+
+  struct Vector4
+  {
+      union
+      {
+          struct { float x, y, z, w; };
+          float  _values[4];
+      };
+  };
+
+  /// <summary>
+  /// N.B matrices are column major
+  /// </summary>
+
+  struct Matrix2x2
+  {
+      union
+      {
+          Vector2 columns[2];
+          float  _values[4];
+      };
+  };
+
+  struct Matrix3x3
+  {
+      union
+      {
+          Vector3 columns[3];
+          float  _values[9];
+      };
+  };
+
+  struct Matrix4x4
+  {
+      union
+      {
+          Vector4 columns[4];
+          float  _values[16];
+      };
+  };
+
   struct VkState;
 
   enum class ShaderBindingType {
