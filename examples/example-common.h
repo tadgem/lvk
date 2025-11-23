@@ -15,6 +15,14 @@
 
 #include "volk.h"
 
+void lvk_internal_printf(const char* fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    vprintf(fmt, args);
+    va_end(args);
+}
+
 glm::vec3 CalculateVec3Radians(glm::vec3 eulerDegrees) {
     return glm::vec3(glm::radians(eulerDegrees.x), glm::radians(eulerDegrees.y), glm::radians(eulerDegrees.z));
 }
