@@ -7,66 +7,9 @@
 #include "lvk/DescriptorSetAllocator.h"
 #include "lvk/Macros.h"
 #include "lvk/Allocator.h"
+#include "glm/glm.hpp"
 
 namespace lvk {
-
-  struct Vector2
-  {
-      union
-      {
-          struct { float x, y; };
-          float  _values[2];
-      };
-  };
-
-  struct Vector3
-  {
-      union
-      {
-          struct { float x, y, z; };
-          float  _values[3];
-      };
-  };
-
-  struct Vector4
-  {
-      union
-      {
-          struct { float x, y, z, w; };
-          float  _values[4];
-      };
-  };
-
-  /// <summary>
-  /// N.B matrices are column major
-  /// </summary>
-
-  struct Matrix2x2
-  {
-      union
-      {
-          Vector2 columns[2];
-          float  _values[4];
-      };
-  };
-
-  struct Matrix3x3
-  {
-      union
-      {
-          Vector3 columns[3];
-          float  _values[9];
-      };
-  };
-
-  struct Matrix4x4
-  {
-      union
-      {
-          Vector4 columns[4];
-          float  _values[16];
-      };
-  };
 
   struct VkState;
 
@@ -375,90 +318,90 @@ namespace lvk {
     virtual String                      LoadStringFromPath(VkState& vk, const char* path) = 0;
   };
 
-  struct VkState
-  {
-    Unique<VkBackend>               m_Backend;
-    Unique<IAllocator>              m_CPUAllocator;
 
-    VkInstance                      m_Instance;
-    VkSurfaceKHR                    m_Surface;
-    VkSwapchainKHR                  m_SwapChain;
-    VkDebugUtilsMessengerEXT        m_DebugMessenger;
-    VkPhysicalDevice                m_PhysicalDevice = VK_NULL_HANDLE;
-    VkDevice                        m_LogicalDevice = VK_NULL_HANDLE;
-    VkRenderPass                    m_SwapchainImageRenderPass;
-    VkRenderPass                    m_ImGuiRenderPass;
-    VkCommandPool                   m_GraphicsComputeQueueCommandPool;
-    VmaAllocator                    m_Allocator;
-    DescriptorSetAllocator          m_DescriptorSetAllocator;
-
-    Vector<VkSemaphore>             m_ImageAvailableSemaphores;
-    Vector<VkSemaphore>             m_RenderFinishedSemaphores;
-    Vector<VkSemaphore>             m_ComputeFinishedSemaphores;
-    Vector<VkFence>                 m_FrameInFlightFences;
-    Vector<VkFence>                 m_ImagesInFlightFences;
-    Vector<VkFence>                 m_ComputeInFlightFences;
-    QueueFamilyIndices              m_QueueFamilyIndices;
-
-    VkQueue                         m_GraphicsQueue = VK_NULL_HANDLE;
-    VkQueue                         m_ComputeQueue = VK_NULL_HANDLE;
-    VkQueue                         m_PresentQueue = VK_NULL_HANDLE;
-
-    VulkanAPIWindowHandle*          m_WindowHandle;
-
-    Vector<VkImage>                 m_SwapChainImages;
-    Vector<VkImageView>             m_SwapChainImageViews;
-    Vector<VkFramebuffer>           m_SwapChainFramebuffers;
-    Vector<VkCommandBuffer>         m_GraphicsCommandBuffers;
-    Vector<VkCommandBuffer>         m_ComputeCommandBuffers;
-
-    VkFormat                        m_SwapChainImageFormat;
-    VkExtent2D                      m_SwapChainImageExtent;
-
-    VkImage                         m_SwapChainColourImage;
-    VkDeviceMemory                  m_SwapChainColourImageMemory;
-    VkImageView                     m_SwapChainColourImageView;
-
-    VkImage                         m_SwapChainDepthImage;
-    VkDeviceMemory                  m_SwapChainDepthImageMemory;
-    VkImageView                     m_SwapChainDepthImageView;
-
-    VkSampleCountFlagBits           m_MaxMsaaSamples;
-    Vector<const char*>             m_DesiredDeviceExtensions;
-
-    double                          m_DeltaTime;
-    bool                            m_ShouldRun = true;
-    bool                            m_RunComputeCommands = false;
-    bool                            m_UseSwapchainMsaa = false;
-    bool                            m_WaitForVerticalSync = false;
-    bool                            m_UseDynamicRendering = false;
-    bool                            m_UseValidation = true;
-    const bool                      m_UseImGui      = true;
-    uint64_t                        m_LastFrameTime;
-    int                             m_CurrentFrameIndex;
-    VkExtent2D                      m_MaxFramebufferExtent;
-    String                          m_AppName;
-
-    VkState(IAllocator& alloc) :
-        m_DescriptorSetAllocator(alloc),
-        m_ImageAvailableSemaphores(alloc),
-        m_RenderFinishedSemaphores(alloc),
-        m_ComputeFinishedSemaphores(alloc),
-        m_FrameInFlightFences(alloc),
-        m_ImagesInFlightFences(alloc),
-        m_ComputeInFlightFences(alloc),
-        m_SwapChainImages(alloc),
-        m_SwapChainImageViews(alloc),
-        m_SwapChainFramebuffers(alloc),
-        m_GraphicsCommandBuffers(alloc),
-        m_ComputeCommandBuffers(alloc),
-        m_DesiredDeviceExtensions(alloc),
-        m_QueueFamilyIndices(alloc),
-        m_AppName(alloc)
+    struct VkState
     {
-    }
-  };
+        Unique<VkBackend>               m_Backend;
+        Unique<IAllocator>              m_CPUAllocator;
 
+        VkInstance                      m_Instance;
+        VkSurfaceKHR                    m_Surface;
+        VkSwapchainKHR                  m_SwapChain;
+        VkDebugUtilsMessengerEXT        m_DebugMessenger;
+        VkPhysicalDevice                m_PhysicalDevice = VK_NULL_HANDLE;
+        VkDevice                        m_LogicalDevice = VK_NULL_HANDLE;
+        VkRenderPass                    m_SwapchainImageRenderPass;
+        VkRenderPass                    m_ImGuiRenderPass;
+        VkCommandPool                   m_GraphicsComputeQueueCommandPool;
+        VmaAllocator                    m_Allocator;
+        DescriptorSetAllocator          m_DescriptorSetAllocator;
+
+        Vector<VkSemaphore>             m_ImageAvailableSemaphores;
+        Vector<VkSemaphore>             m_RenderFinishedSemaphores;
+        Vector<VkSemaphore>             m_ComputeFinishedSemaphores;
+        Vector<VkFence>                 m_FrameInFlightFences;
+        Vector<VkFence>                 m_ImagesInFlightFences;
+        Vector<VkFence>                 m_ComputeInFlightFences;
+        QueueFamilyIndices              m_QueueFamilyIndices;
+
+        VkQueue                         m_GraphicsQueue = VK_NULL_HANDLE;
+        VkQueue                         m_ComputeQueue = VK_NULL_HANDLE;
+        VkQueue                         m_PresentQueue = VK_NULL_HANDLE;
+
+        VulkanAPIWindowHandle* m_WindowHandle;
+
+        Vector<VkImage>                 m_SwapChainImages;
+        Vector<VkImageView>             m_SwapChainImageViews;
+        Vector<VkFramebuffer>           m_SwapChainFramebuffers;
+        Vector<VkCommandBuffer>         m_GraphicsCommandBuffers;
+        Vector<VkCommandBuffer>         m_ComputeCommandBuffers;
+
+        VkFormat                        m_SwapChainImageFormat;
+        VkExtent2D                      m_SwapChainImageExtent;
+
+        VkImage                         m_SwapChainColourImage;
+        VkDeviceMemory                  m_SwapChainColourImageMemory;
+        VkImageView                     m_SwapChainColourImageView;
+
+        VkImage                         m_SwapChainDepthImage;
+        VkDeviceMemory                  m_SwapChainDepthImageMemory;
+        VkImageView                     m_SwapChainDepthImageView;
+
+        VkSampleCountFlagBits           m_MaxMsaaSamples;
+        Vector<const char*>             m_DesiredDeviceExtensions;
+
+        double                          m_DeltaTime;
+        bool                            m_ShouldRun = true;
+        bool                            m_RunComputeCommands = false;
+        bool                            m_UseSwapchainMsaa = false;
+        bool                            m_WaitForVerticalSync = false;
+        bool                            m_UseDynamicRendering = false;
+        bool                            m_UseValidation = true;
+        const bool                      m_UseImGui = true;
+        uint64_t                        m_LastFrameTime;
+        int                             m_CurrentFrameIndex;
+        VkExtent2D                      m_MaxFramebufferExtent;
+        String                          m_AppName;
+
+        VkState(IAllocator& alloc) :
+            m_DescriptorSetAllocator(alloc),
+            m_ImageAvailableSemaphores(alloc),
+            m_RenderFinishedSemaphores(alloc),
+            m_ComputeFinishedSemaphores(alloc),
+            m_FrameInFlightFences(alloc),
+            m_ImagesInFlightFences(alloc),
+            m_ComputeInFlightFences(alloc),
+            m_SwapChainImages(alloc),
+            m_SwapChainImageViews(alloc),
+            m_SwapChainFramebuffers(alloc),
+            m_GraphicsCommandBuffers(alloc),
+            m_ComputeCommandBuffers(alloc),
+            m_DesiredDeviceExtensions(alloc),
+            m_QueueFamilyIndices(alloc),
+            m_AppName(alloc)
+        {
+        }
+    };
   struct VkViewportData
   {
     VkViewport                          m_Viewport;

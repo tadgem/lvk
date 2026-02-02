@@ -5,9 +5,9 @@ namespace lvk
 {
     struct VertexDataPosColUv
     {
-        Vector3 Position;
-        Vector3 Colour;
-        Vector2 UV;
+        glm::vec3 Position;
+        glm::vec3 Colour;
+        glm::vec2 UV;
 
         static VkVertexInputBindingDescription GetBindingDescription()
         {
@@ -48,7 +48,7 @@ namespace lvk
 
     struct VertexDataPos4
     {
-        Vector4 Position;
+        glm::vec4 Position;
 
         static VkVertexInputBindingDescription GetBindingDescription() {
             VkVertexInputBindingDescription bindingDescription{};
@@ -79,8 +79,8 @@ namespace lvk
 
     struct VertexDataPosUv
     {
-        Vector3 Position;
-        Vector2 UV;
+        glm::vec3 Position;
+        glm::vec2 UV;
 
         static VkVertexInputBindingDescription GetBindingDescription() {
             VkVertexInputBindingDescription bindingDescription{};
@@ -116,9 +116,9 @@ namespace lvk
 
     struct VertexDataPosNormalUv
     {
-        Vector3 Position;
-        Vector3 Normal;
-        Vector2 UV;
+        glm::vec3 Position;
+        glm::vec3 Normal;
+        glm::vec2 UV;
 
         static VkVertexInputBindingDescription GetBindingDescription() {
             VkVertexInputBindingDescription bindingDescription{};
