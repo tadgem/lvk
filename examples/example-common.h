@@ -6,7 +6,7 @@
 #include "assimp/postprocess.h"
 #include "assimp/scene.h"
 
-#include "lvk/LVK_All.h"
+#include "lvk/lvk.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
