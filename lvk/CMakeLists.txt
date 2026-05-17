@@ -23,6 +23,7 @@ set(LVK_SRCS
     src/lvk/Submission.cpp
     src/lvk/Debug.cpp
     src/ThirdParty/spirv_reflect.c
+    src/ThirdParty/nanovg.c
     src/ImGui/imgui_impl_vulkan.cpp
     src/ImGui/imgui_draw.cpp
     src/ImGui/imgui_tables.cpp

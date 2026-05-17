@@ -1,5 +1,4 @@
 #define VMA_IMPLEMENTATION
-#define STB_IMAGE_IMPLEMENTATION
 #include "ThirdParty/stb_image.h"
 #include "lvk/Init.h"
 #include "lvk/Macros.h"
@@ -8,6 +7,8 @@
 #include "lvk/Utils.h"
 #include "lvk/Log.h"
 #include "ThirdParty/FunnelSansTTF.h"
+#define NANOVG_VULKAN_IMPLEMENTATION
+#include "ThirdParty/nanovg_vk.h"
 #include "lvk/Commands.h"
 
 static const bool QUIT_ON_ERROR = false;
@@ -20,15 +21,15 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 
   if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
   {
-    LVK_LOG_WARN("VL: %s\n", pCallbackData->pMessage);
+    LVK_LOG_WARN("VL: %s", pCallbackData->pMessage);
   }
   if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
   {
-    LVK_LOG_INFO("VL: %s\n", pCallbackData->pMessage);
+    LVK_LOG_INFO("VL: %s", pCallbackData->pMessage);
   }
   if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
   {
-    LVK_LOG_ERR("VL: %s\n", pCallbackData->pMessage);
+    LVK_LOG_ERR("VL: %s", pCallbackData->pMessage);
   }
   return VK_FALSE;
 }
@@ -341,6 +342,29 @@ void lvk::init::InitImGui(VkState& vk)
   ImGui_ImplVulkan_CreateFontsTexture();
 
   SetImGuiStyle();
+}
+
+void lvk::init::InitNanoVG(VkState& vk)
+{
+    VKNVGCreateInfo nvgCreateInfo = { 0 };
+    nvgCreateInfo.device = vk.m_LogicalDevice;
+    nvgCreateInfo.gpu = vk.m_PhysicalDevice;
+    nvgCreateInfo.renderpass = vk.m_ImGuiRenderPass;
+    nvgCreateInfo.cmdBuffer = &vk.m_GraphicsCommandBuffers[0];
+    nvgCreateInfo.swapchainImageCount = vk.m_SwapChainImages.size();
+    nvgCreateInfo.currentFrame = &vk.m_CurrentFrameIndex;
+
+    nvgCreateInfo.ext.colorBlendEquation = true;
+    nvgCreateInfo.ext.colorWriteMask = true;
+    nvgCreateInfo.ext.dynamicState = true;
+
+    int flags = 0;
+    flags |= NVG_ANTIALIAS;
+    flags |= NVG_STENCIL_STROKES;
+
+    NVGcontext* vg = nvgCreateVk(nvgCreateInfo, flags, vk.m_GraphicsQueue);
+
+    
 }
 
 VkApplicationInfo lvk::init::CreateAppInfo() {

@@ -26,6 +26,8 @@ namespace init
   
   void                                InitVulkan(VkState& vk, bool enableSwapchainMsaa = false);
   void                                InitImGui(VkState& vk);
+  void                                InitNanoVG(VkState& vk);
+
   VkApplicationInfo CreateAppInfo();
   void                                CreateInstance(VkState& vk);
   void                                CleanupVulkan(VkState& vk);

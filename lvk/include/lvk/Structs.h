@@ -12,6 +12,7 @@
 namespace lvk {
 
   struct VkState;
+  struct NVGContext;
 
   enum class ShaderBindingType {
     UniformBuffer,
@@ -379,9 +380,11 @@ namespace lvk {
         bool                            m_UseValidation = true;
         const bool                      m_UseImGui = true;
         uint64_t                        m_LastFrameTime;
-        int                             m_CurrentFrameIndex;
+        uint32_t                        m_CurrentFrameIndex;
         VkExtent2D                      m_MaxFramebufferExtent;
         String                          m_AppName;
+
+        NVGContext*                     m_NanoVG;
 
         VkState(IAllocator& alloc) :
             m_DescriptorSetAllocator(alloc),
