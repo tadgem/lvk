@@ -1,6 +1,8 @@
 #include "lvk/Commands.h"
 #include "lvk/Macros.h"
 #include "lvk/Log.h"
+#include "ThirdParty/nanovg.h"
+
 namespace lvk {
 namespace commands {
 VkCommandBuffer BeginSingleTimeCommands(VkState &vk) {
@@ -43,14 +45,20 @@ void RecordGraphicsCommands(
     for (uint32_t i = 0; i < vk.m_GraphicsCommandBuffers.size(); i++) {
       VkCommandBufferBeginInfo commandBufferBeginInfo{};
       commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-      commandBufferBeginInfo.flags = 0;
+      commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
       commandBufferBeginInfo.pInheritanceInfo = nullptr;
 
       VK_CHECK(
           vkBeginCommandBuffer(vk.m_GraphicsCommandBuffers[i], &commandBufferBeginInfo))
 
+      uint32_t prevFrameIndex = vk.m_CurrentFrameIndex;
+      vk.m_CurrentFrameIndex = i;
+      nvgBeginFrame(vk.m_NanoVG, 1920, 1080, 1.0);
+      vk.m_CurrentFrameIndex = prevFrameIndex;
+
       // Callback
       graphicsCommandsCallback(vk.m_GraphicsCommandBuffers[i], i);
+
 
       VK_CHECK(vkEndCommandBuffer(vk.m_GraphicsCommandBuffers[i]));
   }

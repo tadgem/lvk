@@ -9,10 +9,11 @@
 #include "lvk/Allocator.h"
 #include "glm/glm.hpp"
 
+struct NVGcontext;
+
 namespace lvk {
 
   struct VkState;
-  struct NVGContext;
 
   enum class ShaderBindingType {
     UniformBuffer,
@@ -384,7 +385,7 @@ namespace lvk {
         VkExtent2D                      m_MaxFramebufferExtent;
         String                          m_AppName;
 
-        NVGContext*                     m_NanoVG;
+        NVGcontext*                     m_NanoVG;
 
         VkState(IAllocator& alloc) :
             m_DescriptorSetAllocator(alloc),

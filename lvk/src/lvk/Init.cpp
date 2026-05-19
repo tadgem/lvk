@@ -39,6 +39,7 @@ void lvk::init::Cleanup(VkState& vk)
   Texture::FreeDefaultTexture(vk);
   Mesh::FreeBuiltInMeshes(vk);
   CleanupImGui(vk);
+  CleanupNanoVG(vk);
   vk.m_Backend->CleanupWindow(vk);
   CleanupVulkan(vk);
 }
@@ -52,6 +53,11 @@ void lvk::init::CleanupImGui(VkState& vk)
     ImGui_ImplVulkan_Shutdown();
     vk.m_Backend->CleanupImGuiBackend(vk);
   }
+}
+
+void lvk::init::CleanupNanoVG(VkState& vk)
+{
+    nvgDeleteVk(vk.m_NanoVG);
 }
 
 bool lvk::init::CheckValidationLayerSupport(VkState& vk)
@@ -350,7 +356,7 @@ void lvk::init::InitNanoVG(VkState& vk)
     nvgCreateInfo.device = vk.m_LogicalDevice;
     nvgCreateInfo.gpu = vk.m_PhysicalDevice;
     nvgCreateInfo.renderpass = vk.m_ImGuiRenderPass;
-    nvgCreateInfo.cmdBuffer = &vk.m_GraphicsCommandBuffers[0];
+    nvgCreateInfo.cmdBuffer = vk.m_GraphicsCommandBuffers.data();
     nvgCreateInfo.swapchainImageCount = vk.m_SwapChainImages.size();
     nvgCreateInfo.currentFrame = &vk.m_CurrentFrameIndex;
 
@@ -362,7 +368,8 @@ void lvk::init::InitNanoVG(VkState& vk)
     flags |= NVG_ANTIALIAS;
     flags |= NVG_STENCIL_STROKES;
 
-    NVGcontext* vg = nvgCreateVk(nvgCreateInfo, flags, vk.m_GraphicsQueue);
+    vk.m_NanoVG = nvgCreateVk(nvgCreateInfo, flags, vk.m_GraphicsQueue);
+    
 
     
 }
@@ -669,6 +676,8 @@ void lvk::init::CreateLogicalDevice(VkState& vk)
   auto extensions = s_RequiredDeviceExtensions;
   extensions.push_back("VK_KHR_dynamic_rendering");
   extensions.push_back("VK_KHR_synchronization2");
+  extensions.push_back("VK_EXT_extended_dynamic_state");
+  extensions.push_back("VK_EXT_extended_dynamic_state3");
 
   createInfo.enabledExtensionCount    = static_cast<uint32_t>(extensions.size());
   createInfo.ppEnabledExtensionNames  = extensions.data();
@@ -877,6 +886,7 @@ void lvk::init::RecreateSwapChain(VkState& vk)
 
   CleanupSwapChain(vk);
   CleanupImGui(vk);
+  CleanupNanoVG(vk);
 
   CreateSwapChain(vk);
   CreateSwapChainImageViews(vk);
@@ -885,6 +895,7 @@ void lvk::init::RecreateSwapChain(VkState& vk)
   CreateSwapChainFramebuffers(vk);
 
   InitImGui(vk);
+  InitNanoVG(vk);
 }
 
 void lvk::init::CreateSwapChainColourTexture(VkState& vk, bool enableMsaa)

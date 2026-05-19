@@ -7,6 +7,7 @@
 #include "assimp/scene.h"
 
 #include "lvk/lvk.h"
+#include "ThirdParty/nanovg.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE

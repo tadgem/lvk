@@ -1885,8 +1885,13 @@ static void vknvg_renderDelete(void *uptr) {
   }
 
   for (int i = 0; i < vk->createInfo.swapchainImageCount; i++) {
-    vknvg_destroyBuffer(device, allocator, &vk->vertexBuffer[i]);
-    vknvg_destroyBuffer(device, allocator, &vk->fragUniformBuffer[i]);
+      if (vk->vertexBuffer != NULL) {
+          vknvg_destroyBuffer(device, allocator, &vk->vertexBuffer[i]);
+      }
+      if (vk->fragUniformBuffer != NULL)
+      {
+        vknvg_destroyBuffer(device, allocator, &vk->fragUniformBuffer[i]);
+      }
   }
 
   vkDestroyShaderModule(device, vk->fillVertShader, allocator);

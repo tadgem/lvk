@@ -14,6 +14,7 @@ namespace init
   };
 
   void                                CleanupImGui(VkState& vk);
+  void                                CleanupNanoVG(VkState& vk);
   void                                Cleanup(VkState& vk);
 
   bool                                CheckValidationLayerSupport(VkState& vk);
@@ -84,6 +85,7 @@ namespace init
     vk.m_MaxFramebufferExtent = vk.m_Backend->GetMaxFramebufferResolution(vk);
     vk.m_RunComputeCommands = false;
     InitImGui(vk);
+    InitNanoVG(vk);
     Texture::InitDefaultTexture(vk);
     Mesh::InitBuiltInMeshes(vk);
 
