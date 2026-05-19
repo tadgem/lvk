@@ -3,7 +3,7 @@ project(example-lights-forward)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(${PROJECT_NAME} main.cpp "lights-forward/main.cpp")
+add_executable(${PROJECT_NAME} main.cpp)
 
 get_filename_component(EXAMPLES_DIR ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY)
 
