@@ -24,7 +24,7 @@ void RecordGraphicsCommandBuffers(VkState & vk, VkPipelineData& pipeline, Model&
         auto vg = vk.m_NanoVG;
         nvgBeginPath(vg);
         nvgRoundedRect(vg, 0, 0, 600, 400, 3.0f);
-        nvgFillColor(vg, nvgRGBA(255, 30, 34, 192));
+        nvgFillColor(vg, nvgRGBA(255, 30, 34, 255));
         nvgFill(vg);
 
         nvgEndFrame(vk.m_NanoVG);

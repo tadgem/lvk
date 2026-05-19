@@ -45,7 +45,7 @@ void RecordGraphicsCommands(
     for (uint32_t i = 0; i < vk.m_GraphicsCommandBuffers.size(); i++) {
       VkCommandBufferBeginInfo commandBufferBeginInfo{};
       commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-      commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+      commandBufferBeginInfo.flags = 0;
       commandBufferBeginInfo.pInheritanceInfo = nullptr;
 
       VK_CHECK(
@@ -53,11 +53,13 @@ void RecordGraphicsCommands(
 
       uint32_t prevFrameIndex = vk.m_CurrentFrameIndex;
       vk.m_CurrentFrameIndex = i;
-      nvgBeginFrame(vk.m_NanoVG, 1920, 1080, 1.0);
-      vk.m_CurrentFrameIndex = prevFrameIndex;
 
-      // Callback
+      nvgBeginFrame(vk.m_NanoVG, 1920, 1080, 1.0);
+
+      // Callback (nvgEndFrame is called inside, which uses m_CurrentFrameIndex)
       graphicsCommandsCallback(vk.m_GraphicsCommandBuffers[i], i);
+
+      vk.m_CurrentFrameIndex = prevFrameIndex;
 
 
       VK_CHECK(vkEndCommandBuffer(vk.m_GraphicsCommandBuffers[i]));

@@ -355,7 +355,7 @@ void lvk::init::InitNanoVG(VkState& vk)
     VKNVGCreateInfo nvgCreateInfo = { 0 };
     nvgCreateInfo.device = vk.m_LogicalDevice;
     nvgCreateInfo.gpu = vk.m_PhysicalDevice;
-    nvgCreateInfo.renderpass = vk.m_ImGuiRenderPass;
+    nvgCreateInfo.renderpass = vk.m_SwapchainImageRenderPass;
     nvgCreateInfo.cmdBuffer = vk.m_GraphicsCommandBuffers.data();
     nvgCreateInfo.swapchainImageCount = vk.m_SwapChainImages.size();
     nvgCreateInfo.currentFrame = &vk.m_CurrentFrameIndex;
@@ -363,6 +363,7 @@ void lvk::init::InitNanoVG(VkState& vk)
     nvgCreateInfo.ext.colorBlendEquation = true;
     nvgCreateInfo.ext.colorWriteMask = true;
     nvgCreateInfo.ext.dynamicState = true;
+    nvgCreateInfo.ext.sampleCount = vk.m_UseSwapchainMsaa ? vk.m_MaxMsaaSamples : VK_SAMPLE_COUNT_1_BIT;
 
     int flags = 0;
     flags |= NVG_ANTIALIAS;
