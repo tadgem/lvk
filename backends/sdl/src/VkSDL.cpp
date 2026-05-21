@@ -77,6 +77,8 @@ void lvk::VkSDL::CleanupWindow(VkState& vk)
         return;
     }
     SDL_DestroyWindow(m_SdlHandle->m_SdlWindow);
+    delete m_SdlHandle;
+    m_SdlHandle = nullptr;
     SDL_Quit();
 }
 
@@ -159,7 +161,7 @@ VkExtent2D lvk::VkSDL::GetSurfaceExtent(VkState& vk, VkSurfaceCapabilitiesKHR su
     return VkExtent2D();
 }
 
-VkExtent2D lvk::VkSDL::GetMaxFramebufferResolution(VkState& vk)
+    VkExtent2D lvk::VkSDL::GetMaxFramebufferResolution(VkState& vk)
 {
     int numDisplays = 0;
     SDL_DisplayID* ids = SDL_GetDisplays(&numDisplays);
@@ -170,7 +172,7 @@ VkExtent2D lvk::VkSDL::GetMaxFramebufferResolution(VkState& vk)
         auto* displayModes = SDL_GetFullscreenDisplayModes(ids[i], &mode_count);
         for (int j = 0; j < mode_count; j++)
         {
-            SDL_DisplayMode displayMode = *displayModes[i];
+            SDL_DisplayMode displayMode = *displayModes[j];
 
             if (res.width < static_cast<uint32_t>(displayMode.w))
             {
@@ -182,7 +184,9 @@ VkExtent2D lvk::VkSDL::GetMaxFramebufferResolution(VkState& vk)
                 res.height = displayMode.h;
             }
         }
+        SDL_free(displayModes);
     }
+    SDL_free(ids);
     return res;
 }
 

@@ -350,7 +350,7 @@ namespace lvk {
         VkQueue                         m_ComputeQueue = VK_NULL_HANDLE;
         VkQueue                         m_PresentQueue = VK_NULL_HANDLE;
 
-        VulkanAPIWindowHandle* m_WindowHandle;
+        VulkanAPIWindowHandle* m_WindowHandle = nullptr;
 
         Vector<VkImage>                 m_SwapChainImages;
         Vector<VkImageView>             m_SwapChainImageViews;

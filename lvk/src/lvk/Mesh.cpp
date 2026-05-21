@@ -26,6 +26,8 @@ void lvk::Mesh::InitBuiltInMeshes(lvk::VkState & vk)
 void lvk::Mesh::FreeBuiltInMeshes(lvk::VkState & vk)
 {
     g_ScreenSpaceQuad->Free(vk);
+    delete g_ScreenSpaceQuad;
+    g_ScreenSpaceQuad = nullptr;
 }
 
 void lvk::Mesh::Free (VkState & vk)

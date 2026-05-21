@@ -151,7 +151,7 @@ void RecordCommandBuffersV2(VkState& vk, Vector<ViewData*> views, RenderData& re
             vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
             VkViewport viewport{};
             viewport.x = 0.0f;
-            viewport.x = 0.0f;
+            viewport.y = 0.0f;
             viewport.width = static_cast<float>(vk.m_SwapChainImageExtent.width);
             viewport.height = static_cast<float>(vk.m_SwapChainImageExtent.height);
             viewport.minDepth = 0.0f;
@@ -203,7 +203,7 @@ void RecordCommandBuffersV2(VkState& vk, Vector<ViewData*> views, RenderData& re
                 vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderData.m_TiledPipeline.m_Pipeline);
                 VkViewport viewport{};
                 viewport.x = 0.0f;
-                viewport.x = 0.0f;
+                viewport.y = 0.0f;
                 viewport.width = static_cast<float>(viewExtent.width);
                 viewport.height = static_cast<float>(viewExtent.height);
                 viewport.minDepth = 0.0f;

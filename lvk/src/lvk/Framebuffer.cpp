@@ -138,7 +138,7 @@ void lvk::Framebuffer::BeginDynamicRendering(lvk::VkState& vk, VkCommandBuffer &
             curr.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
             curr.loadOp = m_AttachmentLoadOp;
             curr.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-            curr.clearValue = {1.0f, 0.0f};
+            curr.clearValue.depthStencil = {1.0f, 0};
             depthInfos.push_back(curr);
         }
     }

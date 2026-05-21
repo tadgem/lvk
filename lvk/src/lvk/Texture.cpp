@@ -270,8 +270,10 @@ void lvk::Texture::InitDefaultTexture(lvk::VkState & vk)
 
 void lvk::Texture::FreeDefaultTexture(lvk::VkState & vk)
 {
+	if (!g_DefaultTexture) return;
 	g_DefaultTexture->Free(vk);
 	delete g_DefaultTexture;
+	g_DefaultTexture = nullptr;
 }
 
 void lvk::Texture::Free(lvk::VkState & vk)
@@ -407,9 +409,9 @@ void lvk::textures::CreateTexture(VkState& vk, const char* path, VkFormat format
     TransitionImageLayout(vk, image, format, mips, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     CopyBufferToImage(vk, stagingBuffer.m_GpuBuffer, image, texWidth, texHeight);
     
-    GenerateMips(vk, image, format, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texWidth), mips, VK_FILTER_LINEAR);
+    GenerateMips(vk, image, format, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight), mips, VK_FILTER_LINEAR);
     
-    TransitionImageLayout(vk, image, format, mips, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    TransitionImageLayout(vk, image, format, mips, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     stagingBuffer.Free(vk);
 }
@@ -452,9 +454,9 @@ void lvk::textures::CreateTextureFromMemory(VkState& vk, unsigned char* tex_data
     TransitionImageLayout(vk, image, format, mips, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     CopyBufferToImage(vk, stagingBuffer.m_GpuBuffer, image, texWidth, texHeight);
 
-    GenerateMips(vk, image, format, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texWidth), mips, VK_FILTER_LINEAR);
+    GenerateMips(vk, image, format, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight), mips, VK_FILTER_LINEAR);
 
-    TransitionImageLayout(vk, image, format, mips, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    TransitionImageLayout(vk, image, format, mips, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     stagingBuffer.Free(vk);
 }
 
@@ -495,9 +497,9 @@ void lvk::textures::CreateTexture3DFromMemory(VkState& vk, unsigned char* tex_da
     TransitionImageLayout(vk, image, format, mips, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     CopyBufferToImage(vk, stagingBuffer.m_GpuBuffer, image, texWidth, texHeight);
 
-    GenerateMips(vk, image, format, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texWidth), mips, VK_FILTER_LINEAR);
+    GenerateMips(vk, image, format, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight), mips, VK_FILTER_LINEAR);
 
-    TransitionImageLayout(vk, image, format, mips, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    TransitionImageLayout(vk, image, format, mips, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     stagingBuffer.Free(vk);
 }
 

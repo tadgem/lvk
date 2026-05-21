@@ -19,7 +19,7 @@ Buffer buffers::CreateBuffer(VkState& vk, VkDeviceSize size, VkBufferUsageFlags 
   allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
   allocInfo.requiredFlags = properties;
 
-  if (properties && VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)
+  if (properties & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)
   {
     // if we access members of the array non sequentially,
     // we may need to request random access instead of sequential

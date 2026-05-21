@@ -50,25 +50,23 @@ void lvk::render_passes::CreateRenderPass(VkState& vk, VkRenderPass& renderPass,
   subpass.pColorAttachments = colourAttachmentReferences.data();
   subpass.pResolveAttachments = resolveAttachmentReferences.data();
 
-  VkPipelineStageFlags waitFlags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+  VkPipelineStageFlags srcWaitFlags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+  VkPipelineStageFlags dstWaitFlags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
   VkAccessFlags accessFlags = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
   if (hasDepthAttachment)
   {
-    waitFlags |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    srcWaitFlags |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    dstWaitFlags |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
     accessFlags |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
   }
 
   VkSubpassDependency subpassDependency{};
-  // implicit subpasses
   subpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-  // our pass
   subpassDependency.dstSubpass = 0;
-  // wait for the colour output stage to finish
-  subpassDependency.srcStageMask = waitFlags;
-  subpassDependency.srcAccessMask = 0;
-  // wait until we can write to the color attachment
-  subpassDependency.dstStageMask = waitFlags;
+  subpassDependency.srcStageMask = srcWaitFlags;
+  subpassDependency.srcAccessMask = accessFlags;
+  subpassDependency.dstStageMask = dstWaitFlags;
   subpassDependency.dstAccessMask = accessFlags;
 
 
@@ -106,7 +104,7 @@ lvk::render_passes::BeginSwapchainRenderPass(lvk::VkState &vk, VkCommandBuffer& 
 
   VkViewport viewport{};
   viewport.x = 0.0f;
-  viewport.x = 0.0f;
+  viewport.y = 0.0f;
   viewport.width = static_cast<float>(vk.m_SwapChainImageExtent.width);
   viewport.height = static_cast<float>(vk.m_SwapChainImageExtent.height);
   viewport.minDepth = 0.0f;

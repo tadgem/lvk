@@ -32,7 +32,7 @@ void RecordGraphicsCommandBuffers(VkState & vk, VkPipelineData& pipeline,  Model
 
             VkViewport viewport{};
             viewport.x = 0.0f;
-            viewport.x = 0.0f;
+            viewport.y = 0.0f;
             viewport.width = static_cast<float>(vk.m_SwapChainImageExtent.width);
             viewport.height = static_cast<float>(vk.m_SwapChainImageExtent.height);
             viewport.minDepth = 0.0f;

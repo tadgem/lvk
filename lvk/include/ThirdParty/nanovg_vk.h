@@ -1394,7 +1394,7 @@ static int vknvg_renderCreateTexture(void *uptr, int type, int w, int h, int ima
 
   mem_alloc.allocationSize = mem_reqs.size;
 
-  VkFlags flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+  VkFlags flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
   VkResult res = vknvg_memory_type_from_properties(vk->memoryProperties, mem_reqs.memoryTypeBits, flags, &mem_alloc.memoryTypeIndex);
   assert(res == VK_SUCCESS);
 

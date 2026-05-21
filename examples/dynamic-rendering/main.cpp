@@ -97,8 +97,15 @@ RenderData CreateRenderData(VkState& vk, ShaderProgram gbufferProg, ShaderProgra
     presentFormats.push_back(VK_FORMAT_R8G8B8A8_UNORM);
 
     auto presentVertexDescription = VertexDataPosUv::GetVertexDescription(*vk.m_CPUAllocator);
+    RasterizationState lightPassRasterState {
+        VK_POLYGON_MODE_FILL,
+        VK_CULL_MODE_NONE,
+        false,
+        VK_COMPARE_OP_NEVER,
+        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+    };
     VkPipelineData pipeline = lvk::pipelines::CreateDynamicRasterPipeline(vk,
-       lightPassProg, presentVertexDescription, defaults::CullNoneRasterState,
+       lightPassProg, presentVertexDescription, lightPassRasterState,
        vk.m_SwapChainImageExtent,  presentFormats);
 
     return {gbufferPipeline, pipeline};
@@ -208,7 +215,7 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderData& r
                 vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderData.m_GBufferPipeline.m_Pipeline);
                 VkViewport viewport{};
                 viewport.x = 0.0f;
-                viewport.x = 0.0f;
+                viewport.y = 0.0f;
                 viewport.width = static_cast<float>(viewExtent.width);
                 viewport.height = static_cast<float>(viewExtent.height);
                 viewport.minDepth = 0.0f;
@@ -248,7 +255,7 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderData& r
             vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderData.m_LightPassPipeline.m_Pipeline);
             VkViewport viewport{};
             viewport.x = 0.0f;
-            viewport.x = 0.0f;
+            viewport.y = 0.0f;
             viewport.width = static_cast<float>(viewExtent.width);
             viewport.height = static_cast<float>(viewExtent.height);
             viewport.minDepth = 0.0f;
@@ -275,7 +282,7 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderData& r
 
             auto viewProj = view->m_Camera.Proj * view->m_Camera.View;
             // TODO: Horrendous use of reinterpret_cast
-            DrawIm3d(vk, commandBuffer, frameIndex, im3dState, view->m_Im3dState, *reinterpret_cast<Matrix4x4*>(&viewProj) , viewExtent.width, viewExtent.height);
+            DrawIm3d(vk, commandBuffer, frameIndex, im3dState, view->m_Im3dState, *reinterpret_cast<glm::mat4*>(&viewProj) , viewExtent.width, viewExtent.height);
             vkCmdEndRenderingKHR(commandBuffer);
         }
         }
@@ -300,7 +307,7 @@ RenderModel CreateRenderModelGbuffer(VkState & vk, const char* modelPath, Shader
         item.m_Material.SetSampler(vk, "texSampler" , material.m_Diffuse.m_ImageView, material.m_Diffuse.m_Sampler);
         renderModel.m_RenderItems.push_back(item);
     }
-
+    
     return renderModel;
 }
 
@@ -323,7 +330,7 @@ void OnImGui(VkState & vk, DeferredLightData& lightDataCpu, Vector<ViewData*> vi
             Im3d::GetTextDrawListCount(),
             (float)views[0]->m_CurrentResolution.width,
             (float)views[0]->m_CurrentResolution.height,
-            *reinterpret_cast<Matrix4x4*>(&viewProj));
+            *reinterpret_cast<glm::mat4*>(&viewProj));
         views[0]->m_CurrentResolution = { (uint32_t)extent.x, (uint32_t)extent.y };
 
     }
@@ -346,7 +353,7 @@ void OnImGui(VkState & vk, DeferredLightData& lightDataCpu, Vector<ViewData*> vi
             Im3d::GetTextDrawListCount(), 
             (float)views[1]->m_CurrentResolution.width, 
             (float)views[1]->m_CurrentResolution.height, 
-            *reinterpret_cast<Matrix4x4*>(&viewProj));
+            *reinterpret_cast<glm::mat4*>(&viewProj));
         views[1]->m_CurrentResolution = { (uint32_t)extent.x, (uint32_t)extent.y };
 
     }

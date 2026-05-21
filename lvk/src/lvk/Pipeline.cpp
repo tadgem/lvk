@@ -43,7 +43,7 @@ lvk::VkViewportData CreateViewportData(VkExtent2D resolution, lvk::Rasterization
   using namespace lvk;
   VkViewport viewport{};
   viewport.x = 0.0f;
-  viewport.x = 0.0f;
+  viewport.y = 0.0f;
   viewport.width = static_cast<float>(resolution.width);
   viewport.height = static_cast<float>(resolution.height);
   if(rasterState.m_DepthCompareOp != VK_COMPARE_OP_NEVER) {
@@ -269,7 +269,20 @@ CreateComputePipeline(VkState &vk, StageBinary &comp,
                            VkDescriptorSetLayout &descriptorSetLayout) {
 
   auto compStage = CreateShaderModule(vk, comp);
+
+  VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+  pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+  pipelineLayoutInfo.setLayoutCount = 1;
+  pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
+
   VkPipelineLayout pipelineLayout;
+  if (vkCreatePipelineLayout(vk.m_LogicalDevice, &pipelineLayoutInfo, nullptr,
+                             &pipelineLayout) != VK_SUCCESS) {
+    LVK_LOG_ERR("failed to create compute pipeline layout!");
+    vkDestroyShaderModule(vk.m_LogicalDevice, compStage, nullptr);
+    return {VK_NULL_HANDLE, VK_NULL_HANDLE};
+  }
+
   VkPipelineShaderStageCreateInfo compShaderStageInfo{};
   compShaderStageInfo.sType =
       VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -288,10 +301,13 @@ CreateComputePipeline(VkState &vk, StageBinary &comp,
                                &pipelineInfo, nullptr,
                                &pipeline) != VK_SUCCESS) {
     LVK_LOG_ERR("failed to create compute pipeline!");
-    return {pipeline, pipelineLayout};
+    vkDestroyShaderModule(vk.m_LogicalDevice, compStage, nullptr);
+    vkDestroyPipelineLayout(vk.m_LogicalDevice, pipelineLayout, nullptr);
+    return {VK_NULL_HANDLE, VK_NULL_HANDLE};
   }
 
-  return {VK_NULL_HANDLE, VK_NULL_HANDLE};
+  vkDestroyShaderModule(vk.m_LogicalDevice, compStage, nullptr);
+  return {pipeline, pipelineLayout};
 }
 
 VkPipelineData CreateDynamicRasterPipeline(VkState &vk, ShaderProgram &shader,
