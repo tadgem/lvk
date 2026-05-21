@@ -57,7 +57,7 @@ void OnLightsImGui(VkState& vk)
 {
     if (ImGui::Begin("Lights"))
     {
-        ImGui::Text("FPSS : %f", 1.0 / vk.m_DeltaTime);
+        ImGui::Text("FPS : %f, Frametime : %f", 1.0 / vk.m_DeltaTime, vk.m_DeltaTime);
         ImGui::DragFloat3("Directional Light Dir", &lightDataCpu.m_DirectionalLight.Direction[0]);
         ImGui::DragFloat4("Directional Light Colour", &lightDataCpu.m_DirectionalLight.Colour[0]);
         ImGui::DragFloat4("Directional Light Ambient Colour", &lightDataCpu.m_DirectionalLight.Ambient[0]);

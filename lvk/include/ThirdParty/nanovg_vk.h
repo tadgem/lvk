@@ -24,6 +24,7 @@ typedef struct VkNvgExt {
   bool dynamicState; //Requires VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME
   bool colorBlendEquation; //Requires VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME
   bool colorWriteMask; //Requires VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME
+  uint32_t sampleCount;
 } VkNvgExt;
 
 typedef struct VKNVGCreateInfo {
