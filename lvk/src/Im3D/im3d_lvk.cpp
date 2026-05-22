@@ -143,6 +143,257 @@ namespace lvk
                 tris_pipeline, points_pipeline, lines_pipeline };
     }
 
+    LvkIm3dViewState AddIm3dForGBuffer(VkState& vk, LvkIm3dState& state, const Vector<VkFormat>& gbufferFormats, uint32_t colourWriteAttachment)
+    {
+        auto vertexDescription = VertexDataPos4::GetVertexDescription(*vk.m_CPUAllocator);
+
+        RasterizationState tris_raster_state{
+            VK_POLYGON_MODE_FILL,
+            VK_CULL_MODE_NONE,
+            false,
+            VK_COMPARE_OP_LESS,
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+        };
+
+        Vector<VkFormat> singleFormat(*vk.m_CPUAllocator);
+        singleFormat.push_back(vk.m_SwapChainImageFormat);
+
+        VkPipelineData tris_pipeline = pipelines::CreateDynamicRasterPipeline(vk,
+            state.m_TriProg, vertexDescription, tris_raster_state,
+            vk.m_SwapChainImageExtent, singleFormat);
+
+        Material tris_material = Material::Create(vk, state.m_TriProg);
+        tris_material.CreateBuffer(vk, 0, 0);
+        tris_material.CreateBuffer(vk, 0, 1);
+
+        RasterizationState points_raster_state
+        {
+            VK_POLYGON_MODE_POINT,
+            VK_CULL_MODE_NONE,
+            false,
+            VK_COMPARE_OP_LESS,
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+        };
+
+        VkPipelineData points_pipeline = pipelines::CreateDynamicRasterPipeline(vk,
+            state.m_PointsProg, vertexDescription, points_raster_state,
+            vk.m_SwapChainImageExtent, singleFormat);
+
+        Material points_material = Material::Create(vk, state.m_PointsProg);
+        points_material.CreateBuffer(vk, 0, 0);
+        points_material.CreateBuffer(vk, 0, 1);
+
+        RasterizationState lines_raster_state{
+            VK_POLYGON_MODE_LINE,
+            VK_CULL_MODE_NONE,
+            false,
+            VK_COMPARE_OP_LESS,
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+        };
+        VkPipelineData lines_pipeline = pipelines::CreateDynamicRasterPipeline(vk,
+            state.m_LinesProg, vertexDescription, lines_raster_state,
+            vk.m_SwapChainImageExtent, singleFormat);
+
+        Material lines_material = Material::Create(vk, state.m_LinesProg);
+        lines_material.CreateBuffer(vk, 0, 0);
+        lines_material.CreateBuffer(vk, 0, 1);
+
+        return { tris_material, points_material, lines_material,
+                tris_pipeline, points_pipeline, lines_pipeline };
+    }
+
+    LvkIm3dViewState AddIm3dForDeferredLightPass(VkState& vk, LvkIm3dState& state)
+    {
+        auto vertexDescription = VertexDataPos4::GetVertexDescription(*vk.m_CPUAllocator);
+
+        RasterizationState tris_raster_state{
+            VK_POLYGON_MODE_FILL,
+            VK_CULL_MODE_NONE,
+            false,
+            VK_COMPARE_OP_LESS,
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+        };
+
+        Vector<VkFormat> singleFormat(*vk.m_CPUAllocator);
+        singleFormat.push_back(vk.m_SwapChainImageFormat);
+
+        VkPipelineData tris_pipeline = pipelines::CreateDynamicRasterPipeline(vk,
+            state.m_TriProg, vertexDescription, tris_raster_state,
+            vk.m_SwapChainImageExtent, singleFormat);
+
+        Material tris_material = Material::Create(vk, state.m_TriProg);
+        tris_material.CreateBuffer(vk, 0, 0);
+        tris_material.CreateBuffer(vk, 0, 1);
+
+        RasterizationState points_raster_state
+        {
+            VK_POLYGON_MODE_POINT,
+            VK_CULL_MODE_NONE,
+            false,
+            VK_COMPARE_OP_LESS,
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+        };
+
+        VkPipelineData points_pipeline = pipelines::CreateDynamicRasterPipeline(vk,
+            state.m_PointsProg, vertexDescription, points_raster_state,
+            vk.m_SwapChainImageExtent, singleFormat);
+
+        Material points_material = Material::Create(vk, state.m_PointsProg);
+        points_material.CreateBuffer(vk, 0, 0);
+        points_material.CreateBuffer(vk, 0, 1);
+
+        RasterizationState lines_raster_state{
+            VK_POLYGON_MODE_LINE,
+            VK_CULL_MODE_NONE,
+            false,
+            VK_COMPARE_OP_LESS,
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+        };
+        VkPipelineData lines_pipeline = pipelines::CreateDynamicRasterPipeline(vk,
+            state.m_LinesProg, vertexDescription, lines_raster_state,
+            vk.m_SwapChainImageExtent, singleFormat);
+
+        Material lines_material = Material::Create(vk, state.m_LinesProg);
+        lines_material.CreateBuffer(vk, 0, 0);
+        lines_material.CreateBuffer(vk, 0, 1);
+
+        return { tris_material, points_material, lines_material,
+                tris_pipeline, points_pipeline, lines_pipeline };
+    }
+
+    LvkIm3dViewState AddIm3dForGBufferRenderPass(VkState& vk, LvkIm3dState& state, VkRenderPass gbufferRenderPass, uint32_t colourAttachmentCount, uint32_t colourWriteAttachment)
+    {
+        auto vertexDescription = VertexDataPos4::GetVertexDescription(*vk.m_CPUAllocator);
+
+        RasterizationState tris_raster_state{
+            VK_POLYGON_MODE_FILL,
+            VK_CULL_MODE_NONE,
+            false,
+            VK_COMPARE_OP_LESS,
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+        };
+
+        Vector<VkFormat> singleFormat(*vk.m_CPUAllocator);
+        singleFormat.push_back(vk.m_SwapChainImageFormat);
+
+        VkPipelineData tris_pipeline = pipelines::CreateRasterPipeline(vk,
+            state.m_TriProg, vertexDescription, tris_raster_state,
+            gbufferRenderPass, vk.m_SwapChainImageExtent, 1);
+
+        Material tris_material = Material::Create(vk, state.m_TriProg);
+        tris_material.CreateBuffer(vk, 0, 0);
+        tris_material.CreateBuffer(vk, 0, 1);
+
+        RasterizationState points_raster_state
+        {
+            VK_POLYGON_MODE_POINT,
+            VK_CULL_MODE_NONE,
+            false,
+            VK_COMPARE_OP_LESS,
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+        };
+
+        VkPipelineData points_pipeline = pipelines::CreateRasterPipeline(vk,
+            state.m_PointsProg, vertexDescription, points_raster_state,
+            gbufferRenderPass, vk.m_SwapChainImageExtent, 1);
+
+        Material points_material = Material::Create(vk, state.m_PointsProg);
+        points_material.CreateBuffer(vk, 0, 0);
+        points_material.CreateBuffer(vk, 0, 1);
+
+        RasterizationState lines_raster_state{
+            VK_POLYGON_MODE_LINE,
+            VK_CULL_MODE_NONE,
+            false,
+            VK_COMPARE_OP_LESS,
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+        };
+        VkPipelineData lines_pipeline = pipelines::CreateRasterPipeline(vk,
+            state.m_LinesProg, vertexDescription, lines_raster_state,
+            gbufferRenderPass, vk.m_SwapChainImageExtent, 1);
+
+        Material lines_material = Material::Create(vk, state.m_LinesProg);
+        lines_material.CreateBuffer(vk, 0, 0);
+        lines_material.CreateBuffer(vk, 0, 1);
+
+        return { tris_material, points_material, lines_material,
+                tris_pipeline, points_pipeline, lines_pipeline };
+    }
+
+    LvkIm3dViewState AddIm3dForForwardPass(VkState& vk, LvkIm3dState& state, bool enableDynamicRendering)
+    {
+        auto vertexDescription = VertexDataPos4::GetVertexDescription(*vk.m_CPUAllocator);
+
+        RasterizationState tris_raster_state{
+            VK_POLYGON_MODE_FILL,
+            VK_CULL_MODE_NONE,
+            vk.m_UseSwapchainMsaa,
+            VK_COMPARE_OP_LESS,
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+        };
+
+        Vector<VkFormat> formats(*vk.m_CPUAllocator);
+        formats.push_back(vk.m_SwapChainImageFormat);
+
+        VkPipelineData tris_pipeline = !enableDynamicRendering ?
+            pipelines::CreateRasterPipeline(vk,
+                state.m_TriProg, vertexDescription, tris_raster_state,
+                vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent) :
+
+            pipelines::CreateDynamicRasterPipeline(vk,
+                state.m_TriProg, vertexDescription, tris_raster_state,
+                vk.m_SwapChainImageExtent, formats);
+
+        Material tris_material = Material::Create(vk, state.m_TriProg);
+        tris_material.CreateBuffer(vk, 0, 0);
+        tris_material.CreateBuffer(vk, 0, 1);
+
+        RasterizationState points_raster_state
+        {
+            VK_POLYGON_MODE_POINT,
+            VK_CULL_MODE_NONE,
+            vk.m_UseSwapchainMsaa,
+            VK_COMPARE_OP_LESS,
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+        };
+
+        VkPipelineData points_pipeline = !enableDynamicRendering ?
+            pipelines::CreateRasterPipeline(vk,
+                state.m_PointsProg, vertexDescription, points_raster_state,
+                vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent) :
+
+            pipelines::CreateDynamicRasterPipeline(vk,
+                state.m_PointsProg, vertexDescription, points_raster_state,
+                vk.m_SwapChainImageExtent, formats);
+
+        Material points_material = Material::Create(vk, state.m_PointsProg);
+        points_material.CreateBuffer(vk, 0, 0);
+        points_material.CreateBuffer(vk, 0, 1);
+
+        RasterizationState lines_raster_state{
+            VK_POLYGON_MODE_LINE,
+            VK_CULL_MODE_NONE,
+            vk.m_UseSwapchainMsaa,
+            VK_COMPARE_OP_LESS,
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+        };
+        VkPipelineData lines_pipeline = !enableDynamicRendering ?
+            pipelines::CreateRasterPipeline(vk,
+                state.m_LinesProg, vertexDescription, lines_raster_state,
+                vk.m_SwapchainImageRenderPass, vk.m_SwapChainImageExtent) :
+
+            pipelines::CreateDynamicRasterPipeline(vk,
+                state.m_LinesProg, vertexDescription, lines_raster_state,
+                vk.m_SwapChainImageExtent, formats);
+
+        Material lines_material = Material::Create(vk, state.m_LinesProg);
+        lines_material.CreateBuffer(vk, 0, 0);
+        lines_material.CreateBuffer(vk, 0, 1);
+
+        return { tris_material, points_material, lines_material,
+                tris_pipeline, points_pipeline, lines_pipeline };
+    }
+
     void FreeIm3dViewport(VkState& vk, LvkIm3dViewState& viewState)
     {
         viewState.m_TrisMaterial.Free(vk);

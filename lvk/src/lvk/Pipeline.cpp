@@ -1,6 +1,8 @@
 #include "lvk/Pipeline.h"
 #include "lvk/Log.h"
 
+namespace lvk::pipelines {
+
 VkPipelineShaderStageCreateInfo CreateShaderStageInfo(VkShaderStageFlagBits shaderStage, VkShaderModule& module)
 {
   VkPipelineShaderStageCreateInfo shaderStageInfo{};
@@ -144,6 +146,41 @@ lvk::PipelineAttachmentState CreateAttachmentState(lvk::IAllocator& alloc, uint3
   return state;
 }
 
+lvk::PipelineAttachmentState CreateGBufferAttachmentState(lvk::IAllocator& alloc, uint32_t colourAttachmentCount, uint32_t writeAttachmentIndex)
+{
+  using namespace lvk;
+  PipelineAttachmentState state (alloc);
+  for (uint32_t i = 0; i < colourAttachmentCount; i++) {
+    VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+    if (i == writeAttachmentIndex) {
+      colorBlendAttachment.colorWriteMask =
+          VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+          VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+      colorBlendAttachment.blendEnable = VK_TRUE;
+      colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+      colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+      colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+      colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+      colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+      colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+    } else {
+      colorBlendAttachment.colorWriteMask = 0;
+      colorBlendAttachment.blendEnable = VK_FALSE;
+    }
+
+    state.m_ColourAttachmentStates.push_back(colorBlendAttachment);
+  }
+
+  state.m_BlendStateInfo.sType =
+      VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+  state.m_BlendStateInfo.logicOpEnable = VK_FALSE;
+  state.m_BlendStateInfo.logicOp = VK_LOGIC_OP_COPY;
+  state.m_BlendStateInfo.attachmentCount =
+      static_cast<uint32_t>(state.m_ColourAttachmentStates.size());
+  state.m_BlendStateInfo.pAttachments = state.m_ColourAttachmentStates.data();
+  return state;
+}
+
 lvk::PipelineDynamicState CreateDynamicStateInfo(lvk::IAllocator& alloc)
 {
   using namespace lvk;
@@ -178,7 +215,6 @@ VkPipelineDepthStencilStateCreateInfo CreateDepthStencilState(lvk::Rasterization
   return depthStencil;
 }
 
-namespace lvk::pipelines {
 
 VkPipelineData CreateRasterPipeline(
     VkState &vk, ShaderProgram &shader,
@@ -218,6 +254,87 @@ VkPipelineData CreateRasterPipeline(
 
   PipelineAttachmentState attachmentState =
       CreateAttachmentState(*vk.m_CPUAllocator, colorAttachmentCount);
+
+  PipelineDynamicState dynamicState = CreateDynamicStateInfo(*vk.m_CPUAllocator);
+
+  VkPipelineDepthStencilStateCreateInfo depthStencil =
+      CreateDepthStencilState(rasterState);
+
+  VkPipelineLayoutCreateInfo pipelineLayoutInfo =
+      shader.GetPipelineLayoutCreateInfo();
+
+  VkPipelineLayout pipelineLayout;
+  VK_CHECK(vkCreatePipelineLayout(vk.m_LogicalDevice, &pipelineLayoutInfo,
+                                  nullptr, &pipelineLayout))
+
+
+  VkGraphicsPipelineCreateInfo pipelineCreateInfo{};
+  pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+  pipelineCreateInfo.stageCount = 2;
+  pipelineCreateInfo.pStages = shaderStageCreateInfos.data();
+
+  pipelineCreateInfo.pVertexInputState = &vertexInputInfo;
+  pipelineCreateInfo.pInputAssemblyState = &inputAssemblyInfo;
+  pipelineCreateInfo.pViewportState = &viewport.m_CreateInfo;
+  pipelineCreateInfo.pRasterizationState = &rasterizerInfo;
+  pipelineCreateInfo.pMultisampleState = &multisampleInfo;
+  pipelineCreateInfo.pColorBlendState = &attachmentState.m_BlendStateInfo;
+  pipelineCreateInfo.pDynamicState = &dynamicState.m_DynamicStateInfo;
+
+  rasterState.m_DepthCompareOp != VK_COMPARE_OP_NEVER ?
+    pipelineCreateInfo.pDepthStencilState = &depthStencil :
+    pipelineCreateInfo.pDepthStencilState = nullptr;
+
+
+  pipelineCreateInfo.layout = pipelineLayout;
+  pipelineCreateInfo.renderPass = pipelineRenderPass;
+  pipelineCreateInfo.subpass = 0;
+
+  VkPipeline pipeline;
+  VK_CHECK(vkCreateGraphicsPipelines(vk.m_LogicalDevice, VK_NULL_HANDLE, 1,
+                                     &pipelineCreateInfo, nullptr, &pipeline))
+
+  vkDestroyShaderModule(vk.m_LogicalDevice, vertShaderModule, nullptr);
+  vkDestroyShaderModule(vk.m_LogicalDevice, fragShaderModule, nullptr);
+
+  return { pipeline, pipelineLayout };
+}
+
+VkPipelineData CreateRasterPipeline(
+    VkState &vk, ShaderProgram &shader,
+    VertexDescription& vertexDescription,
+    RasterizationState & rasterState,
+    VkRenderPass &pipelineRenderPass, VkExtent2D resolution, PipelineAttachmentState& attachmentState) {
+
+  VkShaderModule vertShaderModule =
+      CreateShaderModule(vk, shader.m_Stages[0].m_StageBinary);
+  VkShaderModule fragShaderModule =
+      CreateShaderModule(vk, shader.m_Stages[1].m_StageBinary);
+
+  VkPipelineShaderStageCreateInfo vertexShaderStageInfo =
+      CreateShaderStageInfo(VK_SHADER_STAGE_VERTEX_BIT, vertShaderModule);
+
+  VkPipelineShaderStageCreateInfo fragShaderStageInfo =
+      CreateShaderStageInfo(VK_SHADER_STAGE_FRAGMENT_BIT, fragShaderModule);
+
+  Array<VkPipelineShaderStageCreateInfo, 2> shaderStageCreateInfos = {
+      vertexShaderStageInfo, fragShaderStageInfo
+  };
+
+  VkPipelineVertexInputStateCreateInfo vertexInputInfo =
+      CreatePipelineVertexInputState(vertexDescription);
+
+  VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo =
+      CreatePipelineInputAssemblyState(rasterState);
+
+  VkViewportData viewport = CreateViewportData(resolution, rasterState);
+
+  VkPipelineRasterizationStateCreateInfo rasterizerInfo=
+      CreateRasterizationState(rasterState);
+
+
+  VkPipelineMultisampleStateCreateInfo multisampleInfo =
+      CreateMultiSampleInfo(vk, rasterState);
 
   PipelineDynamicState dynamicState = CreateDynamicStateInfo(*vk.m_CPUAllocator);
 
@@ -389,6 +506,103 @@ VkPipelineData CreateDynamicRasterPipeline(VkState &vk, ShaderProgram &shader,
       static_cast<uint32_t>(colourAttachments.size());
   dynRenderingCreateInfo.pColorAttachmentFormats = colourAttachments.data();
   // Todo: Support other depth formats
+  VkFormat depthStencilFormat =
+      rasterState.m_DepthCompareOp == VK_COMPARE_OP_NEVER ?
+                                                          VK_FORMAT_UNDEFINED : utils::FindDepthFormat(vk);
+  dynRenderingCreateInfo.depthAttachmentFormat = depthStencilFormat;
+  if(utils::HasStencilComponent(depthStencilFormat))
+  {
+    dynRenderingCreateInfo.stencilAttachmentFormat = depthStencilFormat;
+  }
+
+  pipelineCreateInfo.pNext = &dynRenderingCreateInfo;
+
+  VkPipeline pipeline;
+  VK_CHECK(vkCreateGraphicsPipelines(vk.m_LogicalDevice, VK_NULL_HANDLE, 1,
+                                     &pipelineCreateInfo, nullptr, &pipeline))
+
+  vkDestroyShaderModule(vk.m_LogicalDevice, vertShaderModule, nullptr);
+  vkDestroyShaderModule(vk.m_LogicalDevice, fragShaderModule, nullptr);
+
+  return {pipeline, pipelineLayout};
+}
+
+VkPipelineData CreateDynamicRasterPipeline(VkState &vk, ShaderProgram &shader,
+                                       VertexDescription &vertexDescription,
+                                       RasterizationState &rasterState,
+                                       VkExtent2D resolution,
+                                       Vector<VkFormat> colourAttachments,
+                                       PipelineAttachmentState& attachmentState) {
+  VkShaderModule vertShaderModule =
+      CreateShaderModule(vk, shader.m_Stages[0].m_StageBinary);
+  VkShaderModule fragShaderModule =
+      CreateShaderModule(vk, shader.m_Stages[1].m_StageBinary);
+
+  VkPipelineShaderStageCreateInfo vertexShaderStageInfo =
+      CreateShaderStageInfo(VK_SHADER_STAGE_VERTEX_BIT, vertShaderModule);
+
+  VkPipelineShaderStageCreateInfo fragShaderStageInfo =
+      CreateShaderStageInfo(VK_SHADER_STAGE_FRAGMENT_BIT, fragShaderModule);
+
+  Array<VkPipelineShaderStageCreateInfo, 2> shaderStageCreateInfos = {
+      vertexShaderStageInfo, fragShaderStageInfo
+  };
+
+  VkPipelineVertexInputStateCreateInfo vertexInputInfo =
+      CreatePipelineVertexInputState(vertexDescription);
+
+  VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo =
+      CreatePipelineInputAssemblyState(rasterState);
+
+  VkViewportData viewport = CreateViewportData(resolution, rasterState);
+
+  VkPipelineRasterizationStateCreateInfo rasterizerInfo=
+      CreateRasterizationState(rasterState);
+
+
+  VkPipelineMultisampleStateCreateInfo multisampleInfo =
+      CreateMultiSampleInfo(vk, rasterState);
+
+  PipelineDynamicState dynamicState = CreateDynamicStateInfo(*vk.m_CPUAllocator);
+
+  VkPipelineDepthStencilStateCreateInfo depthStencil =
+      CreateDepthStencilState(rasterState);
+
+  VkPipelineLayoutCreateInfo pipelineLayoutInfo =
+      shader.GetPipelineLayoutCreateInfo();
+
+  VkPipelineLayout pipelineLayout;
+  VK_CHECK(vkCreatePipelineLayout(vk.m_LogicalDevice, &pipelineLayoutInfo,
+                                  nullptr, &pipelineLayout))
+
+
+  VkGraphicsPipelineCreateInfo pipelineCreateInfo{};
+  pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+  pipelineCreateInfo.stageCount = 2;
+  pipelineCreateInfo.pStages = shaderStageCreateInfos.data();
+
+  pipelineCreateInfo.pVertexInputState = &vertexInputInfo;
+  pipelineCreateInfo.pInputAssemblyState = &inputAssemblyInfo;
+  pipelineCreateInfo.pViewportState = &viewport.m_CreateInfo;
+  pipelineCreateInfo.pRasterizationState = &rasterizerInfo;
+  pipelineCreateInfo.pMultisampleState = &multisampleInfo;
+  pipelineCreateInfo.pColorBlendState = &attachmentState.m_BlendStateInfo;
+  pipelineCreateInfo.pDynamicState = &dynamicState.m_DynamicStateInfo;
+
+  rasterState.m_DepthCompareOp != VK_COMPARE_OP_NEVER ?
+                                                      pipelineCreateInfo.pDepthStencilState = &depthStencil :
+                                                      pipelineCreateInfo.pDepthStencilState = nullptr;
+
+
+  pipelineCreateInfo.layout = pipelineLayout;
+  pipelineCreateInfo.renderPass = nullptr;
+  pipelineCreateInfo.subpass = 0;
+
+  VkPipelineRenderingCreateInfoKHR dynRenderingCreateInfo {};
+  dynRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
+  dynRenderingCreateInfo.colorAttachmentCount =
+      static_cast<uint32_t>(colourAttachments.size());
+  dynRenderingCreateInfo.pColorAttachmentFormats = colourAttachments.data();
   VkFormat depthStencilFormat =
       rasterState.m_DepthCompareOp == VK_COMPARE_OP_NEVER ?
                                                           VK_FORMAT_UNDEFINED : utils::FindDepthFormat(vk);

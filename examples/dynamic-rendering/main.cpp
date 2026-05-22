@@ -20,6 +20,7 @@ struct ViewData
     Material    m_LightPassMaterial;
 
     LvkIm3dViewState m_Im3dState;
+    LvkIm3dViewState m_DeferredIm3dState;
     VkExtent2D  m_CurrentResolution{ 1920, 1080 };
 
     Camera      m_Camera;
@@ -56,6 +57,13 @@ ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferP
 
     auto im3dViewState = AddIm3dForViewport(vk, im3dState, finalImage.m_RenderPassInfo.m_RenderPass, false, true);
 
+    Vector<VkFormat> gbufferFormats(*vk.m_CPUAllocator);
+    gbufferFormats.push_back(VK_FORMAT_R16G16B16A16_SFLOAT);
+    gbufferFormats.push_back(VK_FORMAT_R16G16B16A16_SFLOAT);
+    gbufferFormats.push_back(VK_FORMAT_R16G16B16A16_SFLOAT);
+    auto deferredIm3dViewState = AddIm3dForDeferredLightPass(vk, im3dState);
+
+
     StaticVector<VertexDataPosUv> screenQuadVerts = {
                     { { -1.0f, -1.0f , 0.0f}, { 0.0f, 0.0f } },
                     { {1.0f, -1.0f, 0.0f}, {1.0, 0.0f} },
@@ -72,7 +80,7 @@ ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferP
 
     Mesh screenQuad{ vertexBuffer, indexBuffer,  6 };
 
-    return { gbuffer, finalImage, lightPassMat, im3dViewState , {1920, 1080}, {},  screenQuad };
+    return { gbuffer, finalImage, lightPassMat, im3dViewState, deferredIm3dViewState, {1920, 1080}, {},  screenQuad };
 }
 
 RenderData CreateRenderData(VkState& vk, ShaderProgram gbufferProg, ShaderProgram lightPassProg)
@@ -114,6 +122,7 @@ RenderData CreateRenderData(VkState& vk, ShaderProgram gbufferProg, ShaderProgra
 void FreeView(VkState & vk, ViewData& view)
 {
     FreeIm3dViewport(vk, view.m_Im3dState);
+    FreeIm3dViewport(vk, view.m_DeferredIm3dState);
 }
 
 void UpdateRenderItemUniformBuffer(VkState & vk, Material& renderItemMaterial)
@@ -280,10 +289,39 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderData& r
             vkCmdDrawIndexed(commandBuffer, view->m_ViewQuad.m_IndexCount, 1, 0, 0, 0);
             debug::EndDebugMarker(commandBuffer);
 
-            auto viewProj = view->m_Camera.Proj * view->m_Camera.View;
-            // TODO: Horrendous use of reinterpret_cast
-            DrawIm3d(vk, commandBuffer, frameIndex, im3dState, view->m_Im3dState, *reinterpret_cast<glm::mat4*>(&viewProj) , viewExtent.width, viewExtent.height);
-            vkCmdEndRenderingKHR(commandBuffer);
+            {
+                debug::BeginDebugMarker(commandBuffer, "Im3D Deferred Pass", {0.0f, 0.0f, 1.0f, 1.0f});
+                VkRenderingAttachmentInfoKHR colourInfo{};
+                colourInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+                colourInfo.imageView = view->m_LightPassFB.m_ColourAttachments[0].m_AttachmentSwapchainImages[frameIndex].m_ImageView;
+                colourInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                colourInfo.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+                colourInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+                VkRenderingAttachmentInfoKHR depthInfo{};
+                depthInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+                depthInfo.imageView = view->m_GBuffer.m_DepthAttachments[0].m_AttachmentSwapchainImages[frameIndex].m_ImageView;
+                depthInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+                depthInfo.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+                depthInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+                VkRenderingInfoKHR renderingInfo{};
+                renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
+                renderingInfo.renderArea = { {0, 0}, viewExtent };
+                renderingInfo.layerCount = 1;
+                renderingInfo.colorAttachmentCount = 1;
+                renderingInfo.pColorAttachments = &colourInfo;
+                renderingInfo.pDepthAttachment = &depthInfo;
+
+                vkCmdBeginRenderingKHR(commandBuffer, &renderingInfo);
+
+                auto viewProjDeferred = view->m_Camera.Proj * view->m_Camera.View;
+                DrawIm3d(vk, commandBuffer, frameIndex, im3dState, view->m_DeferredIm3dState, *reinterpret_cast<glm::mat4*>(&viewProjDeferred), viewExtent.width, viewExtent.height);
+
+                vkCmdEndRenderingKHR(commandBuffer);
+                debug::EndDebugMarker(commandBuffer);
+            }
+
         }
         }
     );

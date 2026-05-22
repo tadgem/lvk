@@ -16,6 +16,9 @@ struct ViewData
 
     VkPipelineData    m_GBufferPipeline, m_LightPassPipeline;
     LvkIm3dViewState  m_Im3dState;
+    LvkIm3dViewState  m_DeferredIm3dState;
+    VkRenderPass      m_Im3dRenderPass = VK_NULL_HANDLE;
+    Vector<VkFramebuffer> m_Im3dFramebuffers;
     VkExtent2D        m_CurrentResolution{ 1920, 1080 };
 
     Camera      m_Camera;
@@ -64,6 +67,44 @@ ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferP
 
     auto im3dViewState = AddIm3dForViewport(vk, im3dState, finalImage.m_RenderPassInfo.m_RenderPass, false);
 
+    Vector<VkAttachmentDescription> im3dColourAttachments(*vk.m_CPUAllocator);
+    VkAttachmentDescription im3dColourDesc{};
+    im3dColourDesc.format = finalImage.m_ColourAttachments[0].m_Format;
+    im3dColourDesc.samples = finalImage.m_ColourAttachments[0].m_SampleCount;
+    im3dColourDesc.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    im3dColourDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    im3dColourDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    im3dColourDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    im3dColourDesc.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    im3dColourDesc.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    im3dColourAttachments.push_back(im3dColourDesc);
+
+    VkAttachmentDescription im3dDepthDesc{};
+    im3dDepthDesc.format = gbuffer.m_DepthAttachments[0].m_Format;
+    im3dDepthDesc.samples = gbuffer.m_DepthAttachments[0].m_SampleCount;
+    im3dDepthDesc.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    im3dDepthDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    im3dDepthDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    im3dDepthDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    im3dDepthDesc.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    im3dDepthDesc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    VkRenderPass im3dRenderPass = VK_NULL_HANDLE;
+    render_passes::CreateRenderPass(vk, im3dRenderPass, im3dColourAttachments, Vector<VkAttachmentDescription>(*vk.m_CPUAllocator), true, im3dDepthDesc, VK_ATTACHMENT_LOAD_OP_LOAD);
+
+    Vector<VkFramebuffer> im3dFramebuffers(*vk.m_CPUAllocator);
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        Vector<VkImageView> fbAttachments(*vk.m_CPUAllocator);
+        fbAttachments.push_back(finalImage.m_ColourAttachments[0].m_AttachmentSwapchainImages[i].m_ImageView);
+        fbAttachments.push_back(gbuffer.m_DepthAttachments[0].m_AttachmentSwapchainImages[i].m_ImageView);
+        VkFramebuffer fb;
+        textures::CreateFramebuffer(vk, fbAttachments, im3dRenderPass, vk.m_MaxFramebufferExtent, fb);
+        im3dFramebuffers.push_back(fb);
+    }
+
+    auto deferredIm3dViewState = AddIm3dForDeferredLightPass(vk, im3dState);
+
     static StaticVector<VertexDataPosUv> screenQuadVerts = {
                     { { -1.0f, -1.0f , 0.0f}, { 0.0f, 0.0f } },
                     { {1.0f, -1.0f, 0.0f}, {1.0, 0.0f} },
@@ -80,12 +121,21 @@ ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferP
 
     Mesh screenQuad{ vertexBuffer, indexBuffer, 6 };
 
-    return { gbuffer, finalImage, lightPassMat, gbufferPipeline, pipeline,  im3dViewState , {1920, 1080}, {},  screenQuad };
+    return { gbuffer, finalImage, lightPassMat, gbufferPipeline, pipeline,  im3dViewState, deferredIm3dViewState, im3dRenderPass, im3dFramebuffers, {1920, 1080}, {},  screenQuad };
 }
 
 void FreeView(VkState & vk, ViewData& view)
 {
     FreeIm3dViewport(vk, view.m_Im3dState);
+    FreeIm3dViewport(vk, view.m_DeferredIm3dState);
+    for (auto& fb : view.m_Im3dFramebuffers)
+    {
+        vkDestroyFramebuffer(vk.m_LogicalDevice, fb, nullptr);
+    }
+    if (view.m_Im3dRenderPass != VK_NULL_HANDLE)
+    {
+        vkDestroyRenderPass(vk.m_LogicalDevice, view.m_Im3dRenderPass, nullptr);
+    }
 }
 
 void UpdateRenderItemUniformBuffer(VkState & vk, Material& renderItemMaterial)
@@ -293,8 +343,41 @@ void RecordCommandBuffersV2(VkState & vk, Vector<ViewData*> views, RenderModel& 
             vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, view->m_LightPassPipeline.m_PipelineLayout, 0, 1, &view->m_LightPassMaterial.m_DescriptorSets[0].m_Sets[frameIndex], 0, nullptr);
             vkCmdDrawIndexed(commandBuffer, view->m_ViewQuad.m_IndexCount, 1, 0, 0, 0);
 
-            DrawIm3d(vk, commandBuffer, frameIndex, im3dState, view->m_Im3dState, view->m_Camera.Proj * view->m_Camera.View, viewExtent.width, viewExtent.height);
             vkCmdEndRenderPass(commandBuffer);
+
+            {
+                VkRenderPassBeginInfo im3dRenderPassInfo{};
+                im3dRenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+                im3dRenderPassInfo.renderPass = view->m_Im3dRenderPass;
+                im3dRenderPassInfo.framebuffer = view->m_Im3dFramebuffers[frameIndex];
+                im3dRenderPassInfo.renderArea.offset = { 0,0 };
+                im3dRenderPassInfo.renderArea.extent = viewExtent;
+                im3dRenderPassInfo.clearValueCount = 0;
+                im3dRenderPassInfo.pClearValues = nullptr;
+
+                vkCmdBeginRenderPass(commandBuffer, &im3dRenderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+                vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, view->m_DeferredIm3dState.m_TrisPipeline.m_Pipeline);
+                VkViewport viewport{};
+                viewport.x = 0.0f;
+                viewport.y = 0.0f;
+                viewport.width = static_cast<float>(viewExtent.width);
+                viewport.height = static_cast<float>(viewExtent.height);
+                viewport.minDepth = 0.0f;
+                viewport.maxDepth = 1.0f;
+
+                VkRect2D scissor{};
+                scissor.offset = { 0,0 };
+                scissor.extent = VkExtent2D{
+                    static_cast<uint32_t>(viewExtent.width) ,
+                    static_cast<uint32_t>(viewExtent.height)
+                };
+
+                vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+                vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+                DrawIm3d(vk, commandBuffer, frameIndex, im3dState, view->m_DeferredIm3dState, view->m_Camera.Proj * view->m_Camera.View, viewExtent.width, viewExtent.height);
+                vkCmdEndRenderPass(commandBuffer);
+            }
         }
         }
     );
