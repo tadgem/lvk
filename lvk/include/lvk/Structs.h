@@ -321,97 +321,100 @@ namespace lvk {
   };
 
 
-    struct VkState
-    {
-        Unique<VkBackend>               m_Backend;
-        Unique<IAllocator>              m_CPUAllocator;
+	struct VkState
+	{
+	    Unique<VkBackend>               m_Backend;
+	    Unique<IAllocator>              m_CPUAllocator;
 
-        VkInstance                      m_Instance;
-        VkSurfaceKHR                    m_Surface;
-        VkSwapchainKHR                  m_SwapChain;
-        VkDebugUtilsMessengerEXT        m_DebugMessenger;
-        VkPhysicalDevice                m_PhysicalDevice = VK_NULL_HANDLE;
-        VkDevice                        m_LogicalDevice = VK_NULL_HANDLE;
-        VkRenderPass                    m_SwapchainImageRenderPass;
-        VkRenderPass                    m_ImGuiRenderPass;
-        VkCommandPool                   m_GraphicsComputeQueueCommandPool;
-        VmaAllocator                    m_Allocator;
-        DescriptorSetAllocator          m_DescriptorSetAllocator;
+	    VkInstance                      m_Instance;
+	    VkSurfaceKHR                    m_Surface;
+	    VkSwapchainKHR                  m_SwapChain;
+	    VkDebugUtilsMessengerEXT        m_DebugMessenger;
+	    VkPhysicalDevice                m_PhysicalDevice = VK_NULL_HANDLE;
+	    VkDevice                        m_LogicalDevice = VK_NULL_HANDLE;
+	    VkRenderPass                    m_SwapchainImageRenderPass;
+	    VkRenderPass                    m_ImGuiRenderPass;
+	    VkCommandPool                   m_GraphicsComputeQueueCommandPool;
+	    VmaAllocator                    m_Allocator;
+	    DescriptorSetAllocator          m_DescriptorSetAllocator;
 
-        Vector<VkSemaphore>             m_ImageAvailableSemaphores;
-        Vector<VkSemaphore>             m_RenderFinishedSemaphores;
-        Vector<VkSemaphore>             m_ComputeFinishedSemaphores;
-        Vector<VkFence>                 m_FrameInFlightFences;
-        Vector<VkFence>                 m_ImagesInFlightFences;
-        Vector<VkFence>                 m_ComputeInFlightFences;
-        QueueFamilyIndices              m_QueueFamilyIndices;
+	    Vector<VkSemaphore>             m_ImageAvailableSemaphores;
+	    Vector<VkSemaphore>             m_RenderFinishedSemaphores;
+	    Vector<VkSemaphore>             m_ComputeFinishedSemaphores;
+	    Vector<VkFence>                 m_FrameInFlightFences;
+	    Vector<VkFence>                 m_ImagesInFlightFences;
+	    Vector<VkFence>                 m_ComputeInFlightFences;
+	    QueueFamilyIndices              m_QueueFamilyIndices;
 
-        VkQueue                         m_GraphicsQueue = VK_NULL_HANDLE;
-        VkQueue                         m_ComputeQueue = VK_NULL_HANDLE;
-        VkQueue                         m_PresentQueue = VK_NULL_HANDLE;
+	    VkQueue                         m_GraphicsQueue = VK_NULL_HANDLE;
+	    VkQueue                         m_ComputeQueue = VK_NULL_HANDLE;
+	    VkQueue                         m_PresentQueue = VK_NULL_HANDLE;
 
-        VulkanAPIWindowHandle* m_WindowHandle = nullptr;
+	    VulkanAPIWindowHandle* m_WindowHandle = nullptr;
 
-        Vector<VkImage>                 m_SwapChainImages;
-        Vector<VkImageView>             m_SwapChainImageViews;
-        Vector<VkFramebuffer>           m_SwapChainFramebuffers;
-        Vector<VkCommandBuffer>         m_GraphicsCommandBuffers;
-        Vector<VkCommandBuffer>         m_ComputeCommandBuffers;
+	    Vector<VkImage>                 m_SwapChainImages;
+	    Vector<VkImageView>             m_SwapChainImageViews;
+	    Vector<VkFramebuffer>           m_SwapChainFramebuffers;
+	    Vector<VkCommandBuffer>         m_GraphicsCommandBuffers;
+	    Vector<VkCommandBuffer>         m_ComputeCommandBuffers;
 
-        VkFormat                        m_SwapChainImageFormat;
-        VkExtent2D                      m_SwapChainImageExtent;
+	    VkFormat                        m_SwapChainImageFormat;
+	    VkExtent2D                      m_SwapChainImageExtent;
 
-        VkImage                         m_SwapChainColourImage;
-        VkDeviceMemory                  m_SwapChainColourImageMemory;
-        VkImageView                     m_SwapChainColourImageView;
+	    VkImage                         m_SwapChainColourImage;
+	    VkDeviceMemory                  m_SwapChainColourImageMemory;
+	    VkImageView                     m_SwapChainColourImageView;
 
-        VkImage                         m_SwapChainDepthImage;
-        VkDeviceMemory                  m_SwapChainDepthImageMemory;
-        VkImageView                     m_SwapChainDepthImageView;
+	    VkImage                         m_SwapChainDepthImage;
+	    VkDeviceMemory                  m_SwapChainDepthImageMemory;
+	    VkImageView                     m_SwapChainDepthImageView;
 
-        VkSampleCountFlagBits           m_MaxMsaaSamples;
-        Vector<const char*>             m_DesiredDeviceExtensions;
+	    VkSampleCountFlagBits           m_MaxMsaaSamples;
+		VkSampleCountFlags				m_SelectedMsaaSamples = VK_SAMPLE_COUNT_1_BIT;
 
-        double                          m_DeltaTime;
-        bool                            m_ShouldRun = true;
-        bool                            m_RunComputeCommands = false;
-        bool                            m_UseSwapchainMsaa = false;
-        bool                            m_WaitForVerticalSync = false;
-        bool                            m_UseDynamicRendering = false;
-        bool                            m_UseValidation = true;
-        const bool                      m_UseImGui = true;
-        uint64_t                        m_LastFrameTime;
-        uint32_t                        m_CurrentFrameIndex;
-        VkExtent2D                      m_MaxFramebufferExtent;
-        String                          m_AppName;
+	    Vector<const char*>             m_DesiredDeviceExtensions;
 
-        NVGcontext*                     m_NanoVG;
+	    double                          m_DeltaTime;
+	    bool                            m_ShouldRun = true;
+	    bool                            m_RunComputeCommands = false;
+	    bool                            m_UseSwapchainMsaa = false;
+	    bool                            m_WaitForVerticalSync = false;
+	    bool                            m_UseDynamicRendering = false;
+	    bool                            m_UseValidation = true;
+	    const bool                      m_UseImGui = true;
+	    uint64_t                        m_LastFrameTime;
+	    uint32_t                        m_CurrentFrameIndex;
+	    VkExtent2D                      m_MaxFramebufferExtent;
+	    String                          m_AppName;
 
-        VkState(IAllocator& alloc) :
-            m_DescriptorSetAllocator(alloc),
-            m_ImageAvailableSemaphores(alloc),
-            m_RenderFinishedSemaphores(alloc),
-            m_ComputeFinishedSemaphores(alloc),
-            m_FrameInFlightFences(alloc),
-            m_ImagesInFlightFences(alloc),
-            m_ComputeInFlightFences(alloc),
-            m_SwapChainImages(alloc),
-            m_SwapChainImageViews(alloc),
-            m_SwapChainFramebuffers(alloc),
-            m_GraphicsCommandBuffers(alloc),
-            m_ComputeCommandBuffers(alloc),
-            m_DesiredDeviceExtensions(alloc),
-            m_QueueFamilyIndices(alloc),
-            m_AppName(alloc)
-        {
-        }
-    };
-  struct VkViewportData
-  {
-    VkViewport                          m_Viewport;
-    VkRect2D                            m_Scissor;
-    VkPipelineViewportStateCreateInfo   m_CreateInfo;
-  };
+	    NVGcontext*                     m_NanoVG;
+
+	    VkState(IAllocator& alloc) :
+	        m_DescriptorSetAllocator(alloc),
+	        m_ImageAvailableSemaphores(alloc),
+	        m_RenderFinishedSemaphores(alloc),
+	        m_ComputeFinishedSemaphores(alloc),
+	        m_FrameInFlightFences(alloc),
+	        m_ImagesInFlightFences(alloc),
+	        m_ComputeInFlightFences(alloc),
+	        m_SwapChainImages(alloc),
+	        m_SwapChainImageViews(alloc),
+	        m_SwapChainFramebuffers(alloc),
+	        m_GraphicsCommandBuffers(alloc),
+	        m_ComputeCommandBuffers(alloc),
+	        m_DesiredDeviceExtensions(alloc),
+	        m_QueueFamilyIndices(alloc),
+	        m_AppName(alloc)
+	    {
+	    }
+	};
+
+	struct VkViewportData
+	{
+		VkViewport                          m_Viewport;
+		VkRect2D                            m_Scissor;
+		VkPipelineViewportStateCreateInfo   m_CreateInfo;
+	};
 
 }
 

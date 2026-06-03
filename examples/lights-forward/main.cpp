@@ -100,7 +100,7 @@ void OnLightsImGui(VkState& vk)
 
 int main()
 {
-    bool enableMSAA = true;
+    bool enableMSAA = false;
     VkState vk = init::Create<VkSDL>("Forward Lights", 1920, 1080, enableMSAA);
     FillExampleLightData(lightDataCpu);
 

@@ -1069,11 +1069,6 @@ void lvk::init::GetMaxUsableSampleCount(VkState& vk)
   VkPhysicalDeviceProperties physicalDeviceProperties;
   vkGetPhysicalDeviceProperties(vk.m_PhysicalDevice, &physicalDeviceProperties);
 
-  VK_SAMPLE_COUNT_2_BIT;
-  VK_SAMPLE_COUNT_4_BIT;
-  VK_SAMPLE_COUNT_8_BIT;
-  VK_SAMPLE_COUNT_16_BIT;
-
   auto counts = physicalDeviceProperties.limits.framebufferColorSampleCounts & physicalDeviceProperties.limits.framebufferDepthSampleCounts;
   if (counts & VK_SAMPLE_COUNT_64_BIT) {  vk.m_MaxMsaaSamples = VK_SAMPLE_COUNT_64_BIT;  return ;}
   if (counts & VK_SAMPLE_COUNT_32_BIT) {  vk.m_MaxMsaaSamples = VK_SAMPLE_COUNT_32_BIT;  return ;}
@@ -1081,6 +1076,8 @@ void lvk::init::GetMaxUsableSampleCount(VkState& vk)
   if (counts & VK_SAMPLE_COUNT_8_BIT) {   vk.m_MaxMsaaSamples = VK_SAMPLE_COUNT_8_BIT;   return ;}
   if (counts & VK_SAMPLE_COUNT_4_BIT) {   vk.m_MaxMsaaSamples = VK_SAMPLE_COUNT_4_BIT;   return ;}
   if (counts & VK_SAMPLE_COUNT_2_BIT) {   vk.m_MaxMsaaSamples = VK_SAMPLE_COUNT_2_BIT;   return ;}
+
+  vk.m_SelectedMsaaSamples = vk.m_MaxMsaaSamples;
 }
 
 void lvk::init::CreateBuiltInRenderPasses(lvk::VkState &vk) {
