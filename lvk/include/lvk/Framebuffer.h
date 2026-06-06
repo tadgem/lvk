@@ -28,7 +28,7 @@ namespace lvk
             }
         }
 
-        static Attachment CreateColourAttachment(lvk::VkState & vk, VkExtent2D resolution,
+        static Attachment CreateColourAttachment(VkState & vk, VkExtent2D resolution,
             uint32_t numMips, VkSampleCountFlagBits sampleCount,
             VkFormat format, VkImageUsageFlags usageFlags,
             VkMemoryPropertyFlagBits memoryFlags, VkImageAspectFlagBits imageAspect,
@@ -46,7 +46,7 @@ namespace lvk
             return a;
         }
 
-        static Attachment CreateDepthAttachment(lvk::VkState & vk, VkExtent2D resolution,
+        static Attachment CreateDepthAttachment(VkState & vk, VkExtent2D resolution,
             uint32_t numMips, VkSampleCountFlagBits sampleCount,
             VkImageUsageFlags usageFlags,
             VkMemoryPropertyFlagBits memoryFlags, VkImageAspectFlagBits imageAspect,
@@ -87,7 +87,7 @@ namespace lvk
             m_ClearValues(alloc)
         {  }
 
-        void AddColourAttachment(lvk::VkState& vk, VkExtent2D resolution,
+        void AddColourAttachment(VkState& vk, VkExtent2D resolution,
             uint32_t numMips,  VkFormat format, VkImageUsageFlags usageFlags,
             VkMemoryPropertyFlagBits memoryFlags,
             VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
@@ -101,7 +101,7 @@ namespace lvk
             m_Resolution = resolution;
         }
         
-        void AddColourAttachment(lvk::VkState & vk, ResolutionScale scale,
+        void AddColourAttachment(VkState & vk, ResolutionScale scale,
             uint32_t numMips, VkFormat format, VkImageUsageFlags usageFlags,
             VkMemoryPropertyFlagBits memoryFlags,
             VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
@@ -111,7 +111,7 @@ namespace lvk
             AddColourAttachment(vk, resolution, numMips, format, usageFlags, memoryFlags, samplerFilter, samplerAddressMode);
         }
 
-        void AddDepthAttachment(lvk::VkState& vk, VkExtent2D resolution,
+        void AddDepthAttachment(VkState& vk, VkExtent2D resolution,
             uint32_t numMips, VkImageUsageFlags usageFlags,
             VkMemoryPropertyFlagBits memoryFlags,
             VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
@@ -126,7 +126,7 @@ namespace lvk
 
         }
 
-        void AddDepthAttachment(lvk::VkState & vk, ResolutionScale scale,
+        void AddDepthAttachment(VkState & vk, ResolutionScale scale,
             uint32_t numMips, VkImageUsageFlags usageFlags,
             VkMemoryPropertyFlagBits memoryFlags,
             VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
@@ -136,7 +136,7 @@ namespace lvk
             AddDepthAttachment(vk, resolution, numMips, usageFlags, memoryFlags, samplerFilter, samplerAddressMode);
         }
 
-        void AddResolveAttachment(lvk::VkState& vk, VkExtent2D resolution,
+        void AddResolveAttachment(VkState& vk, VkExtent2D resolution,
             uint32_t numMips, VkFormat format, VkImageUsageFlags usageFlags,
             VkMemoryPropertyFlagBits memoryFlags, VkImageAspectFlagBits imageAspect,
             VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
@@ -150,7 +150,7 @@ namespace lvk
             m_Resolution = resolution;
         }
 
-        void AddResolveAttachment(lvk::VkState & vk, ResolutionScale scale,
+        void AddResolveAttachment(VkState & vk, ResolutionScale scale,
             uint32_t numMips, VkFormat format, VkImageUsageFlags usageFlags,
             VkMemoryPropertyFlagBits memoryFlags, VkImageAspectFlagBits imageAspect,
             VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
@@ -160,12 +160,12 @@ namespace lvk
             AddResolveAttachment(vk, resolution, numMips, format, usageFlags, memoryFlags, imageAspect, samplerFilter, samplerAddressMode);
         }
 
-        void Build(lvk::VkState & vk);
-        void BeginDynamicRendering(lvk::VkState& vk, VkCommandBuffer& cmd, uint32_t frameIndex);
+        void Build(VkState & vk);
+        void BeginDynamicRendering(VkState& vk, VkCommandBuffer& cmd, uint32_t frameIndex);
 
         void Free(VkState & vk);
       private:
 
-        void BuildRenderPasses(lvk::VkState& vk);
+        void BuildRenderPasses(VkState& vk);
     };
 }
