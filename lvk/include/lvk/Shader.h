@@ -44,10 +44,10 @@ namespace lvk
         static ShaderStage
         CreateFromBinaryPath(VkState & vk, const char* stagePath, const ShaderStageType& stageType)
         {
-            String name(*vk.m_CPUAllocator);
-            name = LVK_FILESYSTEM_NS::filesystem::path(stagePath).filename().u8string();
+            String name(LVK_FILESYSTEM_NS::filesystem::path(stagePath).filename().string(), *vk.m_CPUAllocator);
+
             auto stageBin = vk.m_Backend->LoadBinaryFromPath(vk, stagePath);
-            return CreateFromBinary(vk, stageBin, stageType, name.c_str());
+            return CreateFromBinary(vk, stageBin, stageType, LVK_FILESYSTEM_NS::filesystem::path(stagePath).filename().string().c_str());
         }
 
         static ShaderStage CreateFromSource(VkState & vk, const String& source, const ShaderStageType& type, const char* name, const char* path = "")
@@ -75,9 +75,8 @@ namespace lvk
         static ShaderStage CreateFromSourcePath(VkState & vk, const char* path, const ShaderStageType& type)
         {
             String name(*vk.m_CPUAllocator);
-            name = LVK_FILESYSTEM_NS::filesystem::path(path).filename().u8string();
             auto source = LoadShaderSource(vk, path);
-            return CreateFromSource(vk, source, type, path, name.c_str());
+            return CreateFromSource(vk, source, type, path, LVK_FILESYSTEM_NS::filesystem::path(path).filename().string().c_str());
         }
     };
 

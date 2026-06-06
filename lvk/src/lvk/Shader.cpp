@@ -198,7 +198,7 @@ void RecurseStringInclude(VkState& vk, String inputDir, String& output, const St
   String dir(*vk.m_CPUAllocator);
   String finalDir = inputDir + "/" + path;
   input = vk.m_Backend->LoadStringFromPath(vk, finalDir.c_str());
-  dir = std::filesystem::path(path).parent_path().u8string();
+  dir = std::filesystem::path(path).parent_path().string();
   IStringStream iss(input);
   std::regex include_dir_regex("\\\"(.*)\\\"");
   for (std::string line; std::getline(iss, line); )
@@ -231,8 +231,8 @@ String ShaderStage::LoadShaderSource(VkState& vk, const char* path) {
   String parent_path(*vk.m_CPUAllocator);
   String filename(*vk.m_CPUAllocator);
   std::filesystem::path inputPath(path);
-  parent_path = inputPath.parent_path().u8string();
-  filename = inputPath.filename().u8string();
+  parent_path = inputPath.parent_path().string();
+  filename = inputPath.filename().string();
   
   RecurseStringInclude(vk, parent_path, final_shader_src, filename);
   // do includes

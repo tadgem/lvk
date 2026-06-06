@@ -58,15 +58,15 @@ static auto reflect_descriptor_info = [](lvk::ShaderStage& stage, lvk::Material 
                     Buffer::BufferType bufferType = bindingInfo.m_BufferType == ShaderBindingType::UniformBuffer ?
                         Buffer::BufferType::Uniform : Buffer::BufferType::ShaderStorage;
 
+                    auto gpuBuffer = ShaderBufferFrameData();
                     mat.m_ShaderBuffers.emplace(binding,
-                        Material::ShaderBufferBindingData{
-                            descriptorSetInfo.m_SetNumber,
+                        Material::ShaderBufferBindingData (descriptorSetInfo.m_SetNumber,
                             bindingInfo.m_BindingIndex,
                             bindingInfo.m_ExpectedBufferSizeOrDivisor,
                             bufferType,
                             // Deliberately empty, other code can create buffers and assign
-                            ShaderBufferFrameData()
-                        });
+                            gpuBuffer
+                        ));
                 }
             }
         }
