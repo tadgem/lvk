@@ -11,7 +11,6 @@
 #include "ThirdParty/nanovg_vk.h"
 #include "lvk/Commands.h"
 
-static const bool QUIT_ON_ERROR = false;
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
