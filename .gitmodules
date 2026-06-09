@@ -22,3 +22,6 @@
 [submodule "submodules/SPIRV-headers"]
 	path = submodules/SPIRV-headers
 	url = https://github.com/KhronosGroup/SPIRV-Headers.git
+[submodule "submodules/sdl"]
+	path = submodules/sdl
+	url = https://github.com/libsdl-org/SDL.git
