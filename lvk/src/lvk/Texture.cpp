@@ -341,7 +341,7 @@ void lvk::textures::CreateImageView(VkState& vk, VkImage& image, VkFormat format
     VK_CHECK(vkCreateImageView(vk.m_LogicalDevice, &viewInfo, nullptr, &imageView))
 }
 
-void lvk::textures::CreateImageSampler(VkState& vk, VkImageView& imageView, uint32_t numMips, VkFilter filterMode, VkSamplerAddressMode addressMode, VkSampler& sampler)
+void lvk::textures::CreateImageSampler(VkState& vk, uint32_t numMips, VkFilter filterMode, VkSamplerAddressMode addressMode, VkSampler& sampler)
 {
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -460,7 +460,7 @@ void lvk::textures::CreateTextureFromMemory(VkState& vk, unsigned char* tex_data
     stagingBuffer.Free(vk);
 }
 
-void lvk::textures::CreateTexture3DFromMemory(VkState& vk, unsigned char* tex_data, VkExtent3D extent, uint32_t dataSize, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips)
+void lvk::textures::CreateTexture3DFromMemory(VkState& vk, unsigned char* tex_data, uint32_t dataSize, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips)
 {
     bool generateMips = numMips != nullptr;
 

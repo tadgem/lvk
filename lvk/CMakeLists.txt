@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 project(lvk)
-
 set(CMAKE_CXX_STANDARD 20)
-
 option(LVK_RT_SHADER_COMPILATION "Enable Runtime Shader Compilation" TRUE)
 
 set(LVK_SRCS
@@ -77,7 +75,7 @@ if(LVK_RT_SHADER_COMPILATION)
     set(LVK_COMPILE_DEFS ${LVK_COMPILE_DEFS} "/DLVK_RT_SHADER_COMPILATION")
 endif()
 
-add_library(${PROJECT_NAME} STATIC
+add_library(${PROJECT_NAME}
     ${LVK_SRCS}
 )
 
@@ -97,7 +95,7 @@ if (MSVC)
     set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<$<CONFIG:Debug,Release>:ProgramDatabase>")
 endif ()
 
-target_compile_options( ${PROJECT_NAME} PRIVATE ${LVK_COMPILE_DEFS})
+target_compile_options( ${PROJECT_NAME} INTERFACE ${LVK_COMPILE_DEFS})
 target_link_options(    ${PROJECT_NAME} PUBLIC  "/fsanitize=address")
 
 target_link_libraries(${PROJECT_NAME} volk shaderc shaderc_util)

@@ -150,28 +150,28 @@ static void ImGui_ImplSDL3_SetClipboardText(ImGuiContext*, const char* text)
     SDL_SetClipboardText(text);
 }
 
-static void ImGui_ImplSDL3_PlatformSetImeData(ImGuiContext*, ImGuiViewport* viewport, ImGuiPlatformImeData* data)
-{
-    ImGui_ImplSDL3_Data* bd = ImGui_ImplSDL3_GetBackendData();
-    SDL_WindowID window_id = (SDL_WindowID)(intptr_t)viewport->PlatformHandle;
-    SDL_Window* window = SDL_GetWindowFromID(window_id);
-    if ((data->WantVisible == false || bd->ImeWindow != window) && bd->ImeWindow != nullptr)
-    {
-        SDL_StopTextInput(bd->ImeWindow);
-        bd->ImeWindow = nullptr;
-    }
-    if (data->WantVisible)
-    {
-        SDL_Rect r;
-        r.x = (int)(data->InputPos.x - viewport->Pos.x);
-        r.y = (int)(data->InputPos.y - viewport->Pos.y + data->InputLineHeight);
-        r.w = 1;
-        r.h = (int)data->InputLineHeight;
-        SDL_SetTextInputArea(window, &r, 0);
-        SDL_StartTextInput(window);
-        bd->ImeWindow = window;
-    }
-}
+// static void ImGui_ImplSDL3_PlatformSetImeData(ImGuiContext*, ImGuiViewport* viewport, ImGuiPlatformImeData* data)
+// {
+//     ImGui_ImplSDL3_Data* bd = ImGui_ImplSDL3_GetBackendData();
+//     SDL_WindowID window_id = (SDL_WindowID)(intptr_t)viewport->PlatformHandle;
+//     SDL_Window* window = SDL_GetWindowFromID(window_id);
+//     if ((data->WantVisible == false || bd->ImeWindow != window) && bd->ImeWindow != nullptr)
+//     {
+//         SDL_StopTextInput(bd->ImeWindow);
+//         bd->ImeWindow = nullptr;
+//     }
+//     if (data->WantVisible)
+//     {
+//         SDL_Rect r;
+//         r.x = (int)(data->InputPos.x - viewport->Pos.x);
+//         r.y = (int)(data->InputPos.y - viewport->Pos.y + data->InputLineHeight);
+//         r.w = 1;
+//         r.h = (int)data->InputLineHeight;
+//         SDL_SetTextInputArea(window, &r, 0);
+//         SDL_StartTextInput(window);
+//         bd->ImeWindow = window;
+//     }
+// }
 
 // Not static to allow third-party code to use that if they want to (but undocumented)
 ImGuiKey ImGui_ImplSDL3_KeyEventToImGuiKey(SDL_Keycode keycode, SDL_Scancode scancode);
@@ -524,7 +524,6 @@ static bool ImGui_ImplSDL3_Init(SDL_Window* window, SDL_Renderer* renderer, void
     auto& platform_io = ImGui::GetIO();
     platform_io.SetClipboardTextFn = LVK_SetClipboardTextFn;
     platform_io.GetClipboardTextFn = LVK_GetClipboardTextFn;
-    // platform_io.SetImeDataFn = ImGui_ImplSDL3_PlatformSetImeData;
 
     // Update monitor a first time during init
     ImGui_ImplSDL3_UpdateMonitors();

@@ -90,7 +90,7 @@ namespace pipelines{
             return m_PipelineMaterials.back();
         }
 
-        VkPipelineData* AddPipeline(VkState & vk, VkPipeline pipeline, VkPipelineLayout layout)
+        VkPipelineData* AddPipeline(VkPipeline pipeline, VkPipelineLayout layout)
         {
             m_PipelineDatas.emplace_back(new VkPipelineData(pipeline, layout));
             return m_PipelineDatas.back();

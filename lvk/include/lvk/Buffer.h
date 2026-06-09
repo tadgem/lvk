@@ -11,7 +11,7 @@ namespace lvk {
 
         static void CopyBuffer(VkState& vk, VkBuffer& src, VkBuffer& dst, VkDeviceSize size);
 
-        static Buffer CreateIndexBuffer(VkState& vk, uint32_t* indices, uint32_t count);
+        static Buffer CreateIndexBuffer(VkState& vk, uint32_t* indices, size_t count);
         static Buffer CreateIndexBuffer(VkState& vk, Vector<uint32_t>& indices)
         {
             return CreateIndexBuffer(vk, indices.data(), indices.size());
@@ -46,7 +46,7 @@ namespace lvk {
         }
 
         template <typename _Ty>
-        static Buffer CreateVertexBuffer(VkState& vk, _Ty* verts, uint32_t count) {
+        static Buffer CreateVertexBuffer(VkState& vk, _Ty* verts, size_t count) {
             VkDeviceSize bufferSize = sizeof(_Ty) * count;
 
             // create a CPU side buffer to dump vertex data into

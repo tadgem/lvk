@@ -142,7 +142,7 @@ int main()
     VkDeviceMemory textureMemory;
     VkSampler imageSampler;
     textures::CreateTexture(vk, "assets/viking_room.png", VK_FORMAT_R8G8B8A8_UNORM, textureImage, imageView, textureMemory, &mipLevels);
-    textures::CreateImageSampler(vk, imageView, mipLevels, VK_FILTER_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, imageSampler);
+    textures::CreateImageSampler(vk, mipLevels, VK_FILTER_LINEAR, VK_SAMPLER_ADDRESS_MODE_REPEAT, imageSampler);
 
     auto vertexDescription = VertexDataPosUv::GetVertexDescription(*vk.m_CPUAllocator);
     VkPipelineData pipeline = lvk::pipelines::CreateRasterPipeline(vk,

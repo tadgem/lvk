@@ -1,5 +1,7 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.16)
 project(lvk-all)
+
+set(CMAKE_CXX_STANDARD 20)
 
 set(SDL_STATIC TRUE CACHE INTERNAL TRUE)
 set(CMAKE_SUPPRESS_REGENERATION true)
@@ -9,6 +11,7 @@ set(SDL3_DISABLE_UNINSTALL ON CACHE BOOL "Disable SDL Uninstall")
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Disable ASSIMP dynamic linking")
 set(SHADERC_SKIP_TESTS ON CACHE BOOL "" FORCE)
 set(SHADERC_ENABLE_SHARED_CRT ON CACHE BOOL "" FORCE)
+
 add_subdirectory(submodules/glm)
 add_subdirectory(submodules/assimp)
 add_subdirectory(submodules/sdl)

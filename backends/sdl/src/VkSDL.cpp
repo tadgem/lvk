@@ -121,11 +121,13 @@ void lvk::VkSDL::PostFrame(VkState& vk)
 
 void lvk::VkSDL::InitImGuiBackend(VkState& vk)
 {
+    vk;
     ImGui_ImplSDL3_InitForVulkan(m_SdlHandle->m_SdlWindow);
 }
 
 void lvk::VkSDL::CleanupImGuiBackend(VkState& vk)
 {
+    vk;
     ImGui_ImplSDL3_Shutdown();
 }
 
@@ -155,14 +157,17 @@ void lvk::VkSDL::Run(VkState& vk, std::function<void()> callback)
 
 VkExtent2D lvk::VkSDL::GetSurfaceExtent(VkState& vk, VkSurfaceCapabilitiesKHR surface)
 {
+    vk;
+    surface;
     SDL_DisplayID id = SDL_GetPrimaryDisplay();
     SDL_DisplayMode displayMode = *SDL_GetCurrentDisplayMode(id);
 
-    return VkExtent2D();
+    return VkExtent2D{};
 }
 
     VkExtent2D lvk::VkSDL::GetMaxFramebufferResolution(VkState& vk)
 {
+    vk;
     int numDisplays = 0;
     SDL_DisplayID* ids = SDL_GetDisplays(&numDisplays);
     VkExtent2D res{};
@@ -214,7 +219,9 @@ lvk::String lvk::VkSDL::LoadStringFromPath(VkState& vk, const char* path)
 
 lvk::VkSDL::VkSDL(bool enableDebugValidation)
 {
-    LVK_LOG_INFO("LVK : current working directory : %s", std::filesystem::current_path().string().c_str());
+    LVK_LOG_INFO("LVK : current working directory : %s : enable validation? %d",
+        std::filesystem::current_path().string().c_str(),
+        enableDebugValidation ? 1 : 0);
 }
 
 lvk::VulkanAPIWindowHandle_SDL::VulkanAPIWindowHandle_SDL(SDL_Window* sdlWindow) : m_SdlWindow(sdlWindow)

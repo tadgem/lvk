@@ -2,7 +2,14 @@
 
 #define VK_NO_PROTOTYPES
 #include "volk.h"
+#pragma warning(push)
+#pragma warning(disable : 4100)
+#pragma warning(disable : 4189)
+#pragma warning(disable : 4324)
+#pragma warning(disable : 4505)
 #include "ThirdParty/VulkanMemoryAllocator.h"
+#pragma warning(pop)
+
 #include "lvk/Alias.h"
 #include "lvk/DescriptorSetAllocator.h"
 #include "lvk/Macros.h"
@@ -141,7 +148,6 @@ namespace lvk {
 
     template <typename _Ty>
     void SetMemory(uint32_t frameIndex, const _Ty *start, uint64_t count) {
-      constexpr size_t _ty_size = sizeof(_Ty);
       if (!CanSet(frameIndex))
       {
           return;
@@ -172,15 +178,15 @@ namespace lvk {
   struct DescriptorSetBinding {
       union {
           uint64_t        m_Data;
-          struct {
+          struct SetBinding {
               uint32_t    m_Set;
               uint32_t    m_Binding;
-          };
+          } m_SetBinding;
       };
       VkDeviceSize        m_BindingSize;
 
       DescriptorSetBinding(uint32_t set, uint32_t binding, VkDeviceSize size) :
-          m_Set(set), m_Binding(binding), m_BindingSize(size) {}
+          m_SetBinding ({set, binding}), m_BindingSize(size) {}
       DescriptorSetBinding() = default;
       
 
@@ -304,6 +310,9 @@ namespace lvk {
   class VkBackend
   {
   public:
+
+  	virtual ~VkBackend() = default;
+
     virtual Vector<const char*>         GetRequiredInstanceExtensions(VkState& vk) = 0;
     virtual void                        CreateSurface(VkState& vk) = 0;
     virtual void                        CreateWindowLVK(VkState& vk, uint32_t width, uint32_t height) = 0;

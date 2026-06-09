@@ -23,7 +23,10 @@
 
 #include "nanovg.h"
 #define FONTSTASH_IMPLEMENTATION
+#pragma warning(push)
+#pragma warning(disable: 4996)
 #include "fontstash.h"
+#pragma warning(pop)
 
 #ifndef NVG_NO_STB
 #define STB_IMAGE_IMPLEMENTATION

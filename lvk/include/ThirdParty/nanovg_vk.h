@@ -60,9 +60,9 @@ static void nvgDeleteVk(NVGcontext *ctx);
 
 #define NVGVK_CHECK_RESULT(f)                                                                                                                                                                                                                                                                                                  \
   {                                                                                                                                                                                                                                                                                                                            \
-    VkResult res = (f);                                                                                                                                                                                                                                                                                                        \
-    if (res != VK_SUCCESS) {                                                                                                                                                                                                                                                                                                   \
-      assert(res == VK_SUCCESS);                                                                                                                                                                                                                                                                                               \
+    VkResult __res = (f);                                                                                                                                                                                                                                                                                                        \
+    if (__res != VK_SUCCESS) {                                                                                                                                                                                                                                                                                                   \
+      assert(__res == VK_SUCCESS);                                                                                                                                                                                                                                                                                               \
     }                                                                                                                                                                                                                                                                                                                          \
   }
 
@@ -1009,7 +1009,7 @@ static int vknvg_maxVertCountList(const NVGpath *paths, int npaths) {
 
 static VKNVGcall *vknvg_allocCall(VKNVGcontext *vk) {
   VKNVGcall *ret = nullptr;
-  if (vk->ncalls + 1 > vk->ccalls) {
+  if (vk->ncalls + 1 > static_cast<uint32_t>(vk->ccalls)) {
     VKNVGcall *calls;
     int ccalls = vknvg_maxi(vk->ncalls + 1, 128) + vk->ccalls / 2; // 1.5x Overallocate
     calls = (VKNVGcall *) realloc(vk->calls, sizeof(VKNVGcall) * ccalls);
@@ -1275,7 +1275,7 @@ static void vknvg_stroke(VKNVGcontext *vk, VKNVGcall *call, uint32_t descriptor_
     vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk->pipelineLayout, 0, 2, sets, 0, nullptr);
     // Draw Strokes
 
-    VkDeviceSize offsets[] = {0};
+    // VkDeviceSize offsets[] = {0};
     for (int i = 0; i < npaths; ++i) {
       vkCmdDraw(cmdBuffer, paths[i].strokeCount, 1, paths[i].strokeOffset, 0);
     }
@@ -1330,7 +1330,7 @@ static int vknvg_renderCreate(void *uptr) {
 
   vk->fillVertShader = vknvg_createShaderModule(device, fillVertShader, sizeof(fillVertShader), allocator);
   vk->fillFragShader = vknvg_createShaderModule(device, fillFragShader, sizeof(fillFragShader), allocator);
-  VkDeviceSize align = vk->gpuProperties.limits.minUniformBufferOffsetAlignment;
+  // VkDeviceSize align = vk->gpuProperties.limits.minUniformBufferOffsetAlignment;
 
   vk->fragSize = (int) sizeof(VKNVGfragUniforms); // std430 does not need padding
 
@@ -1535,6 +1535,7 @@ static int vknvg_renderGetTextureSize(void *uptr, int image, int *w, int *h) {
   return 0;
 }
 static void vknvg_renderViewport(void *uptr, float width, float height, float devicePixelRatio) {
+  devicePixelRatio;
 #ifdef __cplusplus
   auto *vk = static_cast<VKNVGcontext *>(uptr);
 #else
@@ -1574,7 +1575,6 @@ static void vknvg_renderFlush(void *uptr) {
   }
 
   if (vk->ncalls > 0) {
-    int i;
     const VkFlags flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
     vknvg_UpdateBuffer(device, allocator, &vk->vertexBuffer[currentFrame], memoryProperties, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, flags, vk->verts, vk->nverts * sizeof(vk->verts[0]));
     vknvg_UpdateBuffer(device, allocator, &vk->fragUniformBuffer[currentFrame], memoryProperties, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, flags, vk->uniforms, vk->nuniforms * vk->fragSize);
@@ -1607,14 +1607,14 @@ static void vknvg_renderFlush(void *uptr) {
 #endif
 
       VkDescriptorSetAllocateInfo alloc_info_0 = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO, nullptr, vk->descPool, 1, &vk->descLayout[0]};
-      for (i = 0; i < vk->createInfo.swapchainImageCount; i++) {
-        NVGVK_CHECK_RESULT(vkAllocateDescriptorSets(device, &alloc_info_0, &vk->ssboDescriptorSet[i]))
+      for (uint32_t j = 0; j < vk->createInfo.swapchainImageCount; j++) {
+        NVGVK_CHECK_RESULT(vkAllocateDescriptorSets(device, &alloc_info_0, &vk->ssboDescriptorSet[j]))
       }
 
       VkDescriptorSetAllocateInfo alloc_info_1 = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO, nullptr, vk->descPool, 1, &vk->descLayout[1]};
-      for (i = 0; i < vk->ncalls * vk->createInfo.swapchainImageCount; i++) {
-        NVGVK_CHECK_RESULT(vkAllocateDescriptorSets(device, &alloc_info_1, &vk->uniformDescriptorSet[i]))
-        NVGVK_CHECK_RESULT(vkAllocateDescriptorSets(device, &alloc_info_1, &vk->uniformDescriptorSet2[i]))
+      for (uint32_t j = 0; j < vk->ncalls * vk->createInfo.swapchainImageCount; j++) {
+        NVGVK_CHECK_RESULT(vkAllocateDescriptorSets(device, &alloc_info_1, &vk->uniformDescriptorSet[j]))
+        NVGVK_CHECK_RESULT(vkAllocateDescriptorSets(device, &alloc_info_1, &vk->uniformDescriptorSet2[j]))
       }
 
       vk->cdescPool = vk->ncalls;
@@ -1638,16 +1638,16 @@ static void vknvg_renderFlush(void *uptr) {
     vkUpdateDescriptorSets(device, 1, &write_frag_data, 0, nullptr);
 
     const uint32_t descriptor_offset = vk->cdescPool * currentFrame; // ensure descriptor sets dont clash
-    for (i = 0; i < vk->ncalls; i++) {
-      VKNVGcall *call = &vk->calls[i];
+    for (uint32_t j = 0; j < vk->ncalls; j++) {
+      VKNVGcall *call = &vk->calls[j];
       if (call->type == VKNVG_FILL) {
-        vknvg_fill(vk, call, descriptor_offset + i);
+        vknvg_fill(vk, call, descriptor_offset + j);
       } else if (call->type == VKNVG_CONVEXFILL) {
-        vknvg_convexFill(vk, call, descriptor_offset + i);
+        vknvg_convexFill(vk, call, descriptor_offset + j);
       } else if (call->type == VKNVG_STROKE) {
-        vknvg_stroke(vk, call, descriptor_offset + i);
+        vknvg_stroke(vk, call, descriptor_offset + j);
       } else if (call->type == VKNVG_TRIANGLES) {
-        vknvg_triangles(vk, call, descriptor_offset + i);
+        vknvg_triangles(vk, call, descriptor_offset + j);
       }
     }
   }
@@ -1885,7 +1885,7 @@ static void vknvg_renderDelete(void *uptr) {
     }
   }
 
-  for (int i = 0; i < vk->createInfo.swapchainImageCount; i++) {
+  for (uint32_t i = 0; i < vk->createInfo.swapchainImageCount; i++) {
       if (vk->vertexBuffer != NULL) {
           vknvg_destroyBuffer(device, allocator, &vk->vertexBuffer[i]);
       }

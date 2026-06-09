@@ -46,7 +46,7 @@ void buffers::CopyBuffer(VkState& vk, VkBuffer& src, VkBuffer& dst, VkDeviceSize
   commands::EndSingleTimeCommands(vk, commandBuffer);
 }
 
-Buffer buffers::CreateIndexBuffer(VkState& vk, uint32_t* indices, uint32_t count)
+Buffer buffers::CreateIndexBuffer(VkState& vk, uint32_t* indices, size_t count)
 {
   VkDeviceSize bufferSize = sizeof(uint32_t) * count;
 

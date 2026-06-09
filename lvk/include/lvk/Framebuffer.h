@@ -89,11 +89,11 @@ namespace lvk
 
         void AddColourAttachment(VkState& vk, VkExtent2D resolution,
             uint32_t numMips,  VkFormat format, VkImageUsageFlags usageFlags,
-            VkMemoryPropertyFlagBits memoryFlags,
+            VkMemoryPropertyFlagBits memoryFlags, VkSampleCountFlagBits sampleCount,
             VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
         {
             m_ColourAttachments.push_back(Attachment::CreateColourAttachment(vk,
-                resolution, numMips, vk.m_MaxMsaaSamples, format, usageFlags, memoryFlags, VK_IMAGE_ASPECT_COLOR_BIT, samplerFilter, samplerAddressMode));
+                resolution, numMips, sampleCount, format, usageFlags, memoryFlags, VK_IMAGE_ASPECT_COLOR_BIT, samplerFilter, samplerAddressMode));
             for (auto& img : m_ColourAttachments.back().m_AttachmentSwapchainImages)
             {
                 textures::TransitionImageLayout(vk, img.m_Image, format, numMips, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
@@ -103,21 +103,21 @@ namespace lvk
         
         void AddColourAttachment(VkState & vk, ResolutionScale scale,
             uint32_t numMips, VkFormat format, VkImageUsageFlags usageFlags,
-            VkMemoryPropertyFlagBits memoryFlags,
+            VkMemoryPropertyFlagBits memoryFlags, VkSampleCountFlagBits sampleCount,
             VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
         {
             VkExtent2D resolution = vk.m_MaxFramebufferExtent;
             ResolveResolutionScale(scale, resolution.width, resolution.height, resolution.width, resolution.height);
-            AddColourAttachment(vk, resolution, numMips, format, usageFlags, memoryFlags, samplerFilter, samplerAddressMode);
+            AddColourAttachment(vk, resolution, numMips, format, usageFlags, memoryFlags, sampleCount, samplerFilter, samplerAddressMode);
         }
 
         void AddDepthAttachment(VkState& vk, VkExtent2D resolution,
             uint32_t numMips, VkImageUsageFlags usageFlags,
-            VkMemoryPropertyFlagBits memoryFlags,
+            VkMemoryPropertyFlagBits memoryFlags, VkSampleCountFlagBits sampleCount,
             VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
         {
             m_DepthAttachments.push_back(Attachment::CreateDepthAttachment(vk,
-                resolution, numMips, vk.m_MaxMsaaSamples, usageFlags, memoryFlags, VK_IMAGE_ASPECT_DEPTH_BIT, samplerFilter, samplerAddressMode));
+                resolution, numMips, sampleCount, usageFlags, memoryFlags, VK_IMAGE_ASPECT_DEPTH_BIT, samplerFilter, samplerAddressMode));
             for (auto& img : m_DepthAttachments.back().m_AttachmentSwapchainImages)
             {
                 textures::TransitionImageLayout(vk, img.m_Image, utils::FindDepthFormat(vk), numMips, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
@@ -128,12 +128,12 @@ namespace lvk
 
         void AddDepthAttachment(VkState & vk, ResolutionScale scale,
             uint32_t numMips, VkImageUsageFlags usageFlags,
-            VkMemoryPropertyFlagBits memoryFlags,
+            VkMemoryPropertyFlagBits memoryFlags, VkSampleCountFlagBits sampleCount,
             VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
         {
             VkExtent2D resolution = vk.m_MaxFramebufferExtent;
             ResolveResolutionScale(scale, resolution.width, resolution.height, resolution.width, resolution.height);
-            AddDepthAttachment(vk, resolution, numMips, usageFlags, memoryFlags, samplerFilter, samplerAddressMode);
+            AddDepthAttachment(vk, resolution, numMips, usageFlags, memoryFlags, sampleCount, samplerFilter, samplerAddressMode);
         }
 
         void AddResolveAttachment(VkState& vk, VkExtent2D resolution,

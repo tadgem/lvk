@@ -17,18 +17,18 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     VkDebugUtilsMessageTypeFlagsEXT messageType,
     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
     void* pUserData) {
-
+  pUserData;
   if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
   {
-    LVK_LOG_WARN("VL: %s", pCallbackData->pMessage);
+    LVK_LOG_WARN("VL: %ull : %s", messageType, pCallbackData->pMessage);
   }
   if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
   {
-    LVK_LOG_INFO("VL: %s", pCallbackData->pMessage);
+    LVK_LOG_INFO("VL: %ull : %s",  messageType, pCallbackData->pMessage);
   }
   if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
   {
-    LVK_LOG_ERR("VL: %s", pCallbackData->pMessage);
+    LVK_LOG_ERR("VL: %ull :  %s",  messageType, pCallbackData->pMessage);
   }
   return VK_FALSE;
 }
@@ -342,8 +342,6 @@ void lvk::init::InitImGui(VkState& vk)
   }
   ImGui_ImplVulkan_Init(&init_info);
 
-  auto font = io.Fonts->AddFontFromMemoryTTF((void*)&funnel_sans_ttf[0], FUNNEL_SANS_TTF_SIZE, 16.0f);
-
   ImGui_ImplVulkan_CreateFontsTexture();
 
   SetImGuiStyle();
@@ -356,7 +354,7 @@ void lvk::init::InitNanoVG(VkState& vk)
     nvgCreateInfo.gpu = vk.m_PhysicalDevice;
     nvgCreateInfo.renderpass = vk.m_SwapchainImageRenderPass;
     nvgCreateInfo.cmdBuffer = vk.m_GraphicsCommandBuffers.data();
-    nvgCreateInfo.swapchainImageCount = vk.m_SwapChainImages.size();
+    nvgCreateInfo.swapchainImageCount = static_cast<uint32_t>(vk.m_SwapChainImages.size());
     nvgCreateInfo.currentFrame = &vk.m_CurrentFrameIndex;
 
     nvgCreateInfo.ext.colorBlendEquation = true;

@@ -26,8 +26,8 @@ ShaderProgram ShaderProgram::CreateCompute(VkState &vk, ShaderStage &compute) {
   VkDescriptorSetLayout layout;
 
   Vector<VkDescriptorSetLayoutBinding> bindings(*vk.m_CPUAllocator);
-  for (auto &layout : compute.m_LayoutDatas) {
-    for (auto &binding : layout.m_Bindings) {
+  for (auto &layoutData : compute.m_LayoutDatas) {
+    for (auto &binding : layoutData.m_Bindings) {
       bindings.push_back(binding);
     }
   }

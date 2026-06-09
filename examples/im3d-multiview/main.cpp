@@ -32,18 +32,18 @@ ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferP
     Framebuffer gbuffer(*vk.m_CPUAllocator);
     gbuffer.AddColourAttachment(vk,
         ResolutionScale::Full, 1,  VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_SAMPLE_COUNT_1_BIT);
     gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_SAMPLE_COUNT_1_BIT);
     gbuffer.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_SAMPLE_COUNT_1_BIT);
     gbuffer.AddDepthAttachment(vk, ResolutionScale::Full, 1, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_SAMPLE_COUNT_1_BIT);
     gbuffer.Build(vk);
 
     Framebuffer finalImage(*vk.m_CPUAllocator);
     finalImage.AddColourAttachment(vk, ResolutionScale::Full, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_SAMPLE_COUNT_1_BIT);
     finalImage.Build(vk);
 
     Material lightPassMat = Material::Create(vk, lightPassProg);
@@ -419,7 +419,7 @@ void OnImGui(VkState & vk, DeferredLightData& lightDataCpu, Vector<ViewData*> vi
         auto& image = views[0]->m_LightPassFB.m_ColourAttachments[0].m_AttachmentSwapchainImages[vk.m_CurrentFrameIndex];
 
         ImGuiX::Image(image, extent, { 0,0 }, uv1);
-        DrawIm3dTextListsImGuiAsChild(Im3d::GetTextDrawLists(), Im3d::GetTextDrawListCount(), (float)views[0]->m_CurrentResolution.width, (float)views[0]->m_CurrentResolution.height, views[0]->m_Camera.Proj * views[0]->m_Camera.View);
+        DrawIm3dTextListsImGuiAsChild(views[0]->m_Camera.Proj * views[0]->m_Camera.View);
         views[0]->m_CurrentResolution = { (uint32_t)extent.x, (uint32_t)extent.y };
 
     }
@@ -436,7 +436,7 @@ void OnImGui(VkState & vk, DeferredLightData& lightDataCpu, Vector<ViewData*> vi
         auto& image = views[1]->m_LightPassFB.m_ColourAttachments[0].m_AttachmentSwapchainImages[vk.m_CurrentFrameIndex];
 
         ImGuiX::Image(image, extent, { 0,0 }, uv1);
-        DrawIm3dTextListsImGuiAsChild(Im3d::GetTextDrawLists(), Im3d::GetTextDrawListCount(), (float)views[1]->m_CurrentResolution.width, (float)views[1]->m_CurrentResolution.height, views[1]->m_Camera.Proj * views[1]->m_Camera.View);
+        DrawIm3dTextListsImGuiAsChild(views[1]->m_Camera.Proj * views[1]->m_Camera.View);
         views[1]->m_CurrentResolution = { (uint32_t)extent.x, (uint32_t)extent.y };
 
     }

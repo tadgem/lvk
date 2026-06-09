@@ -143,7 +143,7 @@ namespace lvk
                 tris_pipeline, points_pipeline, lines_pipeline };
     }
 
-    LvkIm3dViewState AddIm3dForGBuffer(VkState& vk, LvkIm3dState& state, const Vector<VkFormat>& gbufferFormats, uint32_t colourWriteAttachment)
+    LvkIm3dViewState AddIm3dForGBuffer(VkState& vk, LvkIm3dState& state)
     {
         auto vertexDescription = VertexDataPos4::GetVertexDescription(*vk.m_CPUAllocator);
 
@@ -261,7 +261,7 @@ namespace lvk
                 tris_pipeline, points_pipeline, lines_pipeline };
     }
 
-    LvkIm3dViewState AddIm3dForGBufferRenderPass(VkState& vk, LvkIm3dState& state, VkRenderPass gbufferRenderPass, uint32_t colourAttachmentCount, uint32_t colourWriteAttachment)
+    LvkIm3dViewState AddIm3dForGBufferRenderPass(VkState& vk, LvkIm3dState& state, VkRenderPass gbufferRenderPass)
     {
         auto vertexDescription = VertexDataPos4::GetVertexDescription(*vk.m_CPUAllocator);
 
@@ -519,12 +519,11 @@ namespace lvk
             return;
         }
 
-        DrawIm3dTextListsImGui(context.getTextDrawLists(), context.getTextDrawListCount(),
-            vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height, _viewProj);
+        DrawIm3dTextListsImGui(vk.m_SwapChainImageExtent.width, vk.m_SwapChainImageExtent.height, _viewProj);
 
     }
 
-    void DrawIm3dTextListsImGui(const Im3d::TextDrawList _textDrawLists[], uint32_t _count, uint32_t width, uint32_t height, glm::mat4 _viewProj)
+    void DrawIm3dTextListsImGui(uint32_t width, uint32_t height, glm::mat4 _viewProj)
     {
         // Using ImGui here as a simple means of rendering text draw lists, however as with primitives the application is free to draw text in any conceivable  manner.
 
@@ -542,15 +541,16 @@ namespace lvk
             | ImGuiWindowFlags_NoBringToFrontOnFocus
         );
 
-        DrawIm3dTextListsImGuiAsChild(_textDrawLists, _count, width, height, _viewProj);
+        DrawIm3dTextListsImGuiAsChild(_viewProj);
 
         ImGui::End();
         ImGui::PopStyleColor(1);
     }
 
-    void DrawIm3dTextListsImGuiAsChild(const Im3d::TextDrawList _textDrawLists[], uint32_t _count, uint32_t width, uint32_t height, glm::mat4 _viewProj)
+    void DrawIm3dTextListsImGuiAsChild(glm::mat4 _viewProj)
     {
         ImDrawList* imDrawList = ImGui::GetWindowDrawList();
+        uint32_t _count = Im3d::GetTextDrawListCount();
         const Im3d::Mat4 viewProj = ToIm3D(_viewProj);
         for (uint32_t i = 0; i < _count; ++i)
         {

@@ -8,11 +8,11 @@ namespace lvk
     namespace textures {
         void  CreateImage(VkState& vk, uint32_t width, uint32_t height, uint32_t numMips, VkSampleCountFlagBits sampleCount, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, uint32_t depth = 1);
         void  CreateImageView(VkState& vk, VkImage& image, VkFormat format, uint32_t numMips, VkImageAspectFlags aspectFlags, VkImageView& imageView, VkImageViewType imageViewType= VK_IMAGE_VIEW_TYPE_2D);
-        void  CreateImageSampler(VkState& vk, VkImageView& imageView, uint32_t numMips, VkFilter filterMode, VkSamplerAddressMode addressMode, VkSampler& sampler);
+        void  CreateImageSampler(VkState& vk, uint32_t numMips, VkFilter filterMode, VkSamplerAddressMode addressMode, VkSampler& sampler);
         void  CreateFramebuffer(VkState& vk, Vector<VkImageView>& attachments, VkRenderPass renderPass, VkExtent2D extent, VkFramebuffer& framebuffer);
         void  CreateTexture(VkState& vk, const char*  path, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips = nullptr);
         void  CreateTextureFromMemory(VkState& vk, unsigned char* tex_data, uint32_t dataSize, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips = nullptr);
-        void  CreateTexture3DFromMemory(VkState& vk, unsigned char* tex_data, VkExtent3D extent, uint32_t dataSize, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips = nullptr);
+        void  CreateTexture3DFromMemory(VkState& vk, unsigned char* tex_data, uint32_t dataSize, VkFormat format, VkImage& image, VkImageView& imageView, VkDeviceMemory& imageMemory, uint32_t* numMips = nullptr);
         void  CopyBufferToImage(VkState& vk, VkBuffer& src, VkImage& image,  uint32_t width, uint32_t height);
         void  GenerateMips(VkState& vk, VkImage image, VkFormat format, uint32_t imageWidth, uint32_t imageHeight, uint32_t numMips, VkFilter filterMethod);
         void  TransitionImageLayout(VkState& vk, VkImage image, VkFormat format, uint32_t numMips, VkImageLayout oldLayout, VkImageLayout newLayout);
@@ -25,7 +25,7 @@ namespace lvk
         Eighth
     };
 
-    static void ResolveResolutionScale(ResolutionScale scale, uint32_t inWidth, uint32_t inHeight, uint32_t& outWidth, uint32_t& outHeight)
+    inline static void ResolveResolutionScale(ResolutionScale scale, uint32_t inWidth, uint32_t inHeight, uint32_t& outWidth, uint32_t& outHeight)
     {
         switch (scale)
         {
@@ -85,7 +85,7 @@ namespace lvk
             VkSampler sampler;
             textures::CreateImage(vk,width, height, numMips, sampleCount, format, tiling, usageFlags, memoryFlags, image, memory);
             textures::CreateImageView(vk,image, format, numMips, imageAspect, imageView);
-            textures::CreateImageSampler(vk,imageView, numMips, samplerFilter, samplerAddressMode, sampler);
+            textures::CreateImageSampler(vk, numMips, samplerFilter, samplerAddressMode, sampler);
 
             VkDescriptorSet imguiTextureHandle = VK_NULL_HANDLE;
             if (vk.m_UseImGui)
@@ -105,7 +105,7 @@ namespace lvk
             uint32_t mipLevels;
             lvk::textures::CreateTexture(vk, path, format, image, imageView, memory, &mipLevels);
             VkSampler sampler;
-            textures::CreateImageSampler(vk, imageView, mipLevels, samplerFilter, samplerAddressMode, sampler);
+            textures::CreateImageSampler(vk, mipLevels, samplerFilter, samplerAddressMode, sampler);
 
             VkDescriptorSet imguiTextureHandle = VK_NULL_HANDLE;
             if (vk.m_UseImGui)
@@ -125,7 +125,7 @@ namespace lvk
             uint32_t mipLevels;
             lvk::textures::CreateTextureFromMemory(vk, tex_data, length, format, image, imageView, memory, &mipLevels);
             VkSampler sampler;
-            textures::CreateImageSampler(vk, imageView, mipLevels, samplerFilter, samplerAddressMode, sampler);
+            textures::CreateImageSampler(vk, mipLevels, samplerFilter, samplerAddressMode, sampler);
 
             VkDescriptorSet imguiTextureHandle = VK_NULL_HANDLE;
             if (vk.m_UseImGui)
@@ -136,16 +136,16 @@ namespace lvk
             return Texture(image, imageView, memory, sampler, format, VK_SAMPLE_COUNT_1_BIT, imguiTextureHandle);
         }
 
-        static Texture CreateTexture3DFromMemory(lvk::VkState & vk, VkExtent3D extent, unsigned char* tex_data, uint32_t length, VkFormat format, VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
+        static Texture CreateTexture3DFromMemory(lvk::VkState & vk, unsigned char* tex_data, uint32_t length, VkFormat format, VkFilter samplerFilter = VK_FILTER_LINEAR, VkSamplerAddressMode samplerAddressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT)
         {
             VkImage image;
             VkImageView imageView;
             VkDeviceMemory memory;
             // Texture abstraction
             uint32_t mipLevels;
-            lvk::textures::CreateTexture3DFromMemory(vk, tex_data, extent, length, format, image, imageView, memory, &mipLevels);
+            lvk::textures::CreateTexture3DFromMemory(vk, tex_data, length, format, image, imageView, memory, &mipLevels);
             VkSampler sampler;
-            textures::CreateImageSampler(vk, imageView, mipLevels, samplerFilter, samplerAddressMode, sampler);
+            textures::CreateImageSampler(vk, mipLevels, samplerFilter, samplerAddressMode, sampler);
 
             VkDescriptorSet imguiTextureHandle = VK_NULL_HANDLE;
             if (vk.m_UseImGui)

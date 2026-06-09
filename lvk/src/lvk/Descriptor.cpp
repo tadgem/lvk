@@ -241,12 +241,17 @@ ReflectDescriptorSetLayoutsRaw(VkState &vk, const char *stage_bin,
   SpvReflectShaderModule shaderReflectModule;
   SpvReflectResult result = spvReflectCreateShaderModule(stage_size, stage_bin, &shaderReflectModule);
 
+  if (result != SPV_REFLECT_RESULT_SUCCESS)
+  {
+    LVK_LOG_ERR("Descriptor.cpp : Failed to reflect descriptor set layouts.");
+    return Vector(dsld_alloc);
+  }
   uint32_t descriptorSetCount = 0;
   spvReflectEnumerateDescriptorSets(&shaderReflectModule, &descriptorSetCount, nullptr);
 
   if (descriptorSetCount == 0)
   {
-    return Vector<DescriptorSetLayoutData>(dsld_alloc);
+    return Vector(dsld_alloc);
   }
 
 
@@ -256,9 +261,9 @@ ReflectDescriptorSetLayoutsRaw(VkState &vk, const char *stage_bin,
 
   Vector<DescriptorSetLayoutData> layoutDatas(*vk.m_CPUAllocator);
 
-  for (int i = 0; i < reflectedDescriptorSets.size(); i++)
+  for (int idx = 0; idx < reflectedDescriptorSets.size(); idx++)
   {
-    const SpvReflectDescriptorSet& reflectedSet = *reflectedDescriptorSets[i];
+    const SpvReflectDescriptorSet& reflectedSet = *reflectedDescriptorSets[idx];
     DescriptorSetLayoutData layoutData = DescriptorSetLayoutData(*vk.m_CPUAllocator);
 
     layoutData.m_Bindings.resize(reflectedSet.binding_count);
@@ -282,32 +287,11 @@ ReflectDescriptorSetLayoutsRaw(VkState &vk, const char *stage_bin,
         binding.m_ExpectedBufferSizeOrDivisor = reflectedBinding.block.size; 
         binding.m_BufferType = bufferType; 
         binding.m_Members = Vector<ShaderBufferMember>(sbma);
-    
 
-//      if (bufferType == ShaderBindingType::ShaderStorageBuffer)
-//      {
-//        uint32_t requiredBufferSize = 0;
-//        for (uint32_t i = 0; i < reflectedBinding.type_description->member_count; i++)
-//        {
-//          auto* member = &reflectedBinding.type_description->members[i];
-//          if (member->type_flags & SPV_REFLECT_TYPE_FLAG_ARRAY)
-//          {
-//            requiredBufferSize += member->traits.array.dims[0] * member->traits.array.stride; // todo: support more than 1D arrays
-//          }
-//
-//          for (uint32_t j = 0; j < member->member_count; j++)
-//          {
-//            auto* childMember = &member->members[i];
-//            int jkj = 420;
-//          }
-//        }
-//        binding.m_ExpectedBufferSizeOrDivisor = requiredBufferSize;
-//        continue;
-//      }
 
-      for (uint32_t i = 0; i < reflectedBinding.block.member_count; i++)
+      for (uint32_t blockIdx = 0; blockIdx < reflectedBinding.block.member_count; blockIdx++)
       {
-        auto member = reflectedBinding.block.members[i];
+        auto member = reflectedBinding.block.members[blockIdx];
         ShaderBufferMember reflectedMember(*vk.m_CPUAllocator);
         reflectedMember.m_Name = String(member.name, *vk.m_CPUAllocator);
         reflectedMember.m_Offset = member.absolute_offset; // this might be an issue with padded types?
@@ -353,6 +337,11 @@ ReflectPushConstantsRaw(VkState &vk, const char *stage_bin, size_t stage_size) {
   SpvReflectShaderModule shaderReflectModule;
   SpvReflectResult result = spvReflectCreateShaderModule(stage_size, stage_bin, &shaderReflectModule);
 
+  if (result != SPV_REFLECT_RESULT_SUCCESS)
+  {
+    LVK_LOG_ERR("Descriptor.cpp : Failed to reflect push constants from shader binary.");
+    return Vector(pcba);
+  }
   uint32_t pushConstantBlockCount = 0;
   spvReflectEnumeratePushConstantBlocks(&shaderReflectModule, &pushConstantBlockCount, nullptr);
   STLAllocator<SpvReflectBlockVariable*>alloc(*vk.m_CPUAllocator);

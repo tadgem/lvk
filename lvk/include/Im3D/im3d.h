@@ -423,16 +423,18 @@ constexpr Color Color_Brown   = Color(0x8b4513ff);
 constexpr Color Color_Purple  = Color(0x800080ff);
 constexpr Color Color_Teal    = Color(0x008080ff);
 constexpr Color Color_Navy    = Color(0x000080ff);
-
+#pragma warning(push)
+#pragma warning (disable: 4324)
 struct alignas(IM3D_VERTEX_ALIGNMENT) VertexData
 {
 	Vec4   m_positionSize; // xyz = position, w = size
 	Color  m_color;        // rgba8 (MSB = r)
 
-	VertexData() {}
+
+	VertexData() = default;
 	VertexData(const Vec3& _position, float _size, Color _color): m_positionSize(_position, _size), m_color(_color) {}
 };
-
+#pragma warning(pop)
 enum DrawPrimitiveType
 {
  // order here determines the order in which unsorted primitives are drawn
@@ -666,16 +668,16 @@ struct IM3D_API Context
  // Low-level interface for internal and app-defined gizmos. May be subject to breaking changes.
 
 	bool                gizmoAxisTranslation_Behavior(Id _id, const Vec3& _origin, const Vec3& _axis, float _snap, float _worldHeight, float _worldSize, Vec3* _out_);
-	void                gizmoAxisTranslation_Draw(Id _id, const Vec3& _origin, const Vec3& _axis, float _worldHeight, float _worldSize, Color _color);
+	void                gizmoAxisTranslation_Draw(Id _id, const Vec3& _origin, const Vec3& _axis, float _worldHeight, Color _color);
 
 	bool                gizmoPlaneTranslation_Behavior(Id _id, const Vec3& _origin, const Vec3& _normal, float _snap, float _worldSize, Vec3* _out_);
 	void                gizmoPlaneTranslation_Draw(Id _id, const Vec3& _origin, const Vec3& _normal, float _worldSize, Color _color);
 
 	bool                gizmoAxislAngle_Behavior(Id _id, const Vec3& _origin, const Vec3& _axis, float _snap, float _worldRadius, float _worldSize, float* _out_);
-	void                gizmoAxislAngle_Draw(Id _id, const Vec3& _origin, const Vec3& _axis, float _worldRadius, float _angle, Color _color, float _minAlpha);
+	void                gizmoAxislAngle_Draw(Id _id, const Vec3& _origin, const Vec3& _axis, float _worldRadius, Color _color, float _minAlpha);
 
 	bool                gizmoAxisScale_Behavior(Id _id, const Vec3& _origin, const Vec3& _axis, float _snap, float _worldHeight, float _worldSize, float *_out_);
-	void                gizmoAxisScale_Draw(Id _id, const Vec3& _origin, const Vec3& _axis, float _worldHeight, float _worldSize, Color _color);
+	void                gizmoAxisScale_Draw(Id _id, const Vec3& _origin, const Vec3& _axis, float _worldHeight, Color _color);
 
 	// Convert pixels -> world space size based on distance between _position and view origin.
 	float               pixelsToWorldSize(const Vec3& _position, float _pixels);

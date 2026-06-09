@@ -21,6 +21,7 @@ void lvk::render_passes::CreateRenderPass(VkState& vk, VkRenderPass& renderPass,
   for (auto i = 0; i < colourAttachments.size(); i++)
   {
     attachments.push_back(colourAttachments[i]);
+    attachments.back().loadOp = attachmentLoadOp;
 
     colorAttachmentReference.attachment = attachmentCount++;
     colorAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;

@@ -4,7 +4,7 @@
 #include "lvk/Buffer.h"
 #include "volk.h"
 
-static auto reflect_descriptor_info = [](lvk::ShaderStage& stage, lvk::Material &mat, lvk::VkState & vk)
+static auto reflect_descriptor_info = [](lvk::ShaderStage& stage, lvk::Material &mat)
     {
         using namespace lvk;
 
@@ -38,12 +38,12 @@ static auto reflect_descriptor_info = [](lvk::ShaderStage& stage, lvk::Material 
                     for (auto& member : bindingInfo.m_Members)
                     {
                         String accessorName = bindingInfo.m_BindingName + "." + member.m_Name;
-                        uint16_t arraySize = member.m_Stride > 0 ? (member.m_Size / member.m_Stride) : 0;
+                        auto arraySize = member.m_Stride > 0 ? (member.m_Size / member.m_Stride) : 0;
                         Material::ShaderAccessorData data{ 
                             member.m_Size , 
                             member.m_Offset, 
                             member.m_Stride, 
-                            arraySize, 
+                            static_cast<uint16_t> (arraySize),
                             static_cast<uint32_t>(mat.m_ShaderBuffers.size()), 
                             Buffer::BufferType::Uniform 
                         };
@@ -115,7 +115,7 @@ void lvk::Material::UpdateDescriptors(VkState& vk)
         {
             if (!bufferInfo.Ready())
             {
-                LVK_LOG_WARN("Material with name %s : set %d, binding %d has no associated buffer", m_ShaderName.c_str(), setBinding.m_Set, setBinding.m_Binding);
+                LVK_LOG_WARN("Material with name %s : set %d, binding %d has no associated buffer", m_ShaderName.c_str(), setBinding.m_SetBinding.m_Set, setBinding.m_SetBinding.m_Binding);
                 continue;
             }
             VkDescriptorBufferInfo bufferWriteInfo{};
@@ -148,7 +148,7 @@ void lvk::Material::UpdateDescriptors(VkState& vk)
             VkWriteDescriptorSet write{};
             write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             write.dstSet = m_DescriptorSets.front().m_Sets[i];
-            write.dstBinding = ubo.m_Binding.m_Binding;
+            write.dstBinding = ubo.m_Binding.m_SetBinding.m_Binding;
             write.dstArrayElement = 0; // todo
             write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
             write.descriptorCount = 1;
@@ -198,7 +198,7 @@ lvk::Material lvk::Material::Create(VkState & vk, ShaderProgram& shader)
     // Collect
     for (auto& stage : shader.m_Stages)
     {
-        reflect_descriptor_info(stage, mat, vk);
+        reflect_descriptor_info(stage, mat);
     }
 
     return mat;
@@ -227,7 +227,7 @@ void lvk::Material::CreateBuffer(VkState& vk, uint32_t set, uint32_t binding)
     DescriptorSetBinding bind_handle{};
     for (auto& [b, _] : m_ShaderBuffers)
     {
-        if (b.m_Set == set && b.m_Binding == binding)
+        if (b.m_SetBinding.m_Set == set && b.m_SetBinding.m_Binding == binding)
         {
             bind_handle = b;
             break;
@@ -285,7 +285,7 @@ bool lvk::Material::SetColourAttachment(VkState & vk, const String& name, Frameb
 {
     if (m_Samplers.find(name) == m_Samplers.end())
     {
-        LVK_LOG_ERR("Material with shader %s : No associated sampler with name %s", m_ShaderName.c_str(), name);
+        LVK_LOG_ERR("Material with shader %s : No associated sampler with name %s", m_ShaderName.c_str(), name.c_str());
         return false;
     }
 
