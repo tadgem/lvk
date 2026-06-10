@@ -1,18 +1,38 @@
 #pragma once
-#include "lvk/Alias.h"
-#include LVK_STDLIB_ALIAS
+#include <concepts>
+#include <cstdlib>
+
 
 namespace lvk
 {
-	class IAllocator;
+	template<typename T>
+	concept AllocatorType = requires(T a)
+	{
+		{a.allocate(sizeof(T))} -> std::same_as<void*>;
+		{a.deallocate(nullptr)} -> std::same_as<void>;
+	};
 
-	template <class T>
+	class MallocAllocator
+	{
+	public:
+		void* allocate(size_t size) {
+			return std::malloc(size);
+		}
+
+		void deallocate(void* addr)
+		{
+			std::free(addr);
+		}
+	};
+
+
+	template <class T, AllocatorType A = MallocAllocator>
 	struct STLAllocator
 	{
 		typedef T value_type;
-		IAllocator& _allocator;
+		A& _allocator;
 
-		STLAllocator(IAllocator& alloc) : _allocator(alloc) {} //default ctor not required by C++ Standard Library
+		STLAllocator(A alloc = A()) : _allocator(alloc) {} //default ctor not required by C++ Standard Library
 
 		// A converting copy constructor:
 		template<class U> STLAllocator(const STLAllocator<U>& o) : _allocator(o._allocator) {}
@@ -34,32 +54,6 @@ namespace lvk
 		}
 	};
 
-	class IAllocator
-	{
-	public:
-		virtual void* allocate(size_t size) = 0;
-		virtual void  deallocate(void* addr) = 0;
-
-		virtual ~IAllocator() {}
-
-		template<typename T>
-		operator STLAllocator<T>() noexcept
-		{
-			return STLAllocator<T>(*this);
-		}
-	};
 
 
-	class MallocAllocator : public IAllocator
-	{
-	public:
-		void* allocate(size_t size) override {
-			return LVK_MEMORY_NS::malloc(size);
-		}
-
-		void deallocate(void* addr)
-		{
-			LVK_MEMORY_NS::free(addr);
-		}
-	};
 }

@@ -1,7 +1,7 @@
 #pragma once
 #include "lvk/Framebuffer.h"
 #include "lvk/Texture.h"
-#include LVK_UTILITY_ALIAS
+
 namespace lvk
 {
     struct ShaderProgram;
@@ -59,7 +59,16 @@ namespace lvk
         HashMap<String, ShaderAccessorData>                         m_UniformBufferAccessors;
         HashMap<String, SamplerBindingData>                         m_Samplers;
 
-        Material(IAllocator& alloc);
+        template<AllocatorType A = MallocAllocator>
+        Material(A&& alloc) :
+            m_DescriptorSets(alloc),
+            m_PushConstants(alloc),
+            m_ShaderBuffers(alloc),
+            m_Samplers(alloc),
+            m_UniformBufferAccessors(alloc),
+            m_ShaderName(alloc)
+        {
+        }
 
         static Material Create(VkState & vk, ShaderProgram& shader);
 

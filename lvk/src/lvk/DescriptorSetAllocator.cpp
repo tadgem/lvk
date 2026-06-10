@@ -3,11 +3,11 @@
 #include "lvk/Macros.h"
 #include "lvk/Log.h"
 
-void lvk::DescriptorSetAllocator::Init(IAllocator& alloc, VkDevice logical_device, uint32_t initialSetAmount, Vector<PoolSizeRatio> ratios)
+void lvk::DescriptorSetAllocator::Init(VkDevice logical_device, uint32_t initialSetAmount, Vector<PoolSizeRatio> ratios)
 {
 	m_Ratios = ratios;
 
-	VkDescriptorPool pool = CreatePool(alloc, logical_device, initialSetAmount);
+	VkDescriptorPool pool = CreatePool(logical_device, initialSetAmount);
 
 	p_SetsPerPool = static_cast<uint32_t>(initialSetAmount * 1.5);
 	m_FreePool.push_back(pool);
@@ -41,9 +41,9 @@ void lvk::DescriptorSetAllocator::Free(VkDevice device)
 	m_FullPool.clear();
 }
 
-VkDescriptorSet lvk::DescriptorSetAllocator::Allocate(IAllocator& alloc, VkDevice device, VkDescriptorSetLayout layout, void* pNext)
+VkDescriptorSet lvk::DescriptorSetAllocator::Allocate(VkDevice device, VkDescriptorSetLayout layout, void* pNext)
 {
-	VkDescriptorPool poolToUse = GetPool(alloc, device);
+	VkDescriptorPool poolToUse = GetPool(device);
 
 	VkDescriptorSetAllocateInfo allocInfo = {};
 	allocInfo.pNext = pNext;
@@ -59,7 +59,7 @@ VkDescriptorSet lvk::DescriptorSetAllocator::Allocate(IAllocator& alloc, VkDevic
 
 		m_FullPool.push_back(poolToUse);
 
-		poolToUse = GetPool(alloc, device);
+		poolToUse = GetPool(device);
 		allocInfo.descriptorPool = poolToUse;
 
 		VK_CHECK(vkAllocateDescriptorSets(device, &allocInfo, &set));
@@ -69,7 +69,7 @@ VkDescriptorSet lvk::DescriptorSetAllocator::Allocate(IAllocator& alloc, VkDevic
 	return set;
 }
 
-VkDescriptorPool lvk::DescriptorSetAllocator::GetPool(IAllocator& alloc, VkDevice device)
+VkDescriptorPool lvk::DescriptorSetAllocator::GetPool(VkDevice device)
 {
 	VkDescriptorPool newPool;
 	if (m_FreePool.size() != 0) {
@@ -78,7 +78,7 @@ VkDescriptorPool lvk::DescriptorSetAllocator::GetPool(IAllocator& alloc, VkDevic
 	}
 	else {
 		//need to create a new pool
-		newPool = CreatePool(alloc, device, p_SetsPerPool);
+		newPool = CreatePool(device, p_SetsPerPool);
 
 		p_SetsPerPool = p_SetsPerPool * 2;
 		if (p_SetsPerPool > 4092) {
@@ -89,10 +89,9 @@ VkDescriptorPool lvk::DescriptorSetAllocator::GetPool(IAllocator& alloc, VkDevic
 	return newPool;
 }
 
-VkDescriptorPool lvk::DescriptorSetAllocator::CreatePool(IAllocator& alloc, VkDevice device, uint32_t setCount)
+VkDescriptorPool lvk::DescriptorSetAllocator::CreatePool(VkDevice device, uint32_t setCount)
 {
-	STLAllocator<VkDescriptorPoolSize> dpsa(alloc);
-	Vector<VkDescriptorPoolSize> poolSizes(dpsa);
+	Vector<VkDescriptorPoolSize> poolSizes;
 	for (PoolSizeRatio ratio : m_Ratios) {
 		poolSizes.push_back(VkDescriptorPoolSize{ ratio.m_DescriptorType, uint32_t(ratio.m_Ratio * p_SetsPerPool) });
 	}

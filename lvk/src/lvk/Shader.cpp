@@ -1,21 +1,15 @@
 #include "lvk/Shader.h"
+
+#include <regex>
+
 #include "lvk/Macros.h"
 #include "lvk/Log.h"
 #include "volk.h"
 #include "shaderc/shaderc.h"
-#include LVK_FILESYSTEM_ALIAS
-#include LVK_STRING_STREAM_ALIAS
-#include LVK_REGEX_ALIAS
 
 namespace lvk {
 
-ShaderStage::ShaderStage(IAllocator& alloc) :
-    m_PushConstants(alloc),
-    m_LayoutDatas(alloc),
-    m_StageBinary(alloc),
-    m_Name(alloc)
-{
-}
+
 
 void ShaderProgram::Free(VkState &vk) {
   vkDestroyDescriptorSetLayout(vk.m_LogicalDevice, m_DescriptorSetLayout,
@@ -41,21 +35,11 @@ ShaderProgram ShaderProgram::CreateCompute(VkState &vk, ShaderStage &compute) {
 
   Vector<ShaderStage> stages(*vk.m_CPUAllocator);
   stages.push_back(compute);
-  auto shader =  ShaderProgram(*vk.m_CPUAllocator, stages, layout);
+  auto shader =  ShaderProgram( stages, layout, *vk.m_CPUAllocator);
   return shader;
 }
 
-ShaderProgram::ShaderProgram(
-    IAllocator& alloc, 
-    Vector<ShaderStage> shaderStages,
-    VkDescriptorSetLayout layout) :
-    
-    m_DescriptorSetLayout(layout), 
-    m_Stages(shaderStages),
-    m_PushConstantRanges(alloc)
-{
-  BuildPushConstantRanges();
-}
+
 void ShaderProgram::BuildPushConstantRanges() {
   // update
   // valid combos:

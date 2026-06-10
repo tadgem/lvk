@@ -37,21 +37,21 @@ void lvk::Mesh::Free (VkState & vk)
 }
 
 #define GET_VERTEX_DESCRIPTION_IMPL \
-VertexDescription vd(alloc);\
-vd.m_AttributeDescriptions = GetAttributeDescriptions(alloc);\
-vd.m_BindingDescriptions = Vector<VkVertexInputBindingDescription>(alloc);\
+VertexDescription vd;\
+vd.m_AttributeDescriptions = GetAttributeDescriptions();\
+vd.m_BindingDescriptions = Vector<VkVertexInputBindingDescription>();\
 vd.m_BindingDescriptions.push_back(GetBindingDescription());\
 return vd;
 
-lvk::VertexDescription lvk::VertexDataPosColUv::GetVertexDescription(IAllocator& alloc) {
+lvk::VertexDescription lvk::VertexDataPosColUv::GetVertexDescription() {
     GET_VERTEX_DESCRIPTION_IMPL;
 }
-lvk::VertexDescription lvk::VertexDataPos4::GetVertexDescription(IAllocator& alloc) {
+lvk::VertexDescription lvk::VertexDataPos4::GetVertexDescription() {
     GET_VERTEX_DESCRIPTION_IMPL;
 }
-lvk::VertexDescription lvk::VertexDataPosUv::GetVertexDescription(IAllocator& alloc) {
+lvk::VertexDescription lvk::VertexDataPosUv::GetVertexDescription() {
     GET_VERTEX_DESCRIPTION_IMPL;
 }
-lvk::VertexDescription lvk::VertexDataPosNormalUv::GetVertexDescription(IAllocator& alloc) {
+lvk::VertexDescription lvk::VertexDataPosNormalUv::GetVertexDescription() {
     GET_VERTEX_DESCRIPTION_IMPL;
 }

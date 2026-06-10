@@ -72,15 +72,6 @@ static auto reflect_descriptor_info = [](lvk::ShaderStage& stage, lvk::Material 
         }
     };
 
-lvk::Material::Material(IAllocator& alloc) :
-    m_DescriptorSets(alloc),
-    m_PushConstants(alloc),
-    m_ShaderBuffers(alloc),
-    m_Samplers(alloc),
-    m_UniformBufferAccessors(alloc),
-    m_ShaderName(alloc)
-{
-}
 
 
 lvk::Material::ShaderBufferBindingData::ShaderBufferBindingData(uint32_t set, uint32_t binding, VkDeviceSize size, Buffer::BufferType bufferType, lvk::ShaderBufferFrameData& buffer)

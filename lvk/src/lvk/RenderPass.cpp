@@ -121,3 +121,8 @@ lvk::render_passes::BeginSwapchainRenderPass(lvk::VkState &vk, VkCommandBuffer& 
   vkCmdSetViewport(cmd, 0, 1, &viewport);
   vkCmdSetScissor(cmd, 0, 1, &scissor);
 }
+
+VkRenderPassBeginInfo lvk::RenderPass::GetBeginInfo()
+{
+
+}

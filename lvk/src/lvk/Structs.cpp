@@ -12,11 +12,6 @@ void lvk::MappedBuffer::Free(lvk::VkState &vk) {
   Buffer::Free(vk);
 }
 
-lvk::QueueFamilyIndices::QueueFamilyIndices(IAllocator& alloc) : m_QueueFamilies(alloc)
-{
-
-}
-
 void lvk::ShaderBufferFrameData::Free(lvk::VkState& vk) {
     if (!Ready())
     {

@@ -50,7 +50,6 @@ namespace pipelines{
         PipelineAttachmentState& attachmentState);
 
     PipelineAttachmentState               CreateGBufferAttachmentState(
-        IAllocator& alloc,
         uint32_t colourAttachmentCount,
         uint32_t writeAttachmentIndex);
 

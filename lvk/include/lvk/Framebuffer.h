@@ -28,6 +28,22 @@ namespace lvk
             }
         }
 
+        VkAttachmentDescription CreateAttachmentDescription(VkImageLayout layout)
+        {
+            VkAttachmentDescription desc{};
+
+            desc.format = m_Format;
+            desc.samples = m_SampleCount;
+            desc.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+            desc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+            desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+            desc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+            desc.initialLayout = layout;
+            desc.finalLayout = layout;
+
+            return desc;
+        }
+
         static Attachment CreateColourAttachment(VkState & vk, VkExtent2D resolution,
             uint32_t numMips, VkSampleCountFlagBits sampleCount,
             VkFormat format, VkImageUsageFlags usageFlags,
@@ -79,7 +95,8 @@ namespace lvk
         VkAttachmentLoadOp          m_AttachmentLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         VkExtent2D                  m_Resolution;
 
-        Framebuffer(IAllocator& alloc) : 
+        template<AllocatorType A = MallocAllocator>
+        Framebuffer(A alloc = A()) :
             m_ColourAttachments(alloc),
             m_DepthAttachments(alloc),
             m_ResolveAttachments(alloc),

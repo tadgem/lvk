@@ -55,7 +55,8 @@ namespace lvk {
     String m_Name;
     VkShaderStageFlags m_Stage;
 
-    PushConstantBlock(IAllocator& alloc) : m_Name(alloc) {}
+  	template<AllocatorType A = MallocAllocator>
+    PushConstantBlock(A alloc = A()) : m_Name(alloc) {}
   };
 
   struct ShaderBufferMember {
@@ -65,7 +66,8 @@ namespace lvk {
     String m_Name;
     ShaderBufferMemberType m_Type;
 
-    ShaderBufferMember(IAllocator& alloc) : m_Name(alloc) {}
+  	template<AllocatorType A = MallocAllocator>
+    ShaderBufferMember(A alloc = A()) : m_Name(alloc) {}
   }; 
 
   struct DescriptorSetLayoutBindingData {
@@ -75,7 +77,8 @@ namespace lvk {
     ShaderBindingType m_BufferType;
     Vector<ShaderBufferMember> m_Members;
 
-    DescriptorSetLayoutBindingData(IAllocator& alloc) :
+  	template<AllocatorType A = MallocAllocator>
+    DescriptorSetLayoutBindingData(A alloc = A()) :
         m_BindingName(alloc),
         m_BindingIndex(0),
         m_ExpectedBufferSizeOrDivisor(0),
@@ -90,7 +93,8 @@ namespace lvk {
     Vector<VkDescriptorSetLayoutBinding> m_Bindings;
     Vector<DescriptorSetLayoutBindingData> m_BindingDatas;
 
-    DescriptorSetLayoutData(IAllocator& alloc) :
+  	template<AllocatorType A = MallocAllocator>
+    DescriptorSetLayoutData(A alloc = A()) :
         m_SetNumber(0),
         m_Bindings(alloc),
         m_BindingDatas(alloc)
@@ -202,9 +206,10 @@ namespace lvk {
     Vector<VkVertexInputBindingDescription>   m_BindingDescriptions;
     Vector<VkVertexInputAttributeDescription> m_AttributeDescriptions;
 
-    VertexDescription(IAllocator& allocator) : 
-        m_BindingDescriptions(STLAllocator<VkVertexInputBindingDescription>(allocator)),
-        m_AttributeDescriptions(STLAllocator<VkVertexInputAttributeDescription>(allocator))
+  	template<AllocatorType A = MallocAllocator>
+    VertexDescription(A allocator = A()) :
+        m_BindingDescriptions(allocator),
+        m_AttributeDescriptions(allocator)
     {
 
     }
@@ -225,7 +230,8 @@ namespace lvk {
     Vector<VkPipelineColorBlendAttachmentState> m_ColourAttachmentStates;
     VkPipelineColorBlendStateCreateInfo         m_BlendStateInfo;
 
-    PipelineAttachmentState(IAllocator& alloc) :
+  	template<AllocatorType A = MallocAllocator>
+    PipelineAttachmentState(A alloc = A()) :
         m_ColourAttachmentStates(alloc),
         m_BlendStateInfo({}) {
     };
@@ -236,7 +242,8 @@ namespace lvk {
     Vector<VkDynamicState>            m_DynamicStates;
     VkPipelineDynamicStateCreateInfo  m_DynamicStateInfo;
 
-    PipelineDynamicState(IAllocator& alloc) :
+  	template<AllocatorType A = MallocAllocator>
+    PipelineDynamicState(A alloc = A()) :
         m_DynamicStates(alloc),
         m_DynamicStateInfo({}) {
     };
@@ -248,7 +255,8 @@ namespace lvk {
     VkRenderPass                    m_RenderPass;
     Vector<VkRenderPassBeginInfo>   m_RenderPassInfos;
 
-    RenderPassInfo(IAllocator& alloc) :
+  	template<AllocatorType A = MallocAllocator>
+    RenderPassInfo(A alloc = A()) :
         m_SwapchainFramebuffers(alloc),
         m_RenderPassInfos(alloc) {
     };
@@ -275,7 +283,9 @@ namespace lvk {
   struct QueueFamilyIndices {
     HashMap<QueueFamilyType, uint32_t> m_QueueFamilies;
 
-    QueueFamilyIndices(IAllocator& alloc);
+
+  	template<AllocatorType A = MallocAllocator>
+    QueueFamilyIndices(A alloc = A()) : m_QueueFamilies(alloc) {};
 
     bool IsComplete();
   };
@@ -285,7 +295,8 @@ namespace lvk {
     Vector<VkSurfaceFormatKHR>  m_SupportedFormats;
     Vector<VkPresentModeKHR>    m_SupportedPresentModes;
 
-    SwapChainSupportDetais(IAllocator& alloc) :
+  	template<AllocatorType A = MallocAllocator>
+    SwapChainSupportDetais(A alloc = A()) :
         m_SupportedFormats(alloc), m_SupportedPresentModes(alloc){}
   };
 
@@ -322,7 +333,7 @@ namespace lvk {
     virtual bool                        ShouldRun(VkState& vk) = 0;
     virtual void                        PreFrame(VkState& vk) = 0;
     virtual void                        PostFrame(VkState& vk) = 0;
-    virtual void                        Run(VkState& vk, LVK_FUNCTIONAL_NS::function<void()> callback) = 0;
+    virtual void                        Run(VkState& vk, std::function<void()> callback) = 0;
     virtual void                        InitImGuiBackend(VkState& vk) = 0;
     virtual void                        CleanupImGuiBackend(VkState& vk) = 0;
     virtual StageBinary                 LoadBinaryFromPath(VkState& vk, const char* path) = 0;
@@ -333,7 +344,8 @@ namespace lvk {
 	struct VkState
 	{
 	    Unique<VkBackend>               m_Backend;
-	    Unique<IAllocator>              m_CPUAllocator;
+		// TODO: Figure out nice way to make this swappable
+	    Unique<MallocAllocator>         m_CPUAllocator;
 
 	    VkInstance                      m_Instance;
 	    VkSurfaceKHR                    m_Surface;
@@ -398,7 +410,8 @@ namespace lvk {
 
 	    NVGcontext*                     m_NanoVG;
 
-	    VkState(IAllocator& alloc) :
+		template<AllocatorType A = MallocAllocator>
+	    VkState(A alloc = A()) :
 	        m_DescriptorSetAllocator(alloc),
 	        m_ImageAvailableSemaphores(alloc),
 	        m_RenderFinishedSemaphores(alloc),
@@ -428,15 +441,15 @@ namespace lvk {
 }
 
 template <>
-struct LVK_UNORDERED_MAP_NS::hash<lvk::DescriptorSetBinding>
+struct std::hash<lvk::DescriptorSetBinding>
 {
-    LVK_UNORDERED_MAP_NS::size_t operator()(const lvk::DescriptorSetBinding& sb) const
+    std::size_t operator()(const lvk::DescriptorSetBinding& sb) const
     {
-        using LVK_UNORDERED_MAP_NS::hash;
+        using std::hash;
 
         return ((hash<uint64_t>()(sb.m_Data)));
 
-            // TODO: This size should account for alignment diffs between GPU & CPU
-            // ^ (hash<uint64_t>()(sb.m_BindingSize))));
+        // TODO: This size should account for alignment diffs between GPU & CPU
+        // ^ (hash<uint64_t>()(sb.m_BindingSize))));
     }
 };

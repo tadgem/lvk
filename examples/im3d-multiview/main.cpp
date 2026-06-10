@@ -14,12 +14,12 @@ struct ViewData
     Framebuffer m_LightPassFB;
     Material    m_LightPassMaterial;
 
-    VkPipelineData    m_GBufferPipeline, m_LightPassPipeline;
-    LvkIm3dViewState  m_Im3dState;
-    LvkIm3dViewState  m_DeferredIm3dState;
-    VkRenderPass      m_Im3dRenderPass = VK_NULL_HANDLE;
-    Vector<VkFramebuffer> m_Im3dFramebuffers;
-    VkExtent2D        m_CurrentResolution{ 1920, 1080 };
+    VkPipelineData          m_GBufferPipeline, m_LightPassPipeline;
+    LvkIm3dViewState        m_Im3dState;
+    LvkIm3dViewState        m_DeferredIm3dState;
+    VkRenderPass            m_Im3dRenderPass = VK_NULL_HANDLE;
+    Vector<VkFramebuffer>   m_Im3dFramebuffers;
+    VkExtent2D              m_CurrentResolution{ 1920, 1080 };
 
     Camera      m_Camera;
     Mesh        m_ViewQuad;
@@ -69,26 +69,10 @@ ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferP
     auto im3dViewState = AddIm3dForViewport(vk, im3dState, finalImage.m_RenderPassInfo.m_RenderPass, false);
 
     Vector<VkAttachmentDescription> im3dColourAttachments(*vk.m_CPUAllocator);
-    VkAttachmentDescription im3dColourDesc{};
-    im3dColourDesc.format = finalImage.m_ColourAttachments[0].m_Format;
-    im3dColourDesc.samples = finalImage.m_ColourAttachments[0].m_SampleCount;
-    im3dColourDesc.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-    im3dColourDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    im3dColourDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    im3dColourDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    im3dColourDesc.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    im3dColourDesc.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    im3dColourAttachments.push_back(im3dColourDesc);
 
-    VkAttachmentDescription im3dDepthDesc{};
-    im3dDepthDesc.format = gbuffer.m_DepthAttachments[0].m_Format;
-    im3dDepthDesc.samples = gbuffer.m_DepthAttachments[0].m_SampleCount;
-    im3dDepthDesc.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-    im3dDepthDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    im3dDepthDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    im3dDepthDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    im3dDepthDesc.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    im3dDepthDesc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    im3dColourAttachments.push_back(finalImage.m_ColourAttachments[0].CreateAttachmentDescription(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL));
+
+    VkAttachmentDescription im3dDepthDesc = finalImage.m_DepthAttachments[0].CreateAttachmentDescription(VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
 
     VkRenderPass im3dRenderPass = VK_NULL_HANDLE;
     render_passes::CreateRenderPass(vk, im3dRenderPass, im3dColourAttachments, Vector<VkAttachmentDescription>(*vk.m_CPUAllocator), true, im3dDepthDesc, VK_ATTACHMENT_LOAD_OP_LOAD);
@@ -114,7 +98,7 @@ ViewData CreateView(VkState & vk, LvkIm3dState im3dState, ShaderProgram gbufferP
     };
 
     static StaticVector<uint32_t> screenQuadIndices = {
-    0, 1, 2, 2, 3, 0
+        0, 1, 2, 2, 3, 0
     };
 
     Buffer vertexBuffer = buffers::CreateVertexBuffer<VertexDataPosUv>(vk, screenQuadVerts.data(), screenQuadVerts.size());

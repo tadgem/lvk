@@ -114,10 +114,10 @@ VkPipelineMultisampleStateCreateInfo CreateMultiSampleInfo(lvk::VkState& vk, lvk
   return multisampleInfo;
 }
 
-lvk::PipelineAttachmentState CreateAttachmentState(lvk::IAllocator& alloc, uint32_t colourAttachmentCount)
+lvk::PipelineAttachmentState CreateAttachmentState(uint32_t colourAttachmentCount)
 {
   using namespace lvk;
-  PipelineAttachmentState state (alloc);
+  PipelineAttachmentState state;
   for (uint32_t i = 0; i < colourAttachmentCount; i++) {
     VkPipelineColorBlendAttachmentState colorBlendAttachment{};
     colorBlendAttachment.colorWriteMask =
@@ -146,10 +146,10 @@ lvk::PipelineAttachmentState CreateAttachmentState(lvk::IAllocator& alloc, uint3
   return state;
 }
 
-lvk::PipelineAttachmentState CreateGBufferAttachmentState(lvk::IAllocator& alloc, uint32_t colourAttachmentCount, uint32_t writeAttachmentIndex)
+lvk::PipelineAttachmentState CreateGBufferAttachmentState(uint32_t colourAttachmentCount, uint32_t writeAttachmentIndex)
 {
   using namespace lvk;
-  PipelineAttachmentState state (alloc);
+  PipelineAttachmentState state;
   for (uint32_t i = 0; i < colourAttachmentCount; i++) {
     VkPipelineColorBlendAttachmentState colorBlendAttachment{};
     if (i == writeAttachmentIndex) {
@@ -181,10 +181,10 @@ lvk::PipelineAttachmentState CreateGBufferAttachmentState(lvk::IAllocator& alloc
   return state;
 }
 
-lvk::PipelineDynamicState CreateDynamicStateInfo(lvk::IAllocator& alloc)
+lvk::PipelineDynamicState CreateDynamicStateInfo()
 {
   using namespace lvk;
-  PipelineDynamicState dynamicState(alloc);
+  PipelineDynamicState dynamicState;
   dynamicState.m_DynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
   dynamicState.m_DynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR);
 

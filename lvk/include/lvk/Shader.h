@@ -1,8 +1,7 @@
 #pragma once
 #include "lvk/Descriptor.h"
 #include "lvk/Structs.h"
-#include "lvk/Utils.h"
-#include LVK_FILESYSTEM_ALIAS
+#include <filesystem>
 namespace lvk
 {
     VkShaderModule CreateShaderModule(VkState& vk, const StageBinary& data);
@@ -20,7 +19,17 @@ namespace lvk
         Vector<DescriptorSetLayoutData> m_LayoutDatas;
         ShaderStageType m_Type;
 
-        ShaderStage(IAllocator& alloc);
+        template<AllocatorType A = MallocAllocator>
+
+        ShaderStage(A alloc = A()) :
+            m_Name(alloc),
+            m_StageBinary(alloc),
+            m_Module(VK_NULL_HANDLE),
+            m_PushConstants(alloc),
+            m_LayoutDatas(alloc),
+            m_Type(ShaderStageType::Vertex)
+        {
+        }
 
         static String      LoadShaderSource(VkState& vk, const char* path);
 
@@ -44,10 +53,10 @@ namespace lvk
         static ShaderStage
         CreateFromBinaryPath(VkState & vk, const char* stagePath, const ShaderStageType& stageType)
         {
-            String name(LVK_FILESYSTEM_NS::filesystem::path(stagePath).filename().string(), *vk.m_CPUAllocator);
+            String name(std::filesystem::path(stagePath).filename().string(), *vk.m_CPUAllocator);
 
             auto stageBin = vk.m_Backend->LoadBinaryFromPath(vk, stagePath);
-            return CreateFromBinary(vk, stageBin, stageType, LVK_FILESYSTEM_NS::filesystem::path(stagePath).filename().string().c_str());
+            return CreateFromBinary(vk, stageBin, stageType, std::filesystem::path(stagePath).filename().string().c_str());
         }
 
         static ShaderStage CreateFromSource(VkState & vk, const String& source, const ShaderStageType& type, const char* name, const char* path = "")
@@ -69,23 +78,29 @@ namespace lvk
             stage.m_LayoutDatas = stageLayoutDatas;
             stage.m_Type = type;
 
-            return LVK_MEMORY_NS::move(stage);
+            return std::move(stage);
         }
 
         static ShaderStage CreateFromSourcePath(VkState & vk, const char* path, const ShaderStageType& type)
         {
             String name(*vk.m_CPUAllocator);
             auto source = LoadShaderSource(vk, path);
-            return CreateFromSource(vk, source, type, path, LVK_FILESYSTEM_NS::filesystem::path(path).filename().string().c_str());
+            return CreateFromSource(vk, source, type, path, std::filesystem::path(path).filename().string().c_str());
         }
     };
 
     struct ShaderProgram
     {
+        template<AllocatorType A = MallocAllocator>
         ShaderProgram(
-            IAllocator& alloc,
             Vector<ShaderStage> shaderStages, 
-            VkDescriptorSetLayout layout);
+            VkDescriptorSetLayout layout, A alloc = A()) :
+                m_DescriptorSetLayout(layout),
+                m_Stages(shaderStages),
+                m_PushConstantRanges(alloc)
+        {
+            BuildPushConstantRanges();
+        }
         Vector<ShaderStage>         m_Stages;
 
         VkDescriptorSetLayout       m_DescriptorSetLayout;
@@ -104,7 +119,7 @@ namespace lvk
             Vector<ShaderStage> stages(alloc);
             stages.push_back(vert);
             stages.push_back(frag);
-            return ShaderProgram (*vk.m_CPUAllocator, stages, layout);
+            return ShaderProgram (stages, layout, *vk.m_CPUAllocator);
         }
 
         static ShaderProgram
